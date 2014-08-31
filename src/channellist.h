@@ -1,0 +1,52 @@
+#ifndef __DVB_CHANNEL_LIST__
+#define __DVB_CHANNEL_LIST__
+
+#include <rdutils/DataList.h>
+#include <rdutils/Hash.h>
+
+#include "config.h"
+
+class ADVBChannelList {
+public:
+	static ADVBChannelList& Get();
+
+	void Update(uint32_t freq, bool verbose = false);
+	void Update(const AString& channel, bool verbose = false);
+
+	void UpdateAll(bool verbose = false);
+
+	AString GetPIDList(const AString& channel, bool update = false);
+
+	AString LookupDVBChannel(const AString& channel) const;
+
+private:
+	ADVBChannelList();
+	~ADVBChannelList();
+
+	static AString ConvertDVBChannel(const AString& str);
+
+protected:
+	typedef struct {
+		AString   name;
+		AString   convertedname;
+		uint32_t    freq;
+		ADataList pidlist;
+	} CHANNEL;
+
+	static void __DeleteChannel(uptr_t item, void *context) {
+		UNUSED(context);
+		delete (CHANNEL *)item;
+	}
+
+	const CHANNEL *GetChannel(const AString& name) const;
+	CHANNEL *GetChannel(const AString& name, bool create = false);
+
+	static int __CompareItems(uptr_t a, uptr_t b, void *context);
+
+protected:
+	ADataList list;
+	AHash     hash;
+	bool      changed;
+};
+
+#endif

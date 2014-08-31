@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>DVB Programmes</title>
+</head>
+<body onload="loadpage()">
+<h1>DVB Programmes</h1>
+<br>
+<table class="container">
+<tr><td colspan=3 id="errormsg"></td></tr>
+<tr><td class="buttons">
+<div class="sidebar">
+<div id="buttons"></div>
+<br>
+User Searches:<br>
+<div id="usersearches"></div>
+Other functions:<br>
+<button onclick="reschedule()">Reschedule</button><br>
+</div>
+</td>
+<td class="maincontent">
+<table class="filter"><tr><td>
+From:<br>
+<select id="from" onchange="dvbrequest()">
+<option>Listings</option>
+<option selected>Combined</option>
+<option>Requested</option>
+<option>Patterns</option>
+<option>Logs</option>
+</select>
+</td><td>
+Filter:<br>
+<input type="text" id="titlefilter" value = "" size=30 maxlength=10000 onchange="dvbrequest()">
+</td><td>
+Time:<br>
+<select id="timefilter" onchange="dvbrequest()">
+<option value="stop&gt;=firstdayofmonth,0:0:0">This Month</option>
+<option value="stop&gt;=firstdayofweek,0:0:0">This Week</option>
+<option value="stop&gt;=yesterday,0:0:0" selected>Yesterday</option>
+<option value="stop&gt;=now,0:0:0">Today</option>
+<option value="stop&gt;=now start&lt;now">Now</option>
+<option value="stop&gt;=now start&lt;now+1h">Next Hour</option>
+<option value="stop&gt;=tomorrow,0:0:0">Tomorrow</option>
+<option value="stop&gt;=lastmonth,firstdayofmonth,0:0:0">Last Month</option>
+<option value="stop&gt;=lastweek,firstdayofweek,0:0:0">Last Week</option>
+<option value="stop&gt;=nextweek,firstdayofweek">Next Week</option>
+<option value="stop&gt;now">Future</option>
+<option value="start=today">Today (Logs)</option>
+<option value="start=yesterday">Yesterday (Logs)</option>
+<option value="">All</option>
+</select>
+</td><td>
+Items:<br>
+<select id="pagesize" onchange="updatepagesize()">
+<option>20</option>
+<option selected>50</option>
+<option>100</option>
+<option>500</option>
+</select>
+</td><td>
+Display:<br>
+<select id="verbosity" onchange="populate()">
+<option value="1">Title</option>
+<option value="2">Title and Description</option>
+<option value="3">Title, Description and Details</option>
+<option value="4">Everything</option>
+</select>
+</td><td>
+<button style="width:100%; height:100%; padding-left:20px; padding-right:20px;" onclick="dvbrequest()">Find</button>
+</td></tr></table>
+<div id="finderrors"></div>
+<br>
+<div class="filterlist" id="filterlist"></div>
+<br>
+<div id="status"></div>
+<br>
+<div id="list"><h2>No programmes</h2></div>
+<br>
+<div id="statusbottom"></div>
+</td></tr>
+<tr><td colspan=2>
+<div id="users"><h2>No Information</h2></div>
+</td></tr></table>
+</body>
+<link rel="stylesheet" type="text/css" href="main.css" />
+<script src="main.js"></script>
+</html>

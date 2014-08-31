@@ -1,0 +1,66 @@
+pkgincludedir = $(includedir)/rddvb-@RDDVB_MAJORMINOR@/rddvb
+
+lib_LTLIBRARIES = librddvb-@RDDVB_MAJORMINOR@.la
+
+librddvb_@RDDVB_MAJORMINOR@_la_LDFLAGS =		\
+	-no-undefined								\
+	-version-info $(RDDVB_LIBVERSION)			\
+     $(RDDVB_LDFLAGS)
+
+librddvb_@RDDVB_MAJORMINOR@_la_LIBADD =			\
+	$(RDUTILS_LIBS)
+
+librddvb_@RDDVB_MAJORMINOR@_la_CPPFLAGS =		\
+	$(RDDVB_CFLAGS)								\
+	$(RDUTILS_CFLAGS)
+
+librddvb_@RDDVB_MAJORMINOR@_la_SOURCES = 		\
+	channellist.cpp								\
+	config.cpp									\
+	dvblock.cpp									\
+	dvbprog.cpp									\
+	episodehandler.cpp							\
+	findcards.cpp								\
+	proglist.cpp
+
+pkginclude_HEADERS = 							\
+	channellist.h								\
+	config.h									\
+	dvblock.h									\
+	dvbprog.h									\
+	episodehandler.h							\
+	findcards.h									\
+	proglist.h
+
+noinst_HEADERS =
+
+nodist_pkginclude_HEADERS = rddvb-stdint.h
+
+DISTCLEANFILES = rddvb-stdint.h
+
+bin_PROGRAMS = dvb dvbweb
+
+dvb_LDADD =										\
+	$(RDUTILS_LIBS)								\
+	$(RDDVB_LIBS)
+
+dvb_CPPFLAGS =									\
+	$(RDDVB_CFLAGS)								\
+	$(RDUTILS_CFLAGS)							\
+	$(RDDVB_CFLAGS)
+
+dvb_SOURCES =									\
+	dvb.cpp
+
+dvbweb_LDADD =									\
+	$(RDUTILS_LIBS)								\
+	$(RDDVB_LIBS)
+
+dvbweb_CPPFLAGS =								\
+	$(RDDVB_CFLAGS)								\
+	$(RDUTILS_CFLAGS)							\
+	$(RDDVB_CFLAGS)
+
+dvbweb_SOURCES =								\
+	dvbweb.cpp
+
