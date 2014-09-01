@@ -9,6 +9,9 @@ EXTRA_DIST = README COPYING autogen.sh
 
 pkgconfig_DATA = rddvb-$(RDDVB_MAJORMINOR).pc
 
+sharedir = $(prefix)/share/$(PACKAGE)
+share_DATA = share/*
+
 rddvb-$(RDDVB_MAJORMINOR).pc: rddvb.pc
 	cp rddvb.pc rddvb-$(RDDVB_MAJORMINOR).pc
 
