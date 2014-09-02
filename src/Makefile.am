@@ -34,9 +34,9 @@ pkginclude_HEADERS = 							\
 
 noinst_HEADERS =
 
-nodist_pkginclude_HEADERS = rddvb-stdint.h
+nodist_pkginclude_HEADERS =
 
-DISTCLEANFILES = rddvb-stdint.h
+DISTCLEANFILES =
 
 bin_PROGRAMS = dvb dvbweb
 
