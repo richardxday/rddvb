@@ -9,6 +9,8 @@ EXTRA_DIST = README COPYING autogen.sh
 
 pkgconfig_DATA = rddvb-$(RDDVB_MAJORMINOR).pc
 
+dist_bin_SCRIPTS = bin/*
+
 install-data-local:
 	mkdir -p $(prefix)/share/$(PACKAGE)
 	cp -r -p share/* $(prefix)/share/$(PACKAGE)

@@ -1,0 +1,11 @@
+#!/bin/sh
+SRC=$1
+DST=${SRC%.*}.mp4
+VIDEO=${SRC%.*}.m2v
+AUDIO=${SRC%.*}.mp2
+LOGFILE=${SRC%.*}_log.txt
+SUBTITLES=${SRC%.*}.sup
+RES=`projectx "$SRC" >/dev/null && avconv -i "$VIDEO" -i "$AUDIO" -acodec copy -vcodec copy -filter:v yadif -v warning -y "$DST" && echo "1"`
+rm "$VIDEO" "$AUDIO" "$LOGFILE" "$SUBTITLES"*
+test -n "$RES"
+
