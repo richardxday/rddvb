@@ -8,11 +8,11 @@ librddvb_@RDDVB_MAJORMINOR@_la_LDFLAGS =		\
      $(RDDVB_LDFLAGS)
 
 librddvb_@RDDVB_MAJORMINOR@_la_LIBADD =			\
-	$(RDUTILS_LIBS)
+	$(RDLIB_LIBS)
 
 librddvb_@RDDVB_MAJORMINOR@_la_CPPFLAGS =		\
 	$(RDDVB_CFLAGS)								\
-	$(RDUTILS_CFLAGS)
+	$(RDLIB_CFLAGS)
 
 librddvb_@RDDVB_MAJORMINOR@_la_SOURCES = 		\
 	channellist.cpp								\
@@ -41,24 +41,24 @@ DISTCLEANFILES = rddvb-stdint.h
 bin_PROGRAMS = dvb dvbweb
 
 dvb_LDADD =										\
-	$(RDUTILS_LIBS)								\
+	$(RDLIB_LIBS)								\
 	$(RDDVB_LIBS)
 
 dvb_CPPFLAGS =									\
 	$(RDDVB_CFLAGS)								\
-	$(RDUTILS_CFLAGS)							\
+	$(RDLIB_CFLAGS)								\
 	$(RDDVB_CFLAGS)
 
 dvb_SOURCES =									\
 	dvb.cpp
 
 dvbweb_LDADD =									\
-	$(RDUTILS_LIBS)								\
+	$(RDLIB_LIBS)								\
 	$(RDDVB_LIBS)
 
 dvbweb_CPPFLAGS =								\
 	$(RDDVB_CFLAGS)								\
-	$(RDUTILS_CFLAGS)							\
+	$(RDLIB_CFLAGS)								\
 	$(RDDVB_CFLAGS)
 
 dvbweb_SOURCES =								\

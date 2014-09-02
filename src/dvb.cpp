@@ -4,8 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <rdutils/Regex.h>
-#include <rdutils/Recurse.h>
+#include <rdlib/Regex.h>
+#include <rdlib/Recurse.h>
 
 #include "config.h"
 #include "dvblock.h"

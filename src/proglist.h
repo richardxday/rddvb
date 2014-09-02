@@ -3,9 +3,9 @@
 
 #include <stdarg.h>
 
-#include <rdutils/strsup.h>
-#include <rdutils/Hash.h>
-#include <rdutils/DataList.h>
+#include <rdlib/strsup.h>
+#include <rdlib/Hash.h>
+#include <rdlib/DataList.h>
 
 #include "dvbprog.h"
 

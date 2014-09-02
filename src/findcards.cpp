@@ -4,8 +4,8 @@
 #include <string.h>
 #include <time.h>
 
-#include <rdutils/strsup.h>
-#include <rdutils/Regex.h>
+#include <rdlib/strsup.h>
+#include <rdlib/Regex.h>
 
 #include "config.h"
 #include "proglist.h"

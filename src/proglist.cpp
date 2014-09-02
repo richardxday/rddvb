@@ -5,8 +5,8 @@
 
 #include <sys/statvfs.h>
 
-#include <rdutils/Regex.h>
-#include <rdutils/Recurse.h>
+#include <rdlib/Regex.h>
+#include <rdlib/Recurse.h>
 
 #include "config.h"
 #include "proglist.h"

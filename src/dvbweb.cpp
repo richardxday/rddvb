@@ -5,9 +5,9 @@
 
 #include <sys/statvfs.h>
 
-#include <rdutils/Hash.h>
-#include <rdutils/Recurse.h>
-#include <rdutils/Regex.h>
+#include <rdlib/Hash.h>
+#include <rdlib/Recurse.h>
+#include <rdlib/Regex.h>
 
 #include "config.h"
 #include "dvblock.h"

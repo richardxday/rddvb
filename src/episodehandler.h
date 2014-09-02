@@ -1,7 +1,7 @@
 #ifndef __EPISODE_HANDLER__
 #define __EPISODE_HANDLER__
 
-#include <rdutils/Hash.h>
+#include <rdlib/Hash.h>
 
 #include "config.h"
 #include "dvbprog.h"

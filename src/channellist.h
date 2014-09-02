@@ -1,8 +1,8 @@
 #ifndef __DVB_CHANNEL_LIST__
 #define __DVB_CHANNEL_LIST__
 
-#include <rdutils/DataList.h>
-#include <rdutils/Hash.h>
+#include <rdlib/DataList.h>
+#include <rdlib/Hash.h>
 
 #include "config.h"
 

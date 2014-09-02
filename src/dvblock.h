@@ -1,8 +1,8 @@
 #ifndef __DVB_LOCK__
 #define __DVB_LOCK__
 
-#include <rdutils/Hash.h>
-#include <rdutils/strsup.h>
+#include <rdlib/Hash.h>
+#include <rdlib/strsup.h>
 
 class ADVBLock {
 public:

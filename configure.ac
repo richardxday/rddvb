@@ -59,11 +59,11 @@ fi
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 
-dnl rdutils is required
-RDUTILS_VER="0.1.0.0"
-PKG_CHECK_MODULES(RDUTILS, rdutils-0.1 >= $RDUTILS_VER, HAVE_RDUTILS=yes, HAVE_RDUTILS=no)
-if test "x${HAVE_RDUTILS}" != xyes ; then
-  AC_MSG_ERROR([rdutils-0.1 >= $RDUTILS_VER is required])
+dnl rdlib is required
+RDLIB_VER="0.1.0.0"
+PKG_CHECK_MODULES(RDLIB, rdlib-0.1 >= $RDLIB_VER, HAVE_RDLIB=yes, HAVE_RDLIB=no)
+if test "x${HAVE_RDLIB}" != xyes ; then
+  AC_MSG_ERROR([rdlib-0.1 >= $RDLIB_VER is required])
 fi
 
 AC_ARG_WITH([thread],

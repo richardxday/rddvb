@@ -3,11 +3,11 @@
 
 #include <stdarg.h>
 
-#include <rdutils/strsup.h>
-#include <rdutils/DateTime.h>
-#include <rdutils/DataList.h>
-#include <rdutils/Hash.h>
-#include <rdutils/SettingsHandler.h>
+#include <rdlib/strsup.h>
+#include <rdlib/DateTime.h>
+#include <rdlib/DataList.h>
+#include <rdlib/Hash.h>
+#include <rdlib/SettingsHandler.h>
 
 class ADVBProgList;
 class ADVBProg {
