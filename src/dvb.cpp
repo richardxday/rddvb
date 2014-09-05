@@ -107,6 +107,7 @@ int main(int argc, char *argv[])
 				if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0)) i++;
 
 				config.printf("Reading main listings file...");
+				proglist.DeleteAll();
 				proglist.ReadFromFile(filename);
 				config.printf("Read programmes from '%s', total now %u", filename.str(), proglist.Count());
 
@@ -656,6 +657,7 @@ int main(int argc, char *argv[])
 			}
 			else {
 				fprintf(stderr, "Unrecognized option '%s'\n", argv[i]);
+				exit(1);
 			}
 		}
 	}
