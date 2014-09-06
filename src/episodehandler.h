@@ -17,9 +17,9 @@ protected:
 	static bool __WriteString(const char *key, uptr_t value, void *context);
 
 	uint32_t GetDayOffset(const AString& key) const;
-	void   SetDayOffset(const AString& key, uint32_t value);
+	void   	 SetDayOffset(const AString& key, uint32_t value);
 	uint32_t GetEpisode(const AString& key) const;
-	void   SetEpisode(const AString& key, uint32_t value);
+	void     SetEpisode(const AString& key, uint32_t value);
 
 protected:
 	AHash dayoffsethash;

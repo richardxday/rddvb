@@ -13,7 +13,7 @@ protected:
 	typedef struct {
 		AString filename;
 		int     fd;
-		uint_t    refcount;
+		uint_t  refcount;
 	} LOCK;
 
 	static AString GetFilename(const LOCK *lock);

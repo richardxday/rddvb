@@ -36,7 +36,7 @@ public:
 	static AString JSONStartStopFormat(uint64_t start, uint64_t stop, const AString& type = "");
 	AString ExportToJSON(bool includebase64 = false) const;
 
-	bool Overlaps(const ADVBProg& prog) const {return ((data->stop > prog.data->start) && (data->start < prog.data->stop));}
+	bool Overlaps(const ADVBProg& prog)              const {return ((data->stop > prog.data->start) && (data->start < prog.data->stop));}
 	bool OverlapsOnSameChannel(const ADVBProg& prog) const {return (Overlaps(prog) && (CompareNoCase(GetChannelID(), prog.GetChannelID()) == 0));}
 
 	bool RecordOverlaps(const ADVBProg& prog) const {return ((data->recstop > prog.data->recstart) && (data->recstart < prog.data->recstop));}
@@ -54,57 +54,57 @@ public:
 
 	void SearchAndReplace(const AString& search, const AString& replace);
 
-	uint64_t	GetStart()			 const {return data->start;}
-	uint64_t	GetStop()			 const {return data->stop;}
-	uint64_t	GetLength()			 const {return GetStop() - GetStart();}
-	ADateTime	GetStartDT()		 const {return ADateTime(GetStart());}
-	ADateTime	GetStopDT()			 const {return ADateTime(GetStop());}
+	uint64_t	GetStart()			   	 const {return data->start;}
+	uint64_t	GetStop()			   	 const {return data->stop;}
+	uint64_t	GetLength()			   	 const {return GetStop() - GetStart();}
+	ADateTime	GetStartDT()		   	 const {return ADateTime(GetStart());}
+	ADateTime	GetStopDT()			   	 const {return ADateTime(GetStop());}
 
-	uint64_t	GetRecordStart()	 const {return data->recstart;}
-	uint64_t	GetRecordStop()		 const {return data->recstop;}
-	uint64_t	GetRecordLength()	 const {return data->recstop - data->recstart;}
-	ADateTime	GetRecordStartDT()	 const {return ADateTime(GetRecordStart());}
-	ADateTime	GetRecordStopDT()	 const {return ADateTime(GetRecordStop());}
-	void		SetRecordStart(uint64_t dt)  {data->recstart = dt;}
-	void		SetRecordStop(uint64_t dt)   {data->recstop  = dt;}
+	uint64_t	GetRecordStart()	   	 const {return data->recstart;}
+	uint64_t	GetRecordStop()		   	 const {return data->recstop;}
+	uint64_t	GetRecordLength()	   	 const {return data->recstop - data->recstart;}
+	ADateTime	GetRecordStartDT()	   	 const {return ADateTime(GetRecordStart());}
+	ADateTime	GetRecordStopDT()	   	 const {return ADateTime(GetRecordStop());}
+	void		SetRecordStart(uint64_t dt)    {data->recstart = dt;}
+	void		SetRecordStop(uint64_t dt)     {data->recstop  = dt;}
 
-	uint64_t	GetActualStart()	 const {return data->actstart;}
-	uint64_t	GetActualStop()		 const {return data->actstop;}
-	uint64_t	GetActualLength()	 const {return data->actstop - data->actstart;}
-	ADateTime	GetActualStartDT()	 const {return ADateTime(GetActualStart());}
-	ADateTime	GetActualStopDT()	 const {return ADateTime(GetActualStop());}
+	uint64_t	GetActualStart()	   	 const {return data->actstart;}
+	uint64_t	GetActualStop()		   	 const {return data->actstop;}
+	uint64_t	GetActualLength()	   	 const {return data->actstop - data->actstart;}
+	ADateTime	GetActualStartDT()	   	 const {return ADateTime(GetActualStart());}
+	ADateTime	GetActualStopDT()	   	 const {return ADateTime(GetActualStop());}
 
-	uint64_t    GetFileSize()        const {return data->filesize;}
+	uint64_t    GetFileSize()          	 const {return data->filesize;}
 
 	static AString GetHex(uint64_t t)		   {return AValue(t).ToString("x016");}
 	static AString GetHex(const ADateTime& dt) {return GetHex((uint64_t)dt);}
 
-	const char *GetChannel()		 const {return GetString(data->strings.channel);}
-	const char *GetBaseChannel()	 const {return GetString(data->strings.basechannel);}
-	const char *GetChannelID()		 const {return GetString(data->strings.channelid);}
-	const char *GetDVBChannel()		 const {return GetString(data->strings.dvbchannel);}
-	const char *GetTitle()			 const {return GetString(data->strings.title);}
-	const char *GetSubtitle()		 const {return GetString(data->strings.subtitle);}
-	const char *GetDesc()			 const {return GetString(data->strings.desc);}
-	const char *GetCategory()		 const {return GetString(data->strings.category);}
-	const char *GetDirector()		 const {return GetString(data->strings.director);}
-	const char *GetEpisodeNum()		 const {return GetString(data->strings.episodenum);}
-	const char *GetUser()			 const {return GetString(data->strings.user);}
-	const char *GetDir()			 const {return GetString(data->strings.dir);}
-	const char *GetFilename()		 const {return GetString(data->strings.filename);}
-	const char *GetPattern()		 const {return GetString(data->strings.pattern);}
-	const char *GetUUID()			 const {return GetString(data->strings.uuid);}
-	const char *GetActors()			 const {return GetString(data->strings.actors);}
-	const char *GetPrefs()			 const {return GetString(data->strings.prefs);}
+	const char *GetChannel()		 	 const {return GetString(data->strings.channel);}
+	const char *GetBaseChannel()	 	 const {return GetString(data->strings.basechannel);}
+	const char *GetChannelID()		 	 const {return GetString(data->strings.channelid);}
+	const char *GetDVBChannel()		 	 const {return GetString(data->strings.dvbchannel);}
+	const char *GetTitle()			 	 const {return GetString(data->strings.title);}
+	const char *GetSubtitle()		 	 const {return GetString(data->strings.subtitle);}
+	const char *GetDesc()			 	 const {return GetString(data->strings.desc);}
+	const char *GetCategory()		 	 const {return GetString(data->strings.category);}
+	const char *GetDirector()		 	 const {return GetString(data->strings.director);}
+	const char *GetEpisodeNum()		 	 const {return GetString(data->strings.episodenum);}
+	const char *GetUser()			 	 const {return GetString(data->strings.user);}
+	const char *GetDir()			 	 const {return GetString(data->strings.dir);}
+	const char *GetFilename()		 	 const {return GetString(data->strings.filename);}
+	const char *GetPattern()		 	 const {return GetString(data->strings.pattern);}
+	const char *GetUUID()			 	 const {return GetString(data->strings.uuid);}
+	const char *GetActors()			 	 const {return GetString(data->strings.actors);}
+	const char *GetPrefs()			 	 const {return GetString(data->strings.prefs);}
 
 	bool SetUUID();
 
-	bool SetDVBChannel(const char *str)    {return SetString(&data->strings.dvbchannel, str);}
-	bool SetUser(const char    	  *str)    {return SetString(&data->strings.user,    	str);}
-	bool SetDir(const char    	  *str)    {return SetString(&data->strings.dir,    	str);}
-	bool SetFilename(const char	  *str)    {return SetString(&data->strings.filename,  	str);}
-	bool SetPattern(const char 	  *str)    {return SetString(&data->strings.pattern, 	str);}
-	bool SetPrefs(const char   	  *str)    {return SetString(&data->strings.prefs,   	str);}
+	bool SetDVBChannel(const char *str)    	   {return SetString(&data->strings.dvbchannel, str);}
+	bool SetUser(const char    	  *str)    	   {return SetString(&data->strings.user,    	str);}
+	bool SetDir(const char    	  *str)    	   {return SetString(&data->strings.dir,    	str);}
+	bool SetFilename(const char	  *str)    	   {return SetString(&data->strings.filename,  	str);}
+	bool SetPattern(const char 	  *str)    	   {return SetString(&data->strings.pattern, 	str);}
+	bool SetPrefs(const char   	  *str)    	   {return SetString(&data->strings.prefs,   	str);}
 
 	AString GetPrefItem(const AString& name, const AString& defval = "") const;
 
@@ -118,11 +118,11 @@ public:
 	static EPISODE GetEpisode(const AString& str);
 	static AString GetEpisodeString(const EPISODE& ep);
 
-	const EPISODE& GetEpisode() const {return data->episode;}
-	AString GetEpisodeString()  const {return GetEpisodeString(GetEpisode());}
+	const EPISODE& GetEpisode() 		 const {return data->episode;}
+	AString GetEpisodeString()  		 const {return GetEpisodeString(GetEpisode());}
 
-	uint_t GetAssignedEpisode() const    {return data->assignedepisode;}
-	void SetAssignedEpisode(uint16_t ep) {data->assignedepisode = ep;}
+	uint_t GetAssignedEpisode()          const {return data->assignedepisode;}
+	void SetAssignedEpisode(uint16_t ep) 	   {data->assignedepisode = ep;}
 
 	uint_t GetYear() const {return data->year;}
 
@@ -189,7 +189,7 @@ public:
 	void   SetDVBCard(uint8_t card)     {data->dvbcard = card;}
 	void   SetJobID(uint_t id)		    {data->jobid   = id;}
 
-	bool   RecordDataValid()   	   const {return (data->recstart || data->recstop);}
+	bool   RecordDataValid()   	  const {return (data->recstart || data->recstop);}
 
 	static int Compare(const ADVBProg *prog1, const ADVBProg *prog2, const bool *reverse = NULL);
 
@@ -448,7 +448,7 @@ protected:
 
 	static const OPERATOR *FindOperator(const PATTERN& pattern, uint_t term);
 
-	static void __DeleteTerm(uptr_t item, void *context);
+	static void     __DeleteTerm(uptr_t item, void *context);
 
 	static sint64_t TermTypeToInt64s(const void *p, uint_t termtype);
 	static void     Int64sToTermType(void *p, sint64_t val, uint_t termtype);
@@ -481,15 +481,15 @@ protected:
 	AString ReplaceTerms(const AString& str) const;
 
 protected:
-	DVBPROG *data;
-	uint16_t maxsize;
-	const   ADataList *list;
-	sint_t  priority_score;
-	uint_t	overlaps;
+	DVBPROG  		   *data;
+	uint16_t 		   maxsize;
+	const ADataList    *list;
+	sint_t   		   priority_score;
+	uint_t	 		   overlaps;
 
-	static AHash fieldhash;
+	static AHash       fieldhash;
 	static const FIELD fields[];
-	static OPERATOR operators[];
+	static OPERATOR    operators[];
 };
 
 #endif

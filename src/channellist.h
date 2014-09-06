@@ -29,7 +29,7 @@ protected:
 	typedef struct {
 		AString   name;
 		AString   convertedname;
-		uint32_t    freq;
+		uint32_t  freq;
 		ADataList pidlist;
 	} CHANNEL;
 
