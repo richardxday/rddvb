@@ -1888,7 +1888,7 @@ AString ADVBProg::ParsePattern(const AString& line, PATTERN& pattern, const AStr
 		else puretext  = line;
 	
 		if (puretext.Valid()) {
-			for (i = 0; puretext[i] && (IsAlphaChar(puretext[i]) || IsNumeralChar(puretext[i]) || (puretext[i] == ' ')); i++) ;
+			for (i = 0; puretext[i] && (IsAlphaChar(puretext[i]) || IsNumeralChar(puretext[i]) || (puretext[i] == ' ') || (puretext[i] == '-')); i++) ;
 
 			if (i == (uint_t)puretext.len()) {
 				AString newtext = "@\"" + puretext + "\"";
