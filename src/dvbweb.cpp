@@ -219,6 +219,11 @@ int main(int argc, char *argv[])
 		else if (val == "patterns") {
 			datasource = DataSource_Patterns;
 		}
+		else if (val == "sky") {
+			proglist = list + index;
+			proglist->ReadFromFile(config.GetDataDir().CatPath("skylistings.dat"));
+			index = (index + 1) % NUMBEROF(list);
+		}
 		else if (val == "logs") {
 			if (Value(vars, val, "timefilter")) {
 				ADateTime dt;
