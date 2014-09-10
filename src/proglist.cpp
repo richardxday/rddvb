@@ -85,17 +85,28 @@ void ADVBProgList::AddXMLTVChannel(const AString& channel)
 {
 	static const ADVBConfig::REPLACEMENT replacements[] = {
 		{" +1", "+1"},
-		{" West", ""},
+		{" Northern", ""},
+		{" Southern", ""},
 		{" North", ""},
 		{" South", ""},
+		{" West", ""},
 		{" East", ""},
 		{" Granada", ""},
+		{" London", ""},
+		{" Midlands", ""},
+		{" Yorkshire & Cumbria", ""},
+		{" Yorkshire & Lincolnshire", ""},
+		{" Border", ""},
 		{" England", ""},
 		{" Wales", ""},
 		{" Scotland", ""},
+		{" Ireland", ""},
+		{" Channel Islands", ""},
 		{" (freeview)", ""},
 		{" [freeview]", ""},
 		{" (Granada/Border)", ""},
+		{" (W)", ""},
+		{" (E)", ""},
 		{"BBC One", "BBC1"},
 		{"BBC Two", "BBC2"},
 		{"BBC Three", "BBC3"},
@@ -105,7 +116,7 @@ void ADVBProgList::AddXMLTVChannel(const AString& channel)
 		{"Pick TV", "Pick"},
 	};
 	AString id   = channel.GetField("channel id=\"", "\"");
-	AString name = channel.GetField("<display-name>", "</display-name>");
+	AString name = channel.GetField("<display-name>", "</display-name>").DeHTMLify();
 
 	name = ADVBConfig::replace(name, replacements, NUMBEROF(replacements));
 
@@ -120,8 +131,11 @@ void ADVBProgList::AddChannel(const AString& id, const AString& name)
 		if (!channelhash.Valid()) channelhash.Create(40);
 
 		if ((channel = new CHANNEL) != NULL) {
-			channel->id   = id;
-			channel->name = name;
+			channel->id   	   = id;
+			channel->name 	   = name;
+			channel->startslot = 0;
+			channel->slots     = 0;
+			channel->data      = NULL;
 
 			//ADVBConfig::Get().logit("Added channel id '%s' name '%s'", channel->id.str(), channel->name.str());
 
@@ -169,9 +183,43 @@ void ADVBProgList::AssignEpisodes(bool reverse, bool ignorerepeats)
 	}
 }
 
+bool ADVBProgList::ValidChannelID(const AString& channelid) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString regionalchannels = config.GetRegionalChannels();
+	uint_t  i, n = regionalchannels.CountColumns();
+	bool    valid = true;
+
+	for (i = 0; i < n; i++) {
+		AString channel = regionalchannels.Column(i).Words(0);
+		AString suffix  = "." + channel.Line(0, "=");
+
+		if (channelid.EndsWithNoCase(suffix)) {
+			valid = false;
+			break;
+		}
+	}
+
+	if (!valid) {
+		for (i = 0; i < n; i++) {
+			AString channel = regionalchannels.Column(i).Words(0);
+			AString suffix  = "." + channel.Line(0, "=");
+			AString region  = channel.Line(1, "=") + suffix;
+		
+			if (channelid.EndsWithNoCase(region)) {
+				valid = true;
+				break;
+			}
+		}
+	}
+
+	return valid;
+}
+
 bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
+	AHash     channelidvalidhash(100);
 	AString   data;
 	FILE_FIND info;
 	bool      success = false;
@@ -195,6 +243,7 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 			if (channel.Valid()) {
 				channel += line;
 				if (channel.PosNoCase("</channel>") >= 0) {
+					channel = channel.DeHTMLify();
 					AddXMLTVChannel(channel);
 
 					channel.Delete();
@@ -203,52 +252,62 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 			else if (programme.Valid()) {
 				programme += line;
 				if (programme.PosNoCase("</programme>") >= 0) {
-					ADateTime start, stop;
-					AString channelid = programme.GetField(" channel=\"", "\"");
-					AString str;
+					AString channelid = programme.GetField(" channel=\"", "\"").DeHTMLify();
+					AString channel   = LookupXMLTVChannel(channelid);
 
-					start.FromTimeStamp(programme.GetField(" start=\"", "\""), true);
-					stop.FromTimeStamp(programme.GetField(" stop=\"", "\""), true);
+					if (!channelidvalidhash.Exists(channelid)) {
+						bool valid = ValidChannelID(channelid);
 
-					AString channel = LookupXMLTVChannel(channelid);
+						channelidvalidhash.Insert(channelid, (uint_t)valid);
 
-					str.printf("\n");
-					str.printf("start=%s\n", ADVBProg::GetHex(start).str());
-					str.printf("stop=%s\n",  ADVBProg::GetHex(stop).str());
-
-					str.printf("channel=%s\n", channel.str());
-					str.printf("channelid=%s\n", channelid.str());
-
-					AString attrs = programme.GetXMLAttributes();
-					uint_t i, n = attrs.CountLines("\n", 0);
-					for (i = 1; i < n; i++) {
-						AString line = attrs.Line(i, "\n", 0);
-						AString var, value;
-						bool valid = false;
-
-						if (line.Left(2) == "</") {
-							var   = line.Mid(2).SearchAndReplace(">", "").Word(0);
-							value = attrs.Line(i - 1, "\n", 0);
-							if ((i >= 2) && (value == "</value>")) value = attrs.Line(i - 2, "\n", 0);
-							valid = ((var != "value") && (value.FirstChar() != '<'));
-						}
-						else if ((line.FirstChar() == '<') && (line.Right(2) == "/>")) {
-							var   = line.Mid(1).SearchAndReplace("/>", "").Word(0);
-							value = line.Mid(1 + var.len(), line.len() - 1 - var.len() - 2).Words(0);
-							valid = (var != "value");
-						}
-
-						if (valid) {
-							var   = var.SearchAndReplace("-", "");
-							value = value.DeHTMLify();
-
-							str.printf("%s=%s\n", var.str(), value.str());
-						}
+						if (!valid) debug("Channel ID '%s' (channel '%s') is%s valid\n", channelid.str(), channel.str(), valid ? "" : " NOT");
 					}
 
-					if (AddProg(str, true, true) < 0) {
-						config.printf("Failed to add prog!\n");
-						success = false;
+					if (channelidvalidhash.Read(channelid)) {
+						ADateTime start, stop;
+						AString   str;
+
+						start.FromTimeStamp(programme.GetField(" start=\"", "\""), true);
+						stop.FromTimeStamp(programme.GetField(" stop=\"", "\""), true);
+
+						str.printf("\n");
+						str.printf("start=%s\n", ADVBProg::GetHex(start).str());
+						str.printf("stop=%s\n",  ADVBProg::GetHex(stop).str());
+
+						str.printf("channel=%s\n", channel.str());
+						str.printf("channelid=%s\n", channelid.str());
+
+						AString attrs = programme.GetXMLAttributes();
+						uint_t i, n = attrs.CountLines("\n", 0);
+						for (i = 1; i < n; i++) {
+							AString line = attrs.Line(i, "\n", 0);
+							AString var, value;
+							bool valid = false;
+
+							if (line.Left(2) == "</") {
+								var   = line.Mid(2).SearchAndReplace(">", "").Word(0);
+								value = attrs.Line(i - 1, "\n", 0);
+								if ((i >= 2) && (value == "</value>")) value = attrs.Line(i - 2, "\n", 0);
+								valid = ((var != "value") && (value.FirstChar() != '<'));
+							}
+							else if ((line.FirstChar() == '<') && (line.Right(2) == "/>")) {
+								var   = line.Mid(1).SearchAndReplace("/>", "").Word(0);
+								value = line.Mid(1 + var.len(), line.len() - 1 - var.len() - 2).Words(0);
+								valid = (var != "value");
+							}
+
+							if (valid) {
+								var   = var.SearchAndReplace("-", "");
+								value = value.DeHTMLify();
+
+								str.printf("%s=%s\n", var.str(), value.str());
+							}
+						}
+						
+						if (AddProg(str, true, true) < 0) {
+							config.printf("Failed to add prog!\n");
+							success = false;
+						}
 					}
 
 					programme.Delete();
@@ -779,6 +838,25 @@ int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps, 
 		}
 		else index = proglist.Add((uptr_t)prog);
 	}
+
+#if 0
+	if (index >= 0) {
+		CHANNEL *channel = (CHANNEL *)channelhash.Read(prog->GetChannelID());
+
+		if (channel) {
+			static const uint64_t slotlength   = 5ULL * 60ULL * 1000ULL;
+			static const uint32_t slotsperweek = (uint32_t)((7ULL * 24ULL * 3600ULL * 1000ULL) / slotlength);
+			uint64_t startslot = prog->GetStart() / slotlength;
+			uint32_t nslots    = (uint32_t)(((prog->GetStop() + slotlength - 1) / slotlength) - startslot);
+
+			if (!channel->data) {
+				channel->startslot = startslot - (startslot % slotsperweek);
+				channel->slots     = (uint32_t)(((startslot + nslots + slotsperweek - 1) / slotsperweek) * slotsperweek - channel->startslot);
+				channel->data      = (uint8_t *)::Allocate(channel->data);
+			}
+		}
+	}
+#endif
 
 	return index;
 }
