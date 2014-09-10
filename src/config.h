@@ -49,6 +49,7 @@ public:
 	AString GetRecordLog(uint32_t day) 		 const {return CatPath(GetLogDir(), "dvbrecordlog-" + ADateTime(day, 0UL).DateFormat("%Y-%M") + ".txt");}
 	AString GetEpisodesFile()				 const {return CatPath(GetDataDir(), GetConfigItem("episodesfile", "episodes.txt"));}
 	AString GetSearchesFile()				 const {return CatPath(GetConfigDir(), GetConfigItem("searchesfile", "searches.txt"));}
+	AString GetRegionalChannels()            const {return GetConfigItem("regionalchannels", "bbc1.bbc.co.uk=north-west,bbc2.bbc.co.uk=north-west,itv1.itv.co.uk=granada");}
 	uint_t  GetMaxCards()				     const {return (uint_t)GetConfigItem("maxcards", "1");}
 	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "10");}
 	uint_t  GetDaysToKeep()					 const {return (uint_t)GetConfigItem("daystokeep", "7");}

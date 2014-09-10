@@ -48,8 +48,11 @@ public:
 	bool DeleteProg(const ADVBProg& prog);
 
 	typedef struct {
-		AString id;
-		AString name;
+		AString  id;
+		AString  name;
+		uint64_t startslot;
+		uint32_t slots;
+		uint8_t  *data;
 	} CHANNEL;
 	uint_t ChannelCount() const {return channellist.Count();}
 	const CHANNEL *GetChannel(uint_t n) {return (const CHANNEL *)channellist[n];}
@@ -110,6 +113,8 @@ protected:
 
 	bool ReadFromJobQueue(int queue, bool runningonly = false);
 
+	bool ValidChannelID(const AString& channelid) const;
+
 	void AddXMLTVChannel(const AString& channel);
 	void AddChannel(const AString& id, const AString& name);
 	int  AddProg(const ADVBProg *prog, bool sort = true, bool removeoverlaps = false, bool reverseorder = false);
@@ -126,8 +131,10 @@ protected:
 	bool ReadRadioListingsFromHTMLFile(const AString& filename, const AString& channel, const AString& channelid, uint32_t day, bool removeoverlaps);
 
 	static void DeleteChannel(uptr_t item, void *context) {
+		CHANNEL *channel = (CHANNEL *)item;
 		UNUSED(context);
-		delete (CHANNEL *)item;
+		if (channel->data) delete[] channel->data;
+		delete channel;
 	}
 
 	static void DeleteProg(uptr_t item, void *context) {
