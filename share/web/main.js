@@ -383,6 +383,10 @@ function populateprogs(id)
 				}
 				else str += '&nbsp;';
 
+				str += '</td><td>';
+				if (typeof prog.user != 'undefined') str += find('user', prog.user, 'Seach for programmes assigned to this user');
+				else							     str += '&nbsp;';
+
 				str += '</td><td class="title">';
 				str += find('title', prog.title) + imdb(prog.title);
 
@@ -442,7 +446,7 @@ function populateprogs(id)
 					var str1 = '';
 
 					//str += '<tr' + classname + ' onclick="populate()"><td class="desc" colspan=5>';
-					str += '<tr' + classname + '><td class="desc" colspan=5>';
+					str += '<tr' + classname + '><td class="desc" colspan=6>';
 
 					if ((typeof prog.rejected != 'undefined') && prog.rejected) {
 						str += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
