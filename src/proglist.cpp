@@ -131,11 +131,8 @@ void ADVBProgList::AddChannel(const AString& id, const AString& name)
 		if (!channelhash.Valid()) channelhash.Create(40);
 
 		if ((channel = new CHANNEL) != NULL) {
-			channel->id   	   = id;
-			channel->name 	   = name;
-			channel->startslot = 0;
-			channel->slots     = 0;
-			channel->data      = NULL;
+			channel->id   = id;
+			channel->name = name;
 
 			//ADVBConfig::Get().logit("Added channel id '%s' name '%s'", channel->id.str(), channel->name.str());
 
