@@ -48,11 +48,8 @@ public:
 	bool DeleteProg(const ADVBProg& prog);
 
 	typedef struct {
-		AString  id;
-		AString  name;
-		uint64_t startslot;
-		uint32_t slots;
-		uint8_t  *data;
+		AString id;
+		AString name;
 	} CHANNEL;
 	uint_t ChannelCount() const {return channellist.Count();}
 	const CHANNEL *GetChannel(uint_t n) {return (const CHANNEL *)channellist[n];}
@@ -133,7 +130,6 @@ protected:
 	static void DeleteChannel(uptr_t item, void *context) {
 		CHANNEL *channel = (CHANNEL *)item;
 		UNUSED(context);
-		if (channel->data) delete[] channel->data;
 		delete channel;
 	}
 
