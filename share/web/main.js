@@ -293,7 +293,7 @@ function populateusers()
 				}
 				else str += '<td>Unknown';
 
-				str += ((level < 1) ? 'Warning' : '') + '</td>';
+				str += '</td>';
 
                 str += '<td>';
 				str += findfromfilter('Combined', 'filename@<"' + diskspace.fullfolder + '"', defaulttimefilter, 'Combined', 'Search for recordings in combined listings with folder ' + diskspace.folder) + '&nbsp;';
