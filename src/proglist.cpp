@@ -218,7 +218,7 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 	const ADVBConfig& config = ADVBConfig::Get();
 	AHash     channelidvalidhash(100);
 	AString   data;
-	FILE_FIND info;
+	FILE_INFO info;
 	bool      success = false;
 
 	if (data.ReadFromFile(filename)) {
@@ -710,12 +710,12 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatecombined) con
 	}
 
 	if (updatecombined) {
-		FILE_FIND combined_info, scheduled_info, recorded_info, rejected_info;
+		FILE_INFO combined_info, scheduled_info, recorded_info, rejected_info;
 
-		if (!::GetFileDetails(config.GetCombinedFile(),  &combined_info) ||
-			(::GetFileDetails(config.GetScheduledFile(), &scheduled_info) && (scheduled_info.WriteTime > combined_info.WriteTime)) ||
-			(::GetFileDetails(config.GetRecordedFile(),  &recorded_info)  && (recorded_info.WriteTime  > combined_info.WriteTime)) ||
-			(::GetFileDetails(config.GetRejectedFile(),  &rejected_info)  && (rejected_info.WriteTime  > combined_info.WriteTime))) {
+		if (!::GetFileInfo(config.GetCombinedFile(),  &combined_info) ||
+			(::GetFileInfo(config.GetScheduledFile(), &scheduled_info) && (scheduled_info.WriteTime > combined_info.WriteTime)) ||
+			(::GetFileInfo(config.GetRecordedFile(),  &recorded_info)  && (recorded_info.WriteTime  > combined_info.WriteTime)) ||
+			(::GetFileInfo(config.GetRejectedFile(),  &rejected_info)  && (rejected_info.WriteTime  > combined_info.WriteTime))) {
 			CreateCombinedList();
 		}
 	}

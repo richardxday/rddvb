@@ -425,8 +425,8 @@ int main(int argc, char *argv[])
 			printf(",%s", ADVBProg::GetPatternDefinitionsJSON().str());
 		}
 
-		FILE_FIND info;
-		if (::GetFileDetails(config.GetSearchesFile(), &info)) {
+		FILE_INFO info;
+		if (::GetFileInfo(config.GetSearchesFile(), &info)) {
 			if (!Value(vars, val, "searchesref") || ((uint64_t)val < (uint64_t)info.WriteTime)) {
 				AStdFile fp;
 
