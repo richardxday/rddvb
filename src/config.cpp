@@ -264,9 +264,9 @@ void ADVBConfig::ListUsers(AList& list) const
 
 void ADVBConfig::CreateDirectory(const AString& dir) const
 {
-	FILE_FIND info;
+	FILE_INFO info;
 
-	if (!::GetFileDetails(dir, &info)) {
+	if (!::GetFileInfo(dir, &info)) {
 		::CreateDirectory(dir);
 	}
 }

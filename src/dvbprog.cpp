@@ -2503,7 +2503,7 @@ void ADVBProg::Record()
 
 			if (res == 0) {
 				AString   str;
-				FILE_FIND info;
+				FILE_INFO info;
 				uint64_t  dt = (uint64_t)ADateTime().TimeStamp(true);
 				uint64_t  st = GetStop();
 				bool      addtorecorded = true;
@@ -2517,7 +2517,7 @@ void ADVBProg::Record()
 					addtorecorded = fake;
 				}
 
-				if (::GetFileDetails(filename, &info)) {
+				if (::GetFileInfo(filename, &info)) {
 					config.addlogit("\n");
 					config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", filename.str(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024ULL * (uint64_t)nsecs)));
 
