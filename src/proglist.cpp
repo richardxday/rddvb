@@ -1121,16 +1121,20 @@ void ADVBProgList::AdjustRecordTimes()
 		for (j = i + 1; j < Count(); j++) {
 			ADVBProg *prog2 = (ADVBProg *)proglist[j];
 
-			if (prog1->GetStop() == prog2->GetStart()) {
-				config.logit("'%s' stops just as '%s' starts - shift times",
+            // if prog1 is before prog2 and the recording of prog1 overlaps the recording of prog2, adjust times 
+			if ((prog1->GetStart() < prog2->GetStart()) &&
+                ((prog1->GetRecordStop() + mininterrectime) >= prog2->GetRecordStart())) {
+				config.logit("'%s' recording end overlaps '%s' recording start - shift times",
 							 prog1->GetQuickDescription().str(),
 							 prog2->GetQuickDescription().str());
 
 				prog1->SetRecordStop(prog2->GetStart() - mininterrectime);
 				prog2->SetRecordStart(prog2->GetStart());
 			}
-			else if (prog2->GetStop() == prog1->GetStart()) {
-				config.logit("'%s' stops just as '%s' starts - shift times",
+            // if prog2 is before prog1 and the recording of prog2 overlaps the recording of prog1, adjust times 
+			else if ((prog2->GetStart() < prog1->GetStart()) &&
+                     ((prog2->GetRecordStop() + mininterrectime) >= prog1->GetRecordStart())) {
+				config.logit("'%s' recording end overlaps '%s' recording start - shift times",
 							 prog2->GetQuickDescription().str(),
 							 prog1->GetQuickDescription().str());
 
