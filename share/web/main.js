@@ -8,7 +8,7 @@ var searchpattern = null;
 var patterndefs = null;
 var xmlhttp  = null;
 var filterlist = {
-	index:-1,
+	index:0,
 	current:null,
 	list:[]
 };
@@ -16,48 +16,48 @@ var filters = [
 	{text:"Sources:<br>"},
 	{
 		title:"Listings",
-		filter:{from:"Listings",titlefilter:"",timefilter:"stop>now"},
+		filter:{from:"Listings",titlefilter:"",timefilter:"stop>now",expanded:-1},
 	},
 	{
 		title:"Combined",
-		filter:{from:"Combined",titlefilter:"",timefilter:defaulttimefilter},
+		filter:{from:"Combined",titlefilter:"",timefilter:defaulttimefilter,expanded:-1},
 	},
 	{
 		title:"Requested",
-		filter:{from:"Requested",titlefilter:"",timefilter:""},
+		filter:{from:"Requested",titlefilter:"",timefilter:"",expanded:-1},
 	},
 	{
 		title:"Rejected",
-		filter:{from:"Combined",titlefilter:"rejected=1",timefilter:defaulttimefilter},
+		filter:{from:"Combined",titlefilter:"rejected=1",timefilter:defaulttimefilter,expanded:-1},
 	},
 	{
 		title:"Scheduled",
-		filter:{from:"Combined",titlefilter:"scheduled=1",timefilter:defaulttimefilter},
+		filter:{from:"Combined",titlefilter:"scheduled=1",timefilter:defaulttimefilter,expanded:-1},
 	},
 	{
 		title:"Recorded",
-		filter:{from:"Combined",titlefilter:"recorded=1",timefilter:defaulttimefilter},
+		filter:{from:"Combined",titlefilter:"recorded=1",timefilter:defaulttimefilter,expanded:-1},
 	},
 	{
 		title:"Patterns",
-		filter:{from:"Patterns"},
+		filter:{from:"Patterns",expanded:-1},
 	},
 	{
 		title:"Clear Filter",
-		filter:{titlefilter:""},
+		filter:{titlefilter:"",expanded:-1},
 	},
 	{
 		title:"Sky",
-		filter:{from:"Sky",titlefilter:"",timefilter:"stop>now"},
+		filter:{from:"Sky",titlefilter:"",timefilter:"stop>now",expanded:-1},
 	},
 	{text:"<br>DVB Logs:<br>"},
 	{
 		title:"Today",
-		filter:{from:"Logs",timefilter:"start=today"},
+		filter:{from:"Logs",timefilter:"start=today",expanded:-1},
 	},
 	{
 		title:"Yesterday",
-		filter:{from:"Logs",timefilter:"start=yesterday"},
+		filter:{from:"Logs",timefilter:"start=yesterday",expanded:-1},
 	},
 ];
 var searches = null;
@@ -349,7 +349,7 @@ function populateprogs(id)
 				else if (prog.flags.rejected  || (typeof prog.rejected  != 'undefined'))	 classname = ' class="rejected"';
 				else if ((typeof prog.category != 'undefined') && (prog.category == 'Film')) classname = ' class="film"';
 
-				str += '<tr' + classname + ' onclick="populate(' + (selected ? -1 : i) + ')">'
+				str += '<tr' + classname + ' onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '})">'
 				str += '<td>';
 				str += find('start', prog.startdate, 'Search for programmes on this day');
 				str += '</td><td>';
@@ -445,7 +445,6 @@ function populateprogs(id)
 				if (progvb > 1) {
 					var str1 = '';
 
-					//str += '<tr' + classname + ' onclick="populate()"><td class="desc" colspan=5>';
 					str += '<tr' + classname + '><td class="desc" colspan=6>';
 
 					if ((typeof prog.rejected != 'undefined') && prog.rejected) {
@@ -680,23 +679,20 @@ function populateprogs(id)
 					}
 					str1 += '<tr><td>Clashes</td><td>';
 					str1 += findfromfilter('Listings',
-										   'uuid!=="' + prog.uuid + '"',
-										   'stop>"' + prog.start + '" ' +
-										   'start<"' + prog.stop + '" ',
+										   'uuid!="' + prog.uuid + '" ' + 'stop>"' + prog.start + '" ' + 'start<"' + prog.stop + '"',
+										   '',
 										   'Listings',
 										   'Search for clashes in listings with this programme');
 					str1 += '</td><td>';
 					str1 += findfromfilter('Combined',
-										   'uuid!=="' + prog.uuid + '"',
-										   'stop>"' + prog.start + '" ' +
-										   'start<"' + prog.stop + '"',
+										   'uuid!="' + prog.uuid + '" ' + 'stop>"' + prog.start + '" ' + 'start<"' + prog.stop + '"',
+										   '',
 										   'Combined',
 										   'Search for clashes in scheduled/recorded programmes with this programme');
 					str1 += '</td><td>';
 					str1 += findfromfilter('Requested',
-										   'uuid!=="' + prog.uuid + '"',
-										   'stop>"' + prog.start + '" ' +
-										   'start<"' + prog.stop + '"',
+										   'uuid!="' + prog.uuid + '" ' + 'stop>"' + prog.start + '" ' + 'start<"' + prog.stop + '"',
+										   '',
 										   'Requested',
 										   'Search for clashes in requested programmes with this programme');
 					str1 += '</td></tr></table>';
@@ -1256,14 +1252,13 @@ function populate(id)
 
 function dvbrequest(filter_arg, postdata)
 {
-	document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
-
 	var filter = {
-		from:document.getElementById("from").value,
-		titlefilter:document.getElementById("titlefilter").value,
-		timefilter:document.getElementById("timefilter").value,
-		page:0,
-		pagesize:document.getElementById("pagesize").value
+		from:        document.getElementById("from").value,
+		titlefilter: document.getElementById("titlefilter").value,
+		timefilter:  document.getElementById("timefilter").value,
+		page:        0,
+		pagesize:    document.getElementById("pagesize").value,
+		expanded:    (filterlist.current != null) ? filterlist.current.expanded : -1
 	};
 
 	if (typeof filter_arg != 'undefined') {
@@ -1272,6 +1267,7 @@ function dvbrequest(filter_arg, postdata)
 		if (typeof 	filter_arg.timefilter  != 'undefined') filter.timefilter  = filter_arg.timefilter;
 		if ((typeof filter_arg.page 	   != 'undefined') && (filter_arg.page >= 0)) filter.page = filter_arg.page;
 		if (typeof  filter_arg.pagesize    != 'undefined') filter.pagesize    = filter_arg.pagesize;
+		if (typeof  filter_arg.expanded    != 'undefined') filter.expanded    = filter_arg.expanded;
 	}
 
 	document.getElementById("from").value        = filter.from;
@@ -1279,88 +1275,77 @@ function dvbrequest(filter_arg, postdata)
 	document.getElementById("timefilter").value  = filter.timefilter;
 	document.getElementById("pagesize").value    = filter.pagesize;
 
-	if ((xmlhttp != null) && (xmlhttp.readState < 4)) {
-		xmlhttp.abort();
-	}
+	if ((filterlist.current == null) ||
+		(typeof postdata    != 'undefined') ||
+		(filter.from        != filterlist.current.from) ||
+		(filter.titlefilter != filterlist.current.titlefilter) ||
+		(filter.timefilter  != filterlist.current.timefilter) ||
+		(filter.page        != filterlist.current.page) ||
+		(filter.pagesize    != filterlist.current.pagesize)) {
+		document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
 
-	if (window.XMLHttpRequest) {
-		// code for IE7+, Firefox, Chrome, Opera, Safari
-		xmlhttp = new XMLHttpRequest();
-		
-		xmlhttp.onreadystatechange = function() {
-			if (xmlhttp.readyState == 4) {
-				if (xmlhttp.status == 200) {
-					response = JSON.parse(xmlhttp.responseText);
+		if ((xmlhttp != null) && (xmlhttp.readState < 4)) {
+			xmlhttp.abort();
+		}
 
-					var errors = '';
-					if ((typeof response.errors != 'undefined') && (response.errors != '')) {
-						errors = '<br><div class="finderrors">' + response.errors + '</div>';
-					}
-					document.getElementById("finderrors").innerHTML = errors;
+		if (window.XMLHttpRequest) {
+			// code for IE7+, Firefox, Chrome, Opera, Safari
+			xmlhttp = new XMLHttpRequest();
+			
+			xmlhttp.onreadystatechange = function() {
+				if (xmlhttp.readyState == 4) {
+					if (xmlhttp.status == 200) {
+						response = JSON.parse(xmlhttp.responseText);
 
-					if (typeof response.searches != 'undefined') {
-						searches = {
-							ref:response.searchesref,
-							view:[],
-						};
+						var errors = '';
+						if ((typeof response.errors != 'undefined') && (response.errors != '')) {
+							errors = '<br><div class="finderrors">' + response.errors + '</div>';
+						}
+						document.getElementById("finderrors").innerHTML = errors;
 
-						var i, str = '';
-						for (i = 0; i < response.searches.length; i++) {
-							var search = response.searches[i];
+						if (typeof response.searches != 'undefined') {
+							searches = {
+								ref:response.searchesref,
+								view:[],
+							};
 
-							searches.view[i] = search.search;
+							var i, str = '';
+							for (i = 0; i < response.searches.length; i++) {
+								var search = response.searches[i];
 
-							str += '<button onclick="dvbrequest(searches.view[' + i + '])">' + search.title + '</button><br>';
+								searches.view[i] = search.search;
+
+								str += '<button onclick="dvbrequest(searches.view[' + i + '])">' + search.title + '</button><br>';
+							}
+
+							if (str != '') str += '<br>';
+
+							document.getElementById("usersearches").innerHTML = str;
 						}
 
-						if (str != '') str += '<br>';
-
-						document.getElementById("usersearches").innerHTML = str;
-					}
-
-					document.getElementById("errormsg").innerHTML = '';
-					if (typeof response.counts != 'undefined') {
-						if ((typeof response.counts.rejected != 'undefined') && (response.counts.rejected > 0)) {
-							document.getElementById("errormsg").innerHTML = '<div class="errormsg">Warning: ' + response.counts.rejected + ' programme' + ((response.counts.rejected != 1) ? 's' : '') + ' not scheduled! <a href="javascript:void(0);" onclick="dvbrequest({from:&quot;Combined&quot;,titlefilter:&quot;rejected=1&quot;,timefilter:&quot;&quot;});">View</a></div>';
+						document.getElementById("errormsg").innerHTML = '';
+						if (typeof response.counts != 'undefined') {
+							if ((typeof response.counts.rejected != 'undefined') && (response.counts.rejected > 0)) {
+								document.getElementById("errormsg").innerHTML = '<div class="errormsg">Warning: ' + response.counts.rejected + ' programme' + ((response.counts.rejected != 1) ? 's' : '') + ' not scheduled! <a href="javascript:void(0);" onclick="dvbrequest({from:&quot;Combined&quot;,titlefilter:&quot;rejected=1&quot;,timefilter:&quot;&quot;});">View</a></div>';
+							}
 						}
-					}
 
-					if (typeof response.patterndefs != 'undefined') {
-						patterndefs = response.patterndefs;
-					}
+						if (typeof response.patterndefs != 'undefined') {
+							patterndefs = response.patterndefs;
+						}
 
-					if (typeof response.parsedpattern != 'undefined') {
-						searchpattern = response.parsedpattern;
-						patterns[0] = searchpattern;
-					}
+						if (typeof response.parsedpattern != 'undefined') {
+							searchpattern = response.parsedpattern;
+							patterns[0] = searchpattern;
+						}
 
-					populate();
+						populate(filter.expanded);
+					}
+					else document.getElementById("status").innerHTML = "<h1>Server returned error " + xmlhttp.status + "</h1>";
 				}
-				else document.getElementById("status").innerHTML = "<h1>Server returned error " + xmlhttp.status + "</h1>";
 			}
 		}
 		
-		while (filterlist.list.length >= 100) {
-			filterlist.list.shift();
-			if (filterlist.index >= 0) filterlist.index--;
-		}
-		
-		filterlist.current = JSON.parse(JSON.stringify(filter));
-
-		var newindex;
-		if ((newindex = findfilterinlist(filter)) >= 0) {
-			filterlist.index = newindex;
-		}
-		else if (filterlist.index < (filterlist.list.length - 1)) {
-			filterlist.list[filterlist.index] = filter;
-		}
-		else {
-			filterlist.list.push(filter);
-			filterlist.index = filterlist.list.length - 1;
-		}
-		
-		updatefilterlist();
-
 		xmlhttp.open("POST", "dvb.php", true);
 
 		var data = "";
@@ -1382,6 +1367,26 @@ function dvbrequest(filter_arg, postdata)
 		document.getElementById("status").innerHTML += " <button onclick=\"abortfind()\">Abort</button>";
 		document.getElementById("statusbottom").innerHTML = '';
 	}
+	else populate(filter.expanded);
+
+	//filterlist.current = JSON.parse(JSON.stringify(filter));
+	generatefilterdescription(filter);
+	filterlist.current = filter;
+
+	if (filterlist.index >= filterlist.list.length) {
+		filterlist.list[filterlist.index] = filter;
+	}
+	else if (!comparefilter(filterlist.current, filterlist.index)) {
+		filterlist.index++;
+		filterlist.list[filterlist.index] = filter;
+	}
+	
+	while (filterlist.list.length >= 100) {
+		filterlist.list.shift();
+		if (filterlist.index >= 0) filterlist.index--;
+	}
+
+	updatefilterlist();
 }
 
 function getfullfilter(filter)
@@ -1407,20 +1412,52 @@ function comparefilter(filter, index)
 			(filter2.titlefilter == filter.titlefilter) &&
 			(filter2.timefilter  == filter.timefilter)  &&
 			(filter2.page     	 == filter.page)		&&
-			(filter2.pagesize 	 == filter.pagesize));
+			(filter2.pagesize 	 == filter.pagesize)    &&
+			(filter2.expanded    == filter.expanded));
 }
 
-function findfilterinlist(filter)
+function generatefilterdescription(filter)
 {
-	var i;
+	var str, fullfilter = getfullfilter(filter);
+	var title;
 
-	for (i = 0; i < filterlist.list.length; i++) {
-		if (comparefilter(filter, i)) {
-			return i;
-		}
+	str = 'Page ' + (filter.page + 1) + ' of ' + filter.from;
+	if (fullfilter != '') {
+		str += '\nFiltered using \'' + fullfilter + '\'';
 	}
+	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined')) {
+		var prog = response.progs[filter.expanded];
+		title = prog.title;
 
-	return -1;
+		if (typeof prog.subtitle != 'undefined') title += ' / ' + prog.subtitle;
+		if (typeof prog.episode != 'undefined') {
+			title += ' (';
+			if (typeof prog.episode.series != 'undefined') {
+				title += 'S' + prog.episode.series;
+			}
+			if (typeof prog.episode.episode != 'undefined') {
+				title += 'E' + strpad(prog.episode.episode, 2);
+			}
+			if (typeof prog.episode.episodes != 'undefined') {
+				title += 'T' + strpad(prog.episode.episodes, 2);
+			}
+			title += ')';
+		}
+		else if (typeof prog.assignedepisode != 'undefined') {
+			title += ' (F' + prog.assignedepisode + ')';
+		}
+
+		str += '\nViewing \'' + title + '\'';
+	}
+	filter.longdesc = str;
+
+	str = 'Page ' + (filter.page + 1) + ' of ' + filter.from;
+	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined')) {
+		str += ' (' + title + ')';
+	}
+	filter.shortdesc = str;
+
+	return str;
 }
 
 function updatefilterlist()
@@ -1429,23 +1466,23 @@ function updatefilterlist()
 
 	str += '<button ';
 	if (filterlist.index > 0) {
-		str += 'onclick="dvbrequest(filterlist.list[' + (filterlist.index - 1) + '])"';
+		str += 'onclick="filterlist.index = ' + (filterlist.index - 1) + '; dvbrequest(filterlist.list[filterlist.index])"';
 	}
 	else str += 'disabled';
 	str += '>Back</button>&nbsp;&nbsp;<button ';
 
 	if ((filterlist.index + 1) < filterlist.list.length) {
-		str += 'onclick="dvbrequest(filterlist.list[' + (filterlist.index + 1) + '])"';
+		str += 'onclick="filterlist.index = ' + (filterlist.index + 1) + '; dvbrequest(filterlist.list[filterlist.index])"';
 	}
 	else str += 'disabled';
 	str += '>Forward</button>&nbsp;&nbsp;';
 
 	str += '<select id="filterlist_select" onchange="selectfilter()">';
 	for (i = 0; i < filterlist.list.length; i++) {
-		var filter = filterlist.list[filterlist.list.length - 1 - i];
+		var filter = filterlist.list[i];
 		str += '<option';
-		if (filterlist.index == (filterlist.list.length - 1 - i)) str += ' selected';
-		str += ' value="' + (filterlist.list.length - 1 - i) + '">Page ' + ((filter.page | 0) + 1) + ' of ' + filter.from + ' using filter \'' + limitstring(getfullfilter(filter)) + '\' (pagesize ' + filter.pagesize + ')</option>';
+		if (filterlist.index == (i)) str += ' selected';
+		str += ' value="' + i + '" title="' + filter.longdesc + '">' + filter.shortdesc + '</option>';
 	}
 	str += '</select>';
 
@@ -1458,8 +1495,8 @@ function updatefilterlist()
 
 function selectfilter()
 {
-	var index = document.getElementById("filterlist_select").value | 0;
-	dvbrequest(filterlist.list[index]);
+	filterlist.index = document.getElementById("filterlist_select").value | 0;
+	dvbrequest(filterlist.list[filterlist.index]);
 }
 
 function decodeurl()
