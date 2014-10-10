@@ -1482,7 +1482,7 @@ function updatefilterlist()
 		var filter = filterlist.list[i];
 		str += '<option';
 		if (filterlist.index == (i)) str += ' selected';
-		str += ' value="' + i + '" title="' + filter.longdesc + '">' + filter.shortdesc + '</option>';
+		str += ' value="' + i + '" title="' + filter.longdesc.replace(/"/g, '&quot;') + '">' + filter.shortdesc + '</option>';
 	}
 	str += '</select>';
 
