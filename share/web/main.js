@@ -16,48 +16,48 @@ var filters = [
 	{text:"Sources:<br>"},
 	{
 		title:"Listings",
-		filter:{from:"Listings",titlefilter:"",timefilter:"stop>now",expanded:-1},
+		filter:{from:"Listings",titlefilter:"",timefilter:"stop>now",expanded:-1,fetch:true},
 	},
 	{
 		title:"Combined",
-		filter:{from:"Combined",titlefilter:"",timefilter:defaulttimefilter,expanded:-1},
+		filter:{from:"Combined",titlefilter:"",timefilter:defaulttimefilter,expanded:-1,fetch:true},
 	},
 	{
 		title:"Requested",
-		filter:{from:"Requested",titlefilter:"",timefilter:"",expanded:-1},
+		filter:{from:"Requested",titlefilter:"",timefilter:"",expanded:-1,fetch:true},
 	},
 	{
 		title:"Rejected",
-		filter:{from:"Combined",titlefilter:"rejected=1",timefilter:defaulttimefilter,expanded:-1},
+		filter:{from:"Combined",titlefilter:"rejected=1",timefilter:defaulttimefilter,expanded:-1,fetch:true},
 	},
 	{
 		title:"Scheduled",
-		filter:{from:"Combined",titlefilter:"scheduled=1",timefilter:defaulttimefilter,expanded:-1},
+		filter:{from:"Combined",titlefilter:"scheduled=1",timefilter:defaulttimefilter,expanded:-1,fetch:true},
 	},
 	{
 		title:"Recorded",
-		filter:{from:"Combined",titlefilter:"recorded=1",timefilter:defaulttimefilter,expanded:-1},
+		filter:{from:"Combined",titlefilter:"recorded=1",timefilter:defaulttimefilter,expanded:-1,fetch:true},
 	},
 	{
 		title:"Patterns",
-		filter:{from:"Patterns",expanded:-1},
+		filter:{from:"Patterns",expanded:-1,fetch:true},
 	},
 	{
 		title:"Clear Filter",
-		filter:{titlefilter:"",expanded:-1},
+		filter:{titlefilter:"",expanded:-1,fetch:true},
 	},
 	{
 		title:"Sky",
-		filter:{from:"Sky",titlefilter:"",timefilter:"stop>now",expanded:-1},
+		filter:{from:"Sky",titlefilter:"",timefilter:"stop>now",expanded:-1,fetch:true},
 	},
 	{text:"<br>DVB Logs:<br>"},
 	{
 		title:"Today",
-		filter:{from:"Logs",timefilter:"start=today",expanded:-1},
+		filter:{from:"Logs",timefilter:"start=today",expanded:-1,fetch:true},
 	},
 	{
 		title:"Yesterday",
-		filter:{from:"Logs",timefilter:"start=yesterday",expanded:-1},
+		filter:{from:"Logs",timefilter:"start=yesterday",expanded:-1,fetch:true},
 	},
 ];
 var searches = null;
@@ -1252,40 +1252,30 @@ function populate(id)
 	document.getElementById("list").innerHTML = str;
 }
 
-function dvbrequest(filter_arg, postdata)
+function dvbrequest(filter, postdata)
 {
-	var filter = {
-		from:        document.getElementById("from").value,
-		titlefilter: document.getElementById("titlefilter").value,
-		timefilter:  document.getElementById("timefilter").value,
-		page:        0,
-		pagesize:    document.getElementById("pagesize").value,
-		expanded:    (filterlist.current != null) ? filterlist.current.expanded : -1
-	};
+	if (typeof filter.from 	      == 'undefined') filter.from 		 = document.getElementById("from").value;
+	else															   document.getElementById("from").value = filter.from;
+	if (typeof filter.titlefilter == 'undefined') filter.titlefilter = document.getElementById("titlefilter").value;
+	else														       document.getElementById("titlefilter").value = filter.titlefilter;
+	if (typeof filter.timefilter  == 'undefined') filter.timefilter  = document.getElementById("timefilter").value;
+	else														       document.getElementById("timefilter").value = filter.timefilter;
+	if (typeof filter.page 	      == 'undefined') filter.page        = 0;
+	if (typeof filter.pagesize    == 'undefined') filter.pagesize    = document.getElementById("pagesize").value;
+	else														       document.getElementById("pagesize").value = filter.pagesize;
+ 	if (typeof filter.expanded    == 'undefined') filter.expanded    = -1;
 
-	if (typeof filter_arg != 'undefined') {
-		if (typeof 	filter_arg.from 	   != 'undefined') filter.from 		  = filter_arg.from;
-		if (typeof 	filter_arg.titlefilter != 'undefined') filter.titlefilter = filter_arg.titlefilter;
-		if (typeof 	filter_arg.timefilter  != 'undefined') filter.timefilter  = filter_arg.timefilter;
-		if ((typeof filter_arg.page 	   != 'undefined') && (filter_arg.page >= 0)) filter.page = filter_arg.page;
-		if (typeof  filter_arg.pagesize    != 'undefined') filter.pagesize    = filter_arg.pagesize;
-		if (typeof  filter_arg.expanded    != 'undefined') filter.expanded    = filter_arg.expanded;
-	}
-
-	document.getElementById("from").value        = filter.from;
-	document.getElementById("titlefilter").value = filter.titlefilter;
-	document.getElementById("timefilter").value  = filter.timefilter;
-	document.getElementById("pagesize").value    = filter.pagesize;
-
-	if ((filterlist.current == null) ||
-		(typeof postdata    != 'undefined') ||
-		(filter.from        != filterlist.current.from) ||
-		(filter.titlefilter != filterlist.current.titlefilter) ||
-		(filter.timefilter  != filterlist.current.timefilter) ||
-		(filter.page        != filterlist.current.page) ||
-		(filter.pagesize    != filterlist.current.pagesize)) {
+	if (((filterlist.current == null) ||
+		 (typeof postdata    != 'undefined') ||
+		 ((typeof filter.fetch != 'undefined') && filter.fetch) ||
+		 (filter.from        != filterlist.current.from) ||
+		 (filter.titlefilter != filterlist.current.titlefilter) ||
+		 (filter.timefilter  != filterlist.current.timefilter) ||
+		 (filter.page        != filterlist.current.page) ||
+		 (filter.pagesize    != filterlist.current.pagesize)) &&
+		!((typeof filter.fetch != 'undefined') && !filter.fetch)) {
 		document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
-
+		
 		if ((xmlhttp != null) && (xmlhttp.readState < 4)) {
 			xmlhttp.abort();
 		}
@@ -1342,6 +1332,8 @@ function dvbrequest(filter_arg, postdata)
 						}
 
 						populate(filter.expanded);
+
+						updatefilterlist(filter);
 					}
 					else document.getElementById("status").innerHTML = "<h1>Server returned error " + xmlhttp.status + "</h1>";
 				}
@@ -1369,26 +1361,11 @@ function dvbrequest(filter_arg, postdata)
 		document.getElementById("status").innerHTML += " <button onclick=\"abortfind()\">Abort</button>";
 		document.getElementById("statusbottom").innerHTML = '';
 	}
-	else populate(filter.expanded);
+	else {
+		populate(filter.expanded);
 
-	//filterlist.current = JSON.parse(JSON.stringify(filter));
-	generatefilterdescription(filter);
-	filterlist.current = filter;
-
-	if (filterlist.index >= filterlist.list.length) {
-		filterlist.list[filterlist.index] = filter;
+		updatefilterlist(filter);
 	}
-	else if (!comparefilter(filterlist.current, filterlist.index)) {
-		filterlist.index++;
-		filterlist.list[filterlist.index] = filter;
-	}
-	
-	while (filterlist.list.length >= 100) {
-		filterlist.list.shift();
-		if (filterlist.index >= 0) filterlist.index--;
-	}
-
-	updatefilterlist();
 }
 
 function getfullfilter(filter)
@@ -1462,9 +1439,25 @@ function generatefilterdescription(filter)
 	return str;
 }
 
-function updatefilterlist()
+function updatefilterlist(filter)
 {
 	var i, str = '';
+
+	generatefilterdescription(filter);
+	filterlist.current = filter;
+
+	if (filterlist.index >= filterlist.list.length) {
+		filterlist.list[filterlist.index] = filter;
+	}
+	else if (!comparefilter(filterlist.current, filterlist.index)) {
+		filterlist.index++;
+		filterlist.list[filterlist.index] = filter;
+	}
+	
+	while (filterlist.list.length >= 100) {
+		filterlist.list.shift();
+		if (filterlist.index >= 0) filterlist.index--;
+	}
 
 	str += '<button ';
 	if (filterlist.index > 0) {
