@@ -349,7 +349,8 @@ function populateprogs(id)
 				else if (prog.flags.rejected  || (typeof prog.rejected  != 'undefined'))	 classname = ' class="rejected"';
 				else if ((typeof prog.category != 'undefined') && (prog.category == 'Film')) classname = ' class="film"';
 
-				str += '<tr' + classname + ' onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '})">'
+				str += '<tr' + classname + '>';
+				str += '<td style="width:20px;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
 				str += '<td>';
 				str += find('start', prog.startdate, 'Search for programmes on this day');
 				str += '</td><td>';
@@ -439,13 +440,14 @@ function populateprogs(id)
 
 					str += str1 + str2 + ')</span>';
 				}
+				str += '<td style="width:20px;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
 				str += '</td></tr>';
 
 				var progvb = selected ? 10 : verbosity;
 				if (progvb > 1) {
 					var str1 = '';
 
-					str += '<tr' + classname + '><td class="desc" colspan=6>';
+					str += '<tr' + classname + '><td class="desc" colspan=8>';
 
 					if ((typeof prog.rejected != 'undefined') && prog.rejected) {
 						str += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
