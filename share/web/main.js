@@ -320,7 +320,7 @@ function strpad(num, len)
 
 function populateprogs(id)
 {
-	var str = '';
+	var astr = '';
 	var i;
 
 	displayfilter(0, -1, '');
@@ -333,7 +333,7 @@ function populateprogs(id)
 		document.getElementById("statusbottom").innerHTML = status;
 
 		if (response.progs.length > 0) {
-			str += '<table class="proglist">';
+			astr += '<table class="proglist">';
 
 			patterns = [];
 			patterns[0] = searchpattern;
@@ -341,380 +341,391 @@ function populateprogs(id)
 			for (i = 0; i < response.progs.length; i++) {
 				var prog      = response.progs[i];
 				var selected  = (i == id);
-				var classname = '';
 
-				if		(prog.flags.running)												 classname = ' class="recording"';
-				else if	(prog.flags.recorded  || (typeof prog.recorded  != 'undefined'))   	 classname = ' class="recorded"';
-				else if (prog.flags.scheduled || (typeof prog.scheduled != 'undefined')) 	 classname = ' class="scheduled"';
-				else if (prog.flags.rejected  || (typeof prog.rejected  != 'undefined'))	 classname = ' class="rejected"';
-				else if ((typeof prog.category != 'undefined') && (prog.category == 'Film')) classname = ' class="film"';
+				if ((typeof prog.html == 'undefined') || (selected != prog.html.selected)) {
+					var str       = '';
+					var classname = '';
 
-				str += '<tr' + classname + '>';
-				str += '<td style="width:20px;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
-				str += '<td>';
-				str += find('start', prog.startdate, 'Search for programmes on this day');
-				str += '</td><td>';
-				str += findfilter('stop>"' + prog.starttime + '" start<"' + prog.stoptime + '"', prog.starttime + ' - ' + prog.stoptime, 'Search for programmes during these times');
-				str += '</td><td>';
-				str += find('channel', prog.channel, 'Seach for programmes on this channel');
+					if		(prog.flags.running)												 classname = ' class="recording"';
+					else if	(prog.flags.recorded  || (typeof prog.recorded  != 'undefined'))   	 classname = ' class="recorded"';
+					else if (prog.flags.scheduled || (typeof prog.scheduled != 'undefined')) 	 classname = ' class="scheduled"';
+					else if (prog.flags.rejected  || (typeof prog.rejected  != 'undefined'))	 classname = ' class="rejected"';
+					else if ((typeof prog.category != 'undefined') && (prog.category == 'Film')) classname = ' class="film"';
 
-				str += '</td><td>';
-				if (typeof prog.episode != 'undefined') {
-					var str1 = '';
+					str += '<tr' + classname + '>';
+					str += '<td style="width:20px;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
+					str += '<td>';
+					str += find('start', prog.startdate, 'Search for programmes on this day');
+					str += '</td><td>';
+					str += findfilter('stop>"' + prog.starttime + '" start<"' + prog.stoptime + '"', prog.starttime + ' - ' + prog.stoptime, 'Search for programmes during these times');
+					str += '</td><td>';
+					str += find('channel', prog.channel, 'Seach for programmes on this channel');
 
-					if (typeof prog.episode.series != 'undefined') {
-						str1 += 'S' + prog.episode.series;
-					}
-					if (typeof prog.episode.episode != 'undefined') {
-						str1 += 'E' + strpad(prog.episode.episode, 2);
-					}
-					if (typeof prog.episode.episodes != 'undefined') {
-						str1 += 'T' + strpad(prog.episode.episodes, 2);
-					}
-
-					str += '<span style="font-size:90%;">';
-					if (typeof prog.episode.series != 'undefined') {	
-						str += findfromfilter('Combined', 'title="' + prog.title + '" series=' + prog.episode.series, '', str1, 'View series ' + prog.episode.series + ' scheduled/recorded of this programme');
-					}
-					else str += str1;
-					str += '</span>';
-				}
-				else if (typeof prog.assignedepisode != 'undefined') {
-					str += '<span style="font-size:90%;">F' + prog.assignedepisode + '</span>';
-				}
-				else str += '&nbsp;';
-
-				str += '</td><td>';
-				if (typeof prog.user != 'undefined') str += find('user', prog.user, 'Seach for programmes assigned to this user');
-				else							     str += '&nbsp;';
-
-				str += '</td><td class="title">';
-				str += find('title', prog.title) + imdb(prog.title);
-
-				if (typeof prog.subtitle != 'undefined') {
-					str += ' / ' + find('subtitle', prog.subtitle) + imdb(prog.subtitle);
-				}
-
-				if (typeof prog.startoffset != 'undefined') {
-					var dt = new Date();
-					var offset = dt.getTime() - prog.startoffset;
-					var type = 'Start';
-					var str1 = '', str2 = '';
-
-					if (offset >= 0) {
-						offset = dt.getTime() - prog.stopoffset;
-						type = 'End';
-					}
-
-					str += ' <span style="font-size:80%;">(';
-					if (offset < 0) {
-						str += type + 's in ';
-						offset = -offset;
-					}
-					else {
-						str += type + 'ed ';
-						str2 = ' ago';
-					}
-
-					var minutes = ((offset + 59999) / 60000) | 0;
-					var hours   = (minutes / 60) | 0;
-					minutes -= hours * 60;
-					var days    = (hours / 24) | 0;
-					hours -= days * 24;
-
-					var n = 0;
-					if (days > 0) {
-						if (str1 != '') str1 += ' ';
-						str1 += days + 'd';
-						n++;
-					}
-					if (hours > 0) {
-						if (str1 != '') str1 += ' ';
-						str1 += hours + 'h';
-						n++;
-					}
-					if ((minutes > 0) && (n < 2)) {
-						if (str1 != '') str1 += ' ';
-						str1 += minutes + 'm';
-					}
-
-					str += str1 + str2 + ')</span>';
-				}
-				str += '<td style="width:20px;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
-				str += '</td></tr>';
-
-				var progvb = selected ? 10 : verbosity;
-				if (progvb > 1) {
-					var str1 = '';
-
-					str += '<tr' + classname + '><td class="desc" colspan=8>';
-
-					if ((typeof prog.rejected != 'undefined') && prog.rejected) {
-						str += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
-					}
-
-					if ((progvb > 1) && (typeof prog.desc != 'undefined')) {
-						str += prog.desc;
-					}
-
-					if ((progvb > 2) && (typeof prog.category != 'undefined')) {
-						if (str1 != '') str1 += ' ';
-						str1 += find('category', prog.category) + '.';
-					}
-
-					if ((progvb > 2) && (typeof prog.director != 'undefined')) {
-						if (str1 != '') str1 += ' ';
-						str1 += 'Directed by ' + find('director', prog.director) + imdb(prog.director) + '.';
-					}
-
-					if ((progvb > 2) && (typeof prog.year != 'undefined')) {
-						if (str1 != '') str1 += ' ';
-						str1 += 'Made in ' + find('year', '' + prog.year) + '.';
-					}
-
-					if ((progvb > 2) && (typeof prog.episode != 'undefined')) {
-						var str2 = '';
+					str += '</td><td>';
+					if (typeof prog.episode != 'undefined') {
+						var str1 = '';
 
 						if (typeof prog.episode.series != 'undefined') {
-							str2 += 'Series ' + prog.episode.series;
+							str1 += 'S' + prog.episode.series;
 						}
-
 						if (typeof prog.episode.episode != 'undefined') {
-							if (str2 != '') str2 += ', episode ';
-							else		    str2 += 'Episode ';
-							str2 += prog.episode.episode;
-							if (typeof prog.episode.episodes != 'undefined') {
-								str2 += ' of ' + prog.episode.episodes;
+							str1 += 'E' + strpad(prog.episode.episode, 2);
+						}
+						if (typeof prog.episode.episodes != 'undefined') {
+							str1 += 'T' + strpad(prog.episode.episodes, 2);
+						}
+
+						str += '<span style="font-size:90%;">';
+						if (typeof prog.episode.series != 'undefined') {	
+							str += findfromfilter('Combined', 'title="' + prog.title + '" series=' + prog.episode.series, '', str1, 'View series ' + prog.episode.series + ' scheduled/recorded of this programme');
+						}
+						else str += str1;
+						str += '</span>';
+					}
+					else if (typeof prog.assignedepisode != 'undefined') {
+						str += '<span style="font-size:90%;">F' + prog.assignedepisode + '</span>';
+					}
+					else str += '&nbsp;';
+
+					str += '</td><td>';
+					if (typeof prog.user != 'undefined') str += find('user', prog.user, 'Seach for programmes assigned to this user');
+					else							     str += '&nbsp;';
+
+					str += '</td><td class="title">';
+					str += find('title', prog.title) + imdb(prog.title);
+
+					if (typeof prog.subtitle != 'undefined') {
+						str += ' / ' + find('subtitle', prog.subtitle) + imdb(prog.subtitle);
+					}
+
+					if (typeof prog.startoffset != 'undefined') {
+						var dt = new Date();
+						var offset = dt.getTime() - prog.startoffset;
+						var type = 'Start';
+						var str1 = '', str2 = '';
+
+						if (offset >= 0) {
+							offset = dt.getTime() - prog.stopoffset;
+							type = 'End';
+						}
+
+						str += ' <span style="font-size:80%;">(';
+						if (offset < 0) {
+							str += type + 's in ';
+							offset = -offset;
+						}
+						else {
+							str += type + 'ed ';
+							str2 = ' ago';
+						}
+
+						var minutes = ((offset + 59999) / 60000) | 0;
+						var hours   = (minutes / 60) | 0;
+						minutes -= hours * 60;
+						var days    = (hours / 24) | 0;
+						hours -= days * 24;
+
+						var n = 0;
+						if (days > 0) {
+							if (str1 != '') str1 += ' ';
+							str1 += days + 'd';
+							n++;
+						}
+						if (hours > 0) {
+							if (str1 != '') str1 += ' ';
+							str1 += hours + 'h';
+							n++;
+						}
+						if ((minutes > 0) && (n < 2)) {
+							if (str1 != '') str1 += ' ';
+							str1 += minutes + 'm';
+						}
+
+						str += str1 + str2 + ')</span>';
+					}
+					str += '<td style="width:20px;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
+					str += '</td></tr>';
+
+					var progvb = selected ? 10 : verbosity;
+					if (progvb > 1) {
+						var str1 = '';
+
+						str += '<tr' + classname + '><td class="desc" colspan=8>';
+
+						if ((typeof prog.rejected != 'undefined') && prog.rejected) {
+							str += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
+						}
+
+						if ((progvb > 1) && (typeof prog.desc != 'undefined')) {
+							str += prog.desc;
+						}
+
+						if ((progvb > 2) && (typeof prog.category != 'undefined')) {
+							if (str1 != '') str1 += ' ';
+							str1 += find('category', prog.category) + '.';
+						}
+
+						if ((progvb > 2) && (typeof prog.director != 'undefined')) {
+							if (str1 != '') str1 += ' ';
+							str1 += 'Directed by ' + find('director', prog.director) + imdb(prog.director) + '.';
+						}
+
+						if ((progvb > 2) && (typeof prog.year != 'undefined')) {
+							if (str1 != '') str1 += ' ';
+							str1 += 'Made in ' + find('year', '' + prog.year) + '.';
+						}
+
+						if ((progvb > 2) && (typeof prog.episode != 'undefined')) {
+							var str2 = '';
+
+							if (typeof prog.episode.series != 'undefined') {
+								str2 += 'Series ' + prog.episode.series;
 							}
-						}
 
-						if (str2 != '') str2 += '.';
-
-						if (str1 != '') str1 += ' ';
-						str1 += str2;
-					}
-					else if ((progvb > 2) && (typeof prog.assignedepisode != 'undefined')) {
-						var str2 = '';
-
-						str2 += 'Assigned episode ' + prog.assignedepisode;
-
-						if (str2 != '') str2 += '.';
-
-						if (str1 != '') str1 += ' ';
-						str1 += str2;
-					}
-
-					if ((progvb > 2) && ((typeof prog.actors != 'undefined') && (prog.actors.length > 0))) {
-						var str2 = '';
-
-						for (j = 0; j < prog.actors.length; j++) {
-							if (str2 != '') str2 += ', ';
-							str2 += find('actor', prog.actors[j]) + imdb(prog.actors[j]);
-						}
-
-						if (str1 != '') str1 += ' ';
-						str1 += 'Starring ' + str2 + '.';
-					}
-
-					if (str1 != '') {
-						str += '<br><br>';
-						str += str1;
-					}
-
-					str1 = '';
-
-					if ((progvb > 3) &&
-						(typeof prog.recorded  == 'undefined') &&
-						(typeof prog.scheduled == 'undefined') &&
-						(typeof prog.rejected  == 'undefined')) {
-						//str1 += '<br><br>';
-						if (typeof response.users != 'undefined') {
-							str1 += '<select class="addrecord" id="addrec' + i + 'user">';
-							for (j = 0; j < response.users.length; j++) {
-								var user = response.users[j].user;
-
-								str1 += '<option>';
-								if (user != '') str1 += user;
-								else			str1 += defaultuser;
-								str1 += '</option>';
+							if (typeof prog.episode.episode != 'undefined') {
+								if (str2 != '') str2 += ', episode ';
+								else		    str2 += 'Episode ';
+								str2 += prog.episode.episode;
+								if (typeof prog.episode.episodes != 'undefined') {
+									str2 += ' of ' + prog.episode.episodes;
+								}
 							}
-							str1 += '</select>';
-						}
-						else str1 += defaultuser;
 
-						str1 += '&nbsp;&nbsp;&nbsp;';
-						str1 += '<button class="addrecord" onclick="recordprogramme(' + i + ')">Record Programme</button>';
-						if (prog.category != 'Film') {
+							if (str2 != '') str2 += '.';
+
+							if (str1 != '') str1 += ' ';
+							str1 += str2;
+						}
+						else if ((progvb > 2) && (typeof prog.assignedepisode != 'undefined')) {
+							var str2 = '';
+
+							str2 += 'Assigned episode ' + prog.assignedepisode;
+
+							if (str2 != '') str2 += '.';
+
+							if (str1 != '') str1 += ' ';
+							str1 += str2;
+						}
+
+						if ((progvb > 2) && ((typeof prog.actors != 'undefined') && (prog.actors.length > 0))) {
+							var str2 = '';
+
+							for (j = 0; j < prog.actors.length; j++) {
+								if (str2 != '') str2 += ', ';
+								str2 += find('actor', prog.actors[j]) + imdb(prog.actors[j]);
+							}
+
+							if (str1 != '') str1 += ' ';
+							str1 += 'Starring ' + str2 + '.';
+						}
+
+						if (str1 != '') {
+							str += '<br><br>';
+							str += str1;
+						}
+
+						str1 = '';
+
+						if ((progvb > 3) &&
+							(typeof prog.recorded  == 'undefined') &&
+							(typeof prog.scheduled == 'undefined') &&
+							(typeof prog.rejected  == 'undefined')) {
+							//str1 += '<br><br>';
+							if (typeof response.users != 'undefined') {
+								str1 += '<select class="addrecord" id="addrec' + i + 'user">';
+								for (j = 0; j < response.users.length; j++) {
+									var user = response.users[j].user;
+
+									str1 += '<option>';
+									if (user != '') str1 += user;
+									else			str1 += defaultuser;
+									str1 += '</option>';
+								}
+								str1 += '</select>';
+							}
+							else str1 += defaultuser;
+
 							str1 += '&nbsp;&nbsp;&nbsp;';
-							str1 += '<button class="addrecord" onclick="recordseries(' + i + ')">Record Series</button>';
+							str1 += '<button class="addrecord" onclick="recordprogramme(' + i + ')">Record Programme</button>';
+							if (prog.category != 'Film') {
+								str1 += '&nbsp;&nbsp;&nbsp;';
+								str1 += '<button class="addrecord" onclick="recordseries(' + i + ')">Record Series</button>';
+							}
+							str1 += '<br><br>';
 						}
-						str1 += '<br><br>';
-					}
 
-					if ((progvb > 3) &&
-						(typeof prog.episode != 'undefined')) {
-						var j, k, n = 1, series = (typeof prog.episode.series != 'undefined');
+						if ((progvb > 3) &&
+							(typeof prog.episode != 'undefined')) {
+							var j, k, n = 1, series = (typeof prog.episode.series != 'undefined');
 
-						if (series) {
-							str1 += 'Series:';
-							if (typeof prog.series != 'undefined') str1 += '<br>';
-							else str1 += '&nbsp;&nbsp;';
+							if (series) {
+								str1 += 'Series:';
+								if (typeof prog.series != 'undefined') str1 += '<br>';
+								else str1 += '&nbsp;&nbsp;';
 
-							str1 += findfromfilter('Combined', 'title="' + prog.title + '" series>=1', '', 'All', 'View all series scheduled/recorded of this programme');
-							if (typeof prog.series != 'undefined') str1 += '<br>';
-						}
-						else str1 += 'All episodes:<br>';
+								str1 += findfromfilter('Combined', 'title="' + prog.title + '" series>=1', '', 'All', 'View all series scheduled/recorded of this programme');
+								if (typeof prog.series != 'undefined') str1 += '<br>';
+							}
+							else str1 += 'All episodes:<br>';
 
-						if (series) n = prog.episode.series + 1;
-						if ((typeof prog.series != 'undefined') && (prog.series.length > n)) n = prog.series.length;
+							if (series) n = prog.episode.series + 1;
+							if ((typeof prog.series != 'undefined') && (prog.series.length > n)) n = prog.series.length;
 
-						var dec = 3;
-						if (n > 10)  dec++;
-						if (n > 100) dec++;
-						for (j = 1; j < n; j++) {
-							if (typeof prog.series == 'undefined') str1 += '&nbsp;&nbsp;&nbsp;';
+							var dec = 3;
+							if (n > 10)  dec++;
+							if (n > 100) dec++;
+							for (j = 1; j < n; j++) {
+								if (typeof prog.series == 'undefined') str1 += '&nbsp;&nbsp;&nbsp;';
 
-							if ((typeof prog.series == 'undefined') ||
-								((typeof prog.series[j] != 'undefined') && (prog.series[j].state != 'empty'))) {
-								if (series) str1 += findfromfilter('Combined', 'title="' + prog.title + '" series=' + j, '', 'Series ' + strpad(j, 2), 'View series ' + j + ' scheduled/recorded of this programme');
-								else {
-									var en1 = j * 100 - 99, en2 = en1 + 99;
-									str1 += findfromfilter('Combined', 'title="' + prog.title + '" episode>=' + en1 + ' episode<=' + en2, '', 'E' + strpad(en1, dec, '0') + ' to E' + strpad(en2, dec, '0'), 'View episode range scheduled/recorded of this programme');
-								}
-
-								if ((typeof prog.series != 'undefined') && (typeof prog.series[j] != 'undefined')) {
-									str1 += ': <span class="episodelist">';
-									for (k = 0; k < prog.series[j].episodes.length; k++) {
-										var pattern, alttext;
-
-										if (series) {
-											pattern = 'series=' + j + ' episode=' + (k + 1);
-											alttext = 'Series ' + j + ' Episode ' + (k + 1);
-										}
-										else {
-											pattern = 'episode=' + (j * 100 - 99 + k);
-											alttext = 'Episode ' + (j * 100 - 99 + k);
-										}
-
-										if		(prog.series[j].episodes[k] == 'r') alttext += ' (Recorded)';
-										else if (prog.series[j].episodes[k] == 's') alttext += ' (Scheduled)';
-										else if (prog.series[j].episodes[k] == 'x') alttext += ' (Rejected)';
-										else if (prog.series[j].episodes[k] == '-') alttext += ' (Unknown)';
-
-										str1 += findfromfilter('Combined', 'title="' + prog.title + '" ' + pattern, '', prog.series[j].episodes[k], alttext);
+								if ((typeof prog.series == 'undefined') ||
+									((typeof prog.series[j] != 'undefined') && (prog.series[j].state != 'empty'))) {
+									if (series) str1 += findfromfilter('Combined', 'title="' + prog.title + '" series=' + j, '', 'Series ' + strpad(j, 2), 'View series ' + j + ' scheduled/recorded of this programme');
+									else {
+										var en1 = j * 100 - 99, en2 = en1 + 99;
+										str1 += findfromfilter('Combined', 'title="' + prog.title + '" episode>=' + en1 + ' episode<=' + en2, '', 'E' + strpad(en1, dec, '0') + ' to E' + strpad(en2, dec, '0'), 'View episode range scheduled/recorded of this programme');
 									}
-									str1 += '</span><br>';
+
+									if ((typeof prog.series != 'undefined') && (typeof prog.series[j] != 'undefined')) {
+										str1 += ': <span class="episodelist">';
+										for (k = 0; k < prog.series[j].episodes.length; k++) {
+											var pattern, alttext;
+
+											if (series) {
+												pattern = 'series=' + j + ' episode=' + (k + 1);
+												alttext = 'Series ' + j + ' Episode ' + (k + 1);
+											}
+											else {
+												pattern = 'episode=' + (j * 100 - 99 + k);
+												alttext = 'Episode ' + (j * 100 - 99 + k);
+											}
+
+											if		(prog.series[j].episodes[k] == 'r') alttext += ' (Recorded)';
+											else if (prog.series[j].episodes[k] == 's') alttext += ' (Scheduled)';
+											else if (prog.series[j].episodes[k] == 'x') alttext += ' (Rejected)';
+											else if (prog.series[j].episodes[k] == '-') alttext += ' (Unknown)';
+
+											str1 += findfromfilter('Combined', 'title="' + prog.title + '" ' + pattern, '', prog.series[j].episodes[k], alttext);
+										}
+										str1 += '</span><br>';
+									}
 								}
+							}
+
+							if (typeof prog.series == 'undefined') str1 += '<br>';
+
+							str1 += '<br>';
+						}
+
+						if ((progvb > 3) && (typeof prog.pattern != 'undefined')) {
+							if (str1 != '') str1 += ' ';
+
+							str1 += 'Found using filter \'' + limitstring(prog.pattern) + '\'';
+							if (typeof prog.user != 'undefined') {
+								str1 += ' by user \'' + prog.user + '\'';
+							}
+							if (typeof prog.pri != 'undefined') {
+								str1 += ', priority ' + prog.pri;
+							}
+							if ((typeof prog.score != 'undefined') && (prog.score > 0)) {
+								str1 += ' (score ' + prog.score + ')';
+							}
+							str1 += ':';
+
+							if (((typeof prog.recorded  != 'undefined') ||
+								 (typeof prog.scheduled != 'undefined')) &&
+								(typeof prog.patternparsed != 'undefined') &&
+								(prog.patternparsed != '')) {
+								str1 += '<table class="patternlist">';
+								str1 += '<tr><th>Status</th><th>Priority</th><th>User</th><th class="desc">Pattern</th></tr>';
+								str1 += populatepattern(prog.patternparsed);
+								str1 += '</table>';
 							}
 						}
 
-						if (typeof prog.series == 'undefined') str1 += '<br>';
-
-						str1 += '<br>';
-					}
-
-					if ((progvb > 3) && (typeof prog.pattern != 'undefined')) {
-						if (str1 != '') str1 += ' ';
-
-						str1 += 'Found using filter \'' + limitstring(prog.pattern) + '\'';
-						if (typeof prog.user != 'undefined') {
-							str1 += ' by user \'' + prog.user + '\'';
+						var str2 = '';
+						if (typeof prog.recorded != 'undefined') {
+							str2 = findfromfilter('Recorded', 'uuid="' + prog.recorded.uuid + '"', '', 'Recorded', 'Go direct to recorded version', 'class="progsearch"') + ': ' + addtimesdata(prog.recorded);
 						}
-						if (typeof prog.pri != 'undefined') {
-							str1 += ', priority ' + prog.pri;
+						else if ((typeof prog.scheduled != 'undefined') && (prog.scheduled.uuid != prog.uuid)) {
+							str2 = findfromfilter('Scheduled', 'uuid="' + prog.scheduled.uuid + '"', '', 'Scheduled', 'Go direct to scheduled version', 'class="progsearch"') + ': ' + addtimesdata(prog.scheduled);
 						}
-						if ((typeof prog.score != 'undefined') && (prog.score > 0)) {
-							str1 += ' (score ' + prog.score + ')';
+						else str2 = addtimesdata(prog);
+
+						if (str2 != '') {
+							if (str1 != '') str1 += '<br><br>';
+
+							str1 += str2;
 						}
-						str1 += ':';
 
-						if (((typeof prog.recorded  != 'undefined') ||
-							 (typeof prog.scheduled != 'undefined')) &&
-							(typeof prog.patternparsed != 'undefined') &&
-							(prog.patternparsed != '')) {
-							str1 += '<table class="patternlist">';
-							str1 += '<tr><th>Status</th><th>Priority</th><th>User</th><th class="desc">Pattern</th></tr>';
-							str1 += populatepattern(prog.patternparsed);
-							str1 += '</table>';
-						}
-					}
-
-					var str2 = '';
-					if (typeof prog.recorded != 'undefined') {
-						str2 = findfromfilter('Recorded', 'uuid="' + prog.recorded.uuid + '"', '', 'Recorded', 'Go direct to recorded version', 'class="progsearch"') + ': ' + addtimesdata(prog.recorded);
-					}
-					else if ((typeof prog.scheduled != 'undefined') && (prog.scheduled.uuid != prog.uuid)) {
-						str2 = findfromfilter('Scheduled', 'uuid="' + prog.scheduled.uuid + '"', '', 'Scheduled', 'Go direct to scheduled version', 'class="progsearch"') + ': ' + addtimesdata(prog.scheduled);
-					}
-					else str2 = addtimesdata(prog);
-
-					if (str2 != '') {
 						if (str1 != '') str1 += '<br><br>';
 
-						str1 += str2;
-					}
-
-					if (str1 != '') str1 += '<br><br>';
-
-					str1 += '<table class="progsearch"><tr><td>Programme</td><td>';
-					str1 += findfromfilter('Listings', 'prog="' + prog.base64 + '"', '', 'Listings', 'Search for occurrences of this programme');
-					str1 += '</td><td>';
-					str1 += findfromfilter('Combined', 'prog="' + prog.base64 + '"', '', 'Combined', 'Search for scheduled/recorded occurrences of this programme');
-					str1 += '</td><td>';
-					str1 += findfromfilter('Requested', 'prog="' + prog.base64 + '"', '', 'Requested', 'Search for requested recordings of this programme');
-					str1 += '</td></tr>';
-					str1 += '<tr><td>Title</td><td>';
-					str1 += findfromfilter('Listings', 'title="' + prog.title + '"', '', 'Listings', 'Search for occurrences of programmes with this title');
-					str1 += '</td><td>';
-					str1 += findfromfilter('Combined', 'title="' + prog.title + '"', '', 'Combined', 'Search for scheduled/recorded occurrences of programmes with this title');
-					str1 += '</td><td>';
-					str1 += findfromfilter('Requested', 'title="' + prog.title + '"', '', 'Requested', 'Search for requested recordings of programmes with this title');
-					str1 += '</td></tr>';
-					if (typeof prog.subtitle != 'undefined') {
-						str1 += '<tr><td>Title / Subtitle</td><td>';
-						str1 += findfromfilter('Listings', 'title="' + prog.title + '" subtitle="' + prog.subtitle + '"', '', 'Listings', 'Search for occurrences of programmes with this title and subtitle');
+						str1 += '<table class="progsearch"><tr><td>Programme</td><td>';
+						str1 += findfromfilter('Listings', 'prog="' + prog.base64 + '"', '', 'Listings', 'Search for occurrences of this programme');
 						str1 += '</td><td>';
-						str1 += findfromfilter('Combined', 'title="' + prog.title + '" subtitle="' + prog.subtitle + '"', '', 'Combined', 'Search for scheduled/recorded occurrences of programmes with this title and subtitle');
+						str1 += findfromfilter('Combined', 'prog="' + prog.base64 + '"', '', 'Combined', 'Search for scheduled/recorded occurrences of this programme');
 						str1 += '</td><td>';
-						str1 += findfromfilter('Requested', 'title="' + prog.title + '" subtitle="' + prog.subtitle + '"', '', 'Requested', 'Search for requested recordings of programmes with this title and subtitle');
+						str1 += findfromfilter('Requested', 'prog="' + prog.base64 + '"', '', 'Requested', 'Search for requested recordings of this programme');
 						str1 += '</td></tr>';
-					}
-					str1 += '<tr><td>Clashes</td><td>';
-					str1 += findfromfilter('Listings',
-										   'uuid!="' + prog.uuid + '" ' + 'stop>"' + prog.start + '" ' + 'start<"' + prog.stop + '"',
-										   '',
-										   'Listings',
-										   'Search for clashes in listings with this programme');
-					str1 += '</td><td>';
-					str1 += findfromfilter('Combined',
-										   'uuid!="' + prog.uuid + '" ' + 'stop>"' + prog.start + '" ' + 'start<"' + prog.stop + '"',
-										   '',
-										   'Combined',
-										   'Search for clashes in scheduled/recorded programmes with this programme');
-					str1 += '</td><td>';
-					str1 += findfromfilter('Requested',
-										   'uuid!="' + prog.uuid + '" ' + 'stop>"' + prog.start + '" ' + 'start<"' + prog.stop + '"',
-										   '',
-										   'Requested',
-										   'Search for clashes in requested programmes with this programme');
-					str1 += '</td></tr></table>';
+						str1 += '<tr><td>Title</td><td>';
+						str1 += findfromfilter('Listings', 'title="' + prog.title + '"', '', 'Listings', 'Search for occurrences of programmes with this title');
+						str1 += '</td><td>';
+						str1 += findfromfilter('Combined', 'title="' + prog.title + '"', '', 'Combined', 'Search for scheduled/recorded occurrences of programmes with this title');
+						str1 += '</td><td>';
+						str1 += findfromfilter('Requested', 'title="' + prog.title + '"', '', 'Requested', 'Search for requested recordings of programmes with this title');
+						str1 += '</td></tr>';
+						if (typeof prog.subtitle != 'undefined') {
+							str1 += '<tr><td>Title / Subtitle</td><td>';
+							str1 += findfromfilter('Listings', 'title="' + prog.title + '" subtitle="' + prog.subtitle + '"', '', 'Listings', 'Search for occurrences of programmes with this title and subtitle');
+							str1 += '</td><td>';
+							str1 += findfromfilter('Combined', 'title="' + prog.title + '" subtitle="' + prog.subtitle + '"', '', 'Combined', 'Search for scheduled/recorded occurrences of programmes with this title and subtitle');
+							str1 += '</td><td>';
+							str1 += findfromfilter('Requested', 'title="' + prog.title + '" subtitle="' + prog.subtitle + '"', '', 'Requested', 'Search for requested recordings of programmes with this title and subtitle');
+							str1 += '</td></tr>';
+						}
+						str1 += '<tr><td>Clashes</td><td>';
+						str1 += findfromfilter('Listings',
+											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + prog.start + '" ' + 'start<"' + prog.stop + '"',
+											   '',
+											   'Listings',
+											   'Search for clashes in listings with this programme');
+						str1 += '</td><td>';
+						str1 += findfromfilter('Combined',
+											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + prog.start + '" ' + 'start<"' + prog.stop + '"',
+											   '',
+											   'Combined',
+											   'Search for clashes in scheduled/recorded programmes with this programme');
+						str1 += '</td><td>';
+						str1 += findfromfilter('Requested',
+											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + prog.start + '" ' + 'start<"' + prog.stop + '"',
+											   '',
+											   'Requested',
+											   'Search for clashes in requested programmes with this programme');
+						str1 += '</td></tr></table>';
 
-					if (str1 != '') {
-						str += '<br><br>';
-						str += str1;
-					}
+						if (str1 != '') {
+							str += '<br><br>';
+							str += str1;
+						}
 
-					str += '</td></tr>';
+						str += '</td></tr>';
+					}
+					
+					response.progs[i].html = {};
+					response.progs[i].html.selected = selected;
+					response.progs[i].html.str      = str;
 				}
+
+				astr += response.progs[i].html.str;
 			}
-			str += '</table>';
+			
+			astr += '</table>';
 		}
 	}
 	else {
 		document.getElementById("status").innerHTML = "No programmes";
 	}
 
-	return str;
+	return astr;
 }
 
 function recordprogramme(id)
