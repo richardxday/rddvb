@@ -1265,16 +1265,30 @@ function populate(id)
 
 function dvbrequest(filter, postdata)
 {
-	if (typeof filter.from 	      == 'undefined') filter.from 		 = document.getElementById("from").value;
-	else															   document.getElementById("from").value = filter.from;
-	if (typeof filter.titlefilter == 'undefined') filter.titlefilter = document.getElementById("titlefilter").value;
-	else														       document.getElementById("titlefilter").value = filter.titlefilter;
-	if (typeof filter.timefilter  == 'undefined') filter.timefilter  = document.getElementById("timefilter").value;
-	else														       document.getElementById("timefilter").value = filter.timefilter;
-	if (typeof filter.page 	      == 'undefined') filter.page        = 0;
-	if (typeof filter.pagesize    == 'undefined') filter.pagesize    = document.getElementById("pagesize").value;
-	else														       document.getElementById("pagesize").value = filter.pagesize;
- 	if (typeof filter.expanded    == 'undefined') filter.expanded    = -1;
+	if (typeof filter != 'undefined') {
+		if (typeof filter.from 	      == 'undefined') filter.from 		 = document.getElementById("from").value;
+		else															   document.getElementById("from").value = filter.from;
+		if (typeof filter.titlefilter == 'undefined') filter.titlefilter = document.getElementById("titlefilter").value;
+		else														       document.getElementById("titlefilter").value = filter.titlefilter;
+		if (typeof filter.timefilter  == 'undefined') filter.timefilter  = document.getElementById("timefilter").value;
+		else														       document.getElementById("timefilter").value = filter.timefilter;
+		if (typeof filter.page 	      == 'undefined') filter.page        = 0;
+		if (typeof filter.pagesize    == 'undefined') filter.pagesize    = document.getElementById("pagesize").value;
+		else														       document.getElementById("pagesize").value = filter.pagesize;
+ 		if (typeof filter.expanded    == 'undefined') filter.expanded    = -1;
+	}
+	else {
+		filter = {};
+		filter.from 	   = document.getElementById("from").value;
+		filter.titlefilter = document.getElementById("titlefilter").value;
+		filter.timefilter  = document.getElementById("timefilter").value;
+		filter.page        = 0;
+		filter.pagesize    = document.getElementById("pagesize").value;
+ 		filter.expanded    = -1;
+	}
+
+	filter.page     = filter.page     | 0;
+	filter.pagesize = filter.pagesize | 0;
 
 	if (((filterlist.current == null) ||
 		 (typeof postdata    != 'undefined') ||
@@ -1442,6 +1456,7 @@ function generatefilterdescription(filter)
 	filter.longdesc = str;
 
 	str = 'Page ' + (filter.page + 1) + ' of ' + filter.from;
+	if (filter.titlefilter != '') str += ' \'' + filter.titlefilter + '\'';
 	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined')) {
 		str += ' (' + title + ')';
 	}
