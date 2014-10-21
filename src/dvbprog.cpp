@@ -85,6 +85,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_ASSIGN(user,		  strings.user,  	string, "User"),
 	DEFINE_ASSIGN(dir,		  strings.dir,  	string, "Directory to store file in"),
 	DEFINE_ASSIGN(prefs,	  strings.prefs, 	string, "Misc prefs"),
+	DEFINE_ASSIGN(dvbcard,    dvbcard,        	uint8_t, "DVB card to record from"),
 };
 
 ADVBProg::OPERATOR ADVBProg::operators[] = {
@@ -2117,7 +2118,7 @@ bool ADVBProg::Match(const PATTERN& pattern) const
 
 					case FieldType_flag...FieldType_lastflag: {
 						uint32_t flags, mask = 1UL << (field.type - FieldType_flag);
-						uint8_t   cmp;
+						uint8_t  cmp;
 
 						memcpy(&flags, ptr, sizeof(flags));
 
@@ -2158,11 +2159,11 @@ sint64_t ADVBProg::TermTypeToInt64s(const void *p, uint_t termtype)
 	sint64_t val = 0;
 
 	if (RANGE(termtype, FieldType_uint32_t, FieldType_sint8_t)) {
-		uint_t   type     = FieldType_sint8_t - termtype;
+		uint_t type     = FieldType_sint8_t - termtype;
 		// sint8_t/uint8_t   -> 0 -> 1
 		// sint16_t/uint16_t -> 1 -> 2
 		// sint32_t/uint32_t -> 2 -> 4
-		uint_t   bytes    = 1U << (type >> 1);
+		uint_t bytes    = 1U << (type >> 1);
 		bool   issigned = ((type & 1) == 0);
 
 		// first, get data from pointer
@@ -2196,8 +2197,8 @@ void ADVBProg::Int64sToTermType(void *p, sint64_t val, uint_t termtype)
 		// sint8_t/uint8_t   -> 0 -> 1
 		// sint16_t/uint16_t -> 1 -> 2
 		// sint32_t/uint32_t -> 2 -> 4
-		uint_t   bytes    = 1U << (type >> 1);
-		bool   issigned = ((type & 1) == 0);
+		uint_t 	 bytes    = 1U << (type >> 1);
+		bool   	 issigned = ((type & 1) == 0);
 
 		if (issigned) {
 			maxval = (sint64_t)((1ULL << ((bytes << 3) - 1)) - 1);
@@ -2210,6 +2211,7 @@ void ADVBProg::Int64sToTermType(void *p, sint64_t val, uint_t termtype)
 
 		//debug("val = %" FMT64 "s, min = " FMT64 "s, max = " FMT64 "s\n", val, minval, maxval);
 
+		// limit value to correct range for type
 		val = LIMIT(val, minval, maxval);
 
 		if (MachineIsBigEndian()) {
@@ -2287,6 +2289,12 @@ void ADVBProg::AssignValue(const FIELD& field, const VALUE& value, uint8_t termt
 			//debug("%" FMT64 "s / %" FMT64 "s = %" FMT64 "s\n", val1, val2, val);
 
 			Int64sToTermType(ptr, val, field.type);
+
+			// detect writing to dvbcard
+			if (ptr == &data->dvbcard) {
+				//debug("DVB card specified as %u\n", (uint_t)data->dvbcard);
+				SetFlag(Flag_dvbcardspecified);
+			}
 			break;
 		}
 

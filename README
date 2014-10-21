@@ -1,20 +1,41 @@
-Purpose
+rddvb - a DVB auto-scheduler
 
-DVB auto-scheduler
+What is rddvb?
+
+rddvb is a system designed to automatically schedule the recording of
+TV programmes using a DVB card.  It uses TV listings from xmltv
+(although other inputs are possible) and user generated 'patterns' to
+decide which programmes need recording, scheduling the recordings to
+record as many programmes as possible.
+
+Features
+
+* Web based interface controlling scheduling, editing patterns, etc.
+* Automatic download and scanning of TV listings ('cron' based)
+* 'at' based record scheduling
+* Maintains lists of TV programmes:
+  * TV listings
+  * Recorded programmes
+  * Scheduled programmes
+  * Rejected programmes
+* Multiple sets of TV listings can be used (e.g. Sky and Freeview) -
+  only one source can be used to schedule programmes however
+* Disk space monitoring (with warning levels)
+* Multi-user
+* Per-programme and per-user configurations
+* Explicit and implicit scheduling prioritization
+* Configurable post-processing of recordings
+* Repeat detection
+* Episode / series awareness (each episode only recorded once)
+* Advanced, multi-parameter searching with regex
+* Uses dvbstream to record programmes
+* Supports multiple DVB cards for handling clashing recordings
+* DVB card can be specified on per-user or per-programme basis
+
 
 Dependencies
 
+dvbstream
+dvbtune
 https://github.com/richardxday/rdutils
 
-Files
-
-autogen.sh - simple autotools script
-configure.ac - configure configuration for autotools
-COPYING - information on copying this library
-debian/ - Debian control and version information
-doxygen.am - Doxygen automake file
-doxygen.cfg - Doxygen configuration
-m4 - folder for autotools
-Makefile.am - makefile for automake
-README - this file
-src/ - source folder containing C/C++ source and header files

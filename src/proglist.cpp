@@ -1704,7 +1704,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	ADVBProgList scheduledlist;
 	ADVBProgList rejectedlist;
 	ADVBProgList runninglist;
-	AString filename;
+	AString  filename;
 	uint64_t lateststart = SUBZ((uint64_t)starttime, (uint64_t)config.GetLatestStart() * 60000ULL);		// set latest start of programmes to be scheduled
 	uint_t   i;
 
@@ -1740,7 +1740,8 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	// first, remove programmes that do not have a valid DVB channel
 	// then, remove any that have already finished
 	// then, remove any that overlap with any running job(s)
-	// finally, remove any that have already been recorded
+	// then, remove any that have already been recorded
+	// finally, REJECT any programmes that must not be recorded on this DVB card
 	for (i = 0; i < Count();) {
 		const ADVBProg *otherprog;
 		ADVBProg& prog = GetProgWritable(i);
@@ -1769,6 +1770,13 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 			config.logit("Adding '%s' to recorded list (Mark Only)", prog.GetQuickDescription().str());
 
 			recordedlist.AddProg(prog, false, false, true);
+
+			DeleteProg(i);
+		}
+		else if (prog.IsDVBCardSpecified() && (prog.GetDVBCard() != card) && (prog.GetDVBCard() < config.GetMaxCards())) {
+			config.logit("Adding '%s' to rejected list (DVB card requested %u, currently %u)", prog.GetQuickDescription().str(), (uint_t)prog.GetDVBCard(), (uint_t)card);
+
+			rejectedlist.AddProg(prog);
 
 			DeleteProg(i);
 		}
