@@ -2381,7 +2381,7 @@ void ADVBProg::Record()
 			ADVBChannelList& channellist = ADVBChannelList::Get();
 			AString dvbchannel = GetDVBChannel();
 
-			pids = channellist.GetPIDList(dvbchannel, true);
+			pids = channellist.GetPIDList(dvbchannel, true).Words(0, 3);
 
 			if (pids.CountWords() < 2) {
 				config.addlogit("\n");
@@ -2469,7 +2469,7 @@ void ADVBProg::Record()
 							  pids.Words(1).str());
 			}
 
-			cmd.printf("dvbstream -c %u -n %u -f %s -o >\"%s\" 2>>%s",
+			cmd.printf("dvbstream -c %u -ps -n %u -f %s -o >\"%s\" 2>>%s",
 					   GetDVBCard(),
 					   nsecs,
 					   pids.str(),
