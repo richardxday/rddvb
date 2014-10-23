@@ -45,7 +45,7 @@ ADVBChannelList::ADVBChannelList() : hash(40),
 					chan->pidlist.DeleteList();
 
 					uint_t i, n = line.CountColumns();
-					for (i = 2; i < n; i++) {
+					for (i = 0; (i < 2) && ((2 + i) < n); i++) {
 						AString col = line.Column(i);
 
 						chan->pidlist.Add((uint_t)col);
@@ -192,7 +192,6 @@ void ADVBChannelList::Update(uint32_t freq, bool verbose)
 							uint_t i, n = service.CountLines("\n", 0);
 							bool hasaudio = false;
 							bool hasvideo = false;
-							bool hassubt  = false;
 							
 							chan->freq = freq;
 
@@ -211,10 +210,6 @@ void ADVBChannelList::Update(uint32_t freq, bool verbose)
 									else if (RANGE(type, 3, 4)) {
 										include  = !hasaudio;
 										hasaudio = true;
-									}
-									else if (type == 6) {
-										include  = !hassubt;
-										hassubt  = true;
 									}
 
 									if (include) pidlist.Add(pid);
