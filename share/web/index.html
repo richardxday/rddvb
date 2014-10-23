@@ -22,7 +22,7 @@ Other functions:<br>
 <td class="maincontent">
 <table class="filter"><tr><td>
 From:<br>
-<select id="from" onchange="dvbrequest()">
+<select id="from" onchange="dvbrequest({from:document.getElementById(&quot;from&quot)})">
 <option>Listings</option>
 <option selected>Combined</option>
 <option>Requested</option>
@@ -32,10 +32,10 @@ From:<br>
 </select>
 </td><td>
 Filter:<br>
-<input type="text" id="titlefilter" value = "" size=30 maxlength=10000 onchange="dvbrequest()">
+<input type="text" id="titlefilter" value = "" size=30 maxlength=10000 onchange="dvbrequest({titlefilter:document.getElementById(&quot;titlefilter&quot;).value})">
 </td><td>
 Time:<br>
-<select id="timefilter" onchange="dvbrequest()">
+<select id="timefilter" onchange="dvbrequest({timefilter:document.getElementById(&quot;timefilter&quot;).value})">
 <option value="stop&gt;=firstdayofmonth,0:0:0">This Month</option>
 <option value="stop&gt;=firstdayofweek,0:0:0">This Week</option>
 <option value="stop&gt;=yesterday,0:0:0" selected>Yesterday</option>

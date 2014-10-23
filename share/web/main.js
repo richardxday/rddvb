@@ -77,7 +77,16 @@ function loadpage()
 
 	document.getElementById("buttons").innerHTML = str;
 	
-	dvbrequest(decodeurl());
+	filter = decodeurl();
+
+	if (typeof filter.from        == 'undefined') filter.from        = document.getElementById("from").value;
+	if (typeof filter.titlefilter == 'undefined') filter.titlefilter = document.getElementById("titlefilter").value;
+	if (typeof filter.timefilter  == 'undefined') filter.timefilter  = document.getElementById("timefilter").value;
+	if (typeof filter.pagesize    == 'undefined') filter.pagesize    = document.getElementById("pagesize").value;
+	if (typeof filter.page        == 'undefined') filter.page        = 0;
+	if (typeof filter.expanded    == 'undefined') filter.expanded    = -1;
+
+	dvbrequest(filter);
 }
 
 function limitstring(str)
@@ -109,7 +118,7 @@ function findfilter(titlefilter, str, title, style)
 
 	titlefilter = titlefilter.replace(/"/g, '\\&quot;');
 
-	return '<a href="javascript:void(0);" onclick="dvbrequest({&quot;titlefilter&quot;:&quot;' + titlefilter + '&quot;});" ' + style + ' title="' + title + '">' + str + '</a>';
+	return '<a href="javascript:void(0);" onclick="dvbrequest({titlefilter:&quot;' + titlefilter + '&quot;});" ' + style + ' title="' + title + '">' + str + '</a>';
 }
 
 function findfromfilter(from, titlefilter, timefilter, str, title, style)
@@ -122,9 +131,9 @@ function findfromfilter(from, titlefilter, timefilter, str, title, style)
 	timefilter  = timefilter.replace(/"/g, '\\&quot;');
 
 	return ('<a href="javascript:void(0);" onclick="dvbrequest({' +
-			'&quot;from&quot;:&quot;'        + from        + '&quot;,' +
-			'&quot;titlefilter&quot;:&quot;' + titlefilter + '&quot;,' + 
-			'&quot;timefilter&quot;:&quot;'  + timefilter  + '&quot;});" ' +
+			'from:&quot;'        + from        + '&quot;,' +
+			'titlefilter:&quot;' + titlefilter + '&quot;,' + 
+			'timefilter:&quot;'  + timefilter  + '&quot;});" ' +
 			style + ' title="' + title + '">' + str + '</a>');
 }
 
@@ -143,15 +152,15 @@ function showstatus(type)
 			var i;
 
 			if (page > 0) {
-				status += ' <a href="javascript:void(0);" onclick="dvbrequest()">First</a>';
+				status += ' <a href="javascript:void(0);" onclick="dvbrequest({page:0})">First</a>';
 
-				status += ' <a href="javascript:void(0);" onclick="dvbrequest({&quot;page&quot;:' + (page - 1) + '})">Previous</a>';
+				status += ' <a href="javascript:void(0);" onclick="dvbrequest({page:' + (page - 1) + '})">Previous</a>';
 			}
 
 			for (i = 0; i < maxpage; i++) {
 				if (!i || (i == (maxpage - 1)) ||
 					((i < (page + 2)) && ((i + 2) > page))) {
-					status += ' <a href="javascript:void(0);" onclick="dvbrequest({&quot;page&quot;:' + i + '})">';
+					status += ' <a href="javascript:void(0);" onclick="dvbrequest({page:' + i + '})">';
 					if (i == page) status += '<b>' + (i + 1) + '</b>';
 					else		   status += (i + 1);
 					status += '</a>';
@@ -164,9 +173,9 @@ function showstatus(type)
 			}
 
 			if (page < (maxpage - 1)) {
-				status += ' <a href="javascript:void(0);" onclick="dvbrequest({&quot;page&quot;:' + (page + 1) + '})">Next</a>';
+				status += ' <a href="javascript:void(0);" onclick="dvbrequest({page:' + (page + 1) + '})">Next</a>';
 				
-				status += ' <a href="javascript:void(0);" onclick="dvbrequest({&quot;page&quot;:' + (maxpage - 1) + '})">Last</a>';
+				status += ' <a href="javascript:void(0);" onclick="dvbrequest({page:' + (maxpage - 1) + '})">Last</a>';
 			}
 
 			status += '&nbsp;<input type="text" id="page" name="page" value="' + (page + 1) + '" size=4 />&nbsp;<button onclick="gotopage();">Go</button>';
@@ -181,7 +190,7 @@ function gotopage()
 	if (document.getElementById("page") != null) page = (document.getElementById("page").value | 0) - 1;
 	else									     page = 0;
 
-	dvbrequest({"page":page});
+	dvbrequest({page:page});
 }
 
 function calctime(length)
@@ -353,7 +362,7 @@ function populateprogs(id)
 					else if ((typeof prog.category != 'undefined') && (prog.category == 'Film')) classname = ' class="film"';
 
 					str += '<tr' + classname + '>';
-					str += '<td style="width:20px;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
+					str += '<td style="width:20px;cursor:pointer;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
 					str += '<td>';
 					str += find('start', prog.startdate, 'Search for programmes on this day');
 					str += '</td><td>';
@@ -443,7 +452,7 @@ function populateprogs(id)
 
 						str += str1 + str2 + ')</span>';
 					}
-					str += '<td style="width:20px;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
+					str += '<td style="width:20px;cursor:pointer;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
 					str += '</td></tr>';
 
 					var progvb = selected ? 10 : verbosity;
@@ -1266,29 +1275,22 @@ function populate(id)
 function dvbrequest(filter, postdata)
 {
 	if (typeof filter != 'undefined') {
-		if (typeof filter.from 	      == 'undefined') filter.from 		 = document.getElementById("from").value;
-		else															   document.getElementById("from").value = filter.from;
-		if (typeof filter.titlefilter == 'undefined') filter.titlefilter = document.getElementById("titlefilter").value;
-		else														       document.getElementById("titlefilter").value = filter.titlefilter;
-		if (typeof filter.timefilter  == 'undefined') filter.timefilter  = document.getElementById("timefilter").value;
-		else														       document.getElementById("timefilter").value = filter.timefilter;
-		if (typeof filter.page 	      == 'undefined') filter.page        = 0;
-		if (typeof filter.pagesize    == 'undefined') filter.pagesize    = document.getElementById("pagesize").value;
-		else														       document.getElementById("pagesize").value = filter.pagesize;
- 		if (typeof filter.expanded    == 'undefined') filter.expanded    = -1;
+		if (typeof filter.from 	      == 'undefined') filter.from 		 = filterlist.current.from;
+		else										  document.getElementById("from").value = filter.from;
+		if (typeof filter.titlefilter == 'undefined') filter.titlefilter = filterlist.current.titlefilter;
+		else										  document.getElementById("titlefilter").value = filter.titlefilter;
+		if (typeof filter.timefilter  == 'undefined') filter.timefilter  = filterlist.current.timefilter;
+		else										  document.getElementById("timefilter").value = filter.timefilter;
+		if (typeof filter.page 	      == 'undefined') filter.page        = filterlist.current.page;
+		if (typeof filter.pagesize    == 'undefined') filter.pagesize    = filterlist.current.pagesize;
+		else										  document.getElementById("pagesize").value = filter.pagesize;
+ 		if (typeof filter.expanded    == 'undefined') filter.expanded    = filterlist.current.expanded;
 	}
-	else {
-		filter = {};
-		filter.from 	   = document.getElementById("from").value;
-		filter.titlefilter = document.getElementById("titlefilter").value;
-		filter.timefilter  = document.getElementById("timefilter").value;
-		filter.page        = 0;
-		filter.pagesize    = document.getElementById("pagesize").value;
- 		filter.expanded    = -1;
-	}
+	else filter = filterlist.current;
 
 	filter.page     = filter.page     | 0;
 	filter.pagesize = filter.pagesize | 0;
+
 
 	if (((filterlist.current == null) ||
 		 (typeof postdata    != 'undefined') ||
@@ -1536,9 +1538,10 @@ function decodeurl()
 function updatepagesize()
 {
 	if (response != null) {
-		dvbrequest({"page":(response.from / (document.getElementById("pagesize").value | 0))});
+		dvbrequest({page:(response.from / (document.getElementById("pagesize").value | 0)),
+					pagesize:document.getElementById("pagesize").value});
 	}
-	else dvbrequest();
+	else dvbrequest({pagesize:document.getElementById("pagesize").value});
 }
 
 function abortfind()
