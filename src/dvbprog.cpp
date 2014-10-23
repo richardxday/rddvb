@@ -2469,8 +2469,10 @@ void ADVBProg::Record()
 							  pids.Words(1).str());
 			}
 
-			cmd.printf("dvbstream -c %u -ps -n %u -f %s -o >\"%s\" 2>>%s",
+			bool mpgps = (((uint_t)config.GetUserConfigItem(GetUser(), "mpgps") != 0) && (pids.CountWords() == 3));
+			cmd.printf("dvbstream -c %u %s -n %u -f %s -o >\"%s\" 2>>%s",
 					   GetDVBCard(),
+					   mpgps ? "-ps" : "",
 					   nsecs,
 					   pids.str(),
 					   filename.str(),
@@ -2500,6 +2502,8 @@ void ADVBProg::Record()
 				}
 			}
 			else {
+				config.printf("Running '%s'", cmd.str());
+
 				config.addlogit("\n");
 				config.addlogit("--------------------------------------------------------------------------------\n");
 				config.writetorecordlog("start %s", Base64Encode().str());
