@@ -45,7 +45,7 @@ ADVBChannelList::ADVBChannelList() : hash(40),
 					chan->pidlist.DeleteList();
 
 					uint_t i, n = line.CountColumns();
-					for (i = 0; (i < 2) && ((2 + i) < n); i++) {
+					for (i = 2; (i < n) && (chan->pidlist.Count() < 2); i++) {
 						AString col = line.Column(i);
 
 						chan->pidlist.Add((uint_t)col);
