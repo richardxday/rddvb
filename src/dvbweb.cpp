@@ -113,21 +113,6 @@ int main(int argc, char *argv[])
 	bool 			  base64encoded = true;
 	int i;
 
-	recordedlist.ReadFromFile(config.GetRecordedFile());
-	recordedlist.CreateHash();
-
-	scheduledlist.ReadFromFile(config.GetScheduledFile());
-	scheduledlist.CreateHash();
-
-	requestedlist.ReadFromFile(config.GetRequestedFile());
-	rejectedlist.ReadFromFile(config.GetRejectedFile());
-
-	runninglist.ReadFromJobList(true);
-
-	combinedlist.ReadFromFile(config.GetCombinedFile());
-	combinedlist.CreateHash();
-	combinedlist.FindSeries(fullseries);
-
 	for (i = 1; i < argc; i++) {
 		AString arg = argv[i];
 
@@ -185,8 +170,25 @@ int main(int argc, char *argv[])
 	}
 
 	if (Value(vars, val, "schedule")) {
-		ADVBProgList::SchedulePatterns(ADateTime().TimeStamp(true), (val == "commit"));
+		bool commit = (val == "commit");
+
+		ADVBProgList::SchedulePatterns(ADateTime().TimeStamp(true), commit);
 	}
+
+	recordedlist.ReadFromFile(config.GetRecordedFile());
+	recordedlist.CreateHash();
+
+	scheduledlist.ReadFromFile(config.GetScheduledFile());
+	scheduledlist.CreateHash();
+
+	requestedlist.ReadFromFile(config.GetRequestedFile());
+	rejectedlist.ReadFromFile(config.GetRejectedFile());
+
+	runninglist.ReadFromJobList(true);
+
+	combinedlist.ReadFromFile(config.GetCombinedFile());
+	combinedlist.CreateHash();
+	combinedlist.FindSeries(fullseries);
 
 	{
 		AString errors;		// use local var to prevent global one being modified
