@@ -22,7 +22,7 @@ Other functions:<br>
 <td class="maincontent">
 <table class="filter"><tr><td>
 From:<br>
-<select id="from" onchange="dvbrequest({from:document.getElementById(&quot;from&quot)})">
+<select id="from" onchange="dvbrequest({from:document.getElementById(&quot;from&quot).value})">
 <option>Listings</option>
 <option selected>Combined</option>
 <option>Requested</option>
@@ -68,7 +68,7 @@ Display:<br>
 <option value="4">Everything</option>
 </select>
 </td><td>
-<button style="width:100%; height:100%; padding-left:20px; padding-right:20px;" onclick="dvbrequest()">Find</button>
+<button style="width:100%; height:100%; padding-left:20px; padding-right:20px;" onclick="dvbrequest({fetch:true})">Find</button>
 </td></tr></table>
 <div id="finderrors"></div>
 <br>

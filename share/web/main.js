@@ -268,7 +268,7 @@ function populateusers()
 			else str += '<td>Unknown</td>';
 
 			str += '<td>';
-			if ((username == 'default') || (username == '')) {
+			if ((username == defaultuser) || (username == '')) {
 				str += findfromfilter('Combined', '', defaulttimefilter, 'Combined', 'Search for recordings in combined listings for the default user') + '&nbsp;';
 				str += findfromfilter('Requested', '', '', 'Requested', 'Search for requested recordings for the default user') + '&nbsp;';
 				str += findfromfilter('Patterns', 'user=""', '', 'Patterns', 'Display scheduling patterns for the default user') + '&nbsp;';
@@ -352,8 +352,13 @@ function populateprogs(id)
 				var selected  = (i == id);
 
 				if ((typeof prog.html == 'undefined') || (selected != prog.html.selected)) {
+					var prog1     = prog;
 					var str       = '';
 					var classname = '';
+
+					if		(typeof prog.recorded  != 'undefined') prog1 = prog.recorded;
+					else if (typeof prog.scheduled != 'undefined') prog1 = prog.scheduled;
+					else if (typeof prog.rejected  != 'undefined') prog1 = prog.rejected;
 
 					if		(prog.flags.running)												 classname = ' class="recording"';
 					else if	(prog.flags.recorded  || (typeof prog.recorded  != 'undefined'))   	 classname = ' class="recorded"';
@@ -397,8 +402,10 @@ function populateprogs(id)
 					else str += '&nbsp;';
 
 					str += '</td><td>';
-					if (typeof prog.user != 'undefined') str += find('user', prog.user, 'Seach for programmes assigned to this user');
-					else							     str += '&nbsp;';
+					if (typeof prog1.user != 'undefined') {
+						str += find('user', prog1.user, 'Seach for programmes assigned to this user');
+					}
+					else str += '&nbsp;';
 
 					str += '</td><td class="title">';
 					str += find('title', prog.title) + imdb(prog.title);
@@ -407,51 +414,7 @@ function populateprogs(id)
 						str += ' / ' + find('subtitle', prog.subtitle) + imdb(prog.subtitle);
 					}
 
-					if (typeof prog.startoffset != 'undefined') {
-						var dt = new Date();
-						var offset = dt.getTime() - prog.startoffset;
-						var type = 'Start';
-						var str1 = '', str2 = '';
-
-						if (offset >= 0) {
-							offset = dt.getTime() - prog.stopoffset;
-							type = 'End';
-						}
-
-						str += ' <span style="font-size:80%;">(';
-						if (offset < 0) {
-							str += type + 's in ';
-							offset = -offset;
-						}
-						else {
-							str += type + 'ed ';
-							str2 = ' ago';
-						}
-
-						var minutes = ((offset + 59999) / 60000) | 0;
-						var hours   = (minutes / 60) | 0;
-						minutes -= hours * 60;
-						var days    = (hours / 24) | 0;
-						hours -= days * 24;
-
-						var n = 0;
-						if (days > 0) {
-							if (str1 != '') str1 += ' ';
-							str1 += days + 'd';
-							n++;
-						}
-						if (hours > 0) {
-							if (str1 != '') str1 += ' ';
-							str1 += hours + 'h';
-							n++;
-						}
-						if ((minutes > 0) && (n < 2)) {
-							if (str1 != '') str1 += ' ';
-							str1 += minutes + 'm';
-						}
-
-						str += str1 + str2 + ')</span>';
-					}
+					str += '{reltime}';
 					str += '<td style="width:20px;cursor:pointer;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
 					str += '</td></tr>';
 
@@ -461,7 +424,7 @@ function populateprogs(id)
 
 						str += '<tr' + classname + '><td class="desc" colspan=8>';
 
-						if ((typeof prog.rejected != 'undefined') && prog.rejected) {
+						if (prog.rejected) {
 							str += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
 						}
 
@@ -536,9 +499,10 @@ function populateprogs(id)
 						str1 = '';
 
 						if ((progvb > 3) &&
-							(typeof prog.recorded  == 'undefined') &&
-							(typeof prog.scheduled == 'undefined') &&
-							(typeof prog.rejected  == 'undefined')) {
+							(typeof  prog.recorded   == 'undefined') &&
+							(typeof  prog.scheduled  == 'undefined') &&
+							(typeof  prog.rejected   == 'undefined') &&
+							((typeof prog.dvbchannel != 'undefined') && (prog.dvbchannel != ''))) {
 							//str1 += '<br><br>';
 							if (typeof response.users != 'undefined') {
 								str1 += '<select class="addrecord" id="addrec' + i + 'user">';
@@ -625,28 +589,28 @@ function populateprogs(id)
 							str1 += '<br>';
 						}
 
-						if ((progvb > 3) && (typeof prog.pattern != 'undefined')) {
+						if ((progvb > 3) && (typeof prog1.pattern != 'undefined')) {
 							if (str1 != '') str1 += ' ';
 
-							str1 += 'Found using filter \'' + limitstring(prog.pattern) + '\'';
-							if (typeof prog.user != 'undefined') {
-								str1 += ' by user \'' + prog.user + '\'';
+							str1 += 'Found using filter \'' + limitstring(prog1.pattern) + '\'';
+							if (typeof prog1.user != 'undefined') {
+								str1 += ' by user \'' + prog1.user + '\'';
 							}
-							if (typeof prog.pri != 'undefined') {
-								str1 += ', priority ' + prog.pri;
+							if (typeof prog1.pri != 'undefined') {
+								str1 += ', priority ' + prog1.pri;
 							}
-							if ((typeof prog.score != 'undefined') && (prog.score > 0)) {
-								str1 += ' (score ' + prog.score + ')';
+							if ((typeof prog1.score != 'undefined') && (prog1.score > 0)) {
+								str1 += ' (score ' + prog1.score + ')';
 							}
 							str1 += ':';
 
 							if (((typeof prog.recorded  != 'undefined') ||
 								 (typeof prog.scheduled != 'undefined')) &&
-								(typeof prog.patternparsed != 'undefined') &&
-								(prog.patternparsed != '')) {
+								(typeof prog1.patternparsed != 'undefined') &&
+								(prog1.patternparsed != '')) {
 								str1 += '<table class="patternlist">';
 								str1 += '<tr><th>Status</th><th>Priority</th><th>User</th><th class="desc">Pattern</th></tr>';
-								str1 += populatepattern(prog.patternparsed);
+								str1 += populatepattern(prog1.patternparsed);
 								str1 += '</table>';
 							}
 						}
@@ -658,7 +622,7 @@ function populateprogs(id)
 						else if ((typeof prog.scheduled != 'undefined') && (prog.scheduled.uuid != prog.uuid)) {
 							str2 = findfromfilter('Scheduled', 'uuid="' + prog.scheduled.uuid + '"', '', 'Scheduled', 'Go direct to scheduled version', 'class="progsearch"') + ': ' + addtimesdata(prog.scheduled);
 						}
-						else str2 = addtimesdata(prog);
+						else str2 = addtimesdata(prog1);
 
 						if (str2 != '') {
 							if (str1 != '') str1 += '<br><br>';
@@ -724,7 +688,56 @@ function populateprogs(id)
 					response.progs[i].html.str      = str;
 				}
 
-				astr += response.progs[i].html.str;
+				var reltimestr = '';
+				if (typeof prog.startoffset != 'undefined') {
+					var dt = new Date();
+					var offset = dt.getTime() - prog.startoffset;
+					var type = 'Start';
+					var str, str1 = '', str2 = '';
+
+					if (offset >= 0) {
+						offset = dt.getTime() - prog.stopoffset;
+						type = 'End';
+					}
+
+					str = ' <span style="font-size:80%;">(';
+					if (offset < 0) {
+						str += type + 's in ';
+						offset = -offset;
+					}
+					else {
+						str += type + 'ed ';
+						str2 = ' ago';
+					}
+
+					var minutes = ((offset + 59999) / 60000) | 0;
+					var hours   = (minutes / 60) | 0;
+					minutes -= hours * 60;
+					var days    = (hours / 24) | 0;
+					hours -= days * 24;
+
+					var n = 0;
+					if (days > 0) {
+						if (str1 != '') str1 += ' ';
+						str1 += days + 'd';
+						n++;
+					}
+					if (hours > 0) {
+						if (str1 != '') str1 += ' ';
+						str1 += hours + 'h';
+						n++;
+					}
+					if ((minutes > 0) && (n < 2)) {
+						if (str1 != '') str1 += ' ';
+						str1 += minutes + 'm';
+					}
+
+					str += str1 + str2 + ')</span>';
+
+					reltimestr = str;
+				}
+
+				astr += response.progs[i].html.str.replace('{reltime}', reltimestr);
 			}
 			
 			astr += '</table>';
@@ -745,6 +758,8 @@ function recordprogramme(id)
 		var pattern = 'title="' + prog.title + '"';
 		var postdata = '';
 
+		if (user == defaultuser) user = '';
+
 		if (typeof prog.subtitle != 'undefined') pattern += ' subtitle="' + prog.subtitle + '"';
 		
 		postdata += "edit=add\n";
@@ -763,7 +778,9 @@ function recordseries(id)
 		var prog = response.progs[id];
 		var pattern = 'title="' + prog.title + '"';
 		var postdata = '';
-		
+
+		if (user == defaultuser) user = '';
+
 		postdata += "edit=add\n";
 		postdata += "newuser=" + user + "\n";
 		postdata += "newpattern=" + pattern + "\n";
@@ -781,6 +798,8 @@ function addrecfromlisting(id)
 		var pattern = 'title="' + prog.title + '"';
 		var postdata = '';
 		
+		if (user == defaultuser) user = '';
+
 		postdata += "edit=add\n";
 		postdata += "newuser=" + user + "\n";
 		postdata += "newpattern=" + pattern + "\n";

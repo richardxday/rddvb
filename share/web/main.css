@@ -59,7 +59,7 @@ table.proglist
 {
 	width:100%;
 }
-table.proglist,table.patternlist,table.patternlist th,table.patternlist th:hover
+table.proglist,table.patternlist,table.patternlist th
 {
 	background-color:#eee;
 	width:100%;
