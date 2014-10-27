@@ -1504,10 +1504,14 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock     lock("schedule");
+	ADVBProgList oldrejectedlist;
 	ADVBProgList recordedlist;
 	ADVBProgList scheduledlist;
 	ADVBProgList rejectedlist;
+	ADVBProgList newrejectedlist;
 	uint_t i, n, reccount;
+
+	oldrejectedlist.ReadFromFile(config.GetRejectedFile());
 
 	WriteToFile(config.GetRequestedFile(), false);
 
@@ -1524,7 +1528,23 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		rejectedlist.GetProgWritable(i).SetRejected();
 	}
 	rejectedlist.WriteToFile(config.GetRejectedFile(), false);
-	if (rejectedlist.Count() > 0) {
+
+	for (i = 0; i < rejectedlist.Count(); i++) {
+		const ADVBProg& prog = rejectedlist.GetProg(i);
+		const ADVBProg  *rejprog;
+
+		if ((rejprog = oldrejectedlist.FindUUID(prog.GetUUID())) != NULL) {
+			config.printf("%s is still rejected", prog.GetDescription().str());
+			oldrejectedlist.DeleteProg(*rejprog);
+		}
+		else {
+			config.printf("%s is a newly rejected programme", prog.GetDescription().str());
+			newrejectedlist.AddProg(prog, false, false, false);
+		}
+	}
+
+	if ((newrejectedlist.Count() > 0) ||
+		(oldrejectedlist.Count() > 0)) {
 		AString cmd;
 
 		if ((cmd = config.GetConfigItem("rejectedcmd")).Valid()) {
@@ -1532,12 +1552,36 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 			AStdFile fp;
 
 			if (fp.open(filename, "w")) {
-				fp.printf("Programmes rejected %s:\n", ADateTime().DateToStr().str());
+				fp.printf("Summary of newly rejected and previously rejected programmes at %s\n", ADateTime().DateToStr().str());
 
-				for (i = 0; i < rejectedlist.Count(); i++) {
-					const ADVBProg& prog = rejectedlist.GetProg(i);
+				if (newrejectedlist.Count() > 0) {
+					fp.printf("\nProgrammes newly rejected:\n");
 
-					fp.printf("%s\n", prog.GetDescription().str());
+					for (i = 0; i < newrejectedlist.Count(); i++) {
+						const ADVBProg& prog = newrejectedlist.GetProg(i);
+
+						fp.printf("%s\n", prog.GetDescription().str());
+					}
+				}
+
+				if (oldrejectedlist.Count() > 0) {
+					fp.printf("\nProgrammes no *longer* rejected:\n");
+
+					for (i = 0; i < oldrejectedlist.Count(); i++) {
+						const ADVBProg& prog = oldrejectedlist.GetProg(i);
+
+						fp.printf("%s\n", prog.GetDescription().str());
+					}
+				}
+
+				if (rejectedlist.Count() > 0) {
+					fp.printf("\nProgrammes rejected:\n");
+
+					for (i = 0; i < rejectedlist.Count(); i++) {
+						const ADVBProg& prog = rejectedlist.GetProg(i);
+
+						fp.printf("%s\n", prog.GetDescription().str());
+					}
 				}
 
 				fp.close();
