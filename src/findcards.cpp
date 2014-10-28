@@ -31,30 +31,30 @@ void findcards(void)
 		AStdFile fp;
 
 		cmd.printf("dvbtune -c %u -f 1 2>%s", i, file.str());
+		//debug("cmd: '%s'\n", cmd.str());
 
 		remove(file);
 
-		if (system(cmd) == 0) {
-			if (fp.open(file)) {
-				AString line;
+		(void)system(cmd);
+		if (fp.open(file)) {
+			AString line;
 
-				while (line.ReadLn(fp) >= 0) {
-					int p;
+			while (line.ReadLn(fp) >= 0) {
+				int p;
+					
+				//debug("Find card %u: %s\n", i, line.str());
 
-					//config.printf("Find card %u: %s", i, line.str());
+				if ((p = line.PosNoCase(str)) >= 0) {
+					p += str.len();
+					line = line.Mid(p).RemoveWhiteSpace().DeQuotify().RemoveWhiteSpace();
 
-					if ((p = line.PosNoCase(str)) >= 0) {
-						p += str.len();
-						line = line.Mid(p).RemoveWhiteSpace().DeQuotify().RemoveWhiteSpace();
-
-						config.printf("%u: %s", i, line.str());
-						ofp.printf("%u %s\n", i, line.str());
-						break;
-					}	
-				}
-			
-				fp.close();
+					config.printf("%u: %s", i, line.str());
+					ofp.printf("%u %s\n", i, line.str());
+					break;
+				}	
 			}
+			
+			fp.close();
 		}
 	}
 

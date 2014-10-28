@@ -30,7 +30,7 @@ public:
 	AString GetRecordingsDir()	   	  		 const {return CatPath(GetBaseDir(), GetConfigItem("recdir", "recordings"));}
 	AString GetRecordingsSubDir(const AString& user) const {return user.Valid() ? GetUserConfigItem(user, "dir") : GetConfigItem("dir");}
 	AString GetRecordingsDir(const AString& user) const {return CatPath(GetRecordingsDir(), GetRecordingsSubDir(user));}
-	AString GetTempDir()              		 const {return GetConfigItem("tempdir", GetDataDir());}
+	AString GetTempDir()              		 const {return GetConfigItem("tempdir", GetBaseDir().CatPath("temp"));}
 	AString GetTempFile(const AString& name, const AString& suffix = "") const;
 	AString GetQueue()						 const {return GetConfigItem("queue", "d");}
 	AString GetFilenameTemplate()			 const {return GetConfigItem("filename", "{title}{sep}{episode}{sep}{date}{sep}{times}.mpg");}
