@@ -163,7 +163,23 @@ int main(int argc, char *argv[])
 		ADVBProgList::SchedulePatterns(ADateTime().TimeStamp(true), commit);
 	}
 
-	if (Value(vars, val, "from")) {
+	if (Value(vars, val, "parse")) {
+		ADVBProg::PATTERN pattern;
+		AString user;
+
+		Value(vars, user, "user");
+
+		ADVBProg::ParsePattern(val, pattern, user);
+		AString newpattern = ADVBProg::RemoveDuplicateTerms(pattern);
+
+		printf("{");
+		printf("\"newpattern\":\"%s\"", ADVBProg::JSONFormat(newpattern).str());
+		ADVBProg::ParsePattern(newpattern, pattern, pattern.user);
+		printf(",\"parsedpattern\":");
+		printpattern(pattern);
+		printf("}");
+	}
+	else {
 		enum {
 			DataSource_Progs = 0,
 			DataSource_Patterns,
@@ -198,6 +214,8 @@ int main(int argc, char *argv[])
 			AString errors;		// use local var to prevent global one being modified
 			ADVBProgList::ReadPatterns(patternlist, errors);
 		}
+
+		Value(vars, val, "from");
 
 		val = val.ToLower();
 
@@ -587,23 +605,6 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		printf("}");
-	}
-
-	if (Value(vars, val, "parse")) {
-		ADVBProg::PATTERN pattern;
-		AString user;
-
-		Value(vars, user, "user");
-
-		ADVBProg::ParsePattern(val, pattern, user);
-		AString newpattern = ADVBProg::RemoveDuplicateTerms(pattern);
-
-		printf("{");
-		printf("\"newpattern\":\"%s\"", ADVBProg::JSONFormat(newpattern).str());
-		ADVBProg::ParsePattern(newpattern, pattern, pattern.user);
-		printf(",\"parsedpattern\":");
-		printpattern(pattern);
 		printf("}");
 	}
 
