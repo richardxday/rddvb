@@ -610,7 +610,7 @@ function populateprogs(id)
 								(prog1.patternparsed != '')) {
 								str1 += '<table class="patternlist">';
 								str1 += '<tr><th>Status</th><th>Priority</th><th>User</th><th class="desc">Pattern</th></tr>';
-								str1 += populatepattern(prog1.patternparsed);
+								str1 += populatepattern(prog1.patternparsed, i + 1);
 								str1 += '</table>';
 							}
 						}
@@ -998,11 +998,12 @@ function getvalidorflags(term_orflag)
 	return str;
 }
 
-function populatepattern(pattern)
+function populatepattern(pattern, index)
 {
-	var index = patterns.length;
 	var str = '', classname = '';
 	var j, k;
+
+	if (typeof index == 'undefined') index = patterns.length;
 
 	patterns[index] = pattern;
 
@@ -1018,7 +1019,13 @@ function populatepattern(pattern)
 	else					  str += 'Disabled';
 
 	str += '</td><td>';
-	str += (pattern.pri | 0);
+	str += '<select id="pattern' + index + 'pri" onchange="patternprichanged(' + index + ')">';
+	for (j = 10; j >= -10; j--) {
+		str += '<option';
+		if (j == pattern.pri) str += ' selected';
+		str += '>' + j + '</option>';
+	}
+	str += '</select>';
 	str += '</td><td>';
 	if (typeof response.users != 'undefined') {
 		str += '<select id="pattern' + index + 'user" onchange="patternchanged(' + index + ')">';
@@ -1131,11 +1138,22 @@ function populatepatterns(id)
 	return str;
 }
 
+function patternprichanged(index)
+{
+	if (typeof patterns[index] != 'undefined') {
+		var user = patterns[index].user;
+
+		if (user == defaultuser) user = '';
+		
+		parserequest(index, user, patterns[index].pattern + " pri:=" + (document.getElementById("pattern" + index + "pri").value * 1));
+	}
+}
+
 function patternchanged(index)
 {
 	if (typeof patterns[index] != 'undefined') {
-		var updated = (( document.getElementById("pattern" + index + "pattern").value != patterns[index].pattern) ||
-					   ( document.getElementById("pattern" + index + "user").value    != patterns[index].user));
+		var updated = ((document.getElementById("pattern" + index + "pattern").value != patterns[index].pattern) ||
+					   (document.getElementById("pattern" + index + "user").value    != patterns[index].user));
 		if (updated) document.getElementById("updatepattern" + index + "link").innerHTML = "<b>Update</b>";
 		else	     document.getElementById("updatepattern" + index + "link").innerHTML = "Update";
 		displayfilter(index, -1, '');
@@ -1279,9 +1297,9 @@ function populate(id)
 	var str = '';
 
 	if (response != null) {
-		if (typeof response.patterns != 'undefined') str += populatepatterns(id);
-		if (typeof response.loglines != 'undefined') str += populatelogs(id);
-		if (typeof response.progs    != 'undefined') str += populateprogs(id);
+		if		(typeof response.patterns != 'undefined') str += populatepatterns(id);
+		else if (typeof response.loglines != 'undefined') str += populatelogs(id);
+		else if (typeof response.progs    != 'undefined') str += populateprogs(id);
 
 		populateusers();
 	}
@@ -1310,7 +1328,6 @@ function dvbrequest(filter, postdata)
 	filter.page     = filter.page     | 0;
 	filter.pagesize = filter.pagesize | 0;
 
-
 	if (((filterlist.current == null) ||
 		 (typeof postdata    != 'undefined') ||
 		 ((typeof filter.fetch != 'undefined') && filter.fetch) ||
@@ -1321,7 +1338,12 @@ function dvbrequest(filter, postdata)
 		 (filter.pagesize    != filterlist.current.pagesize)) &&
 		!((typeof filter.fetch != 'undefined') && !filter.fetch)) {
 		document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
-		
+
+		if ((filterlist.current != null) &&
+			((filter.from        != filterlist.current.from) ||
+			 (filter.titlefilter != filterlist.current.titlefilter) ||
+			 (filter.timefilter  != filterlist.current.timefilter))) filter.page = 0;
+
 		if ((xmlhttp != null) && (xmlhttp.readState < 4)) {
 			xmlhttp.abort();
 		}
@@ -1412,6 +1434,41 @@ function dvbrequest(filter, postdata)
 
 		updatefilterlist(filter);
 	}
+}
+
+function parserequest(index, user, pattern)
+{
+	if ((xmlhttp != null) && (xmlhttp.readState < 4)) {
+		xmlhttp.abort();
+	}
+
+	if (window.XMLHttpRequest) {
+		// code for IE7+, Firefox, Chrome, Opera, Safari
+		xmlhttp = new XMLHttpRequest();
+		
+		xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == 4) {
+				if (xmlhttp.status == 200) {
+					var parseresp = JSON.parse(xmlhttp.responseText);
+
+					if (typeof parseresp.newpattern != 'undefined') {
+						var newpattern = parseresp.parsedpattern;
+
+						document.getElementById("pattern" + index + "pattern").value = newpattern.pattern;
+						patternchanged(index);
+					}
+				}
+				else document.getElementById("status").innerHTML = "<h1>Server returned error " + xmlhttp.status + "</h1>";
+			}
+		}
+	}
+	
+	xmlhttp.open("POST", "dvb.php", true);
+
+	var data = "";
+	data += "parse=" + pattern + "\n";
+	data += "user="  + user    + "\n";
+	xmlhttp.send(data);
 }
 
 function getfullfilter(filter)

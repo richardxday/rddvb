@@ -1466,7 +1466,8 @@ AString ADVBProg::GetPatternDefinitionsJSON()
 	AString str;
 	uint_t i, j;
 
-	str.printf("\"patterndefs\":{\"fields\":[");
+	str.printf("\"patterndefs\":");
+	str.printf("{\"fields\":[");
 	
 	for (i = 0; i < NUMBEROF(fields); i++) {
 		const FIELD& field = fields[i];
@@ -1493,7 +1494,18 @@ AString ADVBProg::GetPatternDefinitionsJSON()
 		str.printf("]}");
 	}
 
-	str.printf("],\"operators\":[");
+	str.printf("]");
+	str.printf(",\"fieldnames\":{");
+	
+	for (i = 0; i < NUMBEROF(fields); i++) {
+		const FIELD& field = fields[i];
+
+		if (i) str.printf(",");
+		str.printf("\"%s\":%u", JSONFormat(field.name).str(), i);
+	}
+
+	str.printf("}");
+	str.printf(",\"operators\":[");
 
 	for (j = 0; j < NUMBEROF(operators); j++) {
 		const OPERATOR& oper = operators[j];
@@ -1505,7 +1517,8 @@ AString ADVBProg::GetPatternDefinitionsJSON()
 		str.printf(",\"assign\":%s}",  oper.assign ? "true" : "false");
 	}
 
-	str.printf("],\"orflags\":[");
+	str.printf("]");
+	str.printf(",\"orflags\":[");
 
 	for (j = 0; j < 2; j++) {
 		if (j) str.printf(",");
@@ -1536,8 +1549,6 @@ bool ADVBProg::ParsePattern(ADataList& patternlist, const AString& line, AString
 	PATTERN *pattern;
 	bool    success = false;
 
-	StaticInit();
-
 	patternlist.SetDestructor(&DeletePattern);
 
 	if ((pattern = new PATTERN) != NULL) {
@@ -1564,6 +1575,8 @@ AString ADVBProg::ParsePattern(const AString& line, PATTERN& pattern, const AStr
 	AString&   errors = pattern.errors;
 	TERM   *term;
 	uint_t i;
+
+	StaticInit();
 
 	pattern.exclude    = false;
 	pattern.enabled    = true;
@@ -1598,9 +1611,9 @@ AString ADVBProg::ParsePattern(const AString& line, PATTERN& pattern, const AStr
 				break;
 			}
 
-			uint_t fs = i++;
+			uint_t fieldstart = i++;
 			while (IsSymbolChar(line[i])) i++;
-			AString field = line.Mid(fs, i - fs).ToLower();
+			AString field = line.Mid(fieldstart, i - fieldstart).ToLower();
 
 			while (IsWhiteSpace(line[i])) i++;
 
@@ -1611,7 +1624,7 @@ AString ADVBProg::ParsePattern(const AString& line, PATTERN& pattern, const AStr
 
 			const FIELD *fieldptr = (const FIELD *)fieldhash.Read(field);
 			if (!fieldptr) {
-				errors.printf("'%s' (at %u) is not a valid search field (term %u), valid search fields are: ", field.str(), fs, list.Count() + 1);
+				errors.printf("'%s' (at %u) is not a valid search field (term %u), valid search fields are: ", field.str(), fieldstart, list.Count() + 1);
 				for (i = 0; i < NUMBEROF(fields); i++) {
 					if (i) errors.printf(", ");
 					errors.printf("'%s'", fields[i].name);
@@ -1619,7 +1632,7 @@ AString ADVBProg::ParsePattern(const AString& line, PATTERN& pattern, const AStr
 				break;
 			}
 
-			fs = i;
+			uint_t opstart = i;
 
 			const char *str = line.str() + i;
 			bool isassign = fieldptr->assignable;
@@ -1674,7 +1687,7 @@ AString ADVBProg::ParsePattern(const AString& line, PATTERN& pattern, const AStr
 					implicitvalue = true;
 				}
 				else {
-					errors.printf("Symbols at %u do not represent a legal operator (term %u), legal operators for the field '%s' are: ", fs, list.Count() + 1, field.str());
+					errors.printf("Symbols at %u do not represent a legal operator (term %u), legal operators for the field '%s' are: ", opstart, list.Count() + 1, field.str());
 
 					bool flag = false;
 					for (j = 0; j < NUMBEROF(operators); j++) {
@@ -1694,13 +1707,13 @@ AString ADVBProg::ParsePattern(const AString& line, PATTERN& pattern, const AStr
 				char quote = 0;
 				if (IsQuoteChar(line[i])) quote = line[i++];
 
-				uint_t vs = i;
+				uint_t valuestart = i;
 				while (line[i] && ((!quote && !IsWhiteSpace(line[i])) || (quote && (line[i] != quote)))) {
 					if (line[i] == '\\') i++;
 					i++;
 				}
 
-				value = line.Mid(vs, i - vs).DeEscapify();
+				value = line.Mid(valuestart, i - valuestart).DeEscapify();
 
 				if (quote && (line[i] == quote)) i++;
 
@@ -1722,6 +1735,8 @@ AString ADVBProg::ParsePattern(const AString& line, PATTERN& pattern, const AStr
 			}
 
 			if ((term = new TERM) != NULL) {
+				term->data.start   = fieldstart;
+				term->data.length  = i - fieldstart;
 				term->data.field   = fieldptr - fields;
 				term->data.opcode  = opcode;
 				term->data.opindex = opindex;
@@ -1833,12 +1848,12 @@ AString ADVBProg::ParsePattern(const AString& line, PATTERN& pattern, const AStr
 								term->value.prog = prog;
 							}
 							else {
-								errors.printf("Failed to decode base64 programme ('%s') for %s at %u (term %u)", value.str(), field.str(), fs, list.Count() + 1);
+								errors.printf("Failed to decode base64 programme ('%s') for %s at %u (term %u)", value.str(), field.str(), fieldstart, list.Count() + 1);
 								delete prog;
 							}
 						}
 						else {
-							errors.printf("Failed to allocate memory for base64 programme ('%s') for %s at %u (term %u)", value.str(), field.str(), fs, list.Count() + 1);
+							errors.printf("Failed to allocate memory for base64 programme ('%s') for %s at %u (term %u)", value.str(), field.str(), fieldstart, list.Count() + 1);
 						}
 						break;
 					}
@@ -2336,6 +2351,46 @@ void ADVBProg::AssignValues(const PATTERN& pattern)
 	}
 
 	UpdateValues(pattern);
+}
+
+AString ADVBProg::RemoveDuplicateTerms(PATTERN& pattern)
+{
+	AString newpattern;
+	uint_t  i, j;
+
+	for (i = 0; i < pattern.list.Count();) {
+		for (j = i + 1; j < pattern.list.Count(); j++) {
+			const TERM&     term1 = *(const TERM *)pattern.list[i];
+			const TERM&     term2 = *(const TERM *)pattern.list[j];
+			const TERMDATA& data1 = term1.data;
+			const TERMDATA& data2 = term2.data;
+
+			if ((data1.field  == data2.field) &&
+				(data1.opcode == data2.opcode) &&
+				(data2.opcode == Operator_Assign)) break;
+		}
+
+		if (j < pattern.list.Count()) {
+			delete (TERM *)pattern.list[i];
+			pattern.list.RemoveIndex(i);
+		}
+		else i++;
+	}	
+
+	for (i = 0; i < pattern.list.Count(); i++) {
+		const TERM&     term = *(const TERM *)pattern.list[i];
+		const TERMDATA& data = term.data;
+
+		if (newpattern.Valid()) newpattern.printf(" ");
+		newpattern.printf("%s%s%s%s%s",
+						  term.field->name,
+						  operators[data.opindex].str,
+						  (data.value.Pos(" ") >= 0) ? "\"" : "",
+						  data.value.str(),
+						  (data.value.Pos(" ") >= 0) ? "\"" : "");
+	}
+
+	return newpattern;
 }
 
 void ADVBProg::UpdateValues(const PATTERN& pattern)
