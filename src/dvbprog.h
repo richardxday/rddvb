@@ -282,6 +282,8 @@ public:
 	} PATTERN;
 
 	typedef struct {
+		uint_t    start;
+		uint_t    length;
 		uint8_t   field;
 		uint8_t   opcode;
 		uint8_t   opindex;
@@ -297,6 +299,7 @@ public:
 	static uint_t  ParsePatterns(ADataList& patternlist, const AString& patterns, AString& errors, const AString& sep = "\n", const AString& user = "");
 	static bool    ParsePattern(ADataList& patternlist, const AString& line, AString& errors, const AString& user = "");
 	static AString ParsePattern(const AString& line, PATTERN& pattern, const AString& user = "");
+	static AString RemoveDuplicateTerms(PATTERN& pattern);
 
 	static void DeletePattern(uptr_t item, void *context) {
 		UNUSED(context);
