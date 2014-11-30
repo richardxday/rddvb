@@ -89,6 +89,11 @@ function loadpage()
 	dvbrequest(filter);
 }
 
+function getusername(user)
+{
+	return (user == '') ? defaultuser : user;
+}
+
 function limitstring(str)
 {
 	if (str.length > 40) return str.substring(0, 40) + '...';
@@ -252,15 +257,12 @@ function populateusers()
 
 		for (i = 0; i < response.users.length; i++) {
 			var user     = response.users[i];
-			var username = user.user;
+			var username = getusername(user.user);
 			var level    = user.level + 0;
 
 			if (level > 2) level = 2;
 
-			str += '<tr class="diskspacelevel' + level + '"><td>';
-			if (username != '') str += username;
-			else				str += defaultuser;
-			str += '</td><td style="text-align:left;">' + user.fullfolder + '</td>';
+			str += '<tr class="diskspacelevel' + level + '"><td>' + username + '</td><td style="text-align:left;">' + user.fullfolder + '</td>';
 
 			if (typeof user.freespace != 'undefined') {
 				str += '<td>' + user.freespace + '</td>';
@@ -287,15 +289,12 @@ function populateusers()
 
 			for (i = 0; i < response.diskspace.length; i++) {
 				var diskspace  = response.diskspace[i];
-				var username   = diskspace.user;
+				var username   = getusername(diskspace.user);
 				var level      = diskspace.level + 0;
 
 				if (level > 2) level = 2;
 
-				str += '<tr class="diskspacelevel' + level + '"><td>';
-				if (username != '') str += username;
-				else				str += defaultuser;
-				str += '</td><td style="text-align:left;">' + diskspace.fullfolder + '</td>';
+				str += '<tr class="diskspacelevel' + level + '"><td>' + username + '</td><td style="text-align:left;">' + diskspace.fullfolder + '</td>';
 
 				if (typeof diskspace.freespace != 'undefined') {
 					str += '<td>' + diskspace.freespace;
@@ -403,7 +402,7 @@ function populateprogs(id)
 
 					str += '</td><td>';
 					if (typeof prog1.user != 'undefined') {
-						str += find('user', prog1.user, 'Seach for programmes assigned to this user');
+						str += find('user', getusername(prog1.user), 'Seach for programmes assigned to this user');
 					}
 					else str += '&nbsp;';
 
@@ -507,12 +506,9 @@ function populateprogs(id)
 							if (typeof response.users != 'undefined') {
 								str1 += '<select class="addrecord" id="addrec' + i + 'user">';
 								for (j = 0; j < response.users.length; j++) {
-									var user = response.users[j].user;
+									var user = getusername(response.users[j].user);
 
-									str1 += '<option>';
-									if (user != '') str1 += user;
-									else			str1 += defaultuser;
-									str1 += '</option>';
+									str1 += '<option>' + user + '</option>';
 								}
 								str1 += '</select>';
 							}
@@ -594,7 +590,7 @@ function populateprogs(id)
 
 							str1 += 'Found using filter \'' + limitstring(prog1.pattern) + '\'';
 							if (typeof prog1.user != 'undefined') {
-								str1 += ' by user \'' + prog1.user + '\'';
+								str1 += ' by user \'' + getusername(prog1.user) + '\'';
 							}
 							if (typeof prog1.pri != 'undefined') {
 								str1 += ', priority ' + prog1.pri;
@@ -1507,7 +1503,7 @@ function generatefilterdescription(filter)
 	if (fullfilter != '') {
 		str += '\nFiltered using \'' + fullfilter + '\'';
 	}
-	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined')) {
+	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined') && (filter.expanded < response.progs.length)) {
 		var prog = response.progs[filter.expanded];
 		title = prog.title;
 
