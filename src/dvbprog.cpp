@@ -567,30 +567,11 @@ AString ADVBProg::JSONFormat(const AString& str)
 	return str.SearchAndReplace("/", "\\/").SearchAndReplace("\"", "\\\"").SearchAndReplace("\n", "\\n");
 }
 
-AString ADVBProg::JSONDateFormat(uint64_t dt, const AString& type)
+ulong_t ADVBProg::JSONTime(uint64_t dt)
 {
 	// calculate number of milliseconds between midnight 1-jan-1970 to midnight 1-jan-1980 (1972 and 1976 were leap years)
-	static const uint64_t offset = (10ULL * 365ULL + 2) * 24ULL * 3600ULL * 1000ULL;
-	ADateTime dto = ADateTime(dt).UTCToLocal();
-	AString   str;
-
-	str.printf("\"%s\":\"%s\"",             type.str(), dto.ToTimeStamp(ADateTime::TIMESTAMP_FORMAT_FULL).str());
-	str.printf(",\"%soffset\":%" FMT64 "u", type.str(), dt + offset);
-	str.printf(",\"%stime\":\"%s\"",     	type.str(), dto.DateFormat("%h:%m").str());
-	str.printf(",\"%sdate\":\"%s\"",     	type.str(), dto.DateFormat("%d %D-%N-%Y").str());
-
-	return str;
-}
-
-AString ADVBProg::JSONStartStopFormat(uint64_t start, uint64_t stop, const AString& type)
-{
-	AString str;
-
-	str.printf("%s",  JSONDateFormat(start, type + "start").str());
-	str.printf(",%s", JSONDateFormat(stop,  type + "stop").str());
-	str.printf(",\"%slength\":%" FMT64 "u", type.str(), (stop - start) / 1000);
-
-	return str;
+	static const uint64_t offset = ADateTime::DaysSince1970 * 24ULL * 3600ULL * 1000ULL;
+	return (ulong_t)(dt + offset);
 }
 
 AString ADVBProg::ExportToJSON(bool includebase64) const
@@ -598,12 +579,15 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	AString str;
 	const char *p;
 
-	str.printf("%s", JSONStartStopFormat(data->start, data->stop).str());
+	str.printf("\"start\":%lu", JSONTime(data->start));
+	str.printf(",\"stop\":%lu", JSONTime(data->stop));
 	if (data->recstart || data->recstop) {
-		str.printf(",%s", JSONStartStopFormat(data->recstart, data->recstop, "rec").str());
+		str.printf(",\"recstart\":%lu", JSONTime(data->recstart));
+		str.printf(",\"recstop\":%lu", JSONTime(data->recstop));
 	}
 	if (data->actstart || data->actstop) {
-		str.printf(",%s", JSONStartStopFormat(data->actstart, data->actstop, "act").str());
+		str.printf(",\"actstart\":%lu", JSONTime(data->actstart));
+		str.printf(",\"actstop\":%lu", JSONTime(data->actstop));
 	}
 	str.printf(",\"channel\":\"%s\"", JSONFormat(GetString(data->strings.channel)).str());
 	str.printf(",\"basechannel\":\"%s\"", JSONFormat(GetString(data->strings.basechannel)).str());

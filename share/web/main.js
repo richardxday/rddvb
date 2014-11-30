@@ -1,6 +1,8 @@
 var defaultuser = 'default';
 var defaulttimefilter = 'stop>=yesterday,0:0:0';
 
+var daynames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+var monthnames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 var response = null;
 var patterns = [];
 var editingpattern = -1;
@@ -200,6 +202,7 @@ function gotopage()
 
 function calctime(length)
 {
+	length = ((length + 999) / 1000) | 0;
 	return ((length / 60) | 0) + 'm ' + ((length % 60) | 0) + 's';
 }
 
@@ -224,9 +227,9 @@ function addtimesdata(prog)
 {
 	var str = '';
 
-	if (typeof prog.actstarttime != 'undefined') {
+	if (typeof prog.actstart != 'undefined') {
 		if (str != '') str += '<br><br>';
-		str += 'Recorded as \'' + prog.filename + '\' (' + prog.actstartdate + ' ' + prog.actstarttime + ' - ' + prog.actstoptime + ': ' + calctime(prog.actlength) + ')';
+		str += 'Recorded as \'' + prog.filename + '\' (' + prog.actstartdate + ' ' + prog.actstarttime + ' - ' + prog.actstoptime + ': ' + calctime(prog.actstop - prog.actstart) + ')';
 		if (typeof prog.filesize != 'undefined') str += ' filesize ' + ((prog.filesize / (1024 * 1024)) | 0) + 'MB';
 
 		str += addcarddetails(prog);
@@ -236,9 +239,9 @@ function addtimesdata(prog)
 			str += ' Programme <b>' + (prog.exists ? 'Available' : 'Unavailable') + '</b>.';
 		}
 	}
-	else if (typeof prog.recstarttime != 'undefined') {
+	else if (typeof prog.recstart != 'undefined') {
 		if (str != '') str += '<br><br>';
-		str += 'To be recorded as \'' + prog.filename + '\' (' + prog.recstartdate + ' ' + prog.recstarttime + ' - ' + prog.recstoptime + ': ' + calctime(prog.reclength) + ')';
+		str += 'To be recorded as \'' + prog.filename + '\' (' + prog.recstartdate + ' ' + prog.recstarttime + ' - ' + prog.recstoptime + ': ' + calctime(prog.recstop - prog.recstart) + ')';
 
 		str += addcarddetails(prog);
 		str += '.';
@@ -326,6 +329,27 @@ function strpad(num, len)
 	return ('0000' + numstr).slice(-Math.max(len, numstr.length));
 }
 
+function getdatestring(datems)
+{
+	var date = new Date(datems);
+	return daynames[date.getDay()] + ' ' + date.getDate() + '-' + monthnames[date.getMonth()] + '-' + date.getFullYear();
+}
+
+function populatedates(prog)
+{
+	prog.starttime    = new Date(prog.start).toLocaleTimeString();
+	prog.stoptime     = new Date(prog.stop).toLocaleTimeString();
+	prog.startdate    = getdatestring(prog.start);
+
+	prog.recstarttime = new Date(prog.recstart).toLocaleTimeString();
+	prog.recstoptime  = new Date(prog.recstop).toLocaleTimeString();
+	prog.recstartdate = getdatestring(prog.recstart);
+
+	prog.actstarttime = new Date(prog.actstart).toLocaleTimeString();
+	prog.actstoptime  = new Date(prog.actstop).toLocaleTimeString();
+	prog.actstartdate = getdatestring(prog.actstart);
+}
+
 function populateprogs(id)
 {
 	var astr = '';
@@ -347,6 +371,14 @@ function populateprogs(id)
 			patterns[0] = searchpattern;
 
 			for (i = 0; i < response.progs.length; i++) {
+				if (typeof response.progs[i].starttime == 'undefined') {
+					populatedates(response.progs[i]);
+
+					if (typeof response.progs[i].scheduled != 'undefined') populatedates(response.progs[i].scheduled);
+					if (typeof response.progs[i].recorded  != 'undefined') populatedates(response.progs[i].recorded);
+					if (typeof response.progs[i].rejected  != 'undefined') populatedates(response.progs[i].rejected);
+				}
+
 				var prog      = response.progs[i];
 				var selected  = (i == id);
 
@@ -370,7 +402,7 @@ function populateprogs(id)
 					str += '<td>';
 					str += find('start', prog.startdate, 'Search for programmes on this day');
 					str += '</td><td>';
-					str += findfilter('stop>"' + prog.starttime + '" start<"' + prog.stoptime + '"', prog.starttime + ' - ' + prog.stoptime, 'Search for programmes during these times');
+					str += findfilter('stop>"' + (new Date(prog.start)).toISOString() + '" start<"' + (new Date(prog.stop)).toISOString() + '"', prog.starttime + ' - ' + prog.stoptime, 'Search for programmes during these times');
 					str += '</td><td>';
 					str += find('channel', prog.channel, 'Seach for programmes on this channel');
 
@@ -653,19 +685,19 @@ function populateprogs(id)
 						}
 						str1 += '<tr><td>Clashes</td><td>';
 						str1 += findfromfilter('Listings',
-											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + prog.start + '" ' + 'start<"' + prog.stop + '"',
+											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + (new Date(prog.start)).toISOString() + '" ' + 'start<"' + (new Date(prog.stop)).toISOString() + '"',
 											   '',
 											   'Listings',
 											   'Search for clashes in listings with this programme');
 						str1 += '</td><td>';
 						str1 += findfromfilter('Combined',
-											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + prog.start + '" ' + 'start<"' + prog.stop + '"',
+											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + (new Date(prog.start)).toISOString() + '" ' + 'start<"' + (new Date(prog.stop)).toISOString() + '"',
 											   '',
 											   'Combined',
 											   'Search for clashes in scheduled/recorded programmes with this programme');
 						str1 += '</td><td>';
 						str1 += findfromfilter('Requested',
-											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + prog.start + '" ' + 'start<"' + prog.stop + '"',
+											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + (new Date(prog.start)).toISOString() + '" ' + 'start<"' + (new Date(prog.stop)).toISOString() + '"',
 											   '',
 											   'Requested',
 											   'Search for clashes in requested programmes with this programme');
@@ -685,14 +717,14 @@ function populateprogs(id)
 				}
 
 				var reltimestr = '';
-				if (typeof prog.startoffset != 'undefined') {
+				if (typeof prog.start != 'undefined') {
 					var dt = new Date();
-					var offset = dt.getTime() - prog.startoffset;
+					var offset = dt.getTime() - prog.start;
 					var type = 'Start';
 					var str, str1 = '', str2 = '';
 
 					if (offset >= 0) {
-						offset = dt.getTime() - prog.stopoffset;
+						offset = dt.getTime() - prog.stop;
 						type = 'End';
 					}
 
