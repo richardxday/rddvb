@@ -325,28 +325,28 @@ function populateusers()
 
 function strpad(num, len)
 {
-	var numstr = num + '';
+	var numstr = num.toString();
 	return ('0000' + numstr).slice(-Math.max(len, numstr.length));
 }
 
 function getdatestring(datems)
 {
 	var date = new Date(datems);
-	return daynames[date.getDay()] + ' ' + date.getDate() + '-' + monthnames[date.getMonth()] + '-' + date.getFullYear();
+	return daynames[date.getDay()] + ' ' + strpad(date.getDate(), 2) + '-' + monthnames[date.getMonth()] + '-' + date.getFullYear();
 }
 
 function populatedates(prog)
 {
-	prog.starttime    = new Date(prog.start).toLocaleTimeString();
-	prog.stoptime     = new Date(prog.stop).toLocaleTimeString();
+	prog.starttime    = new Date(prog.start).toTimeString().substr(0, 5);
+	prog.stoptime     = new Date(prog.stop).toTimeString().substr(0, 5);
 	prog.startdate    = getdatestring(prog.start);
 
-	prog.recstarttime = new Date(prog.recstart).toLocaleTimeString();
-	prog.recstoptime  = new Date(prog.recstop).toLocaleTimeString();
+	prog.recstarttime = new Date(prog.recstart).toTimeString().substr(0, 5);
+	prog.recstoptime  = new Date(prog.recstop).toTimeString().substr(0, 5);
 	prog.recstartdate = getdatestring(prog.recstart);
 
-	prog.actstarttime = new Date(prog.actstart).toLocaleTimeString();
-	prog.actstoptime  = new Date(prog.actstop).toLocaleTimeString();
+	prog.actstarttime = new Date(prog.actstart).toTimeString().substr(0, 5);
+	prog.actstoptime  = new Date(prog.actstop).toTimeString().substr(0, 5);
 	prog.actstartdate = getdatestring(prog.actstart);
 }
 
