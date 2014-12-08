@@ -1227,11 +1227,11 @@ int ADVBProgList::SortPatterns(uptr_t item1, uptr_t item2, void *context)
 
 	UNUSED(context);
 
-	//if (pat1.pri < pat2.pri) return  1;
-	//if (pat1.pri > pat2.pri) return -1;
+	if (pat1.pri < pat2.pri) return  1;
+	if (pat1.pri > pat2.pri) return -1;
 	
-	//if (!pat1.enabled &&  pat2.enabled) return 1;
-	//if ( pat1.enabled && !pat2.enabled) return -1;
+	if (!pat1.enabled &&  pat2.enabled) return 1;
+	if ( pat1.enabled && !pat2.enabled) return -1;
 
 	if ((res = stricmp(pat1.user, pat2.user)) != 0) return res;
 	if ((res = stricmp(pat1.pattern.str() + pat1dis,
