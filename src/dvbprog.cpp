@@ -18,7 +18,7 @@
 
 int  ADVBProg::priscale     = 2;
 int  ADVBProg::repeatsscale = -1;
-int  ADVBProg::urgentscale  = 100;
+int  ADVBProg::urgentscale  = 0;
 bool ADVBProg::debugsameprogramme = false;
 
 AHash ADVBProg::fieldhash;
@@ -1352,11 +1352,15 @@ int ADVBProg::SortListByOverlaps(uptr_t item1, uptr_t item2, void *context)
 	int res = 0;
 
 	UNUSED(context);
-
-	if		(prog1.overlaps   < prog2.overlaps)   res = -1;
-	else if (prog1.overlaps   > prog2.overlaps)   res =  1;
+	
+	if      ( prog1.IsUrgent() && !prog2.IsUrgent()) res = -1;
+	else if (!prog1.IsUrgent() &&  prog2.IsUrgent()) res =  1;
+	else if	(!prog1.IsUrgent() && (prog1.overlaps < prog2.overlaps)) res = -1;
+	else if (!prog1.IsUrgent() && (prog1.overlaps > prog2.overlaps)) res =  1;
 	else if	(prog1.GetStart() < prog2.GetStart()) res = -1;
 	else if (prog1.GetStart() > prog2.GetStart()) res =  1;
+	else if	(prog1.IsUrgent() && (prog1.overlaps  < prog2.overlaps)) res = -1;
+	else if (prog1.IsUrgent() && (prog1.overlaps  > prog2.overlaps)) res =  1;
 	else res = CompareNoCase(prog1.GetQuickDescription(), prog2.GetQuickDescription());
 	
 	return res;
