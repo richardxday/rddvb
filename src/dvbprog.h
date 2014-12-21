@@ -322,6 +322,7 @@ public:
 
 	static int priscale;
 	static int repeatsscale;
+	static int urgentscale;
 
 	static bool debugsameprogramme;
 
