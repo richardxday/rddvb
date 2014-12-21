@@ -18,6 +18,7 @@
 
 int  ADVBProg::priscale     = 2;
 int  ADVBProg::repeatsscale = -1;
+int  ADVBProg::urgentscale  = 100;
 bool ADVBProg::debugsameprogramme = false;
 
 AHash ADVBProg::fieldhash;
@@ -1326,6 +1327,7 @@ void ADVBProg::AddToList(ADataList *list)
 void ADVBProg::SetPriorityScore()
 {
 	priority_score = priscale * data->pri;
+	if (IsUrgent()) priority_score += urgentscale;
 	if (list) priority_score += (list->Count() - 1) * repeatsscale;
 }
 
