@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 		requestedlist.ReadFromFile(config.GetRequestedFile());
 		rejectedlist.ReadFromFile(config.GetRejectedFile());
 
-		runninglist.ReadFromJobList(true);
+		runninglist.ReadFromFile(config.GetRecordingFile());
 
 		combinedlist.ReadFromFile(config.GetCombinedFile());
 		combinedlist.CreateHash();

@@ -1779,8 +1779,14 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	config.logit("--------------------------------------------------------------------------------");
 
 	// read running job(s)
-	runninglist.ReadFromJobQueue('=');
-
+	if (runninglist.ReadFromFile(config.GetRecordingFile())) {
+		config.logit("Found %u running programmes:", runninglist.Count());
+		for (i = 0; i < runninglist.Count(); i++) {
+			config.logit("%c %s", (runninglist.GetProg(i).GetDVBCard() == card) ? '*' : ' ', runninglist.GetProg(i).GetDescription(1).str());
+		}
+		config.logit("--------------------------------------------------------------------------------");
+	}
+	
 	// first, remove programmes that do not have a valid DVB channel
 	// then, remove any that have already finished
 	// then, remove any that overlap with any running job(s)
@@ -1802,6 +1808,11 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 		}
 		else if ((otherprog = runninglist.FindRecordOverlap(prog)) != NULL) {
 			config.logit("'%s' overlaps running job ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
+
+			DeleteProg(i);
+		}
+		else if (!prog.AllowRepeats() && ((otherprog = runninglist.FindSimilar(prog)) != NULL)) {
+			config.logit("'%s' is being recorded now ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
 
 			DeleteProg(i);
 		}
@@ -2004,6 +2015,17 @@ void ADVBProgList::CreateCombinedList()
 	if (!list.ReadFromBinaryFile(config.GetRecordedFile(), false, false, true)) {
 		config.logit("Failed to read recorded programme list for generating combined list");
 	}
+
+	list2.DeleteAll();
+	if (list2.ReadFromBinaryFile(config.GetRecordingFile())) {
+		for (i = 0; i < list2.Count(); i++) {
+			const ADVBProg& prog = list2.GetProg(i);
+			if (!list.FindUUID(prog)) {
+				list.AddProg(prog, false);
+			}
+		}
+	}
+	else config.logit("Failed to read running programme list for generating combined list");
 
 	list2.DeleteAll();
 	if (list2.ReadFromBinaryFile(config.GetScheduledFile())) {
