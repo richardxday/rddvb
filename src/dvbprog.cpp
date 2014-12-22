@@ -2400,14 +2400,15 @@ void ADVBProg::UpdateValues(const PATTERN& pattern)
 
 void ADVBProg::Record()
 {
-	const ADVBConfig& config = ADVBConfig::Get();
-
 	if (Valid()) {
+		const ADVBConfig& config = ADVBConfig::Get();
 		AString  oldaddlogfile = config.GetAdditionalLogFile();
 		AString  addlogfile    = config.GetLogDir().CatPath(AString(GetFilename()).FilePart().Prefix() + ".txt");
 		uint64_t dt, st, et;
 		uint_t   nsecs, nmins;
 		bool     record = true, deladdlogfile = true;
+
+		ADVBProgList::CreateCombinedList();
 
 		config.printf("------------------------------------------------------------------------------------------------------------------------");
 
@@ -2547,7 +2548,17 @@ void ADVBProg::Record()
 				}
 			}
 			else {
+				AString listfilename = config.GetRecordingFile();
+
 				config.printf("Running '%s'", cmd.str());
+
+				{
+					ADVBLock lock("schedule");
+					ADVBProgList list;
+					list.ReadFromFile(listfilename);
+					list.AddProg(*this, false, false, true);
+					list.WriteToFile(listfilename);
+				}
 
 				config.addlogit("\n");
 				config.addlogit("--------------------------------------------------------------------------------\n");
@@ -2556,6 +2567,14 @@ void ADVBProg::Record()
 				config.writetorecordlog("stop %s", Base64Encode().str());
 				config.addlogit("--------------------------------------------------------------------------------\n");
 				config.addlogit("\n");
+
+				{
+					ADVBLock lock("schedule");
+					ADVBProgList list;
+					list.ReadFromFile(listfilename);
+					list.DeleteProg(*this);
+					list.WriteToFile(listfilename);
+				}
 			}
 
 			if (res == 0) {
@@ -2592,7 +2611,6 @@ void ADVBProg::Record()
 
 						{
 							ADVBLock lock("schedule");
-
 							recordedlist.ReadFromFile(filename);
 							recordedlist.AddProg(*this, false, false, true);
 							recordedlist.WriteToFile(filename);
@@ -2628,6 +2646,7 @@ void ADVBProg::Record()
 				config.addlogit("\n");
 				config.printf("Unable to start record of '%s'", GetTitleAndSubtitle().str());
 				reschedule = true;
+				OnRecordFailure();
 				deladdlogfile = false;
 			} 
 		}
@@ -2641,7 +2660,7 @@ void ADVBProg::Record()
 		if (reschedule) {
 			config.printf("Rescheduling");
 
-			ADVBProgList::SchedulePatterns();
+			ADVBProgList::SchedulePatterns(ADateTime().TimeStamp(true), true);
 		}
 		else ADVBProgList::CheckDiskSpace(true);
 
