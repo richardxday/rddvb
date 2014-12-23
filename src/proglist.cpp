@@ -710,10 +710,11 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatecombined) con
 	}
 
 	if (updatecombined) {
-		FILE_INFO combined_info, scheduled_info, recorded_info, rejected_info;
+		FILE_INFO combined_info, scheduled_info, recording_info, recorded_info, rejected_info;
 
 		if (!::GetFileInfo(config.GetCombinedFile(),  &combined_info) ||
 			(::GetFileInfo(config.GetScheduledFile(), &scheduled_info) && (scheduled_info.WriteTime > combined_info.WriteTime)) ||
+			(::GetFileInfo(config.GetRecordingFile(), &recording_info) && (recording_info.WriteTime > combined_info.WriteTime)) ||
 			(::GetFileInfo(config.GetRecordedFile(),  &recorded_info)  && (recorded_info.WriteTime  > combined_info.WriteTime)) ||
 			(::GetFileInfo(config.GetRejectedFile(),  &rejected_info)  && (rejected_info.WriteTime  > combined_info.WriteTime))) {
 			CreateCombinedList();
