@@ -844,9 +844,17 @@ AString ADVBProg::GetEpisodeString(const EPISODE& ep)
 	AString res;
 
 	if (ep.valid) {
+		AString efmt, tfmt;
+		uint_t n = 2;
+
+		if (ep.episodes >= 100)  n = 3;
+		if (ep.episodes >= 1000) n = 4;
+
+		efmt.printf("E%%0%uu", n);
+		efmt.printf("T%%0%uu", n);
 		if (ep.series)   res.printf("S%02u", ep.series);
-		if (ep.episode)  res.printf("E%02u", ep.episode);
-		if (ep.episodes) res.printf("T%02u", ep.episodes);
+		if (ep.episode)  res.printf(efmt.str(), ep.episode);
+		if (ep.episodes) res.printf(tfmt.str(), ep.episodes);
 	}
 
 	return res;

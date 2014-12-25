@@ -1089,17 +1089,19 @@ ADVBProg *ADVBProgList::FindOverlap(const ADVBProg& prog1, const ADVBProg *prog2
 
 ADVBProg *ADVBProgList::FindRecordOverlap(const ADVBProg& prog1, const ADVBProg *prog2) const
 {
+	const ADVBConfig& config = ADVBConfig::Get();
+	const uint64_t mininterrectime = (uint64_t)config.GetConfigItem("mininterrectime", config.GetDefaultInterRecTime()) * 1000ULL;
 	const uint64_t st1 = prog1.GetRecordStart();
-	const uint64_t et1 = prog1.GetRecordStop();
+	const uint64_t et1 = prog1.GetRecordStop() + mininterrectime;
 	uint_t i = 0;
-	int  p;
+	int p;
 
 	if (prog2 && ((p = proglist.Find((uptr_t)prog2)) >= 0)) i = p + 1;
 
 	while ((prog2 = (const ADVBProg *)proglist[i++]) != NULL) {
 		if (prog2 != &prog1) {
 			const uint64_t st2 = prog2->GetRecordStart();
-			const uint64_t et2 = prog2->GetRecordStop();
+			const uint64_t et2 = prog2->GetRecordStop() + mininterrectime;
 
 			if ((st2 < et1) && (et2 > st1)) break;
 		}
