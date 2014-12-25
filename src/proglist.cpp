@@ -903,12 +903,13 @@ bool ADVBProgList::DeleteProg(const ADVBProg& prog)
 
 void ADVBProgList::DeleteProgrammesBefore(const ADateTime& dt)
 {
+	uint64_t _dt = (uint64_t)dt;
 	uint_t i;
 
 	for (i = 0; i < Count();) {
 		const ADVBProg& prog = GetProg(i);
 
-		if (prog.GetStartDT().UTCToLocal() < dt) DeleteProg(i);
+		if (prog.GetStop() < _dt) DeleteProg(i);
 		else i++;
 	}
 }
@@ -1033,7 +1034,7 @@ void ADVBProgList::FindProgrammes(ADVBProgList& dest, const AString& patterns, A
 	FindProgrammes(dest, patternlist, maxmatches);
 }
 
-uint_t ADVBProgList::FindSimilar(ADVBProgList& dest, const ADVBProg& prog, uint_t index) const
+uint_t ADVBProgList::FindSimilarProgrammes(ADVBProgList& dest, const ADVBProg& prog, uint_t index) const
 {
 	uint_t i, n = 0;
 
@@ -1049,12 +1050,15 @@ uint_t ADVBProgList::FindSimilar(ADVBProgList& dest, const ADVBProg& prog, uint_
 	return n;
 }
 
-const ADVBProg *ADVBProgList::FindSimilar(const ADVBProg& prog) const
+const ADVBProg *ADVBProgList::FindSimilar(const ADVBProg& prog, const ADVBProg *startprog) const
 {
 	const ADVBProg *res = NULL;
-	uint_t i;
+	uint_t i = 0;
+	int p;
 
-	for (i = 0; i < Count(); i++) {
+	if (startprog && ((p = proglist.Find((uptr_t)startprog)) >= 0)) i = p + 1;
+
+	for (; i < Count(); i++) {
 		const ADVBProg& prog1 = GetProg(i);
 
 		if (ADVBProg::SameProgramme(prog, prog1)) {
@@ -1062,6 +1066,15 @@ const ADVBProg *ADVBProgList::FindSimilar(const ADVBProg& prog) const
 			break;
 		}
 	}
+
+	return res;
+}
+
+const ADVBProg *ADVBProgList::FindCompleteRecording(const ADVBProg& prog) const
+{
+	const ADVBProg *res = NULL;
+	
+	while (((res = FindSimilar(prog, res)) != NULL) && !res->IsRecordingComplete()) ;
 
 	return res;
 }
@@ -1624,10 +1637,11 @@ int ADVBProgList::SortDataLists(uptr_t item1, uptr_t item2, void *context)
 	return ADVBProg::CompareScore(prog1, prog2);
 }
 
-void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgList& rejectedlist)
+void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgList& rejectedlist, uint64_t starttime)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	// for each programme, attach it to a list of repeats
+	uint64_t  progstarttime = starttime + 5ULL * 60000ULL;		// prefer programmes that start 5 minutes from now
 	ADataList repeatlists;
 	uint_t i;
 
@@ -1635,7 +1649,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgLis
 	for (i = 0; i < Count(); i++) {
 		ADVBProg& prog = GetProgWritable(i);
 
-		prog.GenerateRecordData();
+		prog.GenerateRecordData(starttime);
 		prog.ClearList();
 	}
 
@@ -1649,7 +1663,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgLis
 
 			// this programme MUST be part of a new list since it isn't already part of an existing list
 			if ((list = new ADataList) != NULL) {
-				// add list to list of repeat lists
+				// dvbadd list to list of repeat lists
 				repeatlists.Add((uptr_t)list);
 
 				// add this programme to the list
@@ -1683,7 +1697,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgLis
 			prog.CountOverlaps(*this);
 		}
 
-		list.Sort(&ADVBProg::SortListByOverlaps);
+		list.Sort(&ADVBProg::SortListByOverlaps, &progstarttime);
 	}
 
 	// sort lists so that programme with fewest repeats is first
@@ -1752,8 +1766,14 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	ADVBProgList rejectedlist;
 	ADVBProgList runninglist;
 	AString  filename;
-	uint64_t lateststart = SUBZ((uint64_t)starttime, (uint64_t)config.GetLatestStart() * 60000ULL);		// set latest start of programmes to be scheduled
+	uint64_t recstarttime = (uint64_t)starttime;
+	uint64_t lateststart  = SUBZ((uint64_t)starttime, (uint64_t)config.GetLatestStart() * 60000ULL);		// set latest start of programmes to be scheduled
 	uint_t   i;
+
+	// allow at least 30s before first schedule point
+	recstarttime += 30000ULL;
+	// round up to the next minute
+	recstarttime += 60000ULL - (recstarttime % 60000ULL);
 
 	if (Count() == 0) {
 		config.printf("All programmes can be recorded!");
@@ -1819,7 +1839,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 
 			DeleteProg(i);
 		}
-		else if (!prog.AllowRepeats() && ((otherprog = recordedlist.FindSimilar(prog)) != NULL)) {
+		else if (!prog.AllowRepeats() && ((otherprog = recordedlist.FindCompleteRecording(prog)) != NULL)) {
 			config.logit("'%s' has already been recorded ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
 
 			DeleteProg(i);
@@ -1852,7 +1872,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	config.logit("--------------------------------------------------------------------------------");
 
 	ADVBProg::debugsameprogramme = true;
-	PrioritizeProgrammes(scheduledlist, rejectedlist);
+	PrioritizeProgrammes(scheduledlist, rejectedlist, recstarttime);
 	ADVBProg::debugsameprogramme = false;
 
 	if (scheduledlist.FindFirstRecordOverlap()) {
@@ -1888,8 +1908,11 @@ void ADVBProgList::SimpleSchedule()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProgList joblist, recordedlist, templist;
-	uint64_t now = (uint64_t)ADateTime().TimeStamp(true);
+	uint64_t now      = (uint64_t)ADateTime().TimeStamp(true);
+	uint64_t recstart = now;
 	uint_t i, nsucceeded = 0, nfailed = 0;
+
+	recstart += 60000ULL - (recstart % 60000ULL);
 
 	joblist.ReadFromJobList();
 	recordedlist.ReadFromFile(config.GetRecordedFile());
@@ -1911,7 +1934,7 @@ void ADVBProgList::SimpleSchedule()
 			continue;
 		}
 
-		prog.GenerateRecordData();
+		prog.GenerateRecordData(recstart);
 
 		if ((prog1 = joblist.FindRecordOverlap(prog)) != NULL) {
 			config.logit("Cannot schedule '%s', overlaps with '%s'", prog.GetDescription().str(), prog1->GetDescription().str());

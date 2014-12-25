@@ -67,6 +67,9 @@ public:
 	void		SetRecordStart(uint64_t dt)    {data->recstart = dt;}
 	void		SetRecordStop(uint64_t dt)     {data->recstop  = dt;}
 
+	sint64_t    GetPreRecordHandle()     const {return data->start - data->recstart;}
+	sint64_t    GetPostRecordHandle()    const {return data->recstop - data->stop;}
+
 	uint64_t	GetActualStart()	   	 const {return data->actstart;}
 	uint64_t	GetActualStop()		   	 const {return data->actstop;}
 	uint64_t	GetActualLength()	   	 const {return data->actstop - data->actstart;}
@@ -143,6 +146,7 @@ public:
 		Flag_scheduled,
 		Flag_radioprogramme,
 		Flag_dvbcardspecified,
+		Flag_recordingcomplete,
 
 		Flag_count,
 	};
@@ -178,6 +182,8 @@ public:
 	bool   IsRadioProgramme()	  const {return GetFlag(Flag_radioprogramme);}
 	void   SetRadioProgramme()			{SetFlag(Flag_radioprogramme);}
 	bool   IsDVBCardSpecified()	  const {return GetFlag(Flag_dvbcardspecified);}
+	bool   IsRecordingComplete()  const {return GetFlag(Flag_recordingcomplete);}
+	void   SetRecordingComplete();
 
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}
@@ -203,7 +209,7 @@ public:
 
 	AString GenerateFilename() const;
 
-	void GenerateRecordData();
+	void GenerateRecordData(uint64_t recstarttime);
 
 	bool WriteToJobQueue();
 	bool ReadFromJob(const AString& filename);

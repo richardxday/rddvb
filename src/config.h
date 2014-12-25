@@ -52,7 +52,7 @@ public:
 	AString GetSearchesFile()				 const {return CatPath(GetConfigDir(), GetConfigItem("searchesfile", "searches.txt"));}
 	AString GetRegionalChannels()            const {return GetConfigItem("regionalchannels", "bbc1.bbc.co.uk=north-west,bbc2.bbc.co.uk=north-west,itv1.itv.co.uk=granada");}
 	uint_t  GetMaxCards()				     const {return (uint_t)GetConfigItem("maxcards", "1");}
-	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "10");}
+	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "30");}
 	uint_t  GetDaysToKeep()					 const {return (uint_t)GetConfigItem("daystokeep", "7");}
 	sint_t  GetScoreThreshold()				 const {return (sint_t)GetConfigItem("scorethreshold", "100");}
 	double  GetLowSpaceWarningLimit()		 const {return (double)GetConfigItem("lowdisklimit", "10.0");}

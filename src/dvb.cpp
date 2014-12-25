@@ -94,6 +94,7 @@ int main(int argc, char *argv[])
 		printf("\t--find-series\t\t\tFind series' in programme list\n");
 		printf("\t--set-recorded-flag\t\tSet recorded flag on all programmes in recorded list\n");
 		printf("\t--check-disk-space\t\tCheck disk space for all patterns\n");
+		printf("\t--update-recording-complete\tUpdate recording complete flag in every recorded programme\n");
 	}
 	else {
 		for (i = 1; i < argc; i++) {
@@ -118,7 +119,7 @@ int main(int argc, char *argv[])
 					config.printf("Read programmes from '%s', total now %u", filename.str(), proglist.Count());
 
 					config.printf("Removing old programmes...");
-					proglist.DeleteProgrammesBefore(ADateTime(ADateTime().GetDays() - config.GetDaysToKeep(), 0));
+					proglist.DeleteProgrammesBefore(ADateTime(ADateTime().TimeStamp(true).GetDays() - config.GetDaysToKeep(), 0));
 
 					config.printf("Updating DVB channels...");
 					proglist.UpdateDVBChannels();
@@ -244,7 +245,7 @@ int main(int argc, char *argv[])
 					ADVBProgList reslist;
 					uint_t n;
 
-					if ((n = proglist.FindSimilar(reslist, proglist.GetProg(i))) != 0) {
+					if ((n = proglist.FindSimilarProgrammes(reslist, proglist.GetProg(i))) != 0) {
 						uint_t j;
 
 						printf("%s: %u repeats found:\n", proglist[i].GetDescription(verbosity).str(), n);
@@ -654,6 +655,24 @@ int main(int argc, char *argv[])
 
 				ADVBProgList::ReadPatterns(patternlist, errors);
 				ADVBProgList::CheckDiskSpace(patternlist, true);
+			}
+			else if (stricmp(argv[i], "--update-recording-complete") == 0) {
+				ADVBLock lock("schedule");
+				ADVBProgList reclist;
+
+				if (reclist.ReadFromFile(config.GetRecordedFile())) {
+					uint_t i;
+
+					for (i = 0; i < reclist.Count(); i++) {
+						ADVBProg& prog = reclist.GetProgWritable(i);
+
+						prog.SetRecordingComplete();
+					}
+
+					if (!reclist.WriteToFile(config.GetRecordedFile())) {
+						config.printf("Failed to write recorded programme list back!");
+					}
+				}
 			}
 			else {
 				fprintf(stderr, "Unrecognized option '%s'\n", argv[i]);
