@@ -69,12 +69,14 @@ public:
 	void FindProgrammes(ADVBProgList& dest, const ADataList& patternlist, uint_t maxmatches = MAX_UNSIGNED(uint_t)) const;
 	void FindProgrammes(ADVBProgList& dest, const AString& patterns, AString& errors, const AString& sep = "\n", uint_t maxmatches = MAX_UNSIGNED(uint_t)) const;
 
-	const ADVBProg *FindSimilar(const ADVBProg& prog) const;
-	uint_t FindSimilar(ADVBProgList& dest, const ADVBProg& prog, uint_t index = 0) const;
+	const ADVBProg *FindSimilar(const ADVBProg& prog, const ADVBProg *startprog = NULL) const;
+	const ADVBProg *FindCompleteRecording(const ADVBProg& prog) const;
+	
+	uint_t FindSimilarProgrammes(ADVBProgList& dest, const ADVBProg& prog, uint_t index = 0) const;
 
 	void Sort(bool reverse = false);
 
-	void PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgList& rejectedlist);
+	void PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgList& rejectedlist, uint64_t recstarttime);
 	uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));
 
 	void SimpleSchedule();

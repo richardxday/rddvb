@@ -57,12 +57,13 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 
 	DEFINE_FIELD(card, dvbcard, uint8_t, "DVB card"),
 
-	DEFINE_FLAG(repeat,    		Flag_repeat,    	 "Programme is a repeat"),
-	DEFINE_FLAG(plus1,     		Flag_plus1,     	 "Programme is on +1"),
-	DEFINE_FLAG(rejected,  		Flag_rejected,  	 "Programme rejected"),
-	DEFINE_FLAG(recorded,  		Flag_recorded,  	 "Programme recorded"),
-	DEFINE_FLAG(scheduled, 		Flag_scheduled, 	 "Programme scheduled"),
-	DEFINE_FLAG(radioprogramme, Flag_radioprogramme, "Programme is a Radio programme"),
+	DEFINE_FLAG(repeat,    		   Flag_repeat,    	 	   "Programme is a repeat"),
+	DEFINE_FLAG(plus1,     		   Flag_plus1,     	 	   "Programme is on +1"),
+	DEFINE_FLAG(rejected,  		   Flag_rejected,  	 	   "Programme rejected"),
+	DEFINE_FLAG(recorded,  		   Flag_recorded,  	 	   "Programme recorded"),
+	DEFINE_FLAG(scheduled, 		   Flag_scheduled, 	 	   "Programme scheduled"),
+	DEFINE_FLAG(radioprogramme,    Flag_radioprogramme,    "Programme is a Radio programme"),
+	DEFINE_FLAG(recordingcomplete, Flag_recordingcomplete, "Programme has recorded properly"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
 	DEFINE_FIELD(series,   	  episode.series,   uint8_t,  "Series"),
@@ -378,6 +379,14 @@ bool ADVBProg::SetUUID()
 	uuid.printf("%s:%s:%s", GetStartDT().DateFormat("%Y%M%D%h%m").str(), GetChannel(), GetTitle());
 
 	return SetString(&data->strings.uuid, uuid);
+}
+
+void ADVBProg::SetRecordingComplete()
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	uint64_t maxreclag = (uint64_t)config.GetConfigItem("maxrecordlag", "10") * 1000ULL;
+
+	SetFlag(Flag_recordingcomplete, ((data->actstart <= (data->start + maxreclag)) && (data->actstop >= MIN(data->stop, data->recstop - 1000))));
 }
 
 ADVBProg& ADVBProg::operator = (const AString& str)
@@ -851,7 +860,7 @@ AString ADVBProg::GetEpisodeString(const EPISODE& ep)
 		if (ep.episodes >= 1000) n = 4;
 
 		efmt.printf("E%%0%uu", n);
-		efmt.printf("T%%0%uu", n);
+		tfmt.printf("T%%0%uu", n);
 		if (ep.series)   res.printf("S%02u", ep.series);
 		if (ep.episode)  res.printf(efmt.str(), ep.episode);
 		if (ep.episodes) res.printf(tfmt.str(), ep.episodes);
@@ -949,18 +958,19 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 
 		if ((verbosity > 3) && data->recstart) {
 			if (str1.Valid()) str1.printf("\n\n");
-			str1.printf("Set to record %s - %s (%u mins)",
-						GetRecordStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m").str(),
-						GetRecordStopDT().UTCToLocal().DateFormat("%h:%m").str(),
-						(uint_t)((GetRecordLength() + 60000 - 1) / 60000ULL));
+			str1.printf("Set to record %s - %s (%um %us)",
+						GetRecordStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m:%s").str(),
+						GetRecordStopDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
+						(uint_t)(GetRecordLength() / 60000ULL), (uint_t)((GetRecordLength() % 60000ULL) / 1000ULL));
 
 			if (GetUser()[0]) str1.printf(" by user '%s'", GetUser());
 
 			if (data->actstart) {
-				str1.printf(", actual record time %s - %s (%u mins)",
-							GetActualStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m").str(),
-							GetActualStopDT().UTCToLocal().DateFormat("%h:%m").str(),
-							(uint_t)((GetRecordLength() + 60000 - 1) / 60000ULL));
+				str1.printf(", actual record time %s - %s (%um %us)%s",
+							GetActualStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m:%s").str(),
+							GetActualStopDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
+							(uint_t)(GetActualLength() / 60000ULL), (uint_t)((GetActualLength() % 60000ULL) / 1000ULL),
+							IsRecordingComplete() ? "" : " *not complete* ");
 			}
 		}
 
@@ -1181,13 +1191,16 @@ AString ADVBProg::GenerateFilename() const
 	return filename;
 }
 
-void ADVBProg::GenerateRecordData()
+void ADVBProg::GenerateRecordData(uint64_t recstarttime)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString filename;
 
-	if (!data->recstart) data->recstart = GetStart() - (uint64_t)data->prehandle  * 60ULL * 1000ULL;
-	if (!data->recstop)  data->recstop  = GetStop()  + (uint64_t)data->posthandle * 60ULL * 1000ULL;
+	if (!data->recstart) {
+		data->recstart = GetStart() - (uint64_t)data->prehandle  * 60000ULL;
+		data->recstart = MAX(data->recstart, recstarttime);
+	}
+	if (!data->recstop) data->recstop = GetStop() + (uint64_t)data->posthandle * 60000ULL;
 	if (!GetDVBChannel()[0]) {
 		config.logit("Warning: '%s' has no DVB channel, using main channel!\n", GetQuickDescription().str());
 	}
@@ -1355,20 +1368,27 @@ void ADVBProg::CountOverlaps(const ADVBProgList& proglist)
 
 int ADVBProg::SortListByOverlaps(uptr_t item1, uptr_t item2, void *context)
 {
-	const ADVBProg& prog1 = *(const ADVBProg *)item1;
-	const ADVBProg& prog2 = *(const ADVBProg *)item2;
+	const ADVBProg& prog1 	   = *(const ADVBProg *)item1;
+	const ADVBProg& prog2 	   = *(const ADVBProg *)item2;
+	const uint64_t& starttime  = *(const uint64_t *)context;
+	uint_t          prog1after = (prog1.GetRecordStart() >= starttime);
+	uint_t          prog2after = (prog2.GetRecordStart() >= starttime);
+	bool			prog1urg   = prog1.IsUrgent();
+	bool			prog2urg   = prog2.IsUrgent();
 	int res = 0;
-
-	UNUSED(context);
 	
-	if      ( prog1.IsUrgent() && !prog2.IsUrgent()) res = -1;
-	else if (!prog1.IsUrgent() &&  prog2.IsUrgent()) res =  1;
-	else if	(!prog1.IsUrgent() && (prog1.overlaps < prog2.overlaps)) res = -1;
-	else if (!prog1.IsUrgent() && (prog1.overlaps > prog2.overlaps)) res =  1;
-	else if	(prog1.GetStart() < prog2.GetStart()) res = -1;
-	else if (prog1.GetStart() > prog2.GetStart()) res =  1;
-	else if	(prog1.IsUrgent() && (prog1.overlaps  < prog2.overlaps)) res = -1;
-	else if (prog1.IsUrgent() && (prog1.overlaps  > prog2.overlaps)) res =  1;
+	if		( prog1urg && !prog2urg) 		  		  		   		  res = -1;
+	else if (!prog1urg &&  prog2urg) 		  		  		   		  res =  1;
+	else if	(prog1after > prog2after)								  res = -1;
+	else if	(prog1after < prog2after)								  res =  1;
+	else if	(prog1.GetPreRecordHandle() > prog2.GetPreRecordHandle()) res = -1;
+	else if (prog1.GetPreRecordHandle() < prog2.GetPreRecordHandle()) res =  1;
+	else if	(!prog1urg && (prog1.overlaps < prog2.overlaps))  		  res = -1;
+	else if (!prog1urg && (prog1.overlaps > prog2.overlaps))  		  res =  1;
+	else if	(prog1.GetStart() < prog2.GetStart()) 		   			  res = -1;
+	else if (prog1.GetStart() > prog2.GetStart()) 		   			  res =  1;
+	else if	(prog1urg && (prog1.overlaps  < prog2.overlaps))  		  res = -1;
+	else if (prog1urg && (prog1.overlaps  > prog2.overlaps))  		  res =  1;
 	else res = CompareNoCase(prog1.GetQuickDescription(), prog2.GetQuickDescription());
 	
 	return res;
@@ -2594,11 +2614,19 @@ void ADVBProg::Record()
 
 				data->actstop = dt;
 
+				SetRecordingComplete();
+
 				if (dt < (st - 15000ULL)) {
 					config.addlogit("\n");
 					config.printf("Warning: '%s' stopped %ss before programme end!", GetTitleAndSubtitle().str(), NUMSTR("", (st - dt) / 1000ULL));
 					reschedule = true;
 					addtorecorded = fake;
+				}
+
+				if (!IsRecordingComplete()) {
+					config.printf("Warning: '%s' is incomplete! (%ss missing from the start, %ss missing from the end)", GetTitleAndSubtitle().str(),
+								  NUMSTR("", MAX((sint64_t)(data->actstart - MIN(data->start, data->recstart)), 0) / 1000ULL),
+								  NUMSTR("", MAX((sint64_t)(data->recstop  - data->actstop), 0) / 1000ULL));
 				}
 
 				if (::GetFileInfo(filename, &info)) {
