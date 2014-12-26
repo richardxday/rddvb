@@ -606,6 +606,8 @@ function populateprogs(id)
 											else if (prog.series[j].episodes[k] == '-') alttext += ' (Unknown)';
 
 											str1 += findfromfilter('Combined', 'title="' + prog.title + '" ' + pattern, '', prog.series[j].episodes[k], alttext);
+											
+											if ((k % 10) == 9) str1 += ' ';
 										}
 										str1 += '</span><br>';
 									}

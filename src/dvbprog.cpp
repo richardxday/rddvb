@@ -57,13 +57,13 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 
 	DEFINE_FIELD(card, dvbcard, uint8_t, "DVB card"),
 
-	DEFINE_FLAG(repeat,    		   Flag_repeat,    	 	   "Programme is a repeat"),
-	DEFINE_FLAG(plus1,     		   Flag_plus1,     	 	   "Programme is on +1"),
-	DEFINE_FLAG(rejected,  		   Flag_rejected,  	 	   "Programme rejected"),
-	DEFINE_FLAG(recorded,  		   Flag_recorded,  	 	   "Programme recorded"),
-	DEFINE_FLAG(scheduled, 		   Flag_scheduled, 	 	   "Programme scheduled"),
-	DEFINE_FLAG(radioprogramme,    Flag_radioprogramme,    "Programme is a Radio programme"),
-	DEFINE_FLAG(recordingcomplete, Flag_recordingcomplete, "Programme has recorded properly"),
+	DEFINE_FLAG(repeat,    		   	 Flag_repeat,    	 	   "Programme is a repeat"),
+	DEFINE_FLAG(plus1,     		   	 Flag_plus1,     	 	   "Programme is on +1"),
+	DEFINE_FLAG(rejected,  		   	 Flag_rejected,  	 	   "Programme rejected"),
+	DEFINE_FLAG(recorded,  		   	 Flag_recorded,  	 	   "Programme recorded"),
+	DEFINE_FLAG(scheduled, 		   	 Flag_scheduled, 	 	   "Programme scheduled"),
+	DEFINE_FLAG(radioprogramme,    	 Flag_radioprogramme,      "Programme is a Radio programme"),
+	DEFINE_FLAG(incompleterecording, Flag_incompleterecording, "Programme recorded is incomplete"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
 	DEFINE_FIELD(series,   	  episode.series,   uint8_t,  "Series"),
@@ -386,7 +386,7 @@ void ADVBProg::SetRecordingComplete()
 	const ADVBConfig& config = ADVBConfig::Get();
 	uint64_t maxreclag = (uint64_t)config.GetConfigItem("maxrecordlag", "10") * 1000ULL;
 
-	SetFlag(Flag_recordingcomplete, ((data->actstart <= (data->start + maxreclag)) && (data->actstop >= MIN(data->stop, data->recstop - 1000))));
+	SetFlag(Flag_incompleterecording, !((data->actstart <= (data->start + maxreclag)) && (data->actstop >= MIN(data->stop, data->recstop - 1000))));
 }
 
 ADVBProg& ADVBProg::operator = (const AString& str)
@@ -673,6 +673,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	str.printf(",\"running\":%u", (uint_t)IsRunning());
 	str.printf(",\"scheduled\":%u", (uint_t)IsScheduled());
 	str.printf(",\"radioprogramme\":%u", (uint_t)IsRadioProgramme());
+	str.printf(",\"incompleterecording\":%u", (uint_t)!IsRecordingComplete());
 	str.printf("}");
 
 	if (data->filesize) str.printf(",\"filesize\":%" FMT64 "u", data->filesize);
