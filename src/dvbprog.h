@@ -146,7 +146,7 @@ public:
 		Flag_scheduled,
 		Flag_radioprogramme,
 		Flag_dvbcardspecified,
-		Flag_recordingcomplete,
+		Flag_incompleterecording,
 
 		Flag_count,
 	};
@@ -182,7 +182,7 @@ public:
 	bool   IsRadioProgramme()	  const {return GetFlag(Flag_radioprogramme);}
 	void   SetRadioProgramme()			{SetFlag(Flag_radioprogramme);}
 	bool   IsDVBCardSpecified()	  const {return GetFlag(Flag_dvbcardspecified);}
-	bool   IsRecordingComplete()  const {return GetFlag(Flag_recordingcomplete);}
+	bool   IsRecordingComplete()  const {return !GetFlag(Flag_incompleterecording);}
 	void   SetRecordingComplete();
 
 	sint_t GetPri()   	       	  const {return data->pri;}
