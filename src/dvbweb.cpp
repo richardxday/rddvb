@@ -12,6 +12,7 @@
 #include "config.h"
 #include "dvblock.h"
 #include "proglist.h"
+#include "dvbpatterns.h"
 #include "findcards.h"
 
 bool Value(const AHash& vars, AString& val, const AString& var)
@@ -141,19 +142,19 @@ int main(int argc, char *argv[])
 		Value(vars, newpattern, "newpattern");
 			
 		if (edit == "add") {
-			ADVBProg::InsertPattern(newuser, newpattern);
+			ADVBPatterns::Get().InsertPattern(newuser, newpattern);
 		}
 		else if (edit == "update") {
-			ADVBProg::UpdatePattern(user, pattern, newuser, newpattern);
+			ADVBPatterns::Get().UpdatePattern(user, pattern, newuser, newpattern);
 		}
 		else if (edit == "enable") {
-			ADVBProg::EnablePattern(user, pattern);
+			ADVBPatterns::Get().EnablePattern(user, pattern);
 		}
 		else if (edit == "disable") {
-			ADVBProg::DisablePattern(user, pattern);
+			ADVBPatterns::Get().DisablePattern(user, pattern);
 		}
 		else if (edit == "delete") {
-			ADVBProg::DeletePattern(user, pattern);
+			ADVBPatterns::Get().DeletePattern(user, pattern);
 		}
 	}
 
@@ -487,7 +488,7 @@ int main(int argc, char *argv[])
 				case DataSource_Progs:
 					printf(",\"progs\":[");
 
-					for (i = 0; (i < count) && !config.HasQuit(); i++) {
+					for (i = 0; (i < count) && !HasQuit(); i++) {
 						const ADVBProg& prog = proglist->GetProg(offset + i);
 						const ADVBProg *prog2;
 
@@ -549,7 +550,7 @@ int main(int argc, char *argv[])
 				case DataSource_Patterns:
 					printf(",\"patterns\":[");
 
-					for (i = 0; (i < count) && !config.HasQuit(); i++) {
+					for (i = 0; (i < count) && !HasQuit(); i++) {
 						const ADVBProg::PATTERN& pattern = *(const ADVBProg::PATTERN *)patternlist[offset + i];
 
 						if (i > 0) printf(",");
@@ -563,7 +564,7 @@ int main(int argc, char *argv[])
 				case DataSource_Logs:
 					printf(",\"loglines\":[");
 
-					for (i = 0; (i < count) && !config.HasQuit(); i++) {
+					for (i = 0; (i < count) && !HasQuit(); i++) {
 						if (i > 0) printf(",");
 						printf("\"%s\"", ADVBProg::JSONFormat(logdata.Line(offset + i, "\n", 0).SearchAndReplace("  ", "&nbsp;")).str());
 					}

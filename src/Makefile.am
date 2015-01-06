@@ -18,6 +18,8 @@ librddvb_@RDDVB_MAJORMINOR@_la_SOURCES = 		\
 	channellist.cpp								\
 	config.cpp									\
 	dvblock.cpp									\
+	dvbmisc.cpp									\
+	dvbpatterns.cpp								\
 	dvbprog.cpp									\
 	episodehandler.cpp							\
 	findcards.cpp								\
@@ -27,6 +29,8 @@ pkginclude_HEADERS = 							\
 	channellist.h								\
 	config.h									\
 	dvblock.h									\
+	dvbmisc.h									\
+	dvbpatterns.h								\
 	dvbprog.h									\
 	episodehandler.h							\
 	findcards.h									\

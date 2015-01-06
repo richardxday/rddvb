@@ -13,6 +13,7 @@
 #include "proglist.h"
 #include "channellist.h"
 #include "dvblock.h"
+#include "dvbpatterns.h"
 
 #define DEBUG_SAMEPROGRAMME 0
 
@@ -1171,8 +1172,8 @@ void ADVBProg::SearchAndReplace(const AString& search, const AString& replace)
 AString ADVBProg::GenerateFilename() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString dir      = ADVBConfig::CatPath(config.GetRecordingsDir(), GetDir());
-	AString templ    = ADVBConfig::CatPath(dir, config.GetFilenameTemplate());
+	AString dir      = CatPath(config.GetRecordingsDir(), GetDir());
+	AString templ    = CatPath(dir, config.GetFilenameTemplate());
 	AString date     = GetStartDT().UTCToLocal().DateFormat("%Y-%M-%D");
 	AString times    = GetStartDT().UTCToLocal().DateFormat("%h%m") + "-" + GetStopDT().UTCToLocal().DateFormat("%h%m");
 	AString filename = (templ.SearchAndReplace("{title}", ValidFilename(GetTitle()))
@@ -2525,7 +2526,7 @@ void ADVBProg::Record()
 				}
 			}
 
-			config.CreateDirectory(filename.PathPart());
+			CreateDirectory(filename.PathPart());
 
 			config.addlogit("\n");
 
@@ -2654,7 +2655,7 @@ void ADVBProg::Record()
 						}
 
 						if (IsOnceOnly()) {
-							DeletePattern(GetUser(), GetPattern());
+							ADVBPatterns::Get().DeletePattern(GetUser(), GetPattern());
 
 							reschedule = true;
 						}
@@ -2854,124 +2855,4 @@ void ADVBProg::Record(const AString& channel, uint_t mins)
 	}
 
 	config.printf("------------------------------------------------------------------------------------------------------------------------");
-}
-
-bool ADVBProg::UpdatePatternInFile(const AString& filename, const AString& pattern, const AString& newpattern)
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	AString filename1 = filename + ".new";
-	AStdFile ifp, ofp;
-	bool done = false;
-
-	if (ifp.open(filename)) {
-		if (ofp.open(filename1, "w")) {
-			AString line;
-
-			while (line.ReadLn(ifp) >= 0) {
-				if (line == pattern) {
-					if (newpattern.Valid()) ofp.printf("%s\n", newpattern.str());
-					done = true;
-
-					if (newpattern.Valid()) {
-						config.logit("Changed pattern '%s' to '%s' in file '%s'", pattern.str(), newpattern.str(), filename.str());
-					}
-					else {
-						config.logit("Deleted pattern '%s' from file '%s'", pattern.str(), filename.str());
-					}
-				}
-				else ofp.printf("%s\n", line.str());
-			}
-			ofp.close();
-		}
-
-		ifp.close();
-
-		if (done) {
-			remove(filename);
-			rename(filename1, filename);
-		}
-		else remove(filename1);
-	}
-
-	return done;
-}
-
-void ADVBProg::AddPatternToFile(const AString& filename, const AString& pattern)
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	AStdFile fp;
-	bool done = false;
-
-	if (fp.open(filename)) {
-		AString line;
-
-		while (line.ReadLn(fp) >= 0) {
-			if (line == pattern) {
-				done = true;
-				break;
-			}
-		}
-
-		fp.close();
-
-		if (!done) {
-			if (fp.open(filename, "a")) {
-				fp.printf("%s\n", pattern.str());
-				fp.close();
-
-				config.logit("Add pattern '%s' to file '%s'", pattern.str(), filename.str());
-			}
-		}
-	}
-}
-
-void ADVBProg::UpdatePattern(const AString& olduser, const AString& oldpattern, const AString& newuser, const AString& newpattern)
-{
-	ADVBLock lock("patterns");
-
-	if (newuser != olduser) {
-		DeletePattern(olduser, oldpattern);
-		if (newpattern.Valid()) {
-			InsertPattern(newuser, newpattern);
-		}
-	}
-	else if (newpattern != oldpattern) UpdatePattern(newuser, oldpattern, newpattern);
-}
-
-void ADVBProg::UpdatePattern(const AString& user, const AString& pattern, const AString& newpattern)
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock lock("patterns");
-	
-	if (user.Empty() || !UpdatePatternInFile(config.GetUserPatternsPattern().SearchAndReplace("{#?}", user), pattern, newpattern)) {
-		UpdatePatternInFile(config.GetPatternsFile(), pattern, newpattern);
-	}
-}
-
-void ADVBProg::InsertPattern(const AString& user, const AString& pattern)
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock lock("patterns");
-	
-	if (user.Valid()) AddPatternToFile(config.GetUserPatternsPattern().SearchAndReplace("{#?}", user), pattern);
-	else			  AddPatternToFile(config.GetPatternsFile(), pattern);
-}
-
-void ADVBProg::DeletePattern(const AString& user, const AString& pattern)
-{
-	UpdatePattern(user, pattern, "");
-}
-
-void ADVBProg::EnablePattern(const AString& user, const AString& pattern)
-{
-	if (pattern[0] == '#') {
-		UpdatePattern(user, pattern, pattern.Mid(1));
-	}
-}
-
-void ADVBProg::DisablePattern(const AString& user, const AString& pattern)
-{
-	if (pattern[0] != '#') {
-		UpdatePattern(user, pattern, "#" + pattern);
-	}
 }
