@@ -1395,9 +1395,9 @@ bool ADVBProgList::CheckDiskSpace(const ADataList& patternlist, bool runcmd, boo
 					if (first) first = false;
 					else	   printf(",");
 
-					printf("{\"user\":\"%s\"", ADVBProg::JSONFormat(user).str());
-					printf(",\"folder\":\"%s\"", ADVBProg::JSONFormat(dir).str());
-					printf(",\"fullfolder\":\"%s\"", ADVBProg::JSONFormat(rdir).str());
+					printf("{\"user\":\"%s\"", JSONFormat(user).str());
+					printf(",\"folder\":\"%s\"", JSONFormat(dir).str());
+					printf(",\"fullfolder\":\"%s\"", JSONFormat(rdir).str());
 					printf(",\"freespace\":\"%0.1lfG\"", gb);
 					printf(",\"level\":%u", (uint_t)(gb / lowlimit));
 					printf("}");
