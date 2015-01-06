@@ -11,15 +11,6 @@
 
 #define DEFAULTBASEDIR "/etc/dvb"
 
-static bool hasquit = false;
-
-static void __hasquit(int sig)
-{
-	(void)sig;
-
-	hasquit = true;
-}
-
 ADVBConfig::ADVBConfig() : config(DEFAULTBASEDIR, false),
 						   defaults(20, &AString::DeleteString),
 						   webresponse(false),
@@ -83,13 +74,6 @@ const AString& ADVBConfig::GetDefaultInterRecTime() const
 {
 	static const AString rectime = "10";
 	return rectime;
-}
-
-AString ADVBConfig::CatPath(const AString& dir1, const AString& dir2)
-{
-	if (dir2[0] != '/') return dir1.CatPath(dir2);
-
-	return dir2;
 }
 
 AString ADVBConfig::GetBaseDir() const
@@ -260,30 +244,4 @@ void ADVBConfig::ListUsers(AList& list) const
 	}
 
 	list.Sort(&AString::AlphaCompareCase);
-}
-
-void ADVBConfig::CreateDirectory(const AString& dir) const
-{
-	FILE_INFO info;
-
-	if (!::GetFileInfo(dir, &info)) {
-		::CreateDirectory(dir);
-	}
-}
-
-AString ADVBConfig::replace(const AString& str, const REPLACEMENT *replacements, uint_t n)
-{
-	AString res = str;
-	uint_t i;
-
-	for (i = 0; i < n; i++) {
-		res = res.SearchAndReplaceNoCase(replacements[i].search, replacements[i].replace);
-	}
-
-	return res;
-}
-
-bool ADVBConfig::HasQuit() const
-{
-	return hasquit;
 }
