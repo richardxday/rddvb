@@ -31,8 +31,6 @@ public:
 
 	AString ExportToText() const;
 
-	static AString JSONFormat(const AString& str);
-	static ulong_t JSONTime(uint64_t dt);
 	AString ExportToJSON(bool includebase64 = false) const;
 
 	bool Overlaps(const ADVBProg& prog)              const {return ((data->stop > prog.data->start) && (data->start < prog.data->stop));}

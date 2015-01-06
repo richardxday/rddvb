@@ -30,12 +30,12 @@ void printuserdetails(const AString& user)
 	const ADVBConfig& config = ADVBConfig::Get();
 	double lowlimit = config.GetLowSpaceWarningLimit();
 
-	printf("{\"user\":\"%s\"", ADVBProg::JSONFormat(user).str());
+	printf("{\"user\":\"%s\"", JSONFormat(user).str());
 
 	AString dir  = config.GetRecordingsSubDir(user);
 	AString rdir = config.GetRecordingsDir(user);
-	printf(",\"folder\":\"%s\"", ADVBProg::JSONFormat(dir).str());
-	printf(",\"fullfolder\":\"%s\"", ADVBProg::JSONFormat(rdir).str());
+	printf(",\"folder\":\"%s\"", JSONFormat(dir).str());
+	printf(",\"fullfolder\":\"%s\"", JSONFormat(rdir).str());
 
 	struct statvfs fiData;
 	if (statvfs(rdir, &fiData) >= 0) {
@@ -52,11 +52,11 @@ void printpattern(const ADVBProg::PATTERN& pattern)
 {
 	uint_t i;
 
-	printf("{\"user\":\"%s\"", 	  ADVBProg::JSONFormat(pattern.user).str());
+	printf("{\"user\":\"%s\"", 	  JSONFormat(pattern.user).str());
 	printf(",\"enabled\":%s",     pattern.enabled ? "true" : "false");
 	printf(",\"pri\":%d",      	  pattern.pri);
-	printf(",\"pattern\":\"%s\"", ADVBProg::JSONFormat(pattern.pattern).str());
-	printf(",\"errors\":\"%s\"",  ADVBProg::JSONFormat(pattern.errors).str());
+	printf(",\"pattern\":\"%s\"", JSONFormat(pattern.pattern).str());
+	printf(",\"errors\":\"%s\"",  JSONFormat(pattern.errors).str());
 	printf(",\"terms\":[");
 	for (i = 0; i < pattern.list.Count(); i++) {
 		const ADVBProg::TERMDATA *data = ADVBProg::GetTermData(pattern, i);
@@ -67,7 +67,7 @@ void printpattern(const ADVBProg::PATTERN& pattern)
 		printf(",\"field\":%u",		   (uint_t)data->field);
 		printf(",\"opcode\":%u",  	   (uint_t)data->opcode);
 		printf(",\"opindex\":%u",  	   (uint_t)data->opindex);
-		printf(",\"value\":\"%s\"",    ADVBProg::JSONFormat(data->value).str());
+		printf(",\"value\":\"%s\"",    JSONFormat(data->value).str());
 		printf(",\"quotes\":%s",       (data->value.Pos(" ") >= 0) ? "true" : "false");
 		printf(",\"assign\":%s",	   ADVBProg::OperatorIsAssign(pattern, i) ? "true" : "false");
 		printf(",\"orflag\":%u",	   (uint_t)data->orflag);
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 		AString newpattern = ADVBProg::RemoveDuplicateTerms(pattern);
 
 		printf("{");
-		printf("\"newpattern\":\"%s\"", ADVBProg::JSONFormat(newpattern).str());
+		printf("\"newpattern\":\"%s\"", JSONFormat(newpattern).str());
 		ADVBProg::ParsePattern(newpattern, pattern, pattern.user);
 		printf(",\"parsedpattern\":");
 		printpattern(pattern);
@@ -442,7 +442,7 @@ int main(int argc, char *argv[])
 			printf(",\"for\":%u", count);
 			printf(",\"parsedpattern\":");
 			printpattern(filterpattern);
-			printf(",\"errors\":\"%s\"", ADVBProg::JSONFormat(errors).str());
+			printf(",\"errors\":\"%s\"", JSONFormat(errors).str());
 
 			if (Value(vars, val, "patterndefs")) {
 				printf(",%s", ADVBProg::GetPatternDefinitionsJSON().str());
@@ -469,10 +469,10 @@ int main(int argc, char *argv[])
 								AString filter = search.Words(1);
 
 								if (needscomma) printf(",");
-								printf("{\"title\":\"%s\"", ADVBProg::JSONFormat(title).str());
+								printf("{\"title\":\"%s\"", JSONFormat(title).str());
 								printf(",\"search\":{");
-								if (from.Valid()) printf("\"from\":\"%s\",", ADVBProg::JSONFormat(from).str());
-								printf("\"titlefilter\":\"%s\"}}", ADVBProg::JSONFormat(filter).str());
+								if (from.Valid()) printf("\"from\":\"%s\",", JSONFormat(from).str());
+								printf("\"titlefilter\":\"%s\"}}", JSONFormat(filter).str());
 								needscomma = true;
 							}
 						}
@@ -566,7 +566,7 @@ int main(int argc, char *argv[])
 
 					for (i = 0; (i < count) && !HasQuit(); i++) {
 						if (i > 0) printf(",");
-						printf("\"%s\"", ADVBProg::JSONFormat(logdata.Line(offset + i, "\n", 0).SearchAndReplace("  ", "&nbsp;")).str());
+						printf("\"%s\"", JSONFormat(logdata.Line(offset + i, "\n", 0).SearchAndReplace("  ", "&nbsp;")).str());
 					}
 
 					printf("]");
