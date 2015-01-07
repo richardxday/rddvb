@@ -58,6 +58,10 @@ public:
 	double  GetLowSpaceWarningLimit()		 const {return (double)GetConfigItem("lowdisklimit", "10.0");}
 	bool    CommitScheduling()				 const {return ((uint_t)GetConfigItem("commitscheduling", "0") != 0);}
 
+	int     GetPriorityScale()               const {return (int)GetConfigItem("priscale",     "2");}
+	int     GetRepeatsScale()                const {return (int)GetConfigItem("repeatsscale", "-1");}
+	int     GetUrgentScale()                 const {return (int)GetConfigItem("urgentscale",  "0");}
+
 	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");}
 
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
