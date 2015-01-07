@@ -13,6 +13,7 @@
 #include "channellist.h"
 #include "episodehandler.h"
 #include "dvblock.h"
+#include "dvbpatterns.h"
 
 /*--------------------------------------------------------------------------------*/
 
@@ -1029,7 +1030,7 @@ void ADVBProgList::FindProgrammes(ADVBProgList& dest, const AString& patterns, A
 {
 	ADataList patternlist;
 
-	ADVBProg::ParsePatterns(patternlist, patterns, errors, sep);
+	ADVBPatterns::ParsePatterns(patternlist, patterns, errors, sep);
 
 	FindProgrammes(dest, patternlist, maxmatches);
 }
@@ -1269,7 +1270,7 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
 		AString line;
 
 		while (line.ReadLn(fp) >= 0) {
-			ADVBProg::ParsePattern(patternlist, line, errors);
+			ADVBPatterns::ParsePattern(patternlist, line, errors);
 		}
 
 		fp.close();
@@ -1295,7 +1296,7 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
 			AString line;
 
 			while (line.ReadLn(fp) >= 0) {
-				ADVBProg::ParsePattern(patternlist, line, errors, user);
+				ADVBPatterns::ParsePattern(patternlist, line, errors, user);
 			}
 
 			fp.close();
