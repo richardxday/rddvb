@@ -14,6 +14,7 @@ LISTINGSFILE=archive/listings-sky-`date +%Y-%m-%d`.xmltv
 if [ ! -f $LISTINGSFILE.gz ] ; then
   tv_grab_uk_rt --config-file ~/.xmltv/tv_grab_uk_rt-sky.conf >$LISTINGSFILE
   dvb --read $LISTINGSFILE --update-dvb-channels --write data/skylistings.dat
+  checksky.sh
   gzip $LISTINGSFILE
 fi
 
