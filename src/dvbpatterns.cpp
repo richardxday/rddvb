@@ -7,8 +7,6 @@
 #include "dvbpatterns.h"
 #include "dvbprog.h"
 
-#define DVBPROG_OFFSET(x) ((uint16_t)(uptr_t)&ADVBProg::nullprog->x)
-
 ADVBPatterns _patterns;
 
 ADVBPatterns::OPERATOR ADVBPatterns::operators[] = {
@@ -55,8 +53,6 @@ ADVBPatterns::OPERATOR ADVBPatterns::operators[] = {
 
 	//{"+=", 	false, FieldTypes_String,  	 			 	 Operator_Concat},
 };
-
-const uint_t ADVBPatterns::noperators = NUMBEROF(operators);
 
 ADVBPatterns::ADVBPatterns()
 {
@@ -296,7 +292,7 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const FIELD& field, const VALUE& 
 			// detect writing to dvbcard
 			if (ptr == &prog.data->dvbcard) {
 				//debug("DVB card specified as %u\n", (uint_t)data->dvbcard);
-				prog.SetFlag(ADVBProg::Flag_dvbcardspecified);
+				prog.SetDVBCardSpecified();
 			}
 			break;
 		}
@@ -372,13 +368,14 @@ bool ADVBPatterns::OperatorIsAssign(const PATTERN& pattern, uint_t term)
 AString ADVBPatterns::GetPatternDefinitionsJSON()
 {
 	AString str;
-	uint_t i, j;
+	uint_t i, j, nfields;
+	const FIELD *fields = ADVBProg::GetFields(nfields);
 
 	str.printf("\"patterndefs\":");
 	str.printf("{\"fields\":[");
 	
-	for (i = 0; i < ADVBProg::nfields; i++) {
-		const FIELD& field = ADVBProg::fields[i];
+	for (i = 0; i < nfields; i++) {
+		const FIELD& field = fields[i];
 
 		if (i) str.printf(",");
 		str.printf("{\"name\":\"%s\"", 	 JSONFormat(field.name).str());
@@ -404,9 +401,9 @@ AString ADVBPatterns::GetPatternDefinitionsJSON()
 
 	str.printf("]");
 	str.printf(",\"fieldnames\":{");
-	
-	for (i = 0; i < ADVBProg::nfields; i++) {
-		const FIELD& field = ADVBProg::fields[i];
+
+	for (i = 0; i < nfields; i++) {
+		const FIELD& field = fields[i];
 
 		if (i) str.printf(",");
 		str.printf("\"%s\":%u", JSONFormat(field.name).str(), i);
@@ -546,10 +543,15 @@ AString ADVBPatterns::ParsePattern(const AString& line, PATTERN& pattern, const 
 
 			const FIELD *fieldptr = (const FIELD *)ADVBProg::fieldhash.Read(field);
 			if (!fieldptr) {
+				uint_t nfields;
+				const FIELD *fields = ADVBProg::GetFields(nfields);
+
 				errors.printf("'%s' (at %u) is not a valid search field (term %u), valid search fields are: ", field.str(), fieldstart, list.Count() + 1);
-				for (i = 0; i < ADVBProg::nfields; i++) {
+				for (i = 0; i < nfields; i++) {
+					const FIELD& field = fields[i];
+
 					if (i) errors.printf(", ");
-					errors.printf("'%s'", ADVBProg::fields[i].name);
+					errors.printf("'%s'", field.name);
 				}
 				break;
 			}
@@ -788,7 +790,7 @@ AString ADVBPatterns::ParsePattern(const AString& line, PATTERN& pattern, const 
 				//debug("term: field {name '%s', type %u, assignable %u, offset %u} type %u dateflags %u value '%s'\n", term->field->name, (uint_t)term->field->type, (uint_t)term->field->assignable, term->field->offset, (uint_t)term->data.opcode, (uint_t)term->dateflags, term->value.str);
 
 				if (errors.Empty()) {
-					pattern.scorebased |= (term->field->offset == DVBPROG_OFFSET(score));
+					pattern.scorebased |= (term->field->offset == ADVBProg::GetScoreDataOffset());
 					list.Add((uptr_t)term);
 				}
 				else {
@@ -854,7 +856,7 @@ AString ADVBPatterns::ParsePattern(const AString& line, PATTERN& pattern, const 
 		for (i = 0; i < list.Count(); i++) {
 			const TERM *term = (const TERM *)list[i];
 
-			if ((term->data.opcode == Operator_Assign) && (term->field->offset == DVBPROG_OFFSET(strings.user))) {
+			if ((term->data.opcode == Operator_Assign) && (term->field->offset == ADVBProg::GetUserDataOffset())) {
 				if (pattern.user.Empty()) {
 					pattern.user = term->value.str;
 					if (pattern.user.Valid()) {
@@ -872,7 +874,7 @@ AString ADVBPatterns::ParsePattern(const AString& line, PATTERN& pattern, const 
 		for (i = 0; i < list.Count(); i++) {
 			const TERM *term = (const TERM *)list[i];
 
-			if ((term->data.opcode == Operator_Assign) && (term->field->offset == DVBPROG_OFFSET(pri))) {
+			if ((term->data.opcode == Operator_Assign) && (term->field->offset == ADVBProg::GetPriDataOffset())) {
 				pattern.pri = term->value.s8;
 			}
 		}
@@ -1069,7 +1071,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 				memcpy(&offset, ptr, sizeof(offset));
 				str = prog.GetString(offset);
 
-				if (field.offset == DVBPROG_OFFSET(strings.actors)) {
+				if (field.offset == ADVBProg::GetActorsDataOffset()) {
 					AString actors(str);
 					uint_t j, m = actors.CountLines();
 
@@ -1209,11 +1211,13 @@ void ADVBPatterns::AssignValues(ADVBProg& prog, const PATTERN& pattern)
 
 	if (user.Valid()) {
 		const ADVBConfig& config = ADVBConfig::Get();
+		uint_t nfields;
+		const FIELD *fields = ADVBProg::GetFields(nfields);
 
-		for (i = 0; i < ADVBProg::nfields; i++) {
-			const FIELD& field = ADVBProg::fields[i];
+		for (i = 0; i < nfields; i++) {
+			const FIELD& field = fields[i];
 
-			if (field.assignable && (field.offset != DVBPROG_OFFSET(strings.user))) {
+			if (field.assignable && (field.offset != ADVBProg::GetUserDataOffset())) {
 				AString val = config.GetUserConfigItem(user, field.name);
 
 				if (val.Valid()) {
@@ -1239,7 +1243,7 @@ void ADVBPatterns::UpdateValues(ADVBProg& prog, const PATTERN& pattern)
 		const TERM&  term  = *(const TERM *)list[i];
 		const FIELD& field = *term.field;
 
-		if (RANGE(term.data.opcode, Operator_First_Assignable, Operator_Last_Assignable) && (field.offset != DVBPROG_OFFSET(strings.user))) {
+		if (RANGE(term.data.opcode, Operator_First_Assignable, Operator_Last_Assignable) && (field.offset != ADVBProg::GetUserDataOffset())) {
 			AssignValue(prog, field, term.value, term.data.opcode);
 		}
 	}

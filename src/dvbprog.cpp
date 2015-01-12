@@ -20,6 +20,7 @@
 bool ADVBProg::debugsameprogramme = false;
 
 AHash ADVBProg::fieldhash;
+
 const ADVBProg::DVBPROG *ADVBProg::nullprog = (const ADVBProg::DVBPROG *)NULL;
 
 #define DVBPROG_OFFSET(x) ((uint16_t)(uptr_t)&nullprog->x)
@@ -87,7 +88,6 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_ASSIGN(prefs,	  strings.prefs, 	string, "Misc prefs"),
 	DEFINE_ASSIGN(dvbcard,    dvbcard,        	uint8_t, "DVB card to record from"),
 };
-const uint_t ADVBProg::nfields = NUMBEROF(fields);
 
 ADVBProg::ADVBProg()
 {
@@ -132,6 +132,32 @@ void ADVBProg::StaticInit()
 			fieldhash.Insert(fields[i].name, (uptr_t)(fields + i));
 		}
 	}
+}
+
+const ADVBProg::FIELD *ADVBProg::GetFields(uint_t& nfields)
+{
+	nfields = NUMBEROF(fields);
+	return fields;
+}
+
+uint16_t ADVBProg::GetUserDataOffset()
+{
+	return DVBPROG_OFFSET(strings.user);
+}
+
+uint16_t ADVBProg::GetActorsDataOffset()
+{
+	return DVBPROG_OFFSET(strings.actors);
+}
+
+uint16_t ADVBProg::GetPriDataOffset()
+{
+	return DVBPROG_OFFSET(pri);
+}
+
+uint16_t ADVBProg::GetScoreDataOffset()
+{
+	return DVBPROG_OFFSET(score);
 }
 
 void ADVBProg::Init()
