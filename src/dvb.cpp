@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
 		printf("\t--update-uuid\t\t\tSet UUID's on every programme\n");
 		printf("\t--update-combined\t\tCreate a combined list of recorded and scheduled programmes\n");
 		printf("\t--list\t\t\t\tList programmes in current list (-L)\n");
+		printf("\t--list-to-file <file>\tList programmes in current list (-L) to file <file>\n");
 		printf("\t--list-base64\t\t\tList programmes in current list in base64 format\n");
 		printf("\t--list-channels\t\t\tList channels\n");
 		printf("\t--cut-head <n>\t\t\tCut <n> programmes from the start of the list\n");
@@ -332,9 +333,27 @@ int main(int argc, char *argv[])
 			else if ((strcmp(argv[i], "--list") == 0) || (strcmp(argv[i], "-L") == 0)) {
 				uint_t j;
 
+				if (verbosity > 1) printf("%s\n", AString("-").Copies(80).str());
+
 				for (j = 0; j < proglist.Count(); j++) {
 					printf("%s\n", proglist[j].GetDescription(verbosity).str());
 				}
+			}
+			else if (strcmp(argv[i], "--list-to-file") == 0) {
+				AStdFile fp;
+
+				if (fp.open(argv[++i], "a")) {
+					uint_t j;
+
+					if (verbosity > 1) fp.printf("%s\n", AString("-").Copies(80).str());
+
+					for (j = 0; j < proglist.Count(); j++) {
+						fp.printf("%s\n", proglist[j].GetDescription(verbosity).str());
+					}
+
+					fp.close();
+				}
+				else config.printf("Failed to open file '%s' for append", argv[i]);
 			}
 			else if (strcmp(argv[i], "--list-base64") == 0) {
 				uint_t j;
@@ -681,5 +700,5 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	return 0;
+	return proglist.Count() ? 0 : -1;
 }
