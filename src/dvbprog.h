@@ -182,6 +182,7 @@ public:
 	bool   IsRadioProgramme()	  const {return GetFlag(Flag_radioprogramme);}
 	void   SetRadioProgramme()			{SetFlag(Flag_radioprogramme);}
 	bool   IsDVBCardSpecified()	  const {return GetFlag(Flag_dvbcardspecified);}
+	void   SetDVBCardSpecified()        {SetFlag(Flag_dvbcardspecified);}
 	bool   IsRecordingComplete()  const {return !GetFlag(Flag_incompleterecording);}
 	void   SetRecordingComplete();
 
@@ -303,12 +304,12 @@ protected:
 
 	uint8_t *GetDataPtr(uint16_t offset) const {return (uint8_t *)((uptr_t)data + offset);}
 
-	static void SwapBytes(DVBPROG *prog);
-	static const DVBPROG *nullprog;
+	static uint16_t GetUserDataOffset();
+	static uint16_t GetActorsDataOffset();
+	static uint16_t GetPriDataOffset();
+	static uint16_t GetScoreDataOffset();
 
-	enum {
-		StringCount = sizeof(nullprog->strings) / sizeof(nullprog->strings.channel),
-	};
+	static void SwapBytes(DVBPROG *prog);
 
 	AString ValidFilename(const AString& str) const;
 
@@ -319,11 +320,19 @@ protected:
 	void ClrFlag(uint8_t flag) {SetFlag(flag, false);}
 
 	bool MatchString(const TERM& term, const char *str) const;
+	
+	static const FIELD *GetFields(uint_t& nfields);
 
 	static void StaticInit();
 	void Init();
 
 	AString ReplaceTerms(const AString& str) const;
+
+	static const DVBPROG *nullprog;
+
+	enum {
+		StringCount = sizeof(nullprog->strings) / sizeof(nullprog->strings.channel),
+	};
 
 protected:
 	DVBPROG  		   *data;
@@ -332,9 +341,8 @@ protected:
 	sint_t   		   priority_score;
 	uint_t	 		   overlaps;
 
-	static AHash        fieldhash;
-	static const FIELD  fields[];
-	static const uint_t nfields;
+	static AHash       fieldhash;
+	static const FIELD fields[];
 };
 
 #endif

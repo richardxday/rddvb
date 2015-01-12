@@ -65,9 +65,6 @@ public:
 protected:
 	friend class ADVBProg;
 
-	static bool UpdatePatternInFile(const AString& filename, const AString& pattern, const AString& newpattern);
-	static void AddPatternToFile(const AString& filename, const AString& pattern);
-
 	enum {
 		FieldType_string = 0,
 		FieldType_date,
@@ -122,14 +119,6 @@ protected:
 		Operator_Last_Assignable  = Operator_Minimum,
 	};
 
-	typedef struct {
-		const char *name;
-		uint8_t    type;
-		bool       assignable;
-		uint16_t   offset;
-		const char *desc;
-	} FIELD;
-
 	enum {
 		DateType_none = 0,
 		DateType_fulldate,
@@ -149,6 +138,14 @@ protected:
 		FieldTypes_Prog    = 1U << FieldType_prog,
 		FieldTypes_Default = ~(FieldTypes_String | FieldTypes_Prog),
 	};
+
+	typedef struct {
+		const char *name;
+		uint8_t    type;
+		bool       assignable;
+		uint16_t   offset;
+		const char *desc;
+	} FIELD;
 
 	typedef struct {
 		const char *str;
@@ -178,6 +175,10 @@ protected:
 		VALUE 		value;
 	} TERM;
 
+protected:
+	static bool UpdatePatternInFile(const AString& filename, const AString& pattern, const AString& newpattern);
+	static void AddPatternToFile(const AString& filename, const AString& pattern);
+
 	static void GetFieldValue(const FIELD& field, VALUE& value, AString& val);
 	static void AssignValue(ADVBProg& prog, const FIELD& field, const VALUE& value, uint8_t termtype = Operator_EQ);
 
@@ -194,7 +195,6 @@ protected:
 
 protected:
 	static OPERATOR operators[];
-	static const uint_t noperators;
 };
 
 #endif
