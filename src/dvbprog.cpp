@@ -875,7 +875,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 	EPISODE ep;
 	AString str;
 	const char *p;
-	
+
 	str.printf("%s - %s : %s : %s",
 			   GetStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m").str(),
 			   GetStopDT().UTCToLocal().DateFormat("%h:%m").str(),
