@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
 	ADateTime starttime = ADateTime().TimeStamp(true);
 	uint_t verbosity = 0;
 	int  i;
+	int  res = 0;
 
 	if ((argc == 1) || ((argc > 1) && ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)))) {
 		printf("Usage: dvb {<file>|<cmd> ...}\n");
@@ -61,7 +62,7 @@ int main(int argc, char *argv[])
 		printf("\t--update-uuid\t\t\tSet UUID's on every programme\n");
 		printf("\t--update-combined\t\tCreate a combined list of recorded and scheduled programmes\n");
 		printf("\t--list\t\t\t\tList programmes in current list (-L)\n");
-		printf("\t--list-to-file <file>\tList programmes in current list (-L) to file <file>\n");
+		printf("\t--list-to-file <file>\t\tList programmes in current list (-L) to file <file>\n");
 		printf("\t--list-base64\t\t\tList programmes in current list in base64 format\n");
 		printf("\t--list-channels\t\t\tList channels\n");
 		printf("\t--cut-head <n>\t\t\tCut <n> programmes from the start of the list\n");
@@ -96,6 +97,7 @@ int main(int argc, char *argv[])
 		printf("\t--set-recorded-flag\t\tSet recorded flag on all programmes in recorded list\n");
 		printf("\t--check-disk-space\t\tCheck disk space for all patterns\n");
 		printf("\t--update-recording-complete\tUpdate recording complete flag in every recorded programme\n");
+		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
 		for (i = 1; i < argc; i++) {
@@ -693,6 +695,9 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
+			else if (stricmp(argv[i], "--return-count") == 0) {
+				res = proglist.Count();
+			}
 			else {
 				fprintf(stderr, "Unrecognized option '%s'\n", argv[i]);
 				exit(1);
@@ -700,5 +705,5 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	return proglist.Count() ? 0 : -1;
+	return res;
 }
