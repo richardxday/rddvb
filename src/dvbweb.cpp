@@ -12,6 +12,7 @@
 #include "config.h"
 #include "dvblock.h"
 #include "proglist.h"
+#include "dvbpatterns.h"
 #include "findcards.h"
 
 bool Value(const AHash& vars, AString& val, const AString& var)
@@ -29,12 +30,12 @@ void printuserdetails(const AString& user)
 	const ADVBConfig& config = ADVBConfig::Get();
 	double lowlimit = config.GetLowSpaceWarningLimit();
 
-	printf("{\"user\":\"%s\"", ADVBProg::JSONFormat(user).str());
+	printf("{\"user\":\"%s\"", JSONFormat(user).str());
 
 	AString dir  = config.GetRecordingsSubDir(user);
 	AString rdir = config.GetRecordingsDir(user);
-	printf(",\"folder\":\"%s\"", ADVBProg::JSONFormat(dir).str());
-	printf(",\"fullfolder\":\"%s\"", ADVBProg::JSONFormat(rdir).str());
+	printf(",\"folder\":\"%s\"", JSONFormat(dir).str());
+	printf(",\"fullfolder\":\"%s\"", JSONFormat(rdir).str());
 
 	struct statvfs fiData;
 	if (statvfs(rdir, &fiData) >= 0) {
@@ -47,18 +48,18 @@ void printuserdetails(const AString& user)
 	printf("}");
 }
 
-void printpattern(const ADVBProg::PATTERN& pattern)
+void printpattern(const ADVBPatterns::PATTERN& pattern)
 {
 	uint_t i;
 
-	printf("{\"user\":\"%s\"", 	  ADVBProg::JSONFormat(pattern.user).str());
+	printf("{\"user\":\"%s\"", 	  JSONFormat(pattern.user).str());
 	printf(",\"enabled\":%s",     pattern.enabled ? "true" : "false");
 	printf(",\"pri\":%d",      	  pattern.pri);
-	printf(",\"pattern\":\"%s\"", ADVBProg::JSONFormat(pattern.pattern).str());
-	printf(",\"errors\":\"%s\"",  ADVBProg::JSONFormat(pattern.errors).str());
+	printf(",\"pattern\":\"%s\"", JSONFormat(pattern.pattern).str());
+	printf(",\"errors\":\"%s\"",  JSONFormat(pattern.errors).str());
 	printf(",\"terms\":[");
 	for (i = 0; i < pattern.list.Count(); i++) {
-		const ADVBProg::TERMDATA *data = ADVBProg::GetTermData(pattern, i);
+		const ADVBPatterns::TERMDATA *data = ADVBPatterns::GetTermData(pattern, i);
 
 		if (i) printf(",");
 		printf("{\"start\":\%u",       data->start);
@@ -66,9 +67,9 @@ void printpattern(const ADVBProg::PATTERN& pattern)
 		printf(",\"field\":%u",		   (uint_t)data->field);
 		printf(",\"opcode\":%u",  	   (uint_t)data->opcode);
 		printf(",\"opindex\":%u",  	   (uint_t)data->opindex);
-		printf(",\"value\":\"%s\"",    ADVBProg::JSONFormat(data->value).str());
+		printf(",\"value\":\"%s\"",    JSONFormat(data->value).str());
 		printf(",\"quotes\":%s",       (data->value.Pos(" ") >= 0) ? "true" : "false");
-		printf(",\"assign\":%s",	   ADVBProg::OperatorIsAssign(pattern, i) ? "true" : "false");
+		printf(",\"assign\":%s",	   ADVBPatterns::OperatorIsAssign(pattern, i) ? "true" : "false");
 		printf(",\"orflag\":%u",	   (uint_t)data->orflag);
 		printf("}");
 	}
@@ -80,10 +81,10 @@ void printpattern(AHash& patterns, const ADVBProg& prog)
 	AString str;
 
 	if ((str = prog.GetPattern()).Valid()) {
-		ADVBProg::PATTERN *pattern;
+		ADVBPatterns::PATTERN *pattern;
 
-		if (((pattern = (ADVBProg::PATTERN *)patterns.Read(str)) == NULL) && ((pattern = new ADVBProg::PATTERN) != NULL)) {
-			ADVBProg::ParsePattern(str, *pattern, prog.GetUser());
+		if (((pattern = (ADVBPatterns::PATTERN *)patterns.Read(str)) == NULL) && ((pattern = new ADVBPatterns::PATTERN) != NULL)) {
+			ADVBPatterns::ParsePattern(str, *pattern, prog.GetUser());
 		}
 
 		if (pattern) {
@@ -141,19 +142,19 @@ int main(int argc, char *argv[])
 		Value(vars, newpattern, "newpattern");
 			
 		if (edit == "add") {
-			ADVBProg::InsertPattern(newuser, newpattern);
+			ADVBPatterns::InsertPattern(newuser, newpattern);
 		}
 		else if (edit == "update") {
-			ADVBProg::UpdatePattern(user, pattern, newuser, newpattern);
+			ADVBPatterns::UpdatePattern(user, pattern, newuser, newpattern);
 		}
 		else if (edit == "enable") {
-			ADVBProg::EnablePattern(user, pattern);
+			ADVBPatterns::EnablePattern(user, pattern);
 		}
 		else if (edit == "disable") {
-			ADVBProg::DisablePattern(user, pattern);
+			ADVBPatterns::DisablePattern(user, pattern);
 		}
 		else if (edit == "delete") {
-			ADVBProg::DeletePattern(user, pattern);
+			ADVBPatterns::DeletePattern(user, pattern);
 		}
 	}
 
@@ -164,17 +165,17 @@ int main(int argc, char *argv[])
 	}
 
 	if (Value(vars, val, "parse")) {
-		ADVBProg::PATTERN pattern;
+		ADVBPatterns::PATTERN pattern;
 		AString user;
 
 		Value(vars, user, "user");
 
-		ADVBProg::ParsePattern(val, pattern, user);
-		AString newpattern = ADVBProg::RemoveDuplicateTerms(pattern);
+		ADVBPatterns::ParsePattern(val, pattern, user);
+		AString newpattern = ADVBPatterns::RemoveDuplicateTerms(pattern);
 
 		printf("{");
-		printf("\"newpattern\":\"%s\"", ADVBProg::JSONFormat(newpattern).str());
-		ADVBProg::ParsePattern(newpattern, pattern, pattern.user);
+		printf("\"newpattern\":\"%s\"", JSONFormat(newpattern).str());
+		ADVBPatterns::ParsePattern(newpattern, pattern, pattern.user);
 		printf(",\"parsedpattern\":");
 		printpattern(pattern);
 		printf("}");
@@ -188,8 +189,8 @@ int main(int argc, char *argv[])
 		ADVBProgList 	  recordedlist, scheduledlist, requestedlist, rejectedlist, combinedlist, runninglist;
 		ADVBProgList 	  list[2], *proglist = NULL;
 		ADataList	      patternlist;
-		ADVBProg::PATTERN filterpattern;
-		AHash 			  patterns(50, &ADVBProg::DeletePattern);
+		ADVBPatterns::PATTERN filterpattern;
+		AHash 			  patterns(50, &ADVBPatterns::__DeletePattern);
 		AHash 			  fullseries;
 		uint_t 			  pagesize = (uint_t)config.GetConfigItem("pagesize", "20"), page = 0;
 		uint_t 			  datasource = DataSource_Progs;
@@ -292,7 +293,7 @@ int main(int argc, char *argv[])
 			index = (index + 1) % NUMBEROF(list);
 
 			AString filter = val;
-			ADVBProg::ParsePattern(filter, filterpattern);
+			ADVBPatterns::ParsePattern(filter, filterpattern);
 			proglist->FindProgrammes(*reslist, filter, errors, (filter.Pos("\n") >= 0) ? "\n" : ";");
 			proglist = reslist;
 		}
@@ -376,7 +377,7 @@ int main(int argc, char *argv[])
 
 			if (success) {
 				for (i = 0; i < patternlist.Count();) {
-					ADVBProg::PATTERN *pattern = (ADVBProg::PATTERN *)patternlist[i];
+					ADVBPatterns::PATTERN *pattern = (ADVBPatterns::PATTERN *)patternlist[i];
 					bool keep = (!enabled_check || (enabled_value == pattern->enabled));
 
 					if (keep) {
@@ -441,10 +442,10 @@ int main(int argc, char *argv[])
 			printf(",\"for\":%u", count);
 			printf(",\"parsedpattern\":");
 			printpattern(filterpattern);
-			printf(",\"errors\":\"%s\"", ADVBProg::JSONFormat(errors).str());
+			printf(",\"errors\":\"%s\"", JSONFormat(errors).str());
 
 			if (Value(vars, val, "patterndefs")) {
-				printf(",%s", ADVBProg::GetPatternDefinitionsJSON().str());
+				printf(",%s", ADVBPatterns::GetPatternDefinitionsJSON().str());
 			}
 
 			FILE_INFO info;
@@ -468,10 +469,10 @@ int main(int argc, char *argv[])
 								AString filter = search.Words(1);
 
 								if (needscomma) printf(",");
-								printf("{\"title\":\"%s\"", ADVBProg::JSONFormat(title).str());
+								printf("{\"title\":\"%s\"", JSONFormat(title).str());
 								printf(",\"search\":{");
-								if (from.Valid()) printf("\"from\":\"%s\",", ADVBProg::JSONFormat(from).str());
-								printf("\"titlefilter\":\"%s\"}}", ADVBProg::JSONFormat(filter).str());
+								if (from.Valid()) printf("\"from\":\"%s\",", JSONFormat(from).str());
+								printf("\"titlefilter\":\"%s\"}}", JSONFormat(filter).str());
 								needscomma = true;
 							}
 						}
@@ -487,7 +488,7 @@ int main(int argc, char *argv[])
 				case DataSource_Progs:
 					printf(",\"progs\":[");
 
-					for (i = 0; (i < count) && !config.HasQuit(); i++) {
+					for (i = 0; (i < count) && !HasQuit(); i++) {
 						const ADVBProg& prog = proglist->GetProg(offset + i);
 						const ADVBProg *prog2;
 
@@ -549,8 +550,8 @@ int main(int argc, char *argv[])
 				case DataSource_Patterns:
 					printf(",\"patterns\":[");
 
-					for (i = 0; (i < count) && !config.HasQuit(); i++) {
-						const ADVBProg::PATTERN& pattern = *(const ADVBProg::PATTERN *)patternlist[offset + i];
+					for (i = 0; (i < count) && !HasQuit(); i++) {
+						const ADVBPatterns::PATTERN& pattern = *(const ADVBPatterns::PATTERN *)patternlist[offset + i];
 
 						if (i > 0) printf(",");
 
@@ -563,9 +564,9 @@ int main(int argc, char *argv[])
 				case DataSource_Logs:
 					printf(",\"loglines\":[");
 
-					for (i = 0; (i < count) && !config.HasQuit(); i++) {
+					for (i = 0; (i < count) && !HasQuit(); i++) {
 						if (i > 0) printf(",");
-						printf("\"%s\"", ADVBProg::JSONFormat(logdata.Line(offset + i, "\n", 0).SearchAndReplace("  ", "&nbsp;")).str());
+						printf("\"%s\"", JSONFormat(logdata.Line(offset + i, "\n", 0).SearchAndReplace("  ", "&nbsp;")).str());
 					}
 
 					printf("]");

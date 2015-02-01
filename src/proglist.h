@@ -8,6 +8,7 @@
 #include <rdlib/DataList.h>
 
 #include "dvbprog.h"
+#include "dvbpatterns.h"
 
 class ADVBProgList {
 public:
@@ -157,7 +158,7 @@ protected:
 	static int SortProgsByUserThenDir(uptr_t item1, uptr_t item2, void *pContext);
 	//static int sortprogsbyscore(uptr_t item1, uptr_t item2, void *pContext);
 
-	typedef ADVBProg::PATTERN PATTERN;
+	typedef ADVBPatterns::PATTERN PATTERN;
 	static int SortPatterns(uptr_t item1, uptr_t item2, void *context);
 
 	typedef struct {

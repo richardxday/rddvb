@@ -107,7 +107,7 @@ ADVBChannelList& ADVBChannelList::Get()
 
 AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 {
-	static const ADVBConfig::REPLACEMENT replacements[] = {
+	static const REPLACEMENT replacements[] = {
 		{"BBC ONE", "BBC1"},
 		{"BBC TWO", "BBC2"},
 		{"BBC THREE", "BBC3"},
@@ -122,7 +122,7 @@ AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 		{"Al Jazeera Eng", "Al Jazeera English"},
 	};
 
-	return ADVBConfig::replace(str, replacements, NUMBEROF(replacements));
+	return ReplaceStrings(str, replacements, NUMBEROF(replacements));
 }
 
 const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannel(const AString& name) const

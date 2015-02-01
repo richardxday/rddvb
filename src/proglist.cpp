@@ -13,6 +13,7 @@
 #include "channellist.h"
 #include "episodehandler.h"
 #include "dvblock.h"
+#include "dvbpatterns.h"
 
 /*--------------------------------------------------------------------------------*/
 
@@ -57,7 +58,7 @@ ADVBProgList& ADVBProgList::operator = (const ADVBProgList& list)
 		AddChannel(channel->id, channel->name);
 	}
 
-	for (i = 0; (i < list.Count()) && !config.HasQuit(); i++) {
+	for (i = 0; (i < list.Count()) && !HasQuit(); i++) {
 		const ADVBProg& prog = list[i];
 
 		AddProg(prog, false, false);
@@ -83,7 +84,7 @@ int ADVBProgList::SortChannels(uptr_t item1, uptr_t item2, void *pContext)
 
 void ADVBProgList::AddXMLTVChannel(const AString& channel)
 {
-	static const ADVBConfig::REPLACEMENT replacements[] = {
+	static const REPLACEMENT replacements[] = {
 		{" +1", "+1"},
 		{" Northern", ""},
 		{" Southern", ""},
@@ -118,7 +119,7 @@ void ADVBProgList::AddXMLTVChannel(const AString& channel)
 	AString id   = channel.GetField("channel id=\"", "\"");
 	AString name = channel.GetField("<display-name>", "</display-name>").DeHTMLify();
 
-	name = ADVBConfig::replace(name, replacements, NUMBEROF(replacements));
+	name = ReplaceStrings(name, replacements, NUMBEROF(replacements));
 
 	AddChannel(id, name);
 }
@@ -319,7 +320,7 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 
 			p = p1 + 1;
 
-			if (config.HasQuit()) break;
+			if (HasQuit()) break;
 		}
 		while (p1 < (int)len);
 	}
@@ -352,7 +353,7 @@ bool ADVBProgList::ReadFromTextFile(const AString& filename)
 
 			p = p1 + 1;
 
-			if (config.HasQuit()) break;
+			if (HasQuit()) break;
 		}
 	}
 
@@ -379,7 +380,7 @@ bool ADVBProgList::ReadRadioListingsFromHTMLFile(const AString& filename, const 
 
         data = data.SearchAndReplace("\n", "").SearchAndReplace("\r", "").SearchAndReplace("&mdash;", "-").Words(0);
 
-        for (p = 0; data[p] && success && !config.HasQuit(); ) {
+        for (p = 0; data[p] && success && !HasQuit(); ) {
             if ((data[p] == '<') && ((p1 = data.Pos(">", p)) >= 0)) {
                 AString property, content, datatype, classname;
 
@@ -504,8 +505,8 @@ bool ADVBProgList::ReadRadioListings()
 	bool     notempty = (Count() != 0);
 	bool     success = true;
 
-    for (j = 0; (j < days) && success && !config.HasQuit(); j++) {
-        for (i = 0; (i < NUMBEROF(radiostations)) && success && !config.HasQuit(); i++) {
+    for (j = 0; (j < days) && success && !HasQuit(); j++) {
+        for (i = 0; (i < NUMBEROF(radiostations)) && success && !HasQuit(); i++) {
             AString url, cmd;
             AString filename = config.GetTempFile("radio", ".html");
             AString channel  = radiostations[i].channel;
@@ -566,7 +567,7 @@ bool ADVBProgList::ReadFromBinaryFile(const AString& filename, bool sort, bool r
 
 			pos = fp.tell();
 
-			if (config.HasQuit()) break;
+			if (HasQuit()) break;
 		}
 
 		//config.printf("Read data from '%s', parsing complete", filename.str());
@@ -639,7 +640,7 @@ bool ADVBProgList::ReadFromJobQueue(int queue, bool runningonly)
 				}
 				else config.logit("Failed to read job %u", jobid);
 
-				if (config.HasQuit()) break;
+				if (HasQuit()) break;
 			}
 
 			fp.close();
@@ -701,7 +702,7 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatecombined) con
 
 			prog.WriteToFile(fp);
 
-			if (config.HasQuit()) break;
+			if (HasQuit()) break;
 		}
 
 		fp.close();
@@ -736,7 +737,7 @@ bool ADVBProgList::WriteToTextFile(const AString& filename) const
 		for (i = 0; i < Count(); i++) {
 			fp.printf("%s", GetProg(i).ExportToText().str());
 
-			if (config.HasQuit()) break;
+			if (HasQuit()) break;
 		}
 
 		fp.close();
@@ -795,7 +796,7 @@ int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps, 
 	AddChannel(prog->GetChannelID(), prog->GetChannel());
 
 	if (removeoverlaps && Count()) {
-		for (i = 0; (i < Count()) && !config.HasQuit();) {
+		for (i = 0; (i < Count()) && !HasQuit();) {
 			const ADVBProg& prog1 = GetProg(i);
 
 			if (prog->OverlapsOnSameChannel(prog1)) {
@@ -808,7 +809,7 @@ int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps, 
 
 	if (reverseorder) {
 		if (sort) {
-			for (i = 0; (i < Count()) && !config.HasQuit(); i++) {
+			for (i = 0; (i < Count()) && !HasQuit(); i++) {
 				const ADVBProg& prog1 = GetProg(i);
 
 				if (*prog > prog1) {
@@ -823,7 +824,7 @@ int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps, 
 	}
 	else {
 		if (sort) {
-			for (i = 0; (i < Count()) && !config.HasQuit(); i++) {
+			for (i = 0; (i < Count()) && !HasQuit(); i++) {
 				const ADVBProg& prog1 = GetProg(i);
 
 				if (*prog < prog1) {
@@ -973,13 +974,13 @@ void ADVBProgList::FindProgrammes(ADVBProgList& dest, const ADataList& patternli
 
 	//config.logit("Searching using %u patterns (max matches %u)...", n, maxmatches);
 
-	for (i = 0; (i < Count()) && !config.HasQuit() && (nfound < maxmatches); i++) {
+	for (i = 0; (i < Count()) && !HasQuit() && (nfound < maxmatches); i++) {
 		const ADVBProg& prog = GetProg(i);
 		ADVBProg *prog1 = NULL;
 		bool     addtolist = false;
 		bool     excluded  = false;
 
-		for (j = 0; (j < n) && !config.HasQuit(); j++) {
+		for (j = 0; (j < n) && !HasQuit(); j++) {
 			const PATTERN& pattern = *(const PATTERN *)patternlist[j];
 
 			if (pattern.enabled && prog.Match(pattern)) {
@@ -1029,7 +1030,7 @@ void ADVBProgList::FindProgrammes(ADVBProgList& dest, const AString& patterns, A
 {
 	ADataList patternlist;
 
-	ADVBProg::ParsePatterns(patternlist, patterns, errors, sep);
+	ADVBPatterns::ParsePatterns(patternlist, patterns, errors, sep);
 
 	FindProgrammes(dest, patternlist, maxmatches);
 }
@@ -1269,7 +1270,7 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
 		AString line;
 
 		while (line.ReadLn(fp) >= 0) {
-			ADVBProg::ParsePattern(patternlist, line, errors);
+			ADVBPatterns::ParsePattern(patternlist, line, errors);
 		}
 
 		fp.close();
@@ -1295,7 +1296,7 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
 			AString line;
 
 			while (line.ReadLn(fp) >= 0) {
-				ADVBProg::ParsePattern(patternlist, line, errors, user);
+				ADVBPatterns::ParsePattern(patternlist, line, errors, user);
 			}
 
 			fp.close();
@@ -1395,9 +1396,9 @@ bool ADVBProgList::CheckDiskSpace(const ADataList& patternlist, bool runcmd, boo
 					if (first) first = false;
 					else	   printf(",");
 
-					printf("{\"user\":\"%s\"", ADVBProg::JSONFormat(user).str());
-					printf(",\"folder\":\"%s\"", ADVBProg::JSONFormat(dir).str());
-					printf(",\"fullfolder\":\"%s\"", ADVBProg::JSONFormat(rdir).str());
+					printf("{\"user\":\"%s\"", JSONFormat(user).str());
+					printf(",\"folder\":\"%s\"", JSONFormat(dir).str());
+					printf(",\"fullfolder\":\"%s\"", JSONFormat(rdir).str());
 					printf(",\"freespace\":\"%0.1lfG\"", gb);
 					printf(",\"level\":%u", (uint_t)(gb / lowlimit));
 					printf("}");

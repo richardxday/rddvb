@@ -6,6 +6,8 @@
 #include <rdlib/Hash.h>
 #include <rdlib/SettingsHandler.h>
 
+#include "dvbmisc.h"
+
 class ADVBConfig {
 public:
 	static const ADVBConfig& Get(bool webresponse = false);
@@ -20,8 +22,6 @@ public:
 	bool    UserConfigItemExists(const AString& user, const AString& name) const {return ConfigItemExists(user + ":" + name);}
 
 	void    ListUsers(AList& list) const;
-
-	static AString CatPath(const AString& dir1, const AString& dir2);
 
 	AString GetBaseDir()			   		 const;
 	AString GetConfigDir()		   			 const {return CatPath(GetBaseDir(), GetConfigItem("confdir", "conf"));}
@@ -58,6 +58,10 @@ public:
 	double  GetLowSpaceWarningLimit()		 const {return (double)GetConfigItem("lowdisklimit", "10.0");}
 	bool    CommitScheduling()				 const {return ((uint_t)GetConfigItem("commitscheduling", "0") != 0);}
 
+	int     GetPriorityScale()               const {return (int)GetConfigItem("priscale",     "2");}
+	int     GetRepeatsScale()                const {return (int)GetConfigItem("repeatsscale", "-1");}
+	int     GetUrgentScale()                 const {return (int)GetConfigItem("urgentscale",  "0");}
+
 	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");}
 
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
@@ -74,16 +78,6 @@ public:
 	AString GetLogFile() const {return additionallogfilename.Valid() ? additionallogfilename : GetLogFile(ADateTime().GetDays());}
 
 	const AString& GetFilename() const {return config.GetFilename();}
-
-	void CreateDirectory(const AString& dir) const;
-
-	typedef struct {
-		const char *search;
-		const char *replace;
-	} REPLACEMENT;
-	static AString replace(const AString& str, const REPLACEMENT *replacements, uint_t n);
-
-	bool HasQuit() const;
 
 	const AString& GetDefaultInterRecTime() const;
 
