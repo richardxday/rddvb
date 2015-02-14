@@ -1348,10 +1348,25 @@ function dvbrequest(filter, postdata)
 		else										  document.getElementById("titlefilter").value = filter.titlefilter;
 		if (typeof filter.timefilter  == 'undefined') filter.timefilter  = filterlist.current.timefilter;
 		else										  document.getElementById("timefilter").value = filter.timefilter;
-		if (typeof filter.page 	      == 'undefined') filter.page        = filterlist.current.page;
+		if (typeof filter.page 	      == 'undefined') {
+			if ((filter.from        != filterlist.current.from) ||
+				(filter.titlefilter != filterlist.current.titlefilter) ||
+				(filter.timefilter  != filterlist.current.timefilter)) {
+				filter.page = 0;
+			}
+			else filter.page = filterlist.current.page;
+		}
 		if (typeof filter.pagesize    == 'undefined') filter.pagesize    = filterlist.current.pagesize;
 		else										  document.getElementById("pagesize").value = filter.pagesize;
- 		if (typeof filter.expanded    == 'undefined') filter.expanded    = filterlist.current.expanded;
+ 		if (typeof filter.expanded    == 'undefined') {
+			if ((filter.from        != filterlist.current.from) ||
+				(filter.titlefilter != filterlist.current.titlefilter) ||
+				(filter.timefilter  != filterlist.current.timefilter) ||
+				(filter.page        != filterlist.current.page)) {
+				filter.expanded = -1;
+			}
+			else filter.expanded = filterlist.current.expanded;
+		}
 	}
 	else filter = filterlist.current;
 
@@ -1368,12 +1383,7 @@ function dvbrequest(filter, postdata)
 		 (filter.pagesize    != filterlist.current.pagesize)) &&
 		!((typeof filter.fetch != 'undefined') && !filter.fetch)) {
 		document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
-
-		if ((filterlist.current != null) &&
-			((filter.from        != filterlist.current.from) ||
-			 (filter.titlefilter != filterlist.current.titlefilter) ||
-			 (filter.timefilter  != filterlist.current.timefilter))) filter.page = 0;
-
+		
 		if ((xmlhttp != null) && (xmlhttp.readState < 4)) {
 			xmlhttp.abort();
 		}
