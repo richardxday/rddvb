@@ -5,6 +5,7 @@
 #include <rdlib/DateTime.h>
 #include <rdlib/Hash.h>
 #include <rdlib/SettingsHandler.h>
+#include <rdlib/DataList.h>
 
 #include "dvbmisc.h"
 
@@ -45,13 +46,14 @@ public:
 	AString GetRejectedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("rejected", "rejected.dat"));}
 	AString GetRecordingFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("recording", "recording.dat"));}
 	AString GetCombinedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("combined", "combined.dat"));}
-	AString GetCardsFile()                   const {return CatPath(GetDataDir(), GetConfigItem("cards", "cards.txt"));}
+	AString GetDVBCardsFile()                const {return CatPath(GetConfigDir(), GetConfigItem("dvbcards", "dvbcards.txt"));}
 	AString GetLogFile(uint32_t day)         const {return CatPath(GetLogDir(), "dvblog-" + ADateTime(day, 0UL).DateFormat("%Y-%M-%D") + ".txt");}
 	AString GetRecordLog(uint32_t day) 		 const {return CatPath(GetLogDir(), "dvbrecordlog-" + ADateTime(day, 0UL).DateFormat("%Y-%M") + ".txt");}
 	AString GetEpisodesFile()				 const {return CatPath(GetDataDir(), GetConfigItem("episodesfile", "episodes.txt"));}
 	AString GetSearchesFile()				 const {return CatPath(GetConfigDir(), GetConfigItem("searchesfile", "searches.txt"));}
 	AString GetRegionalChannels()            const {return GetConfigItem("regionalchannels", "bbc1.bbc.co.uk=north-west,bbc2.bbc.co.uk=north-west,itv1.itv.co.uk=granada");}
-	uint_t  GetMaxCards()				     const {return (uint_t)GetConfigItem("maxcards", "1");}
+	uint_t  GetPhysicalDVBCard(uint_t n = 0) const;
+	uint_t  GetMaxDVBCards()				 const {return (uint_t)GetConfigItem("maxcards", "1");}
 	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "30");}
 	uint_t  GetDaysToKeep()					 const {return (uint_t)GetConfigItem("daystokeep", "7");}
 	sint_t  GetScoreThreshold()				 const {return (sint_t)GetConfigItem("scorethreshold", "100");}
@@ -81,6 +83,9 @@ public:
 
 	const AString& GetDefaultInterRecTime() const;
 
+protected:
+	void MapDVBCards();
+
 private:
 	ADVBConfig();
 	~ADVBConfig() {}
@@ -89,6 +94,7 @@ protected:
 	ASettingsHandler config;
 	AString          additionallogfilename;
 	AHash			 defaults;
+	ADataList		 dvbcards;
 	bool			 webresponse;
 	bool			 additionallogneedstimestamps;
 };

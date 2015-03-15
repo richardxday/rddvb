@@ -8,6 +8,7 @@
 #include <rdlib/Recurse.h>
 
 #include "config.h"
+#include "findcards.h"
 
 #define DEFAULTBASEDIR "/etc/dvb"
 
@@ -104,6 +105,53 @@ AString ADVBConfig::GetConfigItem(const AString& name, const AString& defval) co
 {
 	if (config.Exists(name)) return config.Get(name);
 	return defval;
+}
+
+void ADVBConfig::MapDVBCards()
+{
+	uint_t i, n = GetMaxDVBCards();
+
+	printf("Finding mappings for %u DVB cards", n);
+
+	for (i = 0; i < n; i++) {
+		AString defname;
+		AString cardname;
+		sint_t  card = -1;
+
+		if (i == 0) defname = "Conexant*";
+
+		cardname = GetConfigItem(AString("card%u").Arg(n), defname);
+	
+		if ((card = findcard(cardname)) >= 0) {
+			dvbcards.Add((uint_t)card);
+		}
+		else {
+			printf("Failed to find DVB card '%s' (card %u)", cardname.str(), i);
+			
+			uint_t j;
+			for (j = 0; j < n; j++) {
+				if (dvbcards.Find(j) < 0) {
+					dvbcards.Add(j);
+					break;
+				}
+			}
+
+			if (j == n) dvbcards.Add(~0);
+		}
+	}
+	printf("DVB card mapping:");
+	for (i = 0; i < dvbcards.Count(); i++) {
+		printf("Virtual card %u -> physical card %u", i, (uint_t)dvbcards[i]);
+	}
+}
+
+uint_t ADVBConfig::GetPhysicalDVBCard(uint_t n) const
+{
+	if (dvbcards.Count() == 0) {
+		(const_cast<ADVBConfig *>(this))->MapDVBCards();
+	}
+
+	return (n < dvbcards.Count()) ? dvbcards[n] : 0;
 }
 
 void ADVBConfig::logit(const char *fmt, ...) const
