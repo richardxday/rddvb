@@ -4,6 +4,6 @@
 #include <rdlib/strsup.h>
 
 extern void findcards(void);
-extern uint_t findcard(const AString& pattern);
+extern sint_t findcard(const AString& pattern);
 
 #endif

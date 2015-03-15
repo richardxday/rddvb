@@ -1769,6 +1769,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	AString  filename;
 	uint64_t recstarttime = (uint64_t)starttime;
 	uint64_t lateststart  = SUBZ((uint64_t)starttime, (uint64_t)config.GetLatestStart() * 60000ULL);		// set latest start of programmes to be scheduled
+	uint_t   dvbcard = config.GetPhysicalDVBCard(card);
 	uint_t   i;
 
 	// allow at least 30s before first schedule point
@@ -1782,7 +1783,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 		return 0;
 	}
 
-	if (card >= config.GetMaxCards()) {
+	if (card >= config.GetMaxDVBCards()) {
 		config.printf("Reached the end of DVB cards, %u programmes left to schedule", Count());
 
 		for (i = 0; i < Count(); i++) {
@@ -1795,7 +1796,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	}
 
 	config.logit("--------------------------------------------------------------------------------");
-	config.printf("Card %u: Found: %u programmes:", card, Count());
+	config.printf("Card %u (hardware card: %u): Found: %u programmes:", card, dvbcard, Count());
 	config.logit("--------------------------------------------------------------------------------");
 	for (i = 0; i < Count(); i++) {
 		config.logit("%s", GetProg(i).GetDescription(1).str());
@@ -1852,8 +1853,8 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 
 			DeleteProg(i);
 		}
-		else if (prog.IsDVBCardSpecified() && (prog.GetDVBCard() != card) && (prog.GetDVBCard() < config.GetMaxCards())) {
-			config.logit("Adding '%s' to rejected list (DVB card requested %u, currently %u)", prog.GetQuickDescription().str(), (uint_t)prog.GetDVBCard(), (uint_t)card);
+		else if (prog.IsDVBCardSpecified() && (prog.GetDVBCard() != dvbcard) && (prog.GetDVBCard() < config.GetMaxDVBCards())) {
+			config.logit("Adding '%s' to rejected list (DVB card requested %u, currently %u)", prog.GetQuickDescription().str(), (uint_t)prog.GetDVBCard(), dvbcard);
 
 			rejectedlist.AddProg(prog);
 
@@ -1865,7 +1866,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	config.logit("Removed recorded and finished programmes");
 
 	config.logit("--------------------------------------------------------------------------------");
-	config.printf("Card %u: Requested: %u programmes:", card, Count());
+	config.printf("Card %u (hardware card: %u): Requested: %u programmes:", card, dvbcard, Count());
 	config.logit("--------------------------------------------------------------------------------");
 	for (i = 0; i < Count(); i++) {
 		config.logit("%s", GetProg(i).GetDescription(1).str());
@@ -1877,11 +1878,11 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	ADVBProg::debugsameprogramme = false;
 
 	if (scheduledlist.FindFirstRecordOverlap()) {
-		config.printf("Error: found overlap in schedule list for card %u!", card);		
+		config.printf("Error: found overlap in schedule list for card %u!", dvbcard);		
 	}
 	
 	config.logit("--------------------------------------------------------------------------------");
-	config.printf("Card %u: Scheduling: %u programmes:", card, scheduledlist.Count());
+	config.printf("Card %u (hardware card: %u): Scheduling: %u programmes:", card, dvbcard, scheduledlist.Count());
 	config.logit("--------------------------------------------------------------------------------");
 	for (i = 0; i < scheduledlist.Count(); i++) {
 		const ADVBProg& prog = scheduledlist[i];
@@ -1897,7 +1898,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 		ADVBProg& prog = scheduledlist.GetProgWritable(i);
 
 		prog.SetScheduled();
-		prog.SetDVBCard(card);
+		prog.SetDVBCard(dvbcard);
 
 		allscheduledlist.AddProg(prog, false);
 	}

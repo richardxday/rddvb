@@ -24,7 +24,7 @@ void findcards(void)
 
 	file = config.GetTempFile("cards", ".txt");
 
-	ofp.open(config.GetCardsFile(), "w");
+	ofp.open(config.GetDVBCardsFile(), "w");
 
 	for (i = 0; i < MaxCards; i++) {
 		AString cmd;
@@ -63,13 +63,13 @@ void findcards(void)
 	ofp.close();
 }
 
-uint_t findcard(const AString& pattern)
+sint_t findcard(const AString& pattern)
 {
 	AStdFile fp;
 	AString pat = ParseRegex(pattern);
-	uint_t card = 0;
+	sint_t card = -1;
 
-	if (fp.open(ADVBConfig::Get().GetCardsFile())) {
+	if (fp.open(ADVBConfig::Get().GetDVBCardsFile())) {
 		AString line;
 				
 		while (line.ReadLn(fp) >= 0) {
