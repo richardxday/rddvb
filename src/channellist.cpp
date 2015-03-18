@@ -163,7 +163,7 @@ void ADVBChannelList::Update(uint32_t freq, bool verbose)
 
 	sifilename = config.GetTempFile("pids", ".txt");
 
-	cmd.printf("dvbtune -f %u -i >%s 2>>%s", freq, sifilename.str(), config.GetLogFile(ADateTime().GetDays()).str());
+	cmd.printf("dvbtune -c %u -f %u -i >%s 2>>%s", config.GetPhysicalDVBCard(0), freq, sifilename.str(), config.GetLogFile(ADateTime().GetDays()).str());
 
 	if (system(cmd) == 0) {
 		if (fp.open(sifilename)) {
