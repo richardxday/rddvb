@@ -68,7 +68,7 @@ bool ADVBPatterns::UpdatePatternInFile(const AString& filename, const AString& p
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString filename1 = filename + ".new";
 	AStdFile ifp, ofp;
-	bool done = false;
+	bool changed = false, found = false;
 
 	if (ifp.open(filename)) {
 		if (ofp.open(filename1, "w")) {
@@ -77,8 +77,8 @@ bool ADVBPatterns::UpdatePatternInFile(const AString& filename, const AString& p
 			while (line.ReadLn(ifp) >= 0) {
 				if (line == pattern) {
 					if (newpattern.Valid()) ofp.printf("%s\n", newpattern.str());
-					done = true;
-
+					changed = found = true;
+					
 					if (newpattern.Valid()) {
 						config.logit("Changed pattern '%s' to '%s' in file '%s'", pattern.str(), newpattern.str(), filename.str());
 					}
@@ -86,21 +86,22 @@ bool ADVBPatterns::UpdatePatternInFile(const AString& filename, const AString& p
 						config.logit("Deleted pattern '%s' from file '%s'", pattern.str(), filename.str());
 					}
 				}
-				else ofp.printf("%s\n", line.str());
+				else if (line.Words(0).Valid()) ofp.printf("%s\n", line.str());
+				else changed = true;
 			}
 			ofp.close();
 		}
 
 		ifp.close();
 
-		if (done) {
+		if (changed) {
 			remove(filename);
 			rename(filename1, filename);
 		}
 		else remove(filename1);
 	}
 
-	return done;
+	return found;
 }
 
 void ADVBPatterns::AddPatternToFile(const AString& filename, const AString& pattern)
