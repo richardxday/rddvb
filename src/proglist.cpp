@@ -1270,7 +1270,9 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
 		AString line;
 
 		while (line.ReadLn(fp) >= 0) {
-			ADVBPatterns::ParsePattern(patternlist, line, errors);
+			if (line.Words(0).Valid()) {
+				ADVBPatterns::ParsePattern(patternlist, line, errors);
+			}
 		}
 
 		fp.close();
@@ -1296,7 +1298,9 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
 			AString line;
 
 			while (line.ReadLn(fp) >= 0) {
-				ADVBPatterns::ParsePattern(patternlist, line, errors, user);
+				if (line.Words(0).Valid()) {
+					ADVBPatterns::ParsePattern(patternlist, line, errors);
+				}
 			}
 
 			fp.close();
