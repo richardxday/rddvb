@@ -208,6 +208,7 @@ public:
 	AString GetTitleSubtitleAndChannel() const;
 	AString GetQuickDescription() const;
 
+	AString GenerateFilename(const AString& templ) const;
 	AString GenerateFilename() const;
 
 	void GenerateRecordData(uint64_t recstarttime);

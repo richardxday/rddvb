@@ -1087,14 +1087,14 @@ void ADVBProg::SearchAndReplace(const AString& search, const AString& replace)
 	}
 }
 
-AString ADVBProg::GenerateFilename() const
+AString ADVBProg::GenerateFilename(const AString& templ) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString dir      = CatPath(config.GetRecordingsDir(), GetDir());
-	AString templ    = CatPath(dir, config.GetFilenameTemplate());
 	AString date     = GetStartDT().UTCToLocal().DateFormat("%Y-%M-%D");
 	AString times    = GetStartDT().UTCToLocal().DateFormat("%h%m") + "-" + GetStopDT().UTCToLocal().DateFormat("%h%m");
-	AString filename = (templ.SearchAndReplace("{title}", ValidFilename(GetTitle()))
+	AString filename = (CatPath(dir, templ)
+						.SearchAndReplace("{title}", ValidFilename(GetTitle()))
 						.SearchAndReplace("{subtitle}", ValidFilename(GetSubtitle()))
 						.SearchAndReplace("{episode}", ValidFilename(GetEpisodeString()))
 						.SearchAndReplace("{channel}", ValidFilename(GetChannel()))
@@ -1109,6 +1109,12 @@ AString ADVBProg::GenerateFilename() const
 	filename = filename.SearchAndReplace("{sep}", ".");
 
 	return filename;
+}
+
+AString ADVBProg::GenerateFilename() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	return GenerateFilename(config.GetFilenameTemplate());
 }
 
 void ADVBProg::GenerateRecordData(uint64_t recstarttime)

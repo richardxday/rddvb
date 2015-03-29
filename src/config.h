@@ -34,7 +34,7 @@ public:
 	AString GetTempDir()              		 const {return GetConfigItem("tempdir", GetBaseDir().CatPath("temp"));}
 	AString GetTempFile(const AString& name, const AString& suffix = "") const;
 	AString GetQueue()						 const {return GetConfigItem("queue", "d");}
-	AString GetFilenameTemplate()			 const {return GetConfigItem("filename", "{title}{sep}{episode}{sep}{date}{sep}{times}.mpg");}
+	AString GetFilenameTemplate()			 const {return GetConfigItem("filename", "{title}{sep}{episode}{sep}{date}{sep}{times}{sep}{subtitle}{sep}mpg");}
 	AString GetListingsFile()		   		 const {return CatPath(GetDataDir(), GetConfigItem("listings", "dvblistings.dat"));}
 	AString GetChannelsConfFile()	   		 const {return CatPath(GetConfigDir(), GetConfigItem("channelsconf", "channels.conf"));}
 	AString GetDVBChannelsFile()	   		 const {return CatPath(GetConfigDir(), GetConfigItem("dvbchannels", "channels.dat"));}
