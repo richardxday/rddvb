@@ -92,6 +92,8 @@ int main(int argc, char *argv[])
 		printf("\t--change-filename <filename1> <filename2>\n\t\t\t\t\tChange filename of recorded progamme with filename <filename1> to <filename2>\n");
 		printf("\t--change-filename-regex <filename1> <filename2>\n\t\t\t\t\tChange filename of recorded progamme with filename <filename1> to <filename2> (where <filename1> can be a regex and <filename2> can be an expansion)\n");
 		printf("\t--change-filename-regex-test <filename1> <filename2>\n\t\t\t\t\tLike above but do not commit changes\n");
+		printf("\t--rename-files <filename-pattern>\n\t\t\t\t\tRename files in current list and update recorded list, if necessary\n");
+		printf("\t--rename-files-test <filename-pattern>\n\t\t\t\t\tLike above but do not commit changes\n");
 		printf("\t--find-recorded-programmes-on-disk\n\t\t\t\t\tSearch for recorded programmes in 'searchdirs' and update any filenames\n");
 		printf("\t--find-series\t\t\tFind series' in programme list\n");
 		printf("\t--set-recorded-flag\t\tSet recorded flag on all programmes in recorded list\n");
@@ -540,13 +542,13 @@ int main(int argc, char *argv[])
 			}
 			else if ((strcmp(argv[i], "--change-filename-regex")      == 0) ||
 					 (strcmp(argv[i], "--change-filename-regex-test") == 0)) {
-				ADVBLock lock("schedule");
+				ADVBLock     lock("schedule");
 				ADVBProgList reclist;
-				AString errors;
-				AString pattern       = argv[++i];
-				AString parsedpattern = ParseRegex(pattern, errors);
-				AString replacement   = argv[++i];
-				bool    commit        = (strcmp(argv[i - 2], "--change-filename-regex") == 0);
+				AString 	 errors;
+				AString 	 pattern       = argv[++i];
+				AString 	 parsedpattern = ParseRegex(pattern, errors);
+				AString 	 replacement   = argv[++i];
+				bool    	 commit        = (strcmp(argv[i - 2], "--change-filename-regex") == 0);
 
 				if (errors.Valid()) {
 					fprintf(stderr, "Errors in regex '%s':\n%s", pattern.str(), errors.str());
@@ -578,6 +580,45 @@ int main(int argc, char *argv[])
 						else config.printf("NOT writing changes back to files");
 					}
 					else config.printf("Failed to find programmes with filename matching '%s'", pattern.str());
+				}
+				else config.printf("Failed to read recorded programme list");
+			}
+			else if ((strcmp(argv[i], "--rename-files")      == 0) ||
+					 (strcmp(argv[i], "--rename-files-test") == 0)) {
+				ADVBLock     lock("schedule");
+				ADVBProgList reclist;
+				AString  	 templ  = argv[++i];
+				bool     	 commit = (strcmp(argv[i - 1], "--rename-files") == 0);
+
+				if (reclist.ReadFromFile(config.GetRecordedFile())) {
+					uint_t i;
+					bool changed = false;
+
+					for (i = 0; i < proglist.Count(); i++) {
+						ADVBProg& prog      = proglist.GetProgWritable(i);
+						ADVBProg  *recprog;
+						AString   filename  = prog.GetFilename();
+						AString   filename1 = filename.PathPart().CatPath(prog.GenerateFilename(templ + "{sep}" + filename.Suffix()).FilePart());
+
+						if ((filename1 != filename) && AStdFile::exists(filename) && ((recprog = reclist.FindUUIDWritable(prog)) != NULL)) {
+							if		(!commit) config.printf("*TEST* Rename '%s' to '%s'", filename.str(), filename1.str());
+							else if (rename(filename, filename1) == 0) {
+								recprog->SetFilename(filename1);
+								config.printf("Renamed '%s' to '%s'", filename.str(), filename1.str());
+								changed = true;
+							}
+							else config.printf("Failed to rename '%s' to '%s'", filename.str(), filename1.str());
+						}
+					}
+
+					if (changed) {
+						if (commit) {
+							if (!reclist.WriteToFile(config.GetRecordedFile())) {
+								config.printf("Failed to write recorded programme list back!");
+							}
+						}
+						else config.printf("NOT writing changes back to files");
+					}
 				}
 				else config.printf("Failed to read recorded programme list");
 			}
