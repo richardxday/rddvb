@@ -1299,7 +1299,7 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
 
 			while (line.ReadLn(fp) >= 0) {
 				if (line.Words(0).Valid()) {
-					ADVBPatterns::ParsePattern(patternlist, line, errors);
+					ADVBPatterns::ParsePattern(patternlist, line, errors, user);
 				}
 			}
 
