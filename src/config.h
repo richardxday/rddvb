@@ -36,6 +36,7 @@ public:
 	AString GetQueue()						 const {return GetConfigItem("queue", "d");}
 	AString GetFilenameTemplate()			 const {return GetConfigItem("filename", "{title}{sep}{episode}{sep}{date}{sep}{times}{sep}{subtitle}{sep}mpg");}
 	AString GetListingsFile()		   		 const {return CatPath(GetDataDir(), GetConfigItem("listings", "dvblistings.dat"));}
+	AString GetFreqScanFile()				 const {return CatPath(GetConfigDir(), GetConfigItem("freqscan", "scanfreqs.conf"));}
 	AString GetChannelsConfFile()	   		 const {return CatPath(GetConfigDir(), GetConfigItem("channelsconf", "channels.conf"));}
 	AString GetDVBChannelsFile()	   		 const {return CatPath(GetConfigDir(), GetConfigItem("dvbchannels", "channels.dat"));}
 	AString GetPatternsFile()		   		 const {return CatPath(GetConfigDir(), GetConfigItem("patterns", "patterns.txt"));}
@@ -64,7 +65,8 @@ public:
 	int     GetRepeatsScale()                const {return (int)GetConfigItem("repeatsscale", "-1");}
 	int     GetUrgentScale()                 const {return (int)GetConfigItem("urgentscale",  "0");}
 
-	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");}
+	AString GetPriorityDVBPIDs()			 const {return GetConfigItem("prioritypids", "0");}
+	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "16 17 18");}
 
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 	void printf(const char *fmt, ...) const PRINTF_FORMAT_METHOD;

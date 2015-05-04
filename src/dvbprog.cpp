@@ -361,8 +361,8 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 
 	AString channel = GetField(str, "channel");
 	SetString(&data->strings.channel, channel);
-	if (channel.StartsWith(tsod)) {
-		SetString(&data->strings.basechannel, channel.Mid(tsod.len()));
+	if (channel.EndsWith("+1")) {
+		SetString(&data->strings.basechannel, channel.Left(channel.len() - 2).Words(0));
 		SetFlag(Flag_plus1);
 	}
 	else SetString(&data->strings.basechannel, channel);
@@ -1364,13 +1364,29 @@ void ADVBProg::Record()
 			ADVBChannelList& channellist = ADVBChannelList::Get();
 			AString dvbchannel = GetDVBChannel();
 
-			pids = channellist.GetPIDList(dvbchannel, true).Words(0, 3);
+			pids = channellist.GetPIDList(dvbchannel, true);
 
 			if (pids.CountWords() < 2) {
 				config.addlogit("\n");
 				config.printf("No pids for '%s'", GetQuickDescription().str());
 				reschedule = true;
 				record = false;
+			}
+		}
+
+		if (!GetJobID()) {
+			ADVBProgList schedulelist;
+			const ADVBProg *prog;
+
+			schedulelist.ReadFromFile(config.GetScheduledFile());
+
+			// copy over job ID from scheduled list
+			if ((prog = schedulelist.FindUUID(*this)) != NULL) {
+				SetJobID(prog->GetJobID());
+			}
+			else {
+				config.addlogit("\n");
+				config.printf("Failed to find %s in scheduled list, cannot copy job ID!", GetTitleAndSubtitle().str());
 			}
 		}
 
@@ -1416,22 +1432,6 @@ void ADVBProg::Record()
 			AString filename = GetFilename();
 			AString cmd;
 			int     res;
-
-			if (!GetJobID()) {
-				ADVBProgList schedulelist;
-				const ADVBProg *prog;
-
-				schedulelist.ReadFromFile(config.GetScheduledFile());
-
-				// copy over job ID from scheduled list
-				if ((prog = schedulelist.FindUUID(*this)) != NULL) {
-					SetJobID(prog->GetJobID());
-				}
-				else {
-					config.addlogit("\n");
-					config.printf("Failed to find %s in scheduled list, cannot copy job ID!", GetTitleAndSubtitle().str());
-				}
-			}
 
 			CreateDirectory(filename.PathPart());
 

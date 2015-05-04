@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
 		printf("\t--pids <channel>\t\tFind PIDs (all streams) associated with channel <channel>\n");
 		printf("\t--scan <freq>[,<freq>...]\tScan frequencies <freq>MHz for DVB channels\n");
 		printf("\t--scan-all\t\t\tScan all known frequencies for DVB channels\n");
+		printf("\t--scan-range <start-freq> <end-freq> <step>\n\t\t\t\t\tScan frequencies <freq>MHz for DVB channels\n");
 		printf("\t--log <filename>\t\tLog to additional file <filename>\n");
 		printf("\t--cards\t\t\t\tFind DVB cards\n");
 		printf("\t--change-filename <filename1> <filename2>\n\t\t\t\t\tChange filename of recorded progamme with filename <filename1> to <filename2>\n");
@@ -502,6 +503,17 @@ int main(int argc, char *argv[])
 				ADVBChannelList& list = ADVBChannelList::Get();
 
 				list.UpdateAll(true);
+			}
+			else if (strcmp(argv[i], "--scan-range") == 0) {
+				ADVBChannelList& list = ADVBChannelList::Get();
+				double f1   = (double)AString(argv[++i]);
+				double f2   = (double)AString(argv[++i]);
+				double step = (double)AString(argv[++i]);
+				double f;
+
+				for (f = f1; f <= f2; f += step) {
+					list.Update((uint32_t)(1.0e6 * f), true);
+				}
 			}
 			else if (strcmp(argv[i], "--cards") == 0) {
 				findcards();
