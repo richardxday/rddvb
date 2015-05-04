@@ -1137,26 +1137,45 @@ void ADVBProgList::AdjustRecordTimes()
 
 		for (j = i + 1; j < Count(); j++) {
 			ADVBProg *prog2 = (ADVBProg *)proglist[j];
+			ADVBProg *firstprog  = NULL;
+			ADVBProg *secondprog = NULL;
 
-            // if prog1 is before prog2 and the recording of prog1 overlaps the recording of prog2, adjust times 
-			if ((prog1->GetStart() < prog2->GetStart()) &&
-                ((prog1->GetRecordStop() + mininterrectime) >= prog2->GetRecordStart())) {
-				config.logit("'%s' recording end overlaps '%s' recording start - shift times",
-							 prog1->GetQuickDescription().str(),
-							 prog2->GetQuickDescription().str());
-
-				prog1->SetRecordStop(prog2->GetStart() - mininterrectime);
-				prog2->SetRecordStart(prog2->GetStart());
+			// order programmes in chronilogical order
+			if (prog1->GetStart() < prog2->GetStart()) {
+				firstprog  = prog1;
+				secondprog = prog2;
 			}
-            // if prog2 is before prog1 and the recording of prog2 overlaps the recording of prog1, adjust times 
-			else if ((prog2->GetStart() < prog1->GetStart()) &&
-                     ((prog2->GetRecordStop() + mininterrectime) >= prog1->GetRecordStart())) {
-				config.logit("'%s' recording end overlaps '%s' recording start - shift times",
-							 prog2->GetQuickDescription().str(),
-							 prog1->GetQuickDescription().str());
+			else if (prog2->GetStart() < prog1->GetStart()) {
+				firstprog  = prog2;
+				secondprog = prog1;
+			}
 
-				prog2->SetRecordStop(prog1->GetStart() - mininterrectime);
-				prog1->SetRecordStart(prog1->GetStart());
+            // if firstprog is before secondprog and the recording of firstprog overlaps the recording of secondprog, adjust times 
+			if (firstprog && secondprog &&
+				((firstprog->GetRecordStop() + mininterrectime) >= secondprog->GetRecordStart())) {
+				config.logit("'%s' recording end overlaps '%s' recording start - shift times",
+							 firstprog->GetQuickDescription().str(),
+							 secondprog->GetQuickDescription().str());
+
+				config.logit("Recording times originally %s - %s and %s - %s",
+							 firstprog->GetRecordStartDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
+							 firstprog->GetRecordStopDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
+							 secondprog->GetRecordStartDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
+							 secondprog->GetRecordStopDT().UTCToLocal().DateFormat("%h:%m:%s").str());
+
+				uint64_t diff = firstprog->GetRecordStop()   + mininterrectime - secondprog->GetRecordStart();
+				uint64_t newt = secondprog->GetRecordStart() + diff / 2;
+
+				newt -= newt % 60000;
+
+				firstprog->SetRecordStop(newt - mininterrectime);
+				secondprog->SetRecordStart(newt);
+
+				config.logit("Recording times now        %s - %s and %s - %s",
+							 firstprog->GetRecordStartDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
+							 firstprog->GetRecordStopDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
+							 secondprog->GetRecordStartDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
+							 secondprog->GetRecordStopDT().UTCToLocal().DateFormat("%h:%m:%s").str());
 			}
 		}
 	}
@@ -1730,33 +1749,77 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgLis
 		prog.ClearList();
 	}
 
-	for (i = 0; i < repeatlists.Count(); i++) {
-		const ADataList& list = *(const ADataList *)repeatlists[i];
-		uint_t j;
+	bool   done = false;
+	uint_t round;
+	for (round = 0; !done; round++) {
+		done = true;
 
-		for (j = 0; j < list.Count(); j++) {
-			const ADVBProg& prog = *(const ADVBProg *)list[j];
+		for (i = 0; i < repeatlists.Count(); i++) {
+			ADataList& list = *(ADataList *)repeatlists[i];
 
-			if (!scheduledlist.FindOverlap(prog)) {
-				// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
-				config.logit("'%s' does not overlap: can be recorded", prog.GetQuickDescription().str());
+			if (list.Count()) {
+				uint_t j;
 
-				// add to scheduling list
-				scheduledlist.AddProg(prog);
-				break;
+				while (list.Count()) {
+					const ADVBProg& prog = *(const ADVBProg *)list.First();
+
+					if (!scheduledlist.FindOverlap(prog)) {
+						// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
+						config.logit("'%s' does not overlap: can be recorded (round %u, base channel '%s'))", prog.GetQuickDescription().str(), round, prog.GetBaseChannel());
+
+						// add to scheduling list
+						scheduledlist.AddProg(prog);
+
+						// remove programme from list to check
+						list.Pop();
+
+						// remove all other programmes in list that uses the same base channel
+						AString  channel = prog.GetBaseChannel();
+						bool     plus1   = prog.IsPlus1();
+						uint64_t hour    = 3600 * 1000;
+						uint64_t start   = prog.GetStart() - (plus1 ? hour : 0);
+						uint64_t start1  = start + hour;
+						for (j = 0; j < list.Count();) {
+							const ADVBProg& prog2 = *(const ADVBProg *)list[j];
+
+							if		(!prog2.AllowRepeats()) list.RemoveIndex(j);
+							else if ((prog2.GetBaseChannel() == channel) &&
+									 (( prog2.IsPlus1() && (prog2.GetStart() == start1)) ||
+									  (!prog2.IsPlus1() && (prog2.GetStart() == start)))) {
+								config.logit("Removing '%s' because it is +/- 1 hour from '%s'", prog2.GetQuickDescription().str(), prog.GetQuickDescription().str());
+								list.RemoveIndex(j);
+							}
+							else j++;
+						}
+						break;
+					}
+					else if (list.Count() == 1) {
+						// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
+						config.logit("No repeats of '%s' can be recorded!", prog.GetQuickDescription().str());
+						
+						rejectedlist.AddProg(prog);
+					}
+
+					// remove programme from list to check
+					list.Pop();
+				}
+
+				// remove all programmes in list without the AllowRepeats flag set
+				for (j = 0; j < list.Count();) {
+					const ADVBProg& prog = *(const ADVBProg *)list[j];
+
+					if (!prog.AllowRepeats()) list.RemoveIndex(j);
+					else					  j++;
+				}
+
+				// any non-empty lists cause process to be repeated
+				done &= (list.Count() == 0);
 			}
-		}
-
-		if (j == list.Count()) {
-			const ADVBProg& prog = *(const ADVBProg *)list[0];
-
-			// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
-			config.logit("No repeats of '%s' can be recorded!", prog.GetQuickDescription().str());
-
-			rejectedlist.AddProg(prog);
 		}
 	}
 
+	config.logit("Completed prioritization in %u rounds", round);
+	
 	scheduledlist.Sort();
 	rejectedlist.Sort();
 

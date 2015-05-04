@@ -163,7 +163,7 @@ void ADVBChannelList::Update(uint32_t freq, bool verbose)
 
 	sifilename = config.GetTempFile("pids", ".txt");
 
-	cmd.printf("dvbtune -c %u -f %u -i >%s 2>>%s", config.GetPhysicalDVBCard(0), freq, sifilename.str(), config.GetLogFile(ADateTime().GetDays()).str());
+	cmd.printf("dvbtune -c %u -f %u -i >%s 2>>%s", config.GetPhysicalDVBCard(0), (uint_t)freq, sifilename.str(), config.GetLogFile(ADateTime().GetDays()).str());
 
 	if (system(cmd) == 0) {
 		if (fp.open(sifilename)) {
@@ -188,10 +188,9 @@ void ADVBChannelList::Update(uint32_t freq, bool verbose)
 						CHANNEL *chan = GetChannel(servname, true);
 
 						if (chan) {
+							AHash     pidhash(10);
 							ADataList pidlist;
 							uint_t i, n = service.CountLines("\n", 0);
-							bool hasaudio = false;
-							bool hasvideo = false;
 							
 							chan->freq = freq;
 
@@ -199,17 +198,19 @@ void ADVBChannelList::Update(uint32_t freq, bool verbose)
 								line = service.Line(i, "\n", 0);
 
 								if (line.Left(8) == "<stream ") {
-									uint_t type = (uint_t)line.GetField("type=\"", "\"");
-									uint_t pid  = (uint_t)line.GetField("pid=\"", "\"");
-									bool include = false;
+									uint_t  type = (uint_t)line.GetField("type=\"", "\"");
+									uint_t  pid  = (uint_t)line.GetField("pid=\"", "\"");
+									AString id;
+									bool    include = false;
 
-									if (RANGE(type, 1, 2)) {
-										include  = !hasvideo;
-										hasvideo = true;
-									}
-									else if (RANGE(type, 3, 4)) {
-										include  = !hasaudio;
-										hasaudio = true;
+									if	    (RANGE(type, 1, 2)) id = "video";
+									else if (RANGE(type, 3, 4)) id = "audio";
+									//else if (type == 5)			include = true;
+									else if (type == 6)			include = true;
+
+									if (id.Valid() && !pidhash.Exists(id)) {
+										pidhash.Insert(id);
+										include = true;
 									}
 
 									if (include) pidlist.Add(pid);
@@ -220,7 +221,7 @@ void ADVBChannelList::Update(uint32_t freq, bool verbose)
 
 							pidlist.Sort(&__CompareItems);
 
-							if (pidlist != chan->pidlist) {
+							if (pidlist.Count() && (pidlist != chan->pidlist)) {
 								chan->pidlist = pidlist;
 								changed = true;
 							}
@@ -263,6 +264,18 @@ void ADVBChannelList::UpdateAll(bool verbose)
 	// ensure frequencies do not appear in the list more than once!
 	freqlist.EnableDuplication(false);
 
+	// use explicit scan frequencies file for *useful* frequencies
+	if (fp.open(config.GetFreqScanFile())) {
+		AString   line;
+
+		while (line.ReadLn(fp) >= 0) {
+			// any duplicates will be ignored
+			freqlist.Add((uptr_t)line);
+		}
+
+		fp.close();
+	}
+
 	// use old channels.conf to scan the *useful* frequencies
 	if (fp.open(config.GetChannelsConfFile())) {
 		AString   line;
@@ -304,26 +317,32 @@ AString ADVBChannelList::GetPIDList(const AString& channel, bool update)
 	const ADVBConfig& config = ADVBConfig::Get();
 	const CHANNEL *chan;
 	AString pids;
+	AString str;
 
 	if (update) Update(channel);
 
 	if ((chan = GetChannel(channel)) != NULL) {
 		pids.printf("%u", chan->freq);
 
+		if ((str = config.GetPriorityDVBPIDs()).Valid()) {
+			pids.printf(" %s", str.str());
+		}
+
 		uint_t i;
 		for (i = 0; i < chan->pidlist.Count(); i++) {
 			uint_t pid = (uint_t)chan->pidlist[i];
 
+			if (i == 0) pids.printf(" %u", pid - (pid % 100));
+
 			pids.printf(" %u", pid);
 		}
 
-		AString str;
 		if ((str = config.GetExtraDVBPIDs()).Valid()) {
 			pids.printf(" %s", str.str());
 		}
 	}
 
-	return pids.Words(0, 8);
+	return pids.Words(0, 9);
 }
 
 AString ADVBChannelList::LookupDVBChannel(const AString& channel) const
