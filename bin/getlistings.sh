@@ -7,7 +7,7 @@ if [ ! -f $LISTINGSFILE.gz ] ; then
   dvb --update $LISTINGSFILE
   gzip $LISTINGSFILE
 fi
-dvb --find-recorded-programmes-on-disk --check-recording-file --update-combined
+dvb --find-recorded-programmes-on-disk --check-recording-file
 dvb --schedule
 
 LISTINGSFILE=archive/listings-sky-`date +%Y-%m-%d`.xmltv
