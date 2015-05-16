@@ -100,6 +100,7 @@ int main(int argc, char *argv[])
 		printf("\t--set-recorded-flag\t\tSet recorded flag on all programmes in recorded list\n");
 		printf("\t--check-disk-space\t\tCheck disk space for all patterns\n");
 		printf("\t--update-recording-complete\tUpdate recording complete flag in every recorded programme\n");
+		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -747,6 +748,9 @@ int main(int argc, char *argv[])
 						config.printf("Failed to write recorded programme list back!");
 					}
 				}
+			}
+			else if (stricmp(argv[i], "--check-recording-file") == 0) {
+				ADVBProgList::CheckRecordingFile();
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();

@@ -104,6 +104,7 @@ public:
 	static bool WriteToJobList();
 
 	static void CreateCombinedList();
+	static void CheckRecordingFile();
 
 protected:
 	CHANNEL *GetChannelWritable(const AString& id) const {return (CHANNEL *)channelhash.Read(id);}

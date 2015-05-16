@@ -2149,6 +2149,39 @@ void ADVBProgList::CreateCombinedList()
 	}
 }
 
+void ADVBProgList::CheckRecordingFile()
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	ADVBLock     lock("schedule");
+	ADVBProgList list;
+	uint_t i;
+
+	//config.logit("Creating combined list");
+
+	if (list.ReadFromBinaryFile(config.GetRecordingFile())) {
+		uint64_t now     = (uint64_t)ADateTime().TimeStamp(true);
+		bool     changed = false;
+
+
+		for (i = 0; i < list.Count();) {
+			const ADVBProg& prog = list.GetProg(i);
+			
+			if (now >= (prog.GetRecordStop() + 60000)) {
+				config.printf("Programme '%s' should have stopped recording by now, removing it from the running list", prog.GetQuickDescription().str());
+				list.DeleteProg(i);
+				changed = true;
+			}
+			else i++;
+		}
+
+		if (changed) {
+			config.logit("Running list changed, writing new version");
+			list.WriteToFile(config.GetRecordingFile());
+		}
+	}
+	else config.logit("Failed to read running programme list for checking");
+}
+
 void ADVBProgList::FindSeries(AHash& hash) const
 {
 	uint_t i;
