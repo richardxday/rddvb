@@ -240,6 +240,8 @@ public:
 	bool OnRecordFailure() const;
 	bool PostProcess();
 
+	static bool FilePatternExists(const AString& filename);
+
 	static void Record(const AString& channel, uint_t mins = 0);
 
 	static bool debugsameprogramme;
