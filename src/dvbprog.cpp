@@ -1117,6 +1117,17 @@ AString ADVBProg::GenerateFilename() const
 	return GenerateFilename(config.GetFilenameTemplate());
 }
 
+static bool __fileexists(const FILE_INFO *file, void *Context)
+{
+	return false;
+}
+
+bool ADVBProg::FilePatternExists(const AString& filename)
+{
+	AString pattern = filename.Prefix() + ".*";
+	return !::Recurse(pattern, 0, &__fileexists);
+}
+
 void ADVBProg::GenerateRecordData(uint64_t recstarttime)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -1137,14 +1148,14 @@ void ADVBProg::GenerateRecordData(uint64_t recstarttime)
 		SetString(&data->strings.filename, filename.str());
 	}
 
-	if (AStdFile::exists(filename)) {
+	if (FilePatternExists(filename)) {
 		AString filename1;
 		uint_t  n = 1;
 
 		do {
 			filename1 = filename.Prefix() + AString(".%u.").Arg(n++) + filename.Suffix();
 		}
-		while (AStdFile::exists(filename1));
+		while (FilePatternExists(filename1));
 
 		filename = filename1;
 
