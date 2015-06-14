@@ -1055,9 +1055,16 @@ const ADVBProg *ADVBProgList::FindSimilar(const ADVBProg& prog, const ADVBProg *
 {
 	const ADVBProg *res = NULL;
 	uint_t i = 0;
-	int p;
 
-	if (startprog && ((p = proglist.Find((uptr_t)startprog)) >= 0)) i = p + 1;
+	if (startprog) {
+		const ADVBProg *startprog2;
+		int p;
+
+		if (((p = proglist.Find((uptr_t)startprog)) >= 0) ||
+			(((startprog2 = FindUUID(startprog)) != NULL) && ((p = proglist.Find((uptr_t)startprog2)) >= 0))) {
+			i = p + 1;
+		}
+	}
 
 	for (; i < Count(); i++) {
 		const ADVBProg& prog1 = GetProg(i);
