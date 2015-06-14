@@ -1426,15 +1426,17 @@ void ADVBProg::Record()
 
 		if (record) {
 			if (!AllowRepeats()) {
-				const ADVBProg *recordedprog;
+				const ADVBProg *recordedprog = NULL;
 				ADVBProgList recordedlist;
 
 				recordedlist.ReadFromFile(config.GetRecordedFile());
 
-				if ((recordedprog = recordedlist.FindSimilar(*this)) != NULL) {
-					config.addlogit("\n");
-					config.printf("'%s' already recorded ('%s')!", GetTitleAndSubtitle().str(), recordedprog->GetQuickDescription().str());
-					record = false;
+				while (record && ((recordedprog = recordedlist.FindSimilar(*this, recordedprog)) != NULL)) {
+					if (recordedprog->IsRecordingComplete()) {
+						config.addlogit("\n");
+						config.printf("'%s' already recorded ('%s')!", GetTitleAndSubtitle().str(), recordedprog->GetQuickDescription().str());
+						record = false;
+					}
 				}
 			}
 		}
