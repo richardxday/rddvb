@@ -47,7 +47,6 @@ void ADVBProgList::DeleteAll()
 
 ADVBProgList& ADVBProgList::operator = (const ADVBProgList& list)
 {
-	const ADVBConfig& config = ADVBConfig::Get();
 	uint_t i;
 
 	DeleteAll();
@@ -727,7 +726,6 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatecombined) con
 
 bool ADVBProgList::WriteToTextFile(const AString& filename) const
 {
-	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
 	bool success = false;
 
@@ -789,7 +787,6 @@ int ADVBProgList::AddProg(const ADVBProg& prog, bool sort, bool removeoverlaps, 
 
 int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps, bool reverseorder)
 {
-	const ADVBConfig& config = ADVBConfig::Get();
 	uint_t i;
 	int  index = -1;
 
