@@ -1119,6 +1119,8 @@ AString ADVBProg::GenerateFilename() const
 
 static bool __fileexists(const FILE_INFO *file, void *Context)
 {
+	(void)file;
+	(void)Context;
 	return false;
 }
 
@@ -1538,22 +1540,22 @@ void ADVBProg::Record()
 
 				SetRecordingComplete();
 
-				if (dt < (st - 15000ULL)) {
+				if (dt < (st - 15000)) {
 					config.addlogit("\n");
-					config.printf("Warning: '%s' stopped %ss before programme end!", GetTitleAndSubtitle().str(), NUMSTR("", (st - dt) / 1000ULL));
+					config.printf("Warning: '%s' stopped %ss before programme end!", GetTitleAndSubtitle().str(), NUMSTR("", (st - dt) / 1000));
 					reschedule = true;
 					addtorecorded = fake;
 				}
 
 				if (!IsRecordingComplete()) {
 					config.printf("Warning: '%s' is incomplete! (%ss missing from the start, %ss missing from the end)", GetTitleAndSubtitle().str(),
-								  NUMSTR("", MAX((sint64_t)(data->actstart - MIN(data->start, data->recstart)), 0) / 1000ULL),
-								  NUMSTR("", MAX((sint64_t)(data->recstop  - data->actstop), 0) / 1000ULL));
+								  NUMSTR("", MAX((sint64_t)(data->actstart - MIN(data->start, data->recstart)), 0) / 1000),
+								  NUMSTR("", MAX((sint64_t)(data->recstop  - data->actstop), 0) / 1000));
 				}
 
 				if (::GetFileInfo(filename, &info)) {
 					config.addlogit("\n");
-					config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", filename.str(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024ULL * (uint64_t)nsecs)));
+					config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", filename.str(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024 * (uint64_t)nsecs)));
 
 					data->filesize = info.FileSize;
 
