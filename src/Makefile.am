@@ -49,22 +49,23 @@ dvb_LDADD =										\
 	$(RDDVB_LIBS)
 
 dvb_CPPFLAGS =									\
-	$(RDDVB_CFLAGS)								\
 	$(RDLIB_CFLAGS)								\
 	$(RDDVB_CFLAGS)
 
 dvb_SOURCES =									\
 	dvb.cpp
 
+EXTRA_dvb_DEPENDENCIES = $(lib_LTLIBRARIES)
+
 dvbweb_LDADD =									\
 	$(RDLIB_LIBS)								\
 	$(RDDVB_LIBS)
 
 dvbweb_CPPFLAGS =								\
-	$(RDDVB_CFLAGS)								\
 	$(RDLIB_CFLAGS)								\
 	$(RDDVB_CFLAGS)
 
 dvbweb_SOURCES =								\
 	dvbweb.cpp
 
+EXTRA_dvbweb_DEPENDENCIES = $(lib_LTLIBRARIES)
