@@ -264,8 +264,19 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 						ADateTime start, stop;
 						AString   str;
 
-						start.FromTimeStamp(programme.GetField(" start=\"", "\""), true);
-						stop.FromTimeStamp(programme.GetField(" stop=\"", "\""), true);
+						start.StrToDate(programme.GetField(" start=\"", "\""), ADateTime::Time_Absolute);
+						stop.StrToDate(programme.GetField(" stop=\"", "\""), ADateTime::Time_Absolute);
+
+#if 0
+						{
+							static AStdFile fp;
+							if (!fp.isopen()) fp.open("dates.txt", "w");
+							if (fp.isopen()) {
+								fp.printf("Start %s -> %s\n", programme.GetField(" start=\"", "\"").str(), start.DateFormat("%Y-%M-%D %h:%m:%s.%S").str());
+								fp.printf("Stop  %s -> %s\n", programme.GetField(" stop=\"", "\"").str(), stop.DateFormat("%Y-%M-%D %h:%m:%s.%S").str());
+							}
+						}
+#endif
 
 						str.printf("\n");
 						str.printf("start=%s\n", ADVBProg::GetHex(start).str());
