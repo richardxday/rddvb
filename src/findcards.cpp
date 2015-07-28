@@ -50,7 +50,7 @@ void findcards(void)
 					config.printf("%u: %s", i, line.str());
 					ofp.printf("%u %s\n", i, line.str());
 					break;
-				}	
+				}
 			}
 			
 			fp.close();
