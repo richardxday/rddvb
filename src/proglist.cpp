@@ -406,12 +406,12 @@ bool ADVBProgList::ReadRadioListingsFromHTMLFile(const AString& filename, const 
                     ADateTime dt;
 
                     if (property == "startdate") {
-                        dt.FromTimeStamp(content, true);
+                        dt.StrToDate(content);
                         prog.Delete();
                         prog.printf("\nstart=%s\n", ADVBProg::GetHex(dt).str());
                     }
                     else if (property == "enddate") {
-                        dt.FromTimeStamp(content, true);
+                        dt.StrToDate(content);
                         prog.printf("stop=%s\n", ADVBProg::GetHex(dt).str());
                     }
                 }

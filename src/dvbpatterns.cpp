@@ -192,7 +192,7 @@ void ADVBPatterns::GetFieldValue(const FIELD& field, VALUE& value, AString& val)
 			break;
 
 		case FieldType_date:
-			value.u64 = (uint64_t)ADateTime().StrToDate(val);
+			value.u64 = (uint64_t)ADateTime(val, ADateTime::Time_Absolute);
 			break;
 
 		case FieldType_uint32_t:
@@ -690,10 +690,7 @@ AString ADVBPatterns::ParsePattern(const AString& line, PATTERN& pattern, const 
 						ADateTime dt;
 						uint_t specified;
 
-						if (dt.FromTimeStamp(value)) {
-							specified = ADateTime::Specified_Date | ADateTime::Specified_Time;
-						}
-						else dt.StrToDate(value, false, &specified);
+						dt.StrToDate(value, ADateTime::Time_Absolute, &specified);
 
 						//debug("Value '%s', specified %u\n", value.str(), specified);
 
@@ -1092,7 +1089,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 				switch (field.type) {
 					case FieldType_date: {
 						ADateTime dt;
-						uint64_t val;
+						uint64_t  val;
 
 						memcpy(&val, ptr, sizeof(val));
 						dt  = ADateTime(val).UTCToLocal();
@@ -1100,11 +1097,11 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 
 						switch (term.datetype) {
 							case DateType_time:
-								val %= 24ULL * 3600ULL * 1000ULL;
+								val %= 24UL * 3600UL * 1000UL;
 								break;
 
 							case DateType_date:
-								val /= 24ULL * 3600ULL * 1000ULL;
+								val /= 24UL * 3600UL * 1000UL;
 								break;
 
 							case DateType_weekday:
