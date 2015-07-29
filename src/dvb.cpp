@@ -443,10 +443,7 @@ int main(int argc, char *argv[])
 				ADVBProgList::SchedulePatterns();
 			}
 			else if (strcmp(argv[i], "--start-time") == 0) {
-				if (stricmp(argv[++i], "min") == 0) {
-					starttime = ADateTime::MinDateTime;
-				}
-				else starttime.StrToDate(argv[i]);
+				starttime.StrToDate(argv[i]);
 			}
 			else if (strcmp(argv[i], "--fake-schedule") == 0) {
 				ADVBProgList::SchedulePatterns(starttime, false);
