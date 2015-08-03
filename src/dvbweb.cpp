@@ -102,11 +102,14 @@ int main(int argc, char *argv[])
 	bool 			  base64encoded = true;
 	int i;
 
+	enabledebug(false);
+
 	for (i = 1; i < argc; i++) {
 		AString arg = argv[i];
 
 		if (arg == "cli") {
 			base64encoded = false;
+			enabledebug(true);
 			continue;
 		}
 
