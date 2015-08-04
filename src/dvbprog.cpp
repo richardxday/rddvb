@@ -315,7 +315,7 @@ bool ADVBProg::SetUUID()
 void ADVBProg::SetRecordingComplete()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	uint64_t maxreclag = (uint64_t)config.GetConfigItem("maxrecordlag", "10") * 1000ULL;
+	uint64_t maxreclag = (uint64_t)config.GetConfigItem("maxrecordlag", "20") * 1000ULL;
 
 	SetFlag(Flag_incompleterecording, !((data->actstart <= (data->start + maxreclag)) && (data->actstop >= MIN(data->stop, data->recstop - 1000))));
 }
