@@ -1069,7 +1069,7 @@ AString ADVBProg::ValidFilename(const AString& str) const
 		char c = str[i];
 
 		if		(IsSymbolChar(c) || (c == '.') || (c == '-')) updater.Update(c);
-		else if (IsWhiteSpace(c)) updater.Update('_');
+		else if ((c == '/') || IsWhiteSpace(c)) updater.Update('_');
 	}
 
 	updater.Flush();
