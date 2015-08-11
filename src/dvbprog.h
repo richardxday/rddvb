@@ -329,6 +329,7 @@ protected:
 	static void StaticInit();
 	void Init();
 
+	AString GetAdditionalLogFile() const;
 	AString ReplaceTerms(const AString& str) const;
 
 	static const DVBPROG *nullprog;
