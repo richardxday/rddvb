@@ -1348,12 +1348,18 @@ int ADVBProg::CompareScore(const ADVBProg& prog1, const ADVBProg& prog2)
 	return res;
 }
 
+AString ADVBProg::GetAdditionalLogFile() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	return config.GetLogDir().CatPath(AString(GetFilename()).FilePart().Prefix() + ".txt");
+}
+
 void ADVBProg::Record()
 {
 	if (Valid()) {
 		const ADVBConfig& config = ADVBConfig::Get();
 		AString  oldaddlogfile = config.GetAdditionalLogFile();
-		AString  addlogfile    = config.GetLogDir().CatPath(AString(GetFilename()).FilePart().Prefix() + ".txt");
+		AString  addlogfile    = GetAdditionalLogFile();
 		uint64_t dt, st, et;
 		uint_t   nsecs, nmins;
 		bool     record = true, deladdlogfile = true;
@@ -1582,8 +1588,11 @@ void ADVBProg::Record()
 							reschedule = true;
 						}
 
-						deladdlogfile &= PostProcess();
-						deladdlogfile &= OnRecordSuccess();
+						if (PostProcess()) OnRecordSuccess();
+						else {
+							deladdlogfile = false;
+							OnRecordFailure();
+						}
 					}
 					else if (!info.FileSize) {
 						config.addlogit("\n");
@@ -1648,7 +1657,8 @@ AString ADVBProg::ReplaceTerms(const AString& str) const
 			.SearchAndReplace("{times}", times)
 			.SearchAndReplace("{user}", GetUser())
 			.SearchAndReplace("{filename}", GetFilename())
-			.SearchAndReplace("{file}", config.GetLogFile()));
+			.SearchAndReplace("{logfile}", config.GetLogFile())
+			.SearchAndReplace("{addlogfile}", GetAdditionalLogFile()));
 }
 
 bool ADVBProg::OnRecordSuccess() const
