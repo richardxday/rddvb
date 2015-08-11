@@ -35,7 +35,9 @@ void findcards(void)
 
 		remove(file);
 
-		if ((system(cmd) == 0) && fp.open(file)) {
+		int res = system(cmd);
+		(void)res;
+		if (fp.open(file)) {
 			AString line;
 
 			while (line.ReadLn(fp) >= 0) {
