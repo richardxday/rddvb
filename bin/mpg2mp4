@@ -6,11 +6,11 @@ AUDIO=${SRC%.*}.mp2
 LOGFILE=${SRC%.*}_log.txt
 SUBTITLES=${SRC%.*}.sup
 KEEPSUBTITLES="$2"
-RES=`projectx -ini ~/X.ini "$SRC" >/dev/null && avconv -i "$VIDEO" -i "$AUDIO" -acodec copy -vcodec copy -filter:v yadif -v warning -y "$DST" && chmod 755 "$DST" && echo "1"`
+RES=""
+projectx -ini ~/X.ini "$SRC" && avconv -i "$VIDEO" -i "$AUDIO" -acodec copy -vcodec copy -filter:v yadif -v warning -y "$DST" && chmod 755 "$DST" && RES="1"
 if [ -n "$KEEPSUBTITLES" ] ; then
   rm "$VIDEO" "$AUDIO" "$LOGFILE" "$SUBTITLES" "$SUBTITLES.IFO"
 else
   rm "$VIDEO" "$AUDIO" "$LOGFILE" "$SUBTITLES"*
 fi
 test -n "$RES"
-
