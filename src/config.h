@@ -24,14 +24,13 @@ public:
 
 	void    ListUsers(AList& list) const;
 
-	AString GetBaseDir()			   		 const;
-	AString GetConfigDir()		   			 const {return CatPath(GetBaseDir(), GetConfigItem("confdir", "conf"));}
-	AString GetDataDir()			   		 const {return CatPath(GetBaseDir(), GetConfigItem("datadir", "data"));}
-	AString GetLogDir()			   	  		 const {return CatPath(GetBaseDir(), GetConfigItem("logdir", "logs"));}
-	AString GetRecordingsDir()	   	  		 const {return CatPath(GetBaseDir(), GetConfigItem("recdir", "recordings"));}
+	AString GetConfigDir()		   			 const;
+	AString GetDataDir()			   		 const;
+	AString GetLogDir()			   	  		 const;
+	AString GetRecordingsDir()	   	  		 const {return CatPath(GetDataDir(), GetConfigItem("recdir", "recordings"));}
 	AString GetRecordingsSubDir(const AString& user) const {return user.Valid() ? GetUserConfigItem(user, "dir") : GetConfigItem("dir");}
 	AString GetRecordingsDir(const AString& user) const {return CatPath(GetRecordingsDir(), GetRecordingsSubDir(user));}
-	AString GetTempDir()              		 const {return GetConfigItem("tempdir", GetBaseDir().CatPath("temp"));}
+	AString GetTempDir()              		 const {return GetConfigItem("tempdir", GetDataDir().CatPath("temp"));}
 	AString GetTempFile(const AString& name, const AString& suffix = "") const;
 	AString GetQueue()						 const {return GetConfigItem("queue", "d");}
 	AString GetFilenameTemplate()			 const {return GetConfigItem("filename", "{title}{sep}{episode}{sep}{date}{sep}{times}{sep}{subtitle}{sep}mpg");}

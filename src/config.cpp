@@ -10,9 +10,11 @@
 #include "config.h"
 #include "findcards.h"
 
-#define DEFAULTBASEDIR "/etc/dvb"
+#define DEFAULTCONFDIR "/etc/dvb"
+#define DEFAULTDATADIR "/var/dvb"
+#define DEFAULTLOGDIR  "/var/log/dvb"
 
-ADVBConfig::ADVBConfig() : config(DEFAULTBASEDIR, false),
+ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false),
 						   defaults(20, &AString::DeleteString),
 						   webresponse(false),
 						   additionallogneedstimestamps(false)
@@ -38,7 +40,6 @@ ADVBConfig::ADVBConfig() : config(DEFAULTBASEDIR, false),
 	
 	additionallogfilename = GetConfigItem("additionallogfile");
 
-	CreateDirectory(GetBaseDir());
 	CreateDirectory(GetConfigDir());
 	CreateDirectory(GetDataDir());
 	CreateDirectory(GetLogDir());
@@ -77,15 +78,19 @@ const AString& ADVBConfig::GetDefaultInterRecTime() const
 	return rectime;
 }
 
-AString ADVBConfig::GetBaseDir() const
+AString ADVBConfig::GetConfigDir() const
 {
-	static AString dir;
+	return DEFAULTCONFDIR;
+}
 
-	if (dir.Empty()) {
-		dir = config.Get("basedir", DEFAULTBASEDIR);
-	}
+AString ADVBConfig::GetDataDir() const
+{
+	return GetConfigItem("datadir", DEFAULTDATADIR);
+}
 
-	return dir;
+AString ADVBConfig::GetLogDir() const
+{
+	return GetConfigItem("logdir", DEFAULTLOGDIR);
 }
 
 AString ADVBConfig::GetTempFile(const AString& name, const AString& suffix) const
