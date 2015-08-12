@@ -48,6 +48,9 @@ int main(int argc, char *argv[])
 		printf("Usage: dvb {<file>|<cmd> ...}\n");
 		printf("Where <cmd> is:\n");
 		printf("\t-v[<n>]\t\t\t\tIncrease verbosity by <n> or by 1\n");
+		printf("\t--confdir\t\t\tPrint conf directory\n");
+		printf("\t--datadir\t\t\tPrint data directory\n");
+		printf("\t--logdir\t\t\tPrint log directory\n");
 		printf("\t--update <file>\t\t\tUpdate main listings with file <file> (-u)\n");
 		printf("\t--load\t\t\t\tRead listings from default file (-l)\n");
 		printf("\t--read <file>\t\t\tRead listings from file <file> (-r)\n");
@@ -109,6 +112,9 @@ int main(int argc, char *argv[])
 				uint_t inc = (uint_t)AString(argv[i] + 2);
 				verbosity += inc ? inc : 1;
 			}
+			else if (strcmp(argv[i], "--confdir") == 0) printf("%s\n", config.GetConfigDir().str());
+			else if (strcmp(argv[i], "--datadir") == 0) printf("%s\n", config.GetDataDir().str());
+			else if (strcmp(argv[i], "--logdir") == 0)  printf("%s\n", config.GetLogDir().str());
 			else if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0) || (AString(argv[i]).Suffix() == "xmltv") || (AString(argv[i]).Suffix() == "txt")) {
 				AString filename = config.GetListingsFile();
 
