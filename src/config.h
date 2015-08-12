@@ -46,7 +46,7 @@ public:
 	AString GetRejectedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("rejected", "rejected.dat"));}
 	AString GetRecordingFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("recording", "recording.dat"));}
 	AString GetCombinedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("combined", "combined.dat"));}
-	AString GetDVBCardsFile()                const {return CatPath(GetConfigDir(), GetConfigItem("dvbcards", "dvbcards.txt"));}
+	AString GetDVBCardsFile()                const {return CatPath(GetDataDir(), GetConfigItem("dvbcards", "dvbcards.txt"));}
 	AString GetLogFile(uint32_t day)         const {return CatPath(GetLogDir(), "dvblog-" + ADateTime(day, 0UL).DateFormat("%Y-%M-%D") + ".txt");}
 	AString GetRecordLog(uint32_t day) 		 const {return CatPath(GetLogDir(), "dvbrecordlog-" + ADateTime(day, 0UL).DateFormat("%Y-%M") + ".txt");}
 	AString GetEpisodesFile()				 const {return CatPath(GetDataDir(), GetConfigItem("episodesfile", "episodes.txt"));}
