@@ -18,15 +18,16 @@ bool forcelogging = false;
 static bool __DisplaySeries(const char *key, uptr_t value, void *context)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	const ADataList *serieslist = (const ADataList *)value;
 
 	UNUSED(context);
 
-	if (serieslist) {
+	if (value) {
+		const ADVBProgList::SERIES& series = *(const ADVBProgList::SERIES *)value;
+		const ADataList& serieslist = series.list;
 		uint_t j;
 
-		for (j = 0; j < serieslist->Count(); j++) {
-			const AString *str = (const AString *)(*serieslist)[j];
+		for (j = 0; j < serieslist.Count(); j++) {
+			const AString *str = (const AString *)serieslist[j];
 			
 			if (str) config.printf("Programme '%s' series %u: %s", key, j, str->str());
 		}
