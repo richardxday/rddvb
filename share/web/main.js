@@ -575,14 +575,16 @@ function populateprogs(id)
 							var dec = 3;
 							if (n > 10)  dec++;
 							if (n > 100) dec++;
-							for (j = 1; j < n; j++) {
+							for (j = 0; j < n; j++) {
 								if (typeof prog.series == 'undefined') str1 += '&nbsp;&nbsp;&nbsp;';
 
 								if ((typeof prog.series == 'undefined') ||
 									((typeof prog.series[j] != 'undefined') && (prog.series[j].state != 'empty'))) {
-									if (series) str1 += findfromfilter('Combined', 'title="' + prog.title + '" series=' + j, '', 'Series ' + strpad(j, 2), 'View series ' + j + ' scheduled/recorded of this programme');
+									if (series) {
+										str1 += findfromfilter('Combined', 'title="' + prog.title + '" series=' + j, '', j ? 'Series ' + strpad(j, 2) : 'Unknown', 'View series ' + j + ' scheduled/recorded of this programme');
+									}
 									else {
-										var en1 = j * 100 - 99, en2 = en1 + 99;
+										var en1 = j * 100 + 1, en2 = en1 + 99;
 										str1 += findfromfilter('Combined', 'title="' + prog.title + '" episode>=' + en1 + ' episode<=' + en2, '', 'E' + strpad(en1, dec, '0') + ' to E' + strpad(en2, dec, '0'), 'View episode range scheduled/recorded of this programme');
 									}
 
@@ -596,8 +598,8 @@ function populateprogs(id)
 												alttext = 'Series ' + j + ' Episode ' + (k + 1);
 											}
 											else {
-												pattern = 'episode=' + (j * 100 - 99 + k);
-												alttext = 'Episode ' + (j * 100 - 99 + k);
+												pattern = 'episode=' + (j * 100 + 1 + k);
+												alttext = 'Episode ' + (j * 100 + 1 + k);
 											}
 
 											if		(prog.series[j].episodes[k] == 'r') alttext += ' (Recorded)';
