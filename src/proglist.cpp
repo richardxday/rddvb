@@ -2296,7 +2296,7 @@ void ADVBProgList::FindSeries(AHash& hash) const
 
 			if (!ser) {
 				if (epn >= 100) ept = 100;
-				ser = 1 + ((epn - 1) / 100);
+				ser = ((epn - 1) / 100);
 				epn = 1 + ((epn - 1) % 100);
 			}
 
@@ -2332,6 +2332,8 @@ void ADVBProgList::FindSeries(AHash& hash) const
 
 						elist = elist.Left(ind) + AString(t) + elist.Mid(ind + 1);
 					}
+
+					//debug("%s: %u/%u: %s (%s)\n", prog.GetTitle(), ser, epn, str->str(), prog.GetDescription(1).str());
 				}
 			}
 		}
