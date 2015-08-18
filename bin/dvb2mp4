@@ -1,4 +1,4 @@
 #!/bin/sh
 SRC=$1
 DST=${SRC%.*}.mp4
-nice mpg2mp4 "$SRC" "$2" && dvb --change-filename "$SRC" "$DST" && nice mv "$SRC" /home/richard/Videos/Backup
+nice mpg2mp4 "$SRC" "$2" && dvb --change-filename "$SRC" "$DST" && nice mv "$SRC" /home/richard/VideoBackup
