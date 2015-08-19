@@ -121,14 +121,14 @@ void ADVBPatterns::AddPatternToFile(const AString& filename, const AString& patt
 		}
 
 		fp.close();
+	}
 
-		if (!done) {
-			if (fp.open(filename, "a")) {
-				fp.printf("%s\n", pattern.str());
-				fp.close();
-
-				config.logit("Add pattern '%s' to file '%s'", pattern.str(), filename.str());
-			}
+	if (!done) {
+		if (fp.open(filename, "a")) {
+			fp.printf("%s\n", pattern.str());
+			fp.close();
+			
+			config.logit("Add pattern '%s' to file '%s'", pattern.str(), filename.str());
 		}
 	}
 }
