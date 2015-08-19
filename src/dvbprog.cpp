@@ -1100,7 +1100,8 @@ AString ADVBProg::GenerateFilename(const AString& templ) const
 						.SearchAndReplace("{channel}", ValidFilename(GetChannel()))
 						.SearchAndReplace("{date}", ValidFilename(date))
 						.SearchAndReplace("{times}", ValidFilename(times))
-						.SearchAndReplace("{user}", ValidFilename(GetUser())));
+						.SearchAndReplace("{user}", ValidFilename(GetUser()))
+						.SearchAndReplace("{suffix}", config.GetUserConfigItem(GetUser(), "suffix", "mpg")));
 		
 	while (filename.Pos("{sep}{sep}") >= 0) {
 		filename = filename.SearchAndReplace("{sep}{sep}", "{sep}");
@@ -1474,13 +1475,14 @@ void ADVBProg::Record()
 			}
 
 			bool mpgps = (((uint_t)config.GetUserConfigItem(GetUser(), "mpgps") != 0) && (pids.CountWords() == 3));
-			cmd.printf("dvbstream -c %u %s -n %u -f %s -o >\"%s\" 2>>%s",
+			AString dest = ReplaceTerms(config.GetUserConfigItem(GetUser(), "streamprocess", ">\"{filename}\""));
+			cmd.printf("dvbstream -c %u %s -n %u -f %s -o 2>>%s %s",
 					   GetDVBCard(),
 					   mpgps ? "-ps" : "",
 					   nsecs,
 					   pids.str(),
-					   filename.str(),
-					   config.GetLogFile().str());
+					   config.GetLogFile().str(),
+					   dest.str());
 
 			data->actstart = ADateTime().TimeStamp(true);
 
