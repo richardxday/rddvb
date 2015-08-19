@@ -3,4 +3,4 @@ SRC="$1"
 DST="${SRC%.*}.mp4"
 CRF="$2"
 test -z "$CRF" && CRF=18
-avconv -i "$SRC" -acodec mp3 -vcodec libx264 -crf $CRF -preset fast -v warning -y "$DST"
+avconv -i "$SRC" -acodec mp3 -vcodec libx264 -crf $CRF -preset fast -tune animation -filter:v yadif -v warning -y "$DST"

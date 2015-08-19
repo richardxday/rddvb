@@ -1468,7 +1468,7 @@ bool ADVBProgList::CheckDiskSpace(const ADataList& patternlist, bool runcmd, boo
 		if (!okay) {
 			AString cmd = config.GetConfigItem("lowdiskspacecmd");
 			if (cmd.Valid()) {
-				cmd = cmd.SearchAndReplace("{file}", filename);
+				cmd = cmd.SearchAndReplace("{logfile}", filename);
 
 				int res = system(cmd);
 				if (res != 0) config.logit("Command '%s' failed!", cmd.str());
@@ -1477,7 +1477,7 @@ bool ADVBProgList::CheckDiskSpace(const ADataList& patternlist, bool runcmd, boo
 		else {
 			AString cmd = config.GetConfigItem("diskspacecmd");
 			if (cmd.Valid()) {
-				cmd = cmd.SearchAndReplace("{file}", filename);
+				cmd = cmd.SearchAndReplace("{logfile}", filename);
 
 				int res = system(cmd);
 				if (res != 0) config.logit("Command '%s' failed!", cmd.str());
@@ -1645,7 +1645,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 
 				fp.close();
 
-				cmd = cmd.SearchAndReplace("{file}", filename);
+				cmd = cmd.SearchAndReplace("{logfile}", filename);
 
 				if (system(cmd) != 0) {
 					config.printf("Command '%s' failed", cmd.str());

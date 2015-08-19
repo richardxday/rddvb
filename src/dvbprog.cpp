@@ -1476,9 +1476,9 @@ void ADVBProg::Record()
 
 			bool mpgps = (((uint_t)config.GetUserConfigItem(GetUser(), "mpgps") != 0) && (pids.CountWords() == 3));
 			AString dest = config.GetUserConfigItem(GetUser(), "streamprocess", "");
-			if (dest.Valid()) dest = ReplaceTerms("| " + dest);
+			if (dest.Valid()) dest = ReplaceTerms("| " + dest + " 2>>\"{logfile}\"");
 			else			  dest = ReplaceTerms(">\"{filename}\"");
-			cmd.printf("dvbstream -c %u %s -n %u -f %s -o 2>>%s %s",
+			cmd.printf("dvbstream -c %u %s -n %u -f %s -o 2>>\"%s\" %s",
 					   GetDVBCard(),
 					   mpgps ? "-ps" : "",
 					   nsecs,
@@ -1711,7 +1711,7 @@ bool ADVBProg::PostProcess()
 	AString user = GetUser();
 	bool success = false;
 
-	if (RunPostProcess() || ((uint_t)config.GetUserConfigItem(user, "postprocessall") != 0)) {
+	if (RunPostProcess() || ((uint_t)config.GetUserConfigItem(user, "postprocess") != 0)) {
 		AString postcmd;
 
 		if ((postcmd = config.GetUserConfigItem(user, "postprocesscmd")).Valid()) {
