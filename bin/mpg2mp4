@@ -1,10 +1,10 @@
 #!/bin/sh
-SRC=$1
-DST=${SRC%.*}.mp4
-VIDEO=${SRC%.*}.m2v
-AUDIO=${SRC%.*}.mp2
-LOGFILE=${SRC%.*}_log.txt
-SUBTITLES=${SRC%.*}.sup
+SRC="$1"
+DST="${SRC%.*}.mp4"
+VIDEO="${SRC%.*}.m2v"
+AUDIO="${SRC%.*}.mp2"
+LOGFILE="${SRC%.*}_log.txt"
+SUBTITLES="${SRC%.*}.sup"
 KEEPSUBTITLES="$2"
 RES=""
 projectx -ini ~/X.ini "$SRC" && avconv -i "$VIDEO" -i "$AUDIO" -acodec copy -vcodec copy -filter:v yadif -v warning -y "$DST" && chmod 755 "$DST" && RES="1"
