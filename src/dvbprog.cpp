@@ -1531,6 +1531,26 @@ void ADVBProg::Record()
 				config.addlogit("\n");
 
 				{
+					// temporarily switch off additional logging
+					((ADVBConfig&)config).SetAdditionalLogFile(oldaddlogfile);
+
+					// to copy additional log file into main log
+					AStdFile fp;
+					if (fp.open(addlogfile)) {
+						AString line;
+
+						while (line.ReadLn(fp) >= 0) {
+							config.logit("%s\n", line.str());
+						}
+
+						fp.close();
+					}
+
+					// re-enable additional logging
+					((ADVBConfig&)config).SetAdditionalLogFile(addlogfile);
+				}
+
+				{
 					ADVBLock lock("schedule");
 					ADVBProgList list;
 					list.ReadFromFile(listfilename);
