@@ -1,7 +1,7 @@
 #!/bin/sh
 DST="$1"
 BASENAME="`basename \"$DST\"`"
-BACKUP="/home/richard/VideoBackup/${BASENAME%.*}.mpg"
+BACKUP="/home/richard/Videos/Backup/${BASENAME%.*}.mpg"
 CRF="$2"
 test -z "$CRF" && CRF=18
 tee "$BACKUP" | avconv -i - -acodec mp3 -vcodec libx264 -crf $CRF -preset veryfast -tune animation -filter:v yadif -v warning -y "$DST" && chmod a+x "$DST"
