@@ -1540,7 +1540,7 @@ void ADVBProg::Record()
 						AString line;
 
 						while (line.ReadLn(fp) >= 0) {
-							config.logit("%s\n", line.str());
+							config.logit("%s", line.str());
 						}
 
 						fp.close();

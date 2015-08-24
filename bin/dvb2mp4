@@ -4,4 +4,4 @@ DST="${SRC%.*}.mp4"
 CONV="$2"
 test -z "$CONV" && CONV="mp4"
 CONV="mpg2$CONV"
-nice $CONV "$SRC" "$3" && dvb --change-filename "$SRC" "$DST" && nice mv "$SRC" /home/richard/VideoBackup
+nice $CONV "$SRC" "$3" && dvb --change-filename "$SRC" "$DST" && nice mv "$SRC" /home/richard/Videos/Backup
