@@ -335,8 +335,6 @@ AString ADVBChannelList::GetPIDList(const AString& channel, bool update)
 		for (i = 0; i < chan->pidlist.Count(); i++) {
 			uint_t pid = (uint_t)chan->pidlist[i];
 
-			if (i == 0) pids.printf(" %u", pid - (pid % 100));
-
 			pids.printf(" %u", pid);
 		}
 
@@ -344,6 +342,7 @@ AString ADVBChannelList::GetPIDList(const AString& channel, bool update)
 			pids.printf(" %s", str.str());
 		}
 	}
+	//else config.printf("Failed to find channel '%s'", channel.str());
 
 	return pids.Words(0, 9);
 }

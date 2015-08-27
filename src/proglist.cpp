@@ -2093,9 +2093,16 @@ void ADVBProgList::SimpleSchedule()
 			config.printf("'%s' already finished", prog.GetQuickDescription().str());
 			continue;
 		}
-		else if ((prog1 = recordedlist.FindSimilar(prog)) != NULL) {
-			config.printf("'%s' already recorded ('%s')", prog.GetQuickDescription().str(), prog1->GetQuickDescription().str());
-			continue;
+		else {
+			prog1 = NULL;
+
+			// find recorded programme which cannot be ignored
+			while (((prog1 = recordedlist.FindSimilar(prog, prog1)) != NULL) && prog1->CanIgnoreRecording()) ;
+
+			if (prog1) {
+				config.printf("'%s' already recorded ('%s')", prog.GetQuickDescription().str(), prog1->GetQuickDescription().str());
+				continue;
+			}
 		}
 
 		prog.GenerateRecordData(recstart);

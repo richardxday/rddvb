@@ -147,7 +147,8 @@ public:
 		Flag_radioprogramme,
 		Flag_dvbcardspecified,
 		Flag_incompleterecording,
-
+		Flag_ignorerecording,
+		
 		Flag_count,
 	};
 	uint32_t GetFlags()		   	  const {return data->flags;}
@@ -185,6 +186,8 @@ public:
 	void   SetDVBCardSpecified()        {SetFlag(Flag_dvbcardspecified);}
 	bool   IsRecordingComplete()  const {return !GetFlag(Flag_incompleterecording);}
 	void   SetRecordingComplete();
+	bool   CanIgnoreRecording()	  const {return GetFlag(Flag_ignorerecording);}
+	void   SetIgnoreRecording()			{SetFlag(Flag_ignorerecording);}
 
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}
@@ -210,6 +213,9 @@ public:
 
 	AString GenerateFilename(const AString& templ) const;
 	AString GenerateFilename() const;
+
+	AString GetRecordPIDS() const;
+	AString GenerateRecordCommand(uint_t nsecs, const AString& pids) const;
 
 	void GenerateRecordData(uint64_t recstarttime);
 

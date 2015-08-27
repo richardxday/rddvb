@@ -45,7 +45,8 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 	CreateDirectory(GetLogDir());
 	CreateDirectory(GetRecordingsDir());
 	CreateDirectory(GetTempDir());
-
+	CreateDirectory(GetRecordingsBackupDir());
+	
 	{
 		AList users;
 
@@ -54,6 +55,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		const AString *user = AString::Cast(users.First());
 		while (user) {
 			CreateDirectory(GetRecordingsDir(*user));
+			CreateDirectory(GetRecordingsBackupDir(*user));
 			
 			user = user->Next();
 		}
@@ -110,6 +112,80 @@ AString ADVBConfig::GetConfigItem(const AString& name, const AString& defval) co
 {
 	if (config.Exists(name)) return config.Get(name);
 	return defval;
+}
+
+AString ADVBConfig::GetFileSuffix(const AString& user, const AString& def) const
+{
+	AString format = GetUserConfigItem(user, "format", "h264");
+	AString proc   = GetUserConfigItem(user, "proc", GetUserConfigItem(user, "proc:" + format, ""));
+	AString suffix;
+	
+	if		(proc.Valid()) suffix = GetUserConfigItem(user, "proc:suffix", GetUserConfigItem(user, "filesuffix", def));
+	else if ((format == "h264") || (format == "dvb")) {
+		suffix = GetUserConfigItem(user, format + ":suffix", GetUserConfigItem(user, "filesuffix", "mp4"));
+	}
+	else if (format.Valid()) suffix = GetUserConfigItem(user, format + ":suffix", def);
+	else				     suffix = GetUserConfigItem(user, "filesuffix", def);
+
+	return suffix;
+}
+
+AString ADVBConfig::GetProcessingCommand(const AString& user, const AString& filename) const
+{
+	AString format = GetUserConfigItem(user, "format", "h264");
+	AString proc   = GetUserConfigItem(user, "proc", GetUserConfigItem(user, "proc:" + format, ""));
+	AString cmd;
+
+	if		(proc.Valid()) cmd = proc;
+	else if (format == "h264") {
+		cmd.printf("avconv -i - -copyinkf -acodec %s -vcodec libx264 -crf %s -preset %s -tune %s -filter:v %s -v %s %s %s -y \"%s\"",
+				   GetUserConfigItem(user, format + ":acodec", 	 "mp3").str(),
+				   GetUserConfigItem(user, format + ":crf",    	 "18").str(),
+				   GetUserConfigItem(user, format + ":preset", 	 "veryfast").str(),
+				   GetUserConfigItem(user, format + ":tune",   	 "animation").str(),
+				   GetUserConfigItem(user, "video:filter",       "yadif").str(),
+				   GetUserConfigItem(user, "video:warninglevel", "warning").str(),
+				   GetUserConfigItem(user, "video:args",         "").str(),
+				   GetUserConfigItem(user, format + ":args",     "").str(),
+				   filename.str());
+	}
+	else if (format == "dvb") {
+		cmd.printf("avconv -i - -copyinkf -acodec copy -vcodec copy -filter:v %s -v %s %s %s -y \"%s\"",
+				   GetUserConfigItem(user, "video:filter",       "yadif").str(),
+				   GetUserConfigItem(user, "video:warninglevel", "warning").str(),
+				   GetUserConfigItem(user, "video:args",         "").str(),
+				   GetUserConfigItem(user, format + ":args",     "").str(),
+				   filename.str());
+	}
+	else if (format == "avconv") {
+		cmd.printf("avconv -i - -copyinkf -acodec %s -vcodec %s -filter:v %s -v %s %s %s -y \"%s\"",
+				   GetUserConfigItem(user, format + ":acodec",   "copy").str(),
+				   GetUserConfigItem(user, format + ":vcodec",   "copy").str(),
+				   GetUserConfigItem(user, "video:filter",       "yadif").str(),
+				   GetUserConfigItem(user, "video:warninglevel", "warning").str(),
+				   GetUserConfigItem(user, "video:args",         "").str(),
+				   GetUserConfigItem(user, format + ":args",     "").str(),
+				   filename.str());
+	}
+	else cmd.printf(">\"%s\"", filename.str());
+
+	return ReplaceTerms(user, cmd);
+}
+
+AString ADVBConfig::ReplaceTerms(const AString& user, const AString& _str) const
+{
+	AString str = _str;
+	int p = 0, p1, p2;
+	
+	while (((p1 = str.Pos("{conf:", p)) >= 0) && ((p2 = str.Pos("}", p1)) >= 0)) {
+		AString item = GetUserConfigItem(user, str.Mid(p1 + 8, p2 - p1 - 8));
+
+		str = str.Left(p1) + item + str.Mid(p2 + 1);
+
+		p = p1 + item.len();
+	}
+
+	return str;
 }
 
 void ADVBConfig::MapDVBCards()
