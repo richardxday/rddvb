@@ -4,6 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
@@ -593,6 +594,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	str.printf(",\"scheduled\":%u", (uint_t)IsScheduled());
 	str.printf(",\"radioprogramme\":%u", (uint_t)IsRadioProgramme());
 	str.printf(",\"incompleterecording\":%u", (uint_t)!IsRecordingComplete());
+	str.printf(",\"ignorerecording\":%u", (uint_t)CanIgnoreRecording());
 	str.printf("}");
 
 	if (data->filesize) str.printf(",\"filesize\":%" FMT64 "u", data->filesize);
@@ -614,7 +616,6 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 			str.printf(",\"exists\":%u", (uint_t)AStdFile::exists(GetString(data->strings.filename)));
 		}
 	}
-
 
 	if (includebase64) {
 		str.printf(",\"base64\":\"%s\"", Base64Encode().str());
@@ -1093,16 +1094,17 @@ AString ADVBProg::GenerateFilename(const AString& templ) const
 	AString dir      = CatPath(config.GetRecordingsDir(), GetDir());
 	AString date     = GetStartDT().UTCToLocal().DateFormat("%Y-%M-%D");
 	AString times    = GetStartDT().UTCToLocal().DateFormat("%h%m") + "-" + GetStopDT().UTCToLocal().DateFormat("%h%m");
-	AString filename = (CatPath(dir, templ)
-						.SearchAndReplace("{title}", ValidFilename(GetTitle()))
-						.SearchAndReplace("{subtitle}", ValidFilename(GetSubtitle()))
-						.SearchAndReplace("{episode}", ValidFilename(GetEpisodeString()))
-						.SearchAndReplace("{channel}", ValidFilename(GetChannel()))
-						.SearchAndReplace("{date}", ValidFilename(date))
-						.SearchAndReplace("{times}", ValidFilename(times))
-						.SearchAndReplace("{user}", ValidFilename(GetUser()))
-						.SearchAndReplace("{suffix}", config.GetUserConfigItem(GetUser(), "filesuffix", "mpg")));
-		
+	AString filename = config.ReplaceTerms(GetUser(),
+										   CatPath(dir, templ)
+										   .SearchAndReplace("{title}", ValidFilename(GetTitle()))
+										   .SearchAndReplace("{subtitle}", ValidFilename(GetSubtitle()))
+										   .SearchAndReplace("{episode}", ValidFilename(GetEpisodeString()))
+										   .SearchAndReplace("{channel}", ValidFilename(GetChannel()))
+										   .SearchAndReplace("{date}", ValidFilename(date))
+										   .SearchAndReplace("{times}", ValidFilename(times))
+										   .SearchAndReplace("{user}", ValidFilename(GetUser()))
+										   .SearchAndReplace("{suffix}", config.GetFileSuffix(GetUser())));
+
 	while (filename.Pos("{sep}{sep}") >= 0) {
 		filename = filename.SearchAndReplace("{sep}{sep}", "{sep}");
 	}
@@ -1145,11 +1147,8 @@ void ADVBProg::GenerateRecordData(uint64_t recstarttime)
 		config.logit("Warning: '%s' has no DVB channel, using main channel!\n", GetQuickDescription().str());
 	}
 
-	if ((filename = GetFilename()).Empty()) {
-		filename = GenerateFilename();
-
-		SetString(&data->strings.filename, filename.str());
-	}
+	filename = GenerateFilename();
+	SetString(&data->strings.filename, filename.str());
 
 	if (FilePatternExists(filename)) {
 		AString filename1;
@@ -1355,6 +1354,49 @@ AString ADVBProg::GetAdditionalLogFile() const
 	return config.GetLogDir().CatPath(AString(GetFilename()).FilePart().Prefix() + ".txt");
 }
 
+AString ADVBProg::GetRecordPIDS() const
+{
+	ADVBChannelList& channellist = ADVBChannelList::Get();
+	AString dvbchannel = GetDVBChannel();
+
+	if (dvbchannel.Empty()) dvbchannel = GetChannel();
+	
+	return channellist.GetPIDList(dvbchannel, true);
+}
+
+AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString cmd;
+	AString logfile;
+
+	logfile.printf("2>>\"%s\"", config.GetLogFile().str());
+			
+	cmd.printf("dvbstream -c %u -n %u -f %s -o %s",
+			   GetDVBCard(),
+			   nsecs,
+			   pids.str(),
+			   logfile.str());
+
+	if ((uint_t)config.GetUserConfigItem(GetUser(), "backup", "1")) {
+		AString backupdir = config.GetRecordingsBackupDir(GetUser());
+		if (backupdir.Valid()) {
+			AString backupfile = backupdir.CatPath(AString(GetFilename()).FilePart().Prefix() + "." +
+												   config.GetUserConfigItem(GetUser(), "backupsuffix", "mpg"));
+
+			CreateDirectory(backupfile.PathPart());
+			
+			cmd.printf(" | tee \"%s\" %s",
+					   backupfile.str(),
+					   logfile.str());
+		}
+	}
+
+	cmd.printf(" | %s %s", config.GetProcessingCommand(GetUser(), GetFilename()).str(), logfile.str());
+	
+	return cmd;
+}
+
 void ADVBProg::Record()
 {
 	if (Valid()) {
@@ -1380,12 +1422,10 @@ void ADVBProg::Record()
 						((uint_t)config.GetConfigItem("fakerecordings") != 0));
 		bool	reschedule = false;
 
+		
 		if (record && !fake) {
-			ADVBChannelList& channellist = ADVBChannelList::Get();
-			AString dvbchannel = GetDVBChannel();
-
-			pids = channellist.GetPIDList(dvbchannel, true);
-
+			pids = GetRecordPIDS();
+						
 			if (pids.CountWords() < 2) {
 				config.addlogit("\n");
 				config.printf("No pids for '%s'", GetQuickDescription().str());
@@ -1474,17 +1514,7 @@ void ADVBProg::Record()
 							  pids.Words(1).str());
 			}
 
-			bool mpgps = (((uint_t)config.GetUserConfigItem(GetUser(), "mpgps") != 0) && (pids.CountWords() == 3));
-			AString dest = config.GetUserConfigItem(GetUser(), "streamprocess", "");
-			if (dest.Valid()) dest = ReplaceTerms("| " + dest + " 2>>\"{logfile}\"");
-			else			  dest = ReplaceTerms(">\"{filename}\"");
-			cmd.printf("dvbstream -c %u %s -n %u -f %s -o 2>>\"%s\" %s",
-					   GetDVBCard(),
-					   mpgps ? "-ps" : "",
-					   nsecs,
-					   pids.str(),
-					   config.GetLogFile().str(),
-					   dest.str());
+			cmd = GenerateRecordCommand(nsecs, pids);
 
 			data->actstart = ADateTime().TimeStamp(true);
 
@@ -1589,6 +1619,26 @@ void ADVBProg::Record()
 
 					data->filesize = info.FileSize;
 
+					// change mode of written file
+					AString str;
+					if ((str = config.GetUserConfigItem(user, "filepermissions", "")).Valid()) {
+						struct stat st;
+						mode_t mode = 0;
+
+						if		(str == "group") mode |= S_IXGRP | S_IRGRP;
+						else if (str == "all")   mode |= S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH;
+						else config.printf("Unrecognized filepermissions type '%s', must be '', 'group' or 'all'", str.str());
+
+						if (mode) {
+							if (stat(GetFilename(), &st) == 0) {
+								if (chmod(GetFilename(), st.st_mode | mode) != 0) {
+									config.printf("Failed to set permissions of '%s' (%s)", GetFilename(), strerror(errno));
+								}
+							}
+							else config.printf("Failed to read permissions of '%s' (%s)", GetFilename(), strerror(errno));
+						}
+					}
+						
 					if (addtorecorded && (info.FileSize > 0)) {
 						ADVBProgList recordedlist;
 						AString      filename = config.GetRecordedFile();
@@ -1607,7 +1657,7 @@ void ADVBProg::Record()
 						}
 
 						if (IsOnceOnly()) {
-							ADVBPatterns::DeletePattern(GetUser(), GetPattern());
+							ADVBPatterns::DeletePattern(user, GetPattern());
 
 							reschedule = true;
 						}

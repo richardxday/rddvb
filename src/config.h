@@ -31,6 +31,8 @@ public:
 	AString GetRecordingsDir()	   	  		 const {return CatPath(GetDataDir(), GetConfigItem("recdir", "recordings"));}
 	AString GetRecordingsSubDir(const AString& user) const {return user.Valid() ? GetUserConfigItem(user, "dir") : GetConfigItem("dir");}
 	AString GetRecordingsDir(const AString& user) const {return CatPath(GetRecordingsDir(), GetRecordingsSubDir(user));}
+	AString GetRecordingsBackupDir()		 const {return CatPath(GetRecordingsDir(), GetConfigItem("backupdir", "Backup"));}
+	AString GetRecordingsBackupDir(const AString& user) const {return CatPath(GetRecordingsDir(), GetUserConfigItem(user, "backupdir", "Backup"));}
 	AString GetTempDir()              		 const {return GetConfigItem("tempdir", GetDataDir().CatPath("temp"));}
 	AString GetTempFile(const AString& name, const AString& suffix = "") const;
 	AString GetQueue()						 const {return GetConfigItem("queue", "d");}
@@ -53,6 +55,11 @@ public:
 	AString GetEpisodesFile()				 const {return CatPath(GetDataDir(), GetConfigItem("episodesfile", "episodes.txt"));}
 	AString GetSearchesFile()				 const {return CatPath(GetConfigDir(), GetConfigItem("searchesfile", "searches.txt"));}
 	AString GetRegionalChannels()            const {return GetConfigItem("regionalchannels", "bbc1.bbc.co.uk=north-west,bbc2.bbc.co.uk=north-west,itv1.itv.co.uk=granada");}
+
+	AString GetFileSuffix(const AString& user, const AString& def = "mpg") const;
+	AString GetProcessingCommand(const AString& user, const AString& filename) const;
+	AString ReplaceTerms(const AString& user, const AString& str) const;
+	
 	uint_t  GetPhysicalDVBCard(uint_t n = 0) const;
 	uint_t  GetMaxDVBCards()				 const {return (uint_t)GetConfigItem("maxcards", "1");}
 	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "30");}
@@ -65,8 +72,8 @@ public:
 	int     GetRepeatsScale()                const {return (int)GetConfigItem("repeatsscale", "-1");}
 	int     GetUrgentScale()                 const {return (int)GetConfigItem("urgentscale",  "0");}
 
-	AString GetPriorityDVBPIDs()			 const {return GetConfigItem("prioritypids", "0");}
-	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "16 17 18");}
+	AString GetPriorityDVBPIDs()			 const {return GetConfigItem("prioritypids", "");}
+	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");}
 
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 	void printf(const char *fmt, ...) const PRINTF_FORMAT_METHOD;

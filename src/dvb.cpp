@@ -102,6 +102,8 @@ int main(int argc, char *argv[])
 		printf("\t--find-recorded-programmes-on-disk\n\t\t\t\t\tSearch for recorded programmes in 'searchdirs' and update any filenames\n");
 		printf("\t--find-series\t\t\tFind series' in programme list\n");
 		printf("\t--set-recorded-flag\t\tSet recorded flag on all programmes in recorded list\n");
+		printf("\t--set-ignore-flag\t\tSet ignore recording flag on programmes in list\n");
+		printf("\t--show-record-command\t\tShow record command for each programme in list\n");
 		printf("\t--check-disk-space\t\tCheck disk space for all patterns\n");
 		printf("\t--update-recording-complete\tUpdate recording complete flag in every recorded programme\n");
 		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
@@ -755,6 +757,24 @@ int main(int argc, char *argv[])
 			}
 			else if (stricmp(argv[i], "--check-recording-file") == 0) {
 				ADVBProgList::CheckRecordingFile();
+			}
+			else if (stricmp(argv[i], "--set-ignore-flag") == 0) {
+				uint_t i;
+
+				for (i = 0; i < proglist.Count(); i++) {
+					ADVBProg& prog = proglist.GetProgWritable(i);
+					prog.SetIgnoreRecording();
+				}
+			}
+			else if (stricmp(argv[i], "--show-record-command") == 0) {
+				uint_t i;
+
+				for (i = 0; i < proglist.Count(); i++) {
+					ADVBProg& prog = proglist.GetProgWritable(i);
+
+					prog.GenerateRecordData(ADateTime().TimeStamp(true));
+					printf("%s:\n  %s\n\n", prog.GetQuickDescription().str(), prog.GenerateRecordCommand(200, prog.GetRecordPIDS()).SearchAndReplace(" | ", " |\n  ").str());
+				}
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
