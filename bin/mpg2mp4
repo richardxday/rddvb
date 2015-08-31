@@ -1,6 +1,9 @@
 #!/bin/sh
 SRC="$1"
 DST="${SRC%.*}.mp4"
+if [ "$SRC" = "$DST" ] ; then
+  DST="${SRC%.*}.1.mp4"
+fi
 VIDEO="${SRC%.*}.m2v"
 AUDIO="${SRC%.*}.mp2"
 LOGFILE="${SRC%.*}_log.txt"
