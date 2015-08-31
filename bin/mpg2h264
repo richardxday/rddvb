@@ -1,6 +1,9 @@
 #!/bin/sh
 SRC="$1"
 DST="${SRC%.*}.mp4"
+if [ "$SRC" = "$DST" ] ; then
+  DST="${SRC%.*}.1.mp4"
+fi
 CRF="$2"
 test -z "$CRF" && CRF=18
 avconv -i "$SRC" -acodec mp3 -vcodec libx264 -crf $CRF -preset fast -tune animation -filter:v yadif -v warning -y "$DST"
