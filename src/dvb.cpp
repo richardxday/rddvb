@@ -775,7 +775,7 @@ int main(int argc, char *argv[])
 					printf("%s:\n", prog.GetQuickDescription().str());
 					AString cmd = prog.GetProcessingCommands().str();
 					uint_t j, n = cmd.CountLines();
-					for (j= 0; j < n; j++) printf("  %s\n", cmd.Line(j).str());
+					for (j = 0; j < n; j++) printf("  %s\n", cmd.Line(j).str());
 				}
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
