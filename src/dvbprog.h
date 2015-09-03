@@ -214,7 +214,7 @@ public:
 	AString GenerateFilename(const AString& templ) const;
 	AString GenerateFilename() const;
 
-	AString GetRecordPIDS() const;
+	AString GetRecordPIDS(bool update = true) const;
 	AString GenerateRecordCommand(uint_t nsecs, const AString& pids) const;
 
 	void GenerateRecordData(uint64_t recstarttime);
