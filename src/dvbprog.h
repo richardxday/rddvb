@@ -213,11 +213,9 @@ public:
 
 	AString GenerateFilename(const AString& templ) const;
 	AString GenerateFilename() const;
+	void    GenerateRecordData(uint64_t recstarttime);
 
-	AString GetRecordPIDS(bool update = true) const;
-	AString GenerateRecordCommand(uint_t nsecs, const AString& pids) const;
-
-	void GenerateRecordData(uint64_t recstarttime);
+	AString GetProcessingCommands();
 
 	bool WriteToJobQueue();
 	bool ReadFromJob(const AString& filename);
@@ -335,6 +333,11 @@ protected:
 	static void StaticInit();
 	void Init();
 
+	AString GetRecordPIDS(bool update = true) const;
+	AString GenerateRecordCommand(uint_t nsecs, const AString& pids) const;
+	AString GeneratePostProcessCommand() const;
+
+	AString GetSourceFile() const;
 	AString GetAdditionalLogFile() const;
 	AString ReplaceTerms(const AString& str) const;
 

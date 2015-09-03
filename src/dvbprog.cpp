@@ -1378,23 +1378,11 @@ AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
 			   pids.str(),
 			   logfile.str());
 
-	if ((uint_t)config.GetUserConfigItem(GetUser(), "backup", "1")) {
-		AString backupdir = config.GetRecordingsBackupDir(GetUser());
-		if (backupdir.Valid()) {
-			AString backupfile = backupdir.CatPath(AString(GetFilename()).FilePart().Prefix() + "." +
-												   config.GetUserConfigItem(GetUser(), "backupsuffix", "mpg"));
-
-			CreateDirectory(backupfile.PathPart());
-			
-			cmd.printf(" | tee \"%s\" %s",
-					   backupfile.str(),
-					   logfile.str());
-		}
-	}
-
 	AString proccmd = config.GetProcessingCommand(GetUser(), GetFilename());
-	if (proccmd.FirstChar() == '>') cmd.printf(" %s", proccmd.str());
-	else							cmd.printf(" | %s %s", proccmd.str(), logfile.str());
+	AString srcfile = GetSourceFile();
+	CreateDirectory(srcfile.PathPart());
+	if (proccmd.Valid()) cmd.printf(" | tee \"%s\" %s | %s 2>&1 >>\"%s\"", srcfile.str(), logfile.str(), proccmd.str(), config.GetLogFile().str());
+	else				 cmd.printf(" >\"%s\"", srcfile.str());
 	
 	return cmd;
 }
@@ -1710,6 +1698,12 @@ void ADVBProg::Record()
 	}
 }
 
+AString ADVBProg::GetSourceFile() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	return config.GetRecordingsStorageDir(GetUser()).CatPath(AString(GetFilename()).FilePart().Prefix() + ".mpg");
+}
+
 AString ADVBProg::ReplaceTerms(const AString& str) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -1726,6 +1720,7 @@ AString ADVBProg::ReplaceTerms(const AString& str) const
 			.SearchAndReplace("{date}", date)
 			.SearchAndReplace("{times}", times)
 			.SearchAndReplace("{user}", GetUser())
+			.SearchAndReplace("{srcfile}", GetSourceFile())
 			.SearchAndReplace("{filename}", GetFilename())
 			.SearchAndReplace("{logfile}", config.GetLogFile())
 			.SearchAndReplace("{addlogfile}", GetAdditionalLogFile()));
@@ -1771,46 +1766,49 @@ bool ADVBProg::OnRecordFailure() const
 	return success;
 }
 
-bool ADVBProg::PostProcess()
+AString ADVBProg::GeneratePostProcessCommand() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString user = GetUser();
-	bool success = false;
+	AString postcmd;
 
 	if (RunPostProcess() || ((uint_t)config.GetUserConfigItem(user, "postprocess") != 0)) {
-		AString postcmd;
-
 		if ((postcmd = config.GetUserConfigItem(user, "postprocesscmd")).Valid()) {
-			AStdFile fp;
-
-			config.addlogit("\n");
-			config.printf("Running post process command '%s'", postcmd.str());
-
 			postcmd = ReplaceTerms(postcmd);
 			postcmd.printf(" 2>&1 >>\"%s\"", config.GetLogFile().str());
+		}
+	}
 
-			if (system(postcmd) == 0) {
-				ADVBLock     lock("schedule");
-				ADVBProgList recordedlist;
-				AString  	 filename = config.GetRecordedFile();
-				ADVBProg 	 *prog;
+	return postcmd;
+}
 
-				recordedlist.ReadFromFile(filename);
-				if ((prog = recordedlist.FindUUIDWritable(*this)) != NULL) {
-					prog->SetPostProcessed();
-					recordedlist.WriteToFile(filename);
-				}
+bool ADVBProg::PostProcess()
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString postcmd;
+	bool success = false;
 
-				success = true;
+	if ((postcmd = GeneratePostProcessCommand()).Valid()) {
+		config.addlogit("\n");
+		config.printf("Running post process command '%s'", postcmd.str());
+
+		if (system(postcmd) == 0) {
+			ADVBLock     lock("schedule");
+			ADVBProgList recordedlist;
+			AString  	 filename = config.GetRecordedFile();
+			ADVBProg 	 *prog;
+
+			recordedlist.ReadFromFile(filename);
+			if ((prog = recordedlist.FindUUIDWritable(*this)) != NULL) {
+				prog->SetPostProcessed();
+				recordedlist.WriteToFile(filename);
 			}
-			else {
-				config.addlogit("\n");
-				config.printf("Command '%s' failed!", postcmd.str());
-			}
+
+			success = true;
 		}
 		else {
 			config.addlogit("\n");
-			config.logit("No post process command specified for user '%s'", user.str());
+			config.printf("Command '%s' failed!", postcmd.str());
 		}
 	}
 	else success = true;
@@ -1857,4 +1855,25 @@ void ADVBProg::Record(const AString& channel, uint_t mins)
 	}
 
 	config.printf("------------------------------------------------------------------------------------------------------------------------");
+}
+
+AString ADVBProg::GetProcessingCommands()
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString oldaddlogfile = config.GetAdditionalLogFile();
+	AString addlogfile    = GetAdditionalLogFile();
+	AString cmd;
+	
+	GenerateRecordData(ADateTime().TimeStamp(true));
+
+	((ADVBConfig&)config).SetAdditionalLogFile(addlogfile, false);
+
+	cmd.printf("%s\n", GenerateRecordCommand(200, GetRecordPIDS(false)).SearchAndReplace(" | ", " |\n").str());
+	AString postcmd;
+	if ((postcmd = GeneratePostProcessCommand()).Valid()) cmd.printf("Post: %s\n", postcmd.str());
+	cmd.printf("\n");
+
+	((ADVBConfig&)config).SetAdditionalLogFile(oldaddlogfile);
+
+	return cmd;
 }

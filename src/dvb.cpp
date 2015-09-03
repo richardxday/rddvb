@@ -772,8 +772,10 @@ int main(int argc, char *argv[])
 				for (i = 0; i < proglist.Count(); i++) {
 					ADVBProg& prog = proglist.GetProgWritable(i);
 
-					prog.GenerateRecordData(ADateTime().TimeStamp(true));
-					printf("%s:\n  %s\n\n", prog.GetQuickDescription().str(), prog.GenerateRecordCommand(200, prog.GetRecordPIDS(false)).SearchAndReplace(" | ", " |\n  ").str());
+					printf("%s:\n", prog.GetQuickDescription().str());
+					AString cmd = prog.GetProcessingCommands().str();
+					uint_t j, n = cmd.CountLines();
+					for (j= 0; j < n; j++) printf("  %s\n", cmd.Line(j).str());
 				}
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
