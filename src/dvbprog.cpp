@@ -1364,7 +1364,7 @@ AString ADVBProg::GetRecordPIDS(bool update) const
 	return channellist.GetPIDList(dvbchannel, update);
 }
 
-AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
+AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids, AString& filename) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
@@ -1381,8 +1381,14 @@ AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
 	AString proccmd = config.GetProcessingCommand(GetUser(), GetFilename());
 	AString srcfile = GetSourceFile();
 	CreateDirectory(srcfile.PathPart());
-	if (proccmd.Valid()) cmd.printf(" | tee \"%s\" %s | %s 2>&1 >>\"%s\"", srcfile.str(), logfile.str(), proccmd.str(), config.GetLogFile().str());
-	else				 cmd.printf(" >\"%s\"", srcfile.str());
+	if (proccmd.Valid()) {
+		cmd.printf(" | tee \"%s\" %s | %s 2>&1 >>\"%s\"", srcfile.str(), logfile.str(), proccmd.str(), config.GetLogFile().str());
+		filename = GetFilename();
+	}
+	else {
+		cmd.printf(" >\"%s\"", srcfile.str());
+		filename = srcfile;
+	}
 	
 	return cmd;
 }
@@ -1504,7 +1510,7 @@ void ADVBProg::Record()
 							  pids.Words(1).str());
 			}
 
-			cmd = GenerateRecordCommand(nsecs, pids);
+			cmd = GenerateRecordCommand(nsecs, pids, filename);
 
 			data->actstart = ADateTime().TimeStamp(true);
 
@@ -1589,26 +1595,6 @@ void ADVBProg::Record()
 
 					data->filesize = info.FileSize;
 
-					// change mode of written file
-					AString str;
-					if ((str = config.GetUserConfigItem(user, "filepermissions", "")).Valid()) {
-						struct stat st;
-						mode_t mode = 0;
-
-						if		(str == "group") mode |= S_IXGRP | S_IRGRP;
-						else if (str == "all")   mode |= S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH;
-						else config.printf("Unrecognized filepermissions type '%s', must be '', 'group' or 'all'", str.str());
-
-						if (mode) {
-							if (stat(GetFilename(), &st) == 0) {
-								if (chmod(GetFilename(), st.st_mode | mode) != 0) {
-									config.printf("Failed to set permissions of '%s' (%s)", GetFilename(), strerror(errno));
-								}
-							}
-							else config.printf("Failed to read permissions of '%s' (%s)", GetFilename(), strerror(errno));
-						}
-					}
-						
 					if (addtorecorded && (info.FileSize > 0)) {
 						ADVBProgList recordedlist;
 						AString      filename = config.GetRecordedFile();
@@ -1862,13 +1848,13 @@ AString ADVBProg::GetProcessingCommands()
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString oldaddlogfile = config.GetAdditionalLogFile();
 	AString addlogfile    = GetAdditionalLogFile();
-	AString cmd;
+	AString cmd, filename;
 	
 	GenerateRecordData(ADateTime().TimeStamp(true));
 
 	((ADVBConfig&)config).SetAdditionalLogFile(addlogfile, false);
 
-	cmd.printf("%s\n", GenerateRecordCommand(200, GetRecordPIDS(false)).SearchAndReplace(" | ", " |\n").str());
+	cmd.printf("%s\n", GenerateRecordCommand(200, GetRecordPIDS(false), filename).SearchAndReplace(" | ", " |\n").str());
 	AString postcmd;
 	if ((postcmd = GeneratePostProcessCommand()).Valid()) cmd.printf("Post: %s\n", postcmd.str());
 	cmd.printf("\n");

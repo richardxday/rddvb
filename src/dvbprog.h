@@ -334,7 +334,7 @@ protected:
 	void Init();
 
 	AString GetRecordPIDS(bool update = true) const;
-	AString GenerateRecordCommand(uint_t nsecs, const AString& pids) const;
+	AString GenerateRecordCommand(uint_t nsecs, const AString& pids, AString& filename) const;
 	AString GeneratePostProcessCommand() const;
 
 	AString GetSourceFile() const;
