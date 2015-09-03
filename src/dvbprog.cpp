@@ -1354,14 +1354,14 @@ AString ADVBProg::GetAdditionalLogFile() const
 	return config.GetLogDir().CatPath(AString(GetFilename()).FilePart().Prefix() + ".txt");
 }
 
-AString ADVBProg::GetRecordPIDS() const
+AString ADVBProg::GetRecordPIDS(bool update) const
 {
 	ADVBChannelList& channellist = ADVBChannelList::Get();
 	AString dvbchannel = GetDVBChannel();
 
 	if (dvbchannel.Empty()) dvbchannel = GetChannel();
 	
-	return channellist.GetPIDList(dvbchannel, true);
+	return channellist.GetPIDList(dvbchannel, update);
 }
 
 AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
@@ -1392,7 +1392,9 @@ AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
 		}
 	}
 
-	cmd.printf(" | %s %s", config.GetProcessingCommand(GetUser(), GetFilename()).str(), logfile.str());
+	AString proccmd = config.GetProcessingCommand(GetUser(), GetFilename());
+	if (proccmd.FirstChar() == '>') cmd.printf(" %s", proccmd.str());
+	else							cmd.printf(" | %s %s", proccmd.str(), logfile.str());
 	
 	return cmd;
 }

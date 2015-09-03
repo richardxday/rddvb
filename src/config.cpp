@@ -116,7 +116,7 @@ AString ADVBConfig::GetConfigItem(const AString& name, const AString& defval) co
 
 AString ADVBConfig::GetFileSuffix(const AString& user, const AString& def) const
 {
-	AString format = GetUserConfigItem(user, "format", "h264");
+	AString format = GetFileFormat(user);
 	AString proc   = GetUserConfigItem(user, "proc", GetUserConfigItem(user, "proc:" + format, ""));
 	AString suffix;
 	
@@ -132,13 +132,13 @@ AString ADVBConfig::GetFileSuffix(const AString& user, const AString& def) const
 
 AString ADVBConfig::GetProcessingCommand(const AString& user, const AString& filename) const
 {
-	AString format = GetUserConfigItem(user, "format", "h264");
+	AString format = GetFileFormat(user);
 	AString proc   = GetUserConfigItem(user, "proc", GetUserConfigItem(user, "proc:" + format, ""));
 	AString cmd;
 
 	if		(proc.Valid()) cmd = proc;
 	else if (format == "h264") {
-		cmd.printf("avconv -i - -copyinkf -acodec %s -vcodec libx264 -crf %s -preset %s -tune %s -filter:v %s -v %s %s %s -y \"%s\"",
+		cmd.printf("avconv -i - -acodec %s -vcodec libx264 -crf %s -preset %s -tune %s -filter:v %s -v %s %s %s -y \"%s\"",
 				   GetUserConfigItem(user, format + ":acodec", 	 "mp3").str(),
 				   GetUserConfigItem(user, format + ":crf",    	 "18").str(),
 				   GetUserConfigItem(user, format + ":preset", 	 "veryfast").str(),
@@ -150,7 +150,7 @@ AString ADVBConfig::GetProcessingCommand(const AString& user, const AString& fil
 				   filename.str());
 	}
 	else if (format == "dvb") {
-		cmd.printf("avconv -i - -copyinkf -acodec copy -vcodec copy -filter:v %s -v %s %s %s -y \"%s\"",
+		cmd.printf("avconv -i - -acodec copy -vcodec copy -filter:v %s -v %s %s %s -y \"%s\"",
 				   GetUserConfigItem(user, "video:filter",       "yadif").str(),
 				   GetUserConfigItem(user, "video:warninglevel", "warning").str(),
 				   GetUserConfigItem(user, "video:args",         "").str(),
@@ -158,7 +158,7 @@ AString ADVBConfig::GetProcessingCommand(const AString& user, const AString& fil
 				   filename.str());
 	}
 	else if (format == "avconv") {
-		cmd.printf("avconv -i - -copyinkf -acodec %s -vcodec %s -filter:v %s -v %s %s %s -y \"%s\"",
+		cmd.printf("avconv -i - -acodec %s -vcodec %s -filter:v %s -v %s %s %s -y \"%s\"",
 				   GetUserConfigItem(user, format + ":acodec",   "copy").str(),
 				   GetUserConfigItem(user, format + ":vcodec",   "copy").str(),
 				   GetUserConfigItem(user, "video:filter",       "yadif").str(),

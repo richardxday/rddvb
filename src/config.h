@@ -56,6 +56,7 @@ public:
 	AString GetSearchesFile()				 const {return CatPath(GetConfigDir(), GetConfigItem("searchesfile", "searches.txt"));}
 	AString GetRegionalChannels()            const {return GetConfigItem("regionalchannels", "bbc1.bbc.co.uk=north-west,bbc2.bbc.co.uk=north-west,itv1.itv.co.uk=granada");}
 
+	AString GetFileFormat(const AString& user) const {return GetUserConfigItem(user, "format", "");}
 	AString GetFileSuffix(const AString& user, const AString& def = "mpg") const;
 	AString GetProcessingCommand(const AString& user, const AString& filename) const;
 	AString ReplaceTerms(const AString& user, const AString& str) const;

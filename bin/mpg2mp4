@@ -2,18 +2,28 @@
 SRC="$1"
 DST="${SRC%.*}.mp4"
 if [ "$SRC" = "$DST" ] ; then
-  DST="${SRC%.*}.1.mp4"
+	DST="${SRC%.*}.1.mp4"
 fi
 VIDEO="${SRC%.*}.m2v"
 AUDIO="${SRC%.*}.mp2"
 LOGFILE="${SRC%.*}_log.txt"
 SUBTITLES="${SRC%.*}.sup"
-KEEPSUBTITLES="$2"
+SUBTITLESDIR="`dirname "$SRC"`/subs"
 RES=""
-projectx -ini ~/X.ini "$SRC" && avconv -i "$VIDEO" -i "$AUDIO" -acodec copy -vcodec copy -filter:v yadif -v warning -y "$DST" && chmod 755 "$DST" && RES="1"
-if [ -n "$KEEPSUBTITLES" ] ; then
-  rm "$VIDEO" "$AUDIO" "$LOGFILE" "$SUBTITLES" "$SUBTITLES.IFO"
+ACODEC="copy"
+APARAMS=""
+VCODEC="copy"
+VPARAMS=""
+if [ "$2" = "h264" ] ; then
+	ACODEC="mp3"
+	VCODEC="libx264"
+	VPARAMS="-crf 18 -preset fast -tune animation"
+fi
+projectx -ini ~/X.ini "$SRC" && avconv -i "$VIDEO" -i "$AUDIO" -acodec $ACODEC $APARAMS -vcodec $VCODEC $VPARAMS -filter:v yadif -v warning -y "$DST" && chmod 755 "$DST" && RES="1"
+rm "$VIDEO" "$AUDIO" "$LOGFILE" "$SUBTITLES" "$SUBTITLES.IFO"
+if [ -d "$SUBTITLESDIR" ] ; then
+	mv "$SUBTITLES"* "$SUBTITLESDIR"
 else
-  rm "$VIDEO" "$AUDIO" "$LOGFILE" "$SUBTITLES"*
+	rm "$SUBTITLES"*
 fi
 test -n "$RES"
