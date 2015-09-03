@@ -45,7 +45,6 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 	CreateDirectory(GetLogDir());
 	CreateDirectory(GetRecordingsDir());
 	CreateDirectory(GetTempDir());
-	CreateDirectory(GetRecordingsBackupDir());
 	
 	{
 		AList users;
@@ -55,7 +54,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		const AString *user = AString::Cast(users.First());
 		while (user) {
 			CreateDirectory(GetRecordingsDir(*user));
-			CreateDirectory(GetRecordingsBackupDir(*user));
+			CreateDirectory(GetRecordingsStorageDir(*user));
 			
 			user = user->Next();
 		}
@@ -167,7 +166,6 @@ AString ADVBConfig::GetProcessingCommand(const AString& user, const AString& fil
 				   GetUserConfigItem(user, format + ":args",     "").str(),
 				   filename.str());
 	}
-	else cmd.printf(">\"%s\"", filename.str());
 
 	return ReplaceTerms(user, cmd);
 }
