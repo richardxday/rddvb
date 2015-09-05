@@ -16,7 +16,7 @@ if [ "$3" = "h264" ] ; then
 	VCODEC="libx264"
 	VPARAMS="-crf 18 -preset fast -tune animation"
 fi
-projectx -ini ~/X.ini "$SRC" && avconv -i "$VIDEO" -i "$AUDIO" -acodec $ACODEC $APARAMS -vcodec $VCODEC $VPARAMS -filter:v yadif -v warning -y "$DST" && chmod a+rx "$DST" && RES="1"
+projectx -ini ~/X.ini "$SRC" && avconv -i "$VIDEO" -i "$AUDIO" -acodec $ACODEC $APARAMS -vcodec $VCODEC $VPARAMS -filter:v yadif -v warning -y "$DST" 2>&1 && chmod a+rx "$DST" && RES="1"
 rm "$VIDEO" "$AUDIO" "$LOGFILE" "$SUBTITLES" "$SUBTITLES.IFO"
 if [ -d "$SUBTITLESDIR" ] ; then
 	mv "$SUBTITLES"* "$SUBTITLESDIR"
