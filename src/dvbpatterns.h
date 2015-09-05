@@ -1,8 +1,6 @@
 #ifndef __DVB_PATTERN__
 #define __DVB_PATTERN__
 
-#include <map>
-
 #include "config.h"
 
 class ADVBProg;
@@ -10,7 +8,7 @@ class ADVBPatterns {
 public:
 	ADVBPatterns();
 	~ADVBPatterns() {}
-
+	
 	static void   UpdatePattern(const AString& olduser, const AString& oldpattern, const AString& newuser, const AString& newpattern);
 	static void   UpdatePattern(const AString& user, const AString& pattern, const AString& newpattern);
 	static void   InsertPattern(const AString& user, const AString& pattern);

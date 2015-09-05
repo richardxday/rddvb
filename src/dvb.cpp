@@ -40,11 +40,14 @@ int main(int argc, char *argv[])
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProgList proglist;
+	ADVBProg  prog;	// ensure ADVBProg initialisation takes place
 	ADateTime starttime = ADateTime().TimeStamp(true);
 	uint_t verbosity = 0;
 	int  i;
 	int  res = 0;
 
+	(void)prog;
+	
 	if ((argc == 1) || ((argc > 1) && ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)))) {
 		printf("Usage: dvb {<file>|<cmd> ...}\n");
 		printf("Where <cmd> is:\n");
@@ -250,7 +253,12 @@ int main(int argc, char *argv[])
 
 				proglist = reslist;
 
-				if (errors.Valid()) config.printf("Errors: %s", errors.str());
+				if (errors.Valid()) {
+					config.printf("Errors:");
+
+					uint_t i, n = errors.CountLines();
+					for (i = 0; i < n; i++) config.printf("%s", errors.Line(i).str());
+				}
 
 				config.printf("Found %u programme%s", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 			}
@@ -295,7 +303,12 @@ int main(int argc, char *argv[])
 				
 					proglist = reslist;
 
-					if (errors.Valid()) config.printf("Errors: %s", errors.str());
+					if (errors.Valid()) {
+						config.printf("Errors:");
+
+						uint_t i, n = errors.CountLines();
+						for (i = 0; i < n; i++) config.printf("%s", errors.Line(i).str());
+					}
 					
 					config.printf("Found %u programme%s", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 				}
@@ -310,7 +323,12 @@ int main(int argc, char *argv[])
 
 				config.printf("Found %u programme%s", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 
-				if (errors.Valid()) config.printf("Errors: %s", errors.str());
+				if (errors.Valid()) {
+					config.printf("Errors:");
+
+					uint_t i, n = errors.CountLines();
+					for (i = 0; i < n; i++) config.printf("%s", errors.Line(i).str());
+				}
 
 				for (i = 0; i < reslist.Count(); i++) {
 					const ADVBProg& prog = reslist.GetProg(i);

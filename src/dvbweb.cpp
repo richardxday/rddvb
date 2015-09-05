@@ -97,10 +97,13 @@ void printpattern(AHash& patterns, const ADVBProg& prog)
 int main(int argc, char *argv[])
 {
 	const ADVBConfig& config = ADVBConfig::Get(true);
+	ADVBProg		  prog;	// ensure ADVBProg initialisation takes place
 	AHash 			  vars(20, &AString::DeleteString);
 	AString   		  val, logdata, errors;
 	bool 			  base64encoded = true;
 	int i;
+
+	(void)prog;
 
 	enabledebug(false);
 
