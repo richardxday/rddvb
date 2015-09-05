@@ -1,6 +1,9 @@
 #!/bin/sh
+DATADIR="`dvb --datadir`"
+CONFDIR="`dvb --confdir`"
+
 cd ~/programmes-of-interest
-if ! dvb -r /etc/dvb/data/skylistings.dat --find-with-file patterns.txt -w foundprogrammes.dat --return-count ; then
+if ! dvb -r "$DATADIR/skylistings.dat" --find-with-file patterns.txt -w foundprogrammes.dat --return-count ; then
   echo "Summary:" >newlist.txt
   dvb -r foundprogrammes.dat -v --list-to-file newlist.txt >/dev/null
   echo "" >>newlist.txt
