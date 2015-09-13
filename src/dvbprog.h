@@ -75,9 +75,12 @@ public:
 	uint64_t	GetActualLength()	   	 const {return data->actstop - data->actstart;}
 	ADateTime	GetActualStartDT()	   	 const {return ADateTime(GetActualStart());}
 	ADateTime	GetActualStopDT()	   	 const {return ADateTime(GetActualStop());}
+	void		SetActualStart(uint64_t dt)    {data->actstart = dt;}
+	void		SetActualStop(uint64_t dt)     {data->actstop  = dt;}
 
+	void	    SetFileSize(uint64_t filesize) {data->filesize = filesize;}
 	uint64_t    GetFileSize()          	 const {return data->filesize;}
-
+	
 	static AString GetHex(uint64_t t)		   {return AValue(t).ToString("x016");}
 	static AString GetHex(const ADateTime& dt) {return GetHex((uint64_t)dt);}
 

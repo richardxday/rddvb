@@ -4,6 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <map>
+
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
 
@@ -12,6 +14,12 @@
 #include "proglist.h"
 #include "channellist.h"
 #include "findcards.h"
+
+typedef struct {
+	AString  filename;
+	uint64_t length;
+	uint64_t filesize;
+} RECORDDETAILS;
 
 bool forcelogging = false;
 
@@ -110,6 +118,7 @@ int main(int argc, char *argv[])
 		printf("\t--check-disk-space\t\tCheck disk space for all patterns\n");
 		printf("\t--update-recording-complete\tUpdate recording complete flag in every recorded programme\n");
 		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
+		printf("\t--recover-recorded\t\tAttempt to recover recorded programmes using log files\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -794,6 +803,92 @@ int main(int argc, char *argv[])
 					AString cmd = prog.GetProcessingCommands().str();
 					uint_t j, n = cmd.CountLines();
 					for (j = 0; j < n; j++) printf("  %s\n", cmd.Line(j).str());
+				}
+			}
+			else if (stricmp(argv[i], "--recover-recorded") == 0) {
+				std::map<AString,RECORDDETAILS> details;
+				
+				{
+					AList files;
+					CollectFiles(config.GetLogDir(), "dvblog-*.txt", 0, files);
+					uint_t nfiles = 0;
+					
+					const AString *file = AString::Cast(files.First());
+					while (file) {
+						AStdFile fp;
+
+						if (fp.open(*file, "r")) {
+							AString line;
+
+							while (line.ReadLn(fp) >= 0) {
+								if ((line.Word(2) == "File") && (line.Words(4, 3) == "exists and is")) {
+									AString        filename = line.Word(3).DeQuotify().FilePart().Prefix();
+									RECORDDETAILS& detail   = details[filename];
+
+									detail.filename = line.Word(3).DeQuotify().FilePart();
+									detail.length   = (uint64_t)line.Word(8) * 1000ul;
+									detail.filesize = (uint64_t)line.Word(7) * 1024ul * 1024ul;
+
+									nfiles++;
+								}
+							}
+							
+							fp.close();
+						}
+					
+						file = file->Next();
+					}
+
+					printf("Found %u files\n", nfiles);
+				}
+				
+				ADVBLock lock("schedule");
+				ADVBProgList reclist;
+
+				if (reclist.ReadFromFile(config.GetRecordedFile())) {
+					AList  files;
+					uint_t nadded = 0;
+					
+					CollectFiles(config.GetLogDir(), config.GetRecordLogBase() + "*.txt", 0, files);
+
+					const AString *file = AString::Cast(files.First());
+					while (file) {
+						AStdFile fp;
+
+						if (fp.open(*file, "r")) {
+							AString line;
+
+							while (line.ReadLn(fp) >= 0) {
+								if ((line.Word(2) == "stop") && (line.CountWords() >= 4)) {
+									ADVBProg prog;
+
+									if (prog.Base64Decode(line.Word(3))) {
+										if (!reclist.FindUUID(prog)) {
+											std::map<AString,RECORDDETAILS>::iterator it;
+											
+											if ((it = details.find(AString(prog.GetFilename()).FilePart().Prefix())) != details.end()) {
+												prog.SetActualStop(prog.GetActualStart() + it->second.length);
+												prog.SetFileSize(it->second.filesize);
+												prog.SetRecordingComplete();
+												prog.ClearScheduled();
+												prog.SetRecorded();
+												printf("'%s' needs adding\n", prog.GetQuickDescription().str());
+												reclist.AddProg(prog, true, false, true);
+												nadded++;
+											}
+										}
+									}
+								}
+							}
+
+							fp.close();
+						}
+					
+						file = file->Next();
+					}
+
+					printf("Added %u programmes, count now %u\n", nadded, reclist.Count());
+					reclist.WriteToFile(config.GetRecordedFile());
 				}
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
