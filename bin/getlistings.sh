@@ -4,8 +4,12 @@ CONFDIR="`dvb --confdir`"
 
 cd "$DATADIR"
 
-cp recorded.dat "archives/recorded-`date +%Y-%m-%d`.dat" && gzip "archives/recorded-`date +%Y-%m-%d`.dat"
-cp episodes.txt "archives/episodes-`date +%Y-%m-%d`.txt" && gzip "archives/episodes-`date +%Y-%m-%d`.txt"
+if [ ! -f "archives/recorded-`date +%Y-%m-%d`.dat.gz" ] ; then
+  cp recorded.dat "archives/recorded-`date +%Y-%m-%d`.dat" && gzip "archives/recorded-`date +%Y-%m-%d`.dat"
+fi
+if [ ! -f "archives/episodes-`date +%Y-%m-%d`.txt.gz" ] ; then
+  cp episodes.txt "archives/episodes-`date +%Y-%m-%d`.txt" && gzip "archives/episodes-`date +%Y-%m-%d`.txt"
+fi
 
 LISTINGSFILE="archives/listings-`date +%Y-%m-%d`.xmltv"
 if [ ! -f "$LISTINGSFILE.gz" ] ; then
