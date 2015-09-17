@@ -1,5 +1,5 @@
 var defaultuser = 'default';
-var defaulttimefilter = 'stop>=yesterday,0:0:0';
+var defaulttimefilter = 'stop>=yesterday,midnight';
 
 var daynames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 var monthnames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -18,7 +18,7 @@ var filters = [
 	{text:"Sources:<br>"},
 	{
 		title:"Listings",
-		filter:{from:"Listings",titlefilter:"",timefilter:"stop>now",expanded:-1,fetch:true},
+		filter:{from:"Listings",titlefilter:"",timefilter:"start>now",expanded:-1,fetch:true},
 	},
 	{
 		title:"Combined",
