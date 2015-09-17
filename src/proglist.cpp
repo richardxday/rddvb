@@ -985,7 +985,10 @@ void ADVBProgList::FindProgrammes(ADVBProgList& dest, const ADataList& patternli
 	uint_t i, j, n = patternlist.Count(), nfound = 0;
 
 	//config.logit("Searching using %u patterns (max matches %u)...", n, maxmatches);
-
+	//for (i = 0; i < n; i++) {
+	//debug("Pattern %u/%u:\n%s", i, n, ADVBPatterns::ToString(*(const PATTERN *)patternlist[i]).str());
+	//}
+	
 	for (i = 0; (i < Count()) && !HasQuit() && (nfound < maxmatches); i++) {
 		const ADVBProg& prog = GetProg(i);
 		ADVBProg *prog1 = NULL;

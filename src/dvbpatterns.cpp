@@ -690,7 +690,7 @@ AString ADVBPatterns::ParsePattern(const AString& line, PATTERN& pattern, const 
 						ADateTime dt;
 						uint_t specified;
 
-						dt.StrToDate(value, ADateTime::Time_Absolute, &specified);
+						dt.StrToDate(value, ADateTime::Time_Relative_Local, &specified);
 
 						//debug("Value '%s', specified %u\n", value.str(), specified);
 
@@ -1056,7 +1056,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 	for (i = 0; (i < n) && (match || orflag); i++) {
 		const TERM&  term  = *(const TERM *)list[i];
 		const FIELD& field = *term.field;
-
+			  
 		if (!RANGE(term.data.opcode, Operator_First_Assignable, Operator_Last_Assignable)) {
 			const uint8_t *ptr = prog.GetDataPtr(field.offset);
 			int  res      = 0;
@@ -1245,4 +1245,106 @@ void ADVBPatterns::UpdateValues(ADVBProg& prog, const PATTERN& pattern)
 			AssignValue(prog, field, term.value, term.data.opcode);
 		}
 	}
+}
+
+AString ADVBPatterns::ToString(const VALUE& val, uint8_t fieldtype, uint8_t datetype)
+{
+	ADateTime dt;
+	AString str;
+
+	switch (fieldtype) {
+		case FieldType_string:
+			str.printf("'%s'", val.str);
+			break;
+		case FieldType_date:
+			switch (datetype) {
+				case DateType_fulldate:
+					dt = val.u64;
+					str.printf("%s", dt.DateFormat("%d %Y-%M-%D %h:%m:%s.%S").str());
+					break;
+
+				case DateType_time:
+					dt.Set(0, (uint32_t)val.u64);
+					str.printf("%s", dt.DateFormat("%h:%m:%s.%S").str());
+					break;
+
+				case DateType_date:
+					dt.Set((uint32_t)val.u64, 0);
+					str.printf("%s", dt.DateFormat("%Y-%M-%D").str());
+					break;
+					
+				case DateType_weekday:
+					str.printf("%s", dt.GetDayName(val.u64));
+					break;
+			}
+			break;
+		case FieldType_uint32_t:
+			str.printf("%lu", (ulong_t)val.u32);
+			break;
+		case FieldType_sint32_t:
+			str.printf("%ld", (slong_t)val.u32);
+			break;
+		case FieldType_uint16_t:
+			str.printf("%u", (uint_t)val.u16);
+			break;
+		case FieldType_sint16_t:
+			str.printf("%d", (sint_t)val.s16);
+			break;
+		case FieldType_uint8_t:
+			str.printf("%u", (uint_t)val.u8);
+			break;
+		case FieldType_sint8_t:
+			str.printf("%d", (sint_t)val.s8);
+			break;
+		case FieldType_prog:
+			str.printf("%s", val.prog->GetQuickDescription().str());
+			break;
+		case FieldType_flag...FieldType_lastflag:
+			str.printf("flag%u", (uint_t)(fieldtype - FieldType_flag));
+			break;
+	}
+	
+	return str;
+}
+
+AString ADVBPatterns::ToString(const TERM& val)
+{
+	AString str;
+
+	str.printf("%s, %s, %s", ToString(val.data).str(), ToString(*val.field).str(), ToString(val.value, val.field->type, val.datetype).str());
+	
+	return str;
+}
+
+AString ADVBPatterns::ToString(const FIELD& val)
+{
+	AString str;
+
+	str.printf("Name '%s' ('%s') type %u assignable %u", val.name, val.desc, (uint_t)val.type, (uint_t)val.assignable);
+
+	return str;
+}
+
+AString ADVBPatterns::ToString(const TERMDATA& val)
+{
+	AString str;
+
+	str.printf("Term [%u:%u] '%s' field %u opcode %u opindex %u orflag %u", val.start, val.length, val.value.str(), (uint_t)val.field, (uint_t)val.opcode, (uint_t)val.opindex, (uint_t)val.orflag);
+	
+	return str;
+}
+
+AString ADVBPatterns::ToString(const PATTERN& pattern)
+{
+	const ADataList& list = pattern.list;
+	uint_t i, n = list.Count();
+	AString str;
+	
+	for (i = 0; i < n; i++) {
+		const TERM& term = *(const TERM *)list[i];
+		
+		str.printf("Term %u/%u: %s\n", i, n, ToString(term).str());
+	}
+
+	return str;
 }

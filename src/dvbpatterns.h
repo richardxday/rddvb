@@ -48,6 +48,8 @@ public:
 	static const char *GetOperatorDescription(const PATTERN& pattern, uint_t term);
 	static bool       OperatorIsAssign(const PATTERN& pattern, uint_t term);
 
+	static AString    ToString(const PATTERN& pattern);
+
 	typedef struct {
 		uint_t    start;
 		uint_t    length;
@@ -191,6 +193,11 @@ protected:
 
 	static void __DeleteTerm(uptr_t item, void *context);
 
+	static AString ToString(const VALUE& 	val, uint8_t fieldtype, uint8_t datetype);
+	static AString ToString(const TERM&  	val);
+	static AString ToString(const FIELD& 	val);
+	static AString ToString(const TERMDATA& val);
+	
 protected:
 	static OPERATOR operators[];
 };
