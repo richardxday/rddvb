@@ -1,5 +1,5 @@
 var defaultuser = 'default';
-var defaulttimefilter = 'stop>=yesterday,midnight';
+var defaulttimefilter = 'start>=yesterday,midnight';
 
 var daynames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 var monthnames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -547,8 +547,11 @@ function populateprogs(id)
 							else str1 += defaultuser;
 
 							str1 += '&nbsp;&nbsp;&nbsp;';
-							str1 += '<button class="addrecord" onclick="recordprogramme(' + i + ')">Record Programme</button>';
-							if (prog.category != 'Film') {
+							if (prog.category.toLowerCase() == 'film') {
+								str1 += '<button class="addrecord" onclick="recordprogramme(' + i + ')">Record Film</button>';
+							}
+							else {
+								str1 += '<button class="addrecord" onclick="recordprogramme(' + i + ')">Record Programme</button>';
 								str1 += '&nbsp;&nbsp;&nbsp;';
 								str1 += '<button class="addrecord" onclick="recordseries(' + i + ')">Record Series</button>';
 							}
@@ -792,6 +795,8 @@ function recordprogramme(id)
 
 		if (user == defaultuser) user = '';
 
+		if (prog.category.toLowerCase() == 'film') pattern += ' category=' + prog.category.toLowerCase() + ' dir:=Films';
+		
 		if (typeof prog.subtitle != 'undefined') pattern += ' subtitle="' + prog.subtitle + '"';
 		
 		postdata += "edit=add\n";
