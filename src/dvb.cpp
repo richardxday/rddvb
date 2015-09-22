@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
 		printf("\t--unschedule-all\t\tUnschedule all programmes\n");
 		printf("\t--schedule-list\t\t\tSchedule current list of programmes (-S)\n");
 		printf("\t--record <prog>\t\t\tRecord programme <prog> (Base64 encoded)\n");
+		printf("\t--add-recorded <prog>\t\t\tAdd recorded programme <prog> to recorded list (Base64 encoded)\n");
 		printf("\t--record-now <channel>[:<mins>]\tRecord channel <channel>\n");
 		printf("\t--record-list\t\t\tSet the current list to record, ensuring they don't clash with the current set of jobs\n");
 		printf("\t--pids <channel>\t\tFind PIDs (all streams) associated with channel <channel>\n");
@@ -498,6 +499,48 @@ int main(int argc, char *argv[])
 				ADVBProg prog;
 
 				if (prog.Base64Decode(progstr)) prog.Record();
+				else config.printf("Failed to decode programme '%s'\n", progstr.str());
+			}
+			else if (strcmp(argv[i], "--add-recorded") == 0) {
+				AString  progstr = argv[++i];
+				ADVBProg prog;
+
+				if (prog.Base64Decode(progstr)) {
+					const AString filename = prog.GetFilename();
+					FILE_INFO info;
+					uint_t    nsecs;
+
+					config.printf("Adding %s to recorded...", prog.GetQuickDescription().str());
+					
+					prog.ClearScheduled();
+					prog.SetRecorded();
+					prog.SetActualStart(prog.GetRecordStart());
+					prog.SetActualStop(prog.GetRecordStop());
+					prog.SetRecordingComplete();
+
+					config.printf("Faking actual start and stop times (%s-%s)", prog.GetActualStartDT().DateFormat("%h:%m:%s").str(), prog.GetActualStopDT().DateFormat("%h:%m:%s").str());
+
+					nsecs = (uint_t)((prog.GetActualStop() - prog.GetActualStart()) / 1000);
+					
+					if (::GetFileInfo(filename, &info)) {
+						config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", filename.str(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024 * (uint64_t)nsecs)));
+
+						prog.SetFileSize(info.FileSize);
+					}
+					else config.printf("File '%s' *doesn't* exists", filename.str());
+
+					{
+						ADVBLock lock("schedule");
+						ADVBProgList recordedlist;
+						AString      filename = config.GetRecordedFile();
+						
+						recordedlist.ReadFromFile(filename);
+						recordedlist.AddProg(prog, true, false, true);
+						recordedlist.WriteToFile(filename);
+
+						config.printf("Recorded list now has %u programmes", recordedlist.Count());
+					}
+				}
 				else config.printf("Failed to decode programme '%s'\n", progstr.str());
 			}
 			else if (strcmp(argv[i], "--record-now") == 0) {
