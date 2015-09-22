@@ -7,7 +7,7 @@ LOGFILE="${SRC%.*}_log.txt"
 SUBTITLES="${SRC%.*}.sup"
 SUBTITLESDIR="`dirname "$DST"`/subs"
 RES=""
-ACODEC="copy"
+ACODEC="mp3"
 APARAMS=""
 VCODEC="copy"
 VPARAMS=""
@@ -17,7 +17,7 @@ if [ "$3" = "h264" ] ; then
 	VPARAMS="-crf 18 -preset fast -tune animation"
 fi
 projectx -ini /home/richard/X.ini "$SRC" && avconv -i "$VIDEO" -i "$AUDIO" -acodec $ACODEC $APARAMS -vcodec $VCODEC $VPARAMS -filter:v yadif -v warning -y "$DST" 2>&1 && chmod a+rx "$DST" && RES="1"
-rm "$VIDEO" "$AUDIO" "$LOGFILE" "$SUBTITLES" "$SUBTITLES.IFO"
+rm "$VIDEO" "${SRC%.*}"*.mp2 "$LOGFILE" "$SUBTITLES" "$SUBTITLES.IFO"
 if [ -d "$SUBTITLESDIR" ] ; then
 	mv "$SUBTITLES"* "$SUBTITLESDIR"
 else
