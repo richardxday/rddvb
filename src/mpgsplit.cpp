@@ -82,7 +82,7 @@ int ConvertSubtitles(const AString& src, const AString& dst, const std::vector<S
 								
 				while (line.ReadLn(fp1) >= 0) {
 					if (line.Pos("timestamp:") == 0) {
-						uint64_t t = CalcTime(line.str() + 10);
+						uint64_t t = CalcTime(line.str() + 11);
 						uint64_t sub = 0;
 						uint_t i;
 						
@@ -90,7 +90,7 @@ int ConvertSubtitles(const AString& src, const AString& dst, const std::vector<S
 							const SPLIT& split = splits[i];
 											
 							if (split.aspect == aspect) {
-								if ((t >= split.start) && (t < (split.start + split.length))) {
+								if ((t >= split.start) && (!split.length || (t < (split.start + split.length)))) {
 									t -= sub;
 													
 									fp2.printf("timestamp: %s, filepos: %s\n",
