@@ -376,6 +376,15 @@ int main(int argc, char *argv[])
 	if (!rc && cleanup) {
 		remove(basename + ".m2v");
 		remove(basename + ".mp2");
+
+		AList subfiles;
+		CollectFiles(src.PathPart(), src.FilePart().Prefix() + ".sup.*", RECURSE_ALL_SUBDIRS, subfiles);
+
+		const AString *file = AString::Cast(subfiles.First());
+		while (file) {
+			remove(*file);
+			file = file->Next();
+		}
 		remove(remuxsrc);
 		remove(logfile);
 	}
