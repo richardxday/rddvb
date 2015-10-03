@@ -42,7 +42,7 @@ nodist_pkginclude_HEADERS =
 
 DISTCLEANFILES =
 
-bin_PROGRAMS = dvb dvbweb
+bin_PROGRAMS = dvb dvbweb mpgsplit
 
 dvb_LDADD =										\
 	$(RDLIB_LIBS)								\
@@ -69,3 +69,16 @@ dvbweb_SOURCES =								\
 	dvbweb.cpp
 
 EXTRA_dvbweb_DEPENDENCIES = $(lib_LTLIBRARIES)
+
+mpgsplit_LDADD =								\
+	$(RDLIB_LIBS)								\
+	$(RDDVB_LIBS)
+
+mpgsplit_CPPFLAGS =								\
+	$(RDLIB_CFLAGS)								\
+	$(RDDVB_CFLAGS)
+
+mpgsplit_SOURCES =								\
+	mpgsplit.cpp
+
+EXTRA_mpgsplit_DEPENDENCIES = $(lib_LTLIBRARIES)
