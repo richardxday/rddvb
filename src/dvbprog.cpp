@@ -1722,7 +1722,7 @@ bool ADVBProg::OnRecordSuccess() const
 		cmd = ReplaceTerms(cmd);
 		
 		//config.printf("Running '%s' after successful record", cmd.str());
-		if (system(cmd) != 0) {
+		if (system("nice " + cmd) != 0) {
 			config.addlogit("\n");
 			config.printf("Command '%s' failed!", cmd.str());
 			success = false;
@@ -1742,7 +1742,7 @@ bool ADVBProg::OnRecordFailure() const
 		cmd = ReplaceTerms(cmd);
 		
 		//config.printf("Running '%s' after failed record", cmd.str());
-		if (system(cmd) != 0) {
+		if (system("nice " + cmd) != 0) {
 			config.addlogit("\n");
 			config.printf("Command '%s' failed!", cmd.str());
 			success = false;
@@ -1778,7 +1778,7 @@ bool ADVBProg::PostProcess()
 		config.addlogit("\n");
 		config.printf("Running post process command '%s'", postcmd.str());
 
-		if (system(postcmd) == 0) {
+		if (system("nice " + postcmd) == 0) {
 			ADVBLock     lock("schedule");
 			ADVBProgList recordedlist;
 			AString  	 filename = config.GetRecordedFile();
