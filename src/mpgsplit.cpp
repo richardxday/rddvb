@@ -64,6 +64,90 @@ typedef struct {
 	uint64_t  start, length;
 } SPLIT;
 
+int ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect)
+{
+	FILE_INFO info;
+	int rc = 0;
+	
+	if (GetFileInfo(dst.PathPart().CatPath("subs"), &info)) {
+		AString srcsubfile = src.Prefix() + ".sup.idx";
+		AString dstsubfile = dst.PathPart().CatPath("subs", dst.FilePart().Prefix() + ".sup.idx");
+		AStdFile fp1, fp2;
+						
+		if (fp1.open(srcsubfile)) {
+			if (fp2.open(dstsubfile, "w")) {
+				AString line;
+
+				printf("Converting '%s' to '%s'\n", srcsubfile.str(), dstsubfile.str());
+								
+				while (line.ReadLn(fp1) >= 0) {
+					if (line.Pos("timestamp:") == 0) {
+						uint64_t t = CalcTime(line.str() + 10);
+						uint64_t sub = 0;
+						uint_t i;
+						
+						for (i = 0; i < splits.size(); i++) {
+							const SPLIT& split = splits[i];
+											
+							if (split.aspect == aspect) {
+								if ((t >= split.start) && (t < (split.start + split.length))) {
+									t -= sub;
+													
+									fp2.printf("timestamp: %s, filepos: %s\n",
+											   GenTime(t, "%02u:%02u:%02u:%03u").str(),
+											   line.Mid(34).str());
+									break;
+								}
+							}
+							else sub += split.length;
+						}
+					}
+					else fp2.printf("%s\n", line.str());
+				}
+
+				fp2.close();
+			}
+			else {
+				printf("Failed to open sub file '%s' for writing\n", dstsubfile.str());
+				rc = -__LINE__;
+			}
+			
+			fp1.close();
+		}
+		else {
+			printf("Failed to open sub file '%s' for reading\n", srcsubfile.str());
+			rc = -__LINE__;
+		}
+
+		if (!rc) {
+			srcsubfile = src.Prefix() + ".sup.sub";
+			dstsubfile = dst.PathPart().CatPath("subs", dst.FilePart().Prefix() + ".sup.sub");
+			if (fp1.open(srcsubfile, "rb")) {
+				if (fp2.open(dstsubfile, "wb")) {
+					printf("Copying '%s' to '%s'\n", srcsubfile.str(), dstsubfile.str());
+								
+					CopyFile(fp1, fp2);
+								
+					fp2.close();
+				}
+				else {
+					printf("Failed to open sub file '%s' for writing\n", dstsubfile.str());
+					rc = -__LINE__;
+				}
+			
+				fp1.close();
+			}
+			else {
+				printf("Failed to open sub file '%s' for reading\n", srcsubfile.str());
+				rc = -__LINE__;
+			}
+		}
+	}
+	else printf("'subs' directory doesn't exist\n");
+
+	return rc;
+}
+
 int main(int argc, char *argv[])
 {
 	AStdFile fp;
@@ -179,7 +263,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!rc) {
+	if (!rc) {		
 		if (splits.size() == 1) {
 			AString cmd;
 
@@ -194,6 +278,8 @@ int main(int argc, char *argv[])
 				printf("--------------------------------------------------------------------------------\n");
 				rc = -__LINE__;
 			}
+
+			if (!rc) rc = ConvertSubtitles(src, dst, splits, bestaspect);
 		}
 		else {
 			printf("Splitting file...\n");
@@ -248,125 +334,63 @@ int main(int argc, char *argv[])
 					}
 				}
 
-				{
-					AString outputfile;
-					
-					outputfile.printf("%s%s.%s", dst.Prefix().str(), outputindex ? AString(".%u").Arg(outputindex).str() : "", dst.Suffix().str());
-					
-					if (!AStdFile::exists(outputfile)) {
-						AStdFile ofp;
-						AString  concatfile;
+				AString outputfile;
+				outputfile.printf("%s%s.%s", dst.Prefix().str(), outputindex ? AString(".%u").Arg(outputindex).str() : "", dst.Suffix().str());
+				
+				if (!AStdFile::exists(outputfile)) {
+					AStdFile ofp;
+					AString  concatfile;
 
-						concatfile = outputfile.Prefix() + "_Concat.mpg";
+					concatfile = outputfile.Prefix() + "_Concat.mpg";
 
-						if (ofp.open(concatfile, "wb")) {
-							for (i = 0; i < files.size(); i++) {
-								AStdFile ifp;
+					if (ofp.open(concatfile, "wb")) {
+						for (i = 0; i < files.size(); i++) {
+							AStdFile ifp;
 
-								if (ifp.open(files[i], "rb")) {
-									printf("Adding '%s'...\n", files[i].str());
-									CopyFile(ifp, ofp);
-									ifp.close();
-								}
-								else {
-									printf("Failed to open '%s' for reading\n", files[i].str());
-									rc = -__LINE__;
-									break;
-								}
+							if (ifp.open(files[i], "rb")) {
+								printf("Adding '%s'...\n", files[i].str());
+								CopyFile(ifp, ofp);
+								ifp.close();
 							}
-
-							ofp.close();
-						}
-						else {
-							printf("Failed to open '%s' for writing\n", concatfile.str());
-							rc = -__LINE__;
-						}
-
-						if (!rc) {
-							AString cmd;
-
-							cmd.printf("avconv -i \"%s\" -aspect %s -acodec mp3 -vcodec copy -filter:v yadif -v warning -y \"%s\"", concatfile.str(), aspect.str(), outputfile.str());
-						
-							printf("--------------------------------------------------------------------------------\n");
-							printf("Executing: '%s'\n", cmd.str());
-							if (system(cmd) != 0) {
-								printf("**** Failed\n");
-								printf("--------------------------------------------------------------------------------\n");
+							else {
+								printf("Failed to open '%s' for reading\n", files[i].str());
 								rc = -__LINE__;
 								break;
 							}
 						}
 
-						if (cleanup) remove(concatfile);
+						ofp.close();
 					}
-					
-					printf("--------------------------------------------------------------------------------\n");
+					else {
+						printf("Failed to open '%s' for writing\n", concatfile.str());
+						rc = -__LINE__;
+					}
 
-					if (cleanup) {
-						for (i = 0; i < files.size(); i++) {
-							remove(files[i]);
-						}
-					}
-					
-					FILE_INFO info;
-					if (GetFileInfo(dst.PathPart().CatPath("subs"), &info)) {
-						AString srcsubfile = src.Prefix() + ".sup.idx";
-						AString dstsubfile = outputfile.PathPart().CatPath("subs", outputfile.FilePart().Prefix() + ".sup.idx");
-						AStdFile fp1, fp2;
+					if (!rc) {
+						AString cmd;
+
+						cmd.printf("avconv -i \"%s\" -aspect %s -acodec mp3 -vcodec copy -filter:v yadif -v warning -y \"%s\"", concatfile.str(), aspect.str(), outputfile.str());
 						
-						if (fp1.open(srcsubfile)) {
-							if (fp2.open(dstsubfile, "w")) {
-								AString line;
-
-								printf("Converting '%s' to '%s'\n", srcsubfile.str(), dstsubfile.str());
-								
-								while (line.ReadLn(fp1) >= 0) {
-									if (line.Pos("timestamp:") == 0) {
-										uint64_t t = CalcTime(line.str() + 10);
-										uint64_t sub = 0;
-
-										for (i = 0; i < splits.size(); i++) {
-											const SPLIT& split = splits[i];
-											
-											if (split.aspect == aspect) {
-												if ((t >= split.start) && (t < (split.start + split.length))) {
-													t -= sub;
-													
-													fp2.printf("timestamp: %s, filepos: %s\n",
-															   GenTime(t, "%02u:%02u:%02u:%03u").str(),
-															   line.Mid(34).str());
-													break;
-												}
-											}
-											else sub += split.length;
-										}
-									}
-									else fp2.printf("%s\n", line.str());
-								}
-
-								fp2.close();
-							}
-							else printf("Failed to open sub file '%s' for writing\n", dstsubfile.str());
-
-							fp1.close();
+						printf("--------------------------------------------------------------------------------\n");
+						printf("Executing: '%s'\n", cmd.str());
+						if (system(cmd) != 0) {
+							printf("**** Failed\n");
+							printf("--------------------------------------------------------------------------------\n");
+							rc = -__LINE__;
+							break;
 						}
-						else printf("Failed to open sub file '%s' for reading\n", srcsubfile.str());
+					}
 
-						srcsubfile = src.Prefix() + ".sup.sub";
-						dstsubfile = outputfile.PathPart().CatPath("subs", outputfile.FilePart().Prefix() + ".sup.sub");
-						if (fp1.open(srcsubfile, "rb")) {
-							if (fp2.open(dstsubfile, "wb")) {
-								printf("Copying '%s' to '%s'\n", srcsubfile.str(), dstsubfile.str());
-								
-								CopyFile(fp1, fp2);
-								
-								fp2.close();
-							}
-							else printf("Failed to open sub file '%s' for writing\n", dstsubfile.str());
+					if (!rc) rc = ConvertSubtitles(src, outputfile, splits, aspect);
+												   
+					if (cleanup) remove(concatfile);
+				}
+					
+				printf("--------------------------------------------------------------------------------\n");
 
-							fp1.close();
-						}
-						else printf("Failed to open sub file '%s' for reading\n", srcsubfile.str());
+				if (cleanup) {
+					for (i = 0; i < files.size(); i++) {
+						remove(files[i]);
 					}
 				}
 			}
