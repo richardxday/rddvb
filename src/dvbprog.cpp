@@ -64,6 +64,8 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(scheduled, 		   	 Flag_scheduled, 	 	   "Programme scheduled"),
 	DEFINE_FLAG(radioprogramme,    	 Flag_radioprogramme,      "Programme is a Radio programme"),
 	DEFINE_FLAG(incompleterecording, Flag_incompleterecording, "Programme recorded is incomplete"),
+	DEFINE_FLAG(ignorerecording,     Flag_ignorerecording,     "Programme recorded should be ignored when scheduling"),
+	DEFINE_FLAG(failed,				 Flag_recordingfailed,     "Programme recording failed"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
 	DEFINE_FIELD(series,   	  episode.series,   uint8_t,  "Series"),
@@ -595,6 +597,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	str.printf(",\"radioprogramme\":%u", (uint_t)IsRadioProgramme());
 	str.printf(",\"incompleterecording\":%u", (uint_t)!IsRecordingComplete());
 	str.printf(",\"ignorerecording\":%u", (uint_t)IgnoreRecording());
+	str.printf(",\"recordingfailed\":%u", (uint_t)HasRecordingFailed());
 	str.printf("}");
 
 	if (data->filesize) str.printf(",\"filesize\":%" FMT64 "u", data->filesize);
@@ -1404,9 +1407,7 @@ void ADVBProg::Record()
 		uint64_t dt, st, et;
 		uint_t   nsecs, nmins;
 		bool     record = true, deladdlogfile = true;
-
-		ADVBProgList::CreateCombinedList();
-
+		
 		config.printf("------------------------------------------------------------------------------------------------------------------------");
 
 		((ADVBConfig&)config).SetAdditionalLogFile(addlogfile, false);
@@ -1419,7 +1420,7 @@ void ADVBProg::Record()
 						(user.Valid() && ((uint_t)config.GetUserConfigItem(user, "fakerecordings") != 0)) ||
 						((uint_t)config.GetConfigItem("fakerecordings") != 0));
 		bool	reschedule = false;
-
+		bool	failed     = false;
 		
 		if (record && !fake) {
 			pids = GetRecordPIDS();
@@ -1433,14 +1434,19 @@ void ADVBProg::Record()
 		}
 
 		if (!GetJobID()) {
-			ADVBProgList schedulelist;
+			ADVBLock     lock("schedule");
+			ADVBProgList list;
 			const ADVBProg *prog;
 
-			schedulelist.ReadFromFile(config.GetScheduledFile());
+			list.ReadFromFile(config.GetScheduledFile());
 
 			// copy over job ID from scheduled list
-			if ((prog = schedulelist.FindUUID(*this)) != NULL) {
+			if ((prog = list.FindUUID(*this)) != NULL) {
 				SetJobID(prog->GetJobID());
+				// delete programme
+				list.DeleteProg(*prog);
+				// write back
+				list.WriteToFile(config.GetScheduledFile());
 			}
 			else {
 				config.addlogit("\n");
@@ -1478,12 +1484,10 @@ void ADVBProg::Record()
 
 				recordedlist.ReadFromFile(config.GetRecordedFile());
 
-				while (record && ((recordedprog = recordedlist.FindSimilar(*this, recordedprog)) != NULL)) {
-					if (recordedprog->IsRecordingComplete()) {
-						config.addlogit("\n");
-						config.printf("'%s' already recorded ('%s')!", GetTitleAndSubtitle().str(), recordedprog->GetQuickDescription().str());
-						record = false;
-					}
+				if (record && ((recordedprog = recordedlist.FindCompleteRecording(*this)) != NULL)) {
+					config.addlogit("\n");
+					config.printf("'%s' already recorded ('%s')!", GetTitleAndSubtitle().str(), recordedprog->GetQuickDescription().str());
+					record = false;
 				}
 			}
 		}
@@ -1542,13 +1546,7 @@ void ADVBProg::Record()
 
 				config.printf("Running '%s'", cmd.str());
 
-				{
-					ADVBLock lock("schedule");
-					ADVBProgList list;
-					list.ReadFromFile(listfilename);
-					list.AddProg(*this, false, false, true);
-					list.WriteToFile(listfilename);
-				}
+				ADVBProgList::AddToList(listfilename, *this);
 
 				config.addlogit("\n");
 				config.addlogit("--------------------------------------------------------------------------------\n");
@@ -1558,13 +1556,7 @@ void ADVBProg::Record()
 				config.addlogit("--------------------------------------------------------------------------------\n");
 				config.addlogit("\n");
 
-				{
-					ADVBLock lock("schedule");
-					ADVBProgList list;
-					list.ReadFromFile(listfilename);
-					list.DeleteProg(*this);
-					list.WriteToFile(listfilename);
-				}
+				ADVBProgList::RemoveFromList(listfilename, *this);
 			}
 
 			if (res == 0) {
@@ -1607,12 +1599,7 @@ void ADVBProg::Record()
 						ClearScheduled();
 						SetRecorded();
 
-						{
-							ADVBLock lock("schedule");
-							recordedlist.ReadFromFile(filename);
-							recordedlist.AddProg(*this, false, false, true);
-							recordedlist.WriteToFile(filename);
-						}
+						ADVBProgList::AddToList(filename, *this, false, false, true);
 
 						if (IsOnceOnly()) {
 							ADVBPatterns::DeletePattern(user, GetPattern());
@@ -1622,6 +1609,7 @@ void ADVBProg::Record()
 
 						if (PostProcess()) OnRecordSuccess();
 						else {
+							failed = true;
 							deladdlogfile = false;
 							OnRecordFailure();
 						}
@@ -1630,7 +1618,7 @@ void ADVBProg::Record()
 						config.addlogit("\n");
 						config.printf("Record of '%s' ('%s') is zero length", GetTitleAndSubtitle().str(), filename.str());
 						remove(filename);
-						reschedule = true;
+						failed = reschedule = true;
 						OnRecordFailure();
 						deladdlogfile = false;
 					}
@@ -1638,7 +1626,7 @@ void ADVBProg::Record()
 				else {
 					config.addlogit("\n");
 					config.printf("Record of '%s' ('%s') doesn't exist", GetTitleAndSubtitle().str(), filename.str());
-					reschedule = true;
+					failed = reschedule = true;
 					OnRecordFailure();
 					deladdlogfile = false;
 				} 
@@ -1646,14 +1634,10 @@ void ADVBProg::Record()
 			else {
 				config.addlogit("\n");
 				config.printf("Unable to start record of '%s'", GetTitleAndSubtitle().str());
-				reschedule = true;
+				failed = reschedule = true;
 				OnRecordFailure();
 				deladdlogfile = false;
 			} 
-		}
-		else {
-			OnRecordFailure();
-			deladdlogfile = false;
 		}
 
 		((ADVBConfig&)config).SetAdditionalLogFile(oldaddlogfile);
@@ -1674,6 +1658,13 @@ void ADVBProg::Record()
 		
 		config.printf("------------------------------------------------------------------------------------------------------------------------");
 
+		if (failed) {
+			ClearScheduled();
+			SetRecordingFailed();
+			
+			ADVBProgList::AddToList(config.GetRecordFailuresFile(), *this);
+	   }
+		
 		if (reschedule) {
 			config.printf("Rescheduling");
 

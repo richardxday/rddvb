@@ -47,6 +47,7 @@ public:
 	AString GetScheduledFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("scheduled", "scheduled.dat"));}
 	AString GetRejectedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("rejected", "rejected.dat"));}
 	AString GetRecordingFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("recording", "recording.dat"));}
+	AString GetRecordFailuresFile()			 const {return CatPath(GetDataDir(), GetConfigItem("recordfailures", "recordfailures.dat"));}
 	AString GetCombinedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("combined", "combined.dat"));}
 	AString GetDVBCardsFile()                const {return CatPath(GetDataDir(), GetConfigItem("dvbcards", "dvbcards.txt"));}
 	AString GetLogFile(uint32_t day)         const {return CatPath(GetLogDir(), "dvblog-" + ADateTime(day, 0UL).DateFormat("%Y-%M-%D") + ".txt");}

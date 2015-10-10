@@ -725,13 +725,14 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatecombined) con
 	}
 
 	if (updatecombined) {
-		FILE_INFO combined_info, scheduled_info, recording_info, recorded_info, rejected_info;
+		FILE_INFO combined_info, scheduled_info, recording_info, recorded_info, failures_info, rejected_info;
 
-		if (!::GetFileInfo(config.GetCombinedFile(),  &combined_info) ||
-			(::GetFileInfo(config.GetScheduledFile(), &scheduled_info) && (scheduled_info.WriteTime > combined_info.WriteTime)) ||
-			(::GetFileInfo(config.GetRecordingFile(), &recording_info) && (recording_info.WriteTime > combined_info.WriteTime)) ||
-			(::GetFileInfo(config.GetRecordedFile(),  &recorded_info)  && (recorded_info.WriteTime  > combined_info.WriteTime)) ||
-			(::GetFileInfo(config.GetRejectedFile(),  &rejected_info)  && (rejected_info.WriteTime  > combined_info.WriteTime))) {
+		if (!::GetFileInfo(config.GetCombinedFile(),  	   &combined_info) ||
+			(::GetFileInfo(config.GetScheduledFile(), 	   &scheduled_info) && (scheduled_info.WriteTime > combined_info.WriteTime)) ||
+			(::GetFileInfo(config.GetRecordingFile(), 	   &recording_info) && (recording_info.WriteTime > combined_info.WriteTime)) ||
+			(::GetFileInfo(config.GetRecordedFile(),  	   &recorded_info)  && (recorded_info.WriteTime  > combined_info.WriteTime)) ||
+			(::GetFileInfo(config.GetRejectedFile(),  	   &rejected_info)  && (rejected_info.WriteTime  > combined_info.WriteTime)) ||
+			(::GetFileInfo(config.GetRecordFailuresFile(), &failures_info)  && (failures_info.WriteTime  > combined_info.WriteTime))) {
 			CreateCombinedList();
 		}
 	}
@@ -1562,6 +1563,26 @@ void ADVBProgList::Sort(bool reverse)
 	proglist.Sort(&SortProgs, &reverse);
 }
 
+void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool sort, bool removeoverlaps, bool reverseorder)
+{
+	ADVBLock     lock("schedule");
+	ADVBProgList list;
+
+	list.ReadFromFile(filename);
+	list.AddProg(prog, sort, removeoverlaps, reverseorder);
+	list.WriteToFile(filename);
+}
+
+void ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
+{
+	ADVBLock     lock("schedule");
+	ADVBProgList list;
+
+	list.ReadFromFile(filename);
+	list.DeleteProg(prog);
+	list.WriteToFile(filename);
+}
+
 uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -2217,17 +2238,6 @@ void ADVBProgList::CreateCombinedList()
 	}
 
 	list2.DeleteAll();
-	if (list2.ReadFromBinaryFile(config.GetRecordingFile())) {
-		for (i = 0; i < list2.Count(); i++) {
-			const ADVBProg& prog = list2.GetProg(i);
-			if (!list.FindUUID(prog)) {
-				list.AddProg(prog, false);
-			}
-		}
-	}
-	else config.logit("Failed to read running programme list for generating combined list");
-
-	list2.DeleteAll();
 	if (list2.ReadFromBinaryFile(config.GetScheduledFile())) {
 		for (i = 0; i < list2.Count(); i++) {
 			const ADVBProg& prog = list2.GetProg(i);
@@ -2237,6 +2247,28 @@ void ADVBProgList::CreateCombinedList()
 		}
 	}
 	else config.logit("Failed to read scheduled programme list for generating combined list");
+
+	list2.DeleteAll();
+	if (list2.ReadFromBinaryFile(config.GetRecordingFile())) {
+		for (i = 0; i < list2.Count(); i++) {
+			const ADVBProg& prog = list2.GetProg(i);
+			if (!list.FindUUID(prog)) {
+				list.AddProg(prog);
+			}
+		}
+	}
+	else config.logit("Failed to read running programme list for generating combined list");
+
+	list2.DeleteAll();
+	if (list2.ReadFromBinaryFile(config.GetRecordFailuresFile())) {
+		for (i = 0; i < list2.Count(); i++) {
+			const ADVBProg& prog = list2.GetProg(i);
+			if (!list.FindUUID(prog)) {
+				list.AddProg(prog);
+			}
+		}
+	}
+	else config.logit("Failed to read record failures list for generating combined list");
 
 	list2.DeleteAll();
 	if (list2.ReadFromBinaryFile(config.GetRejectedFile())) {
@@ -2333,10 +2365,26 @@ void ADVBProgList::FindSeries(AHash& hash) const
 
 					if (ind >= (uint_t)elist.len()) elist += AString("-").Copies(ind + 1 - elist.len());
 
-					char t = elist[ind];
-					if		(prog.IsScheduled()) t = 's';
-					else if	(prog.IsRecorded())  t = 'r';
-					else if (prog.IsRejected())  t = 'x';
+					char t = elist[ind], t1 = t;
+					if		(prog.IsScheduled())	    t1 = 's';
+					else if	(prog.HasRecordingFailed()) t1 = 'f';
+					else if	(prog.IsRecorded())  		t1 = 'r';
+					else if (prog.IsRejected())  		t1 = 'x';
+
+					static const char *allowablechanges[] = {
+						"-sfrx",
+						"sfr",
+						"fsrx",
+						"rsx",
+						"xsfr",
+					};
+					uint_t i;
+					for (i = 0; i < NUMBEROF(allowablechanges); i++) {
+						if ((t == allowablechanges[i][0]) && strchr(allowablechanges[i] + 1, t1)) {
+							t = t1;
+							break;
+						}
+					}
 
 					if (t != elist[ind]) {
 						elist = elist.Left(ind) + AString(t) + elist.Mid(ind + 1);
