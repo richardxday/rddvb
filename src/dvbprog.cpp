@@ -594,7 +594,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	str.printf(",\"scheduled\":%u", (uint_t)IsScheduled());
 	str.printf(",\"radioprogramme\":%u", (uint_t)IsRadioProgramme());
 	str.printf(",\"incompleterecording\":%u", (uint_t)!IsRecordingComplete());
-	str.printf(",\"ignorerecording\":%u", (uint_t)CanIgnoreRecording());
+	str.printf(",\"ignorerecording\":%u", (uint_t)IgnoreRecording());
 	str.printf("}");
 
 	if (data->filesize) str.printf(",\"filesize\":%" FMT64 "u", data->filesize);
@@ -894,7 +894,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 							IsRecordingComplete() ? "" : " *not complete* ");
 			}
 
-			if (CanIgnoreRecording()) str1.printf(" (ignored when scheduling)");
+			if (IgnoreRecording()) str1.printf(" (ignored when scheduling)");
 		}
 
 		if ((verbosity > 4) && GetFilename()[0]) {

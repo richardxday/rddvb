@@ -1097,7 +1097,7 @@ const ADVBProg *ADVBProgList::FindCompleteRecording(const ADVBProg& prog) const
 {
 	const ADVBProg *res = NULL;
 	
-	while (((res = FindSimilar(prog, res)) != NULL) && !res->IsRecordingComplete()) ;
+	while (((res = FindSimilar(prog, res)) != NULL) && (res->IgnoreRecording() || !res->IsRecordingComplete())) ;
 
 	return res;
 }
@@ -2100,7 +2100,7 @@ void ADVBProgList::SimpleSchedule()
 			prog1 = NULL;
 
 			// find recorded programme which cannot be ignored
-			while (((prog1 = recordedlist.FindSimilar(prog, prog1)) != NULL) && prog1->CanIgnoreRecording()) ;
+			while (((prog1 = recordedlist.FindSimilar(prog, prog1)) != NULL) && prog1->IgnoreRecording()) ;
 
 			if (prog1) {
 				config.printf("'%s' already recorded ('%s')", prog.GetQuickDescription().str(), prog1->GetQuickDescription().str());
@@ -2332,14 +2332,13 @@ void ADVBProgList::FindSeries(AHash& hash) const
 					uint_t   ind   = epn - 1;
 
 					if (ind >= (uint_t)elist.len()) elist += AString("-").Copies(ind + 1 - elist.len());
-					if (elist[ind] == '-') {
-						char t;
 
-						if		(prog.IsRecorded())  t = 'r';
-						else if (prog.IsScheduled()) t = 's';
-						else if (prog.IsRejected())  t = 'x';
-						else						 t = '*';
+					char t = elist[ind];
+					if		(prog.IsScheduled()) t = 's';
+					else if	(prog.IsRecorded())  t = 'r';
+					else if (prog.IsRejected())  t = 'x';
 
+					if (t != elist[ind]) {
 						elist = elist.Left(ind) + AString(t) + elist.Mid(ind + 1);
 					}
 

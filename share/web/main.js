@@ -238,6 +238,10 @@ function addtimesdata(prog)
 		if (typeof prog.exists != 'undefined') {
 			str += ' Programme <b>' + (prog.exists ? 'Available' : 'Unavailable') + '</b>.';
 		}
+
+		if ((typeof prog.flags.ignorerecording != 'undefined') && prog.flags.ignorerecording) {
+			str += ' (Programme <b>ignored</b> during scheduling)';
+		}
 	}
 	else if (typeof prog.recstart != 'undefined') {
 		if (str != '') str += '<br><br>';
@@ -392,8 +396,8 @@ function populateprogs(id)
 					else if (typeof prog.rejected  != 'undefined') prog1 = prog.rejected;
 
 					if		(prog.flags.running)												 classname = ' class="recording"';
-					else if	(prog.flags.recorded  || (typeof prog.recorded  != 'undefined'))   	 classname = ' class="recorded"';
 					else if (prog.flags.scheduled || (typeof prog.scheduled != 'undefined')) 	 classname = ' class="scheduled"';
+					else if	(prog.flags.recorded  || (typeof prog.recorded  != 'undefined'))   	 classname = ' class="recorded"';
 					else if (prog.flags.rejected  || (typeof prog.rejected  != 'undefined'))	 classname = ' class="rejected"';
 					else if ((typeof prog.category != 'undefined') && (prog.category == 'Film')) classname = ' class="film"';
 

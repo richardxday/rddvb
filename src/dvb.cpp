@@ -855,7 +855,8 @@ int main(int argc, char *argv[])
 						ADVBProg *prog;
 
 						if ((prog = reclist.FindUUIDWritable(reslist.GetProg(i))) != NULL) {
-							if (prog->CanIgnoreRecording() != ignore) {
+							if (prog->IgnoreRecording() != ignore) {
+								config.printf("Changing '%s'", prog->GetQuickDescription().str());
 								prog->SetIgnoreRecording(ignore);
 								changed++;
 							}
