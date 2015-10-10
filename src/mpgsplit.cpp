@@ -64,10 +64,9 @@ typedef struct {
 	uint64_t  start, length;
 } SPLIT;
 
-int ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect)
+void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect)
 {
 	FILE_INFO info;
-	int rc = 0;
 	
 	if (GetFileInfo(dst.PathPart().CatPath("subs"), &info)) {
 		AString srcsubfile = src.Prefix() + ".sup.idx";
@@ -107,19 +106,10 @@ int ConvertSubtitles(const AString& src, const AString& dst, const std::vector<S
 
 				fp2.close();
 			}
-			else {
-				printf("Failed to open sub file '%s' for writing\n", dstsubfile.str());
-				rc = -__LINE__;
-			}
+			else printf("Failed to open sub file '%s' for writing\n", dstsubfile.str());
 			
 			fp1.close();
-		}
-		else {
-			printf("Failed to open sub file '%s' for reading\n", srcsubfile.str());
-			rc = -__LINE__;
-		}
 
-		if (!rc) {
 			srcsubfile = src.Prefix() + ".sup.sub";
 			dstsubfile = dst.PathPart().CatPath("subs", dst.FilePart().Prefix() + ".sup.sub");
 			if (fp1.open(srcsubfile, "rb")) {
@@ -130,22 +120,15 @@ int ConvertSubtitles(const AString& src, const AString& dst, const std::vector<S
 								
 					fp2.close();
 				}
-				else {
-					printf("Failed to open sub file '%s' for writing\n", dstsubfile.str());
-					rc = -__LINE__;
-				}
+				else printf("Failed to open sub file '%s' for writing\n", dstsubfile.str());
 			
 				fp1.close();
 			}
-			else {
-				printf("Failed to open sub file '%s' for reading\n", srcsubfile.str());
-				rc = -__LINE__;
-			}
+			else printf("Failed to open sub file '%s' for reading\n", srcsubfile.str());
 		}
+		else printf("Failed to open sub file '%s' for reading\n", srcsubfile.str());
 	}
 	else printf("'subs' directory doesn't exist\n");
-
-	return rc;
 }
 
 int main(int argc, char *argv[])
@@ -279,7 +262,7 @@ int main(int argc, char *argv[])
 				rc = -__LINE__;
 			}
 
-			if (!rc) rc = ConvertSubtitles(src, dst, splits, bestaspect);
+			if (!rc) ConvertSubtitles(src, dst, splits, bestaspect);
 		}
 		else {
 			printf("Splitting file...\n");
@@ -381,7 +364,7 @@ int main(int argc, char *argv[])
 						}
 					}
 
-					if (!rc) rc = ConvertSubtitles(src, outputfile, splits, aspect);
+					if (!rc) ConvertSubtitles(src, outputfile, splits, aspect);
 												   
 					if (cleanup) remove(concatfile);
 				}
