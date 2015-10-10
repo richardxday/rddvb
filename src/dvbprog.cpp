@@ -893,6 +893,8 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 							(uint_t)(GetActualLength() / 60000ULL), (uint_t)((GetActualLength() % 60000ULL) / 1000ULL),
 							IsRecordingComplete() ? "" : " *not complete* ");
 			}
+
+			if (CanIgnoreRecording()) str1.printf(" (ignored when scheduling)");
 		}
 
 		if ((verbosity > 4) && GetFilename()[0]) {
