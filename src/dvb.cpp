@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 		printf("\t--unschedule-all\t\tUnschedule all programmes\n");
 		printf("\t--schedule-list\t\t\tSchedule current list of programmes (-S)\n");
 		printf("\t--record <prog>\t\t\tRecord programme <prog> (Base64 encoded)\n");
-		printf("\t--add-recorded <prog>\t\t\tAdd recorded programme <prog> to recorded list (Base64 encoded)\n");
+		printf("\t--add-recorded <prog>\t\tAdd recorded programme <prog> to recorded list (Base64 encoded)\n");
 		printf("\t--record-now <channel>[:<mins>]\tRecord channel <channel>\n");
 		printf("\t--record-list\t\t\tSet the current list to record, ensuring they don't clash with the current set of jobs\n");
 		printf("\t--pids <channel>\t\tFind PIDs (all streams) associated with channel <channel>\n");
@@ -121,6 +121,7 @@ int main(int argc, char *argv[])
 		printf("\t--update-recording-complete\tUpdate recording complete flag in every recorded programme\n");
 		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
 		printf("\t--recover-recorded\t\tAttempt to recover recorded programmes using log files\n");
+		printf("\t--force-failures\t\tAdd current list to recording failures (setting failed flag)\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -189,6 +190,7 @@ int main(int argc, char *argv[])
 				else if (filename.ToLower() == "scheduled") filename = config.GetScheduledFile();
 				else if (filename.ToLower() == "recorded")  filename = config.GetRecordedFile();
 				else if (filename.ToLower() == "requested") filename = config.GetRequestedFile();
+				else if (filename.ToLower() == "failures")  filename = config.GetRecordFailuresFile();
 				else if (filename.ToLower() == "rejected")  filename = config.GetRejectedFile();
 				else if (filename.ToLower() == "combined")  filename = config.GetCombinedFile();
 
@@ -970,6 +972,30 @@ int main(int argc, char *argv[])
 					printf("Added %u programmes, count now %u\n", nadded, reclist.Count());
 					reclist.WriteToFile(config.GetRecordedFile());
 				}
+			}
+			else if (stricmp(argv[i], "--force-failures") == 0) {
+				ADVBLock     lock("schedule");
+				ADVBProgList failureslist;
+
+				if (!AStdFile::exists(config.GetRecordFailuresFile()) || failureslist.ReadFromFile(config.GetRecordFailuresFile())) {
+					uint_t i;
+
+					for (i = 0; i < proglist.Count(); i++) {
+						failureslist.AddProg(proglist.GetProg(i), false, false, false);
+					}
+
+					for (i = 0; i < failureslist.Count(); i++) {
+						ADVBProg& prog = failureslist.GetProgWritable(i);
+
+						prog.ClearScheduled();
+						prog.SetRecordingFailed();
+					}
+					
+					if (!failureslist.WriteToFile(config.GetRecordFailuresFile())) {
+						config.printf("Failed to write record failure list back!");
+					}
+				}
+				else config.printf("Failed to read record failure list");
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();

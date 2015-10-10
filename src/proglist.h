@@ -106,6 +106,9 @@ public:
 	static void CreateCombinedList();
 	static void CheckRecordingFile();
 
+	static void AddToList(const AString& filename, const ADVBProg& prog, bool sort = true, bool removeoverlaps = false, bool reverseorder = false);
+	static void RemoveFromList(const AString& filename, const ADVBProg& prog);
+	
 protected:
 	CHANNEL *GetChannelWritable(const AString& id) const {return (CHANNEL *)channelhash.Read(id);}
 	void DeleteChannel(const AString& id);

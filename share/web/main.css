@@ -145,6 +145,14 @@ table.proglist tr.rejected:hover
 {
 	background-color:#e77;
 }
+table.proglist tr.failed
+{
+	background-color:#f44;
+}
+table.proglist tr.failed:hover
+{
+	background-color:#e33;
+}
 table.proglist tr.film
 {
 	background-color:#2ff;

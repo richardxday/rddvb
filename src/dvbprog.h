@@ -151,6 +151,7 @@ public:
 		Flag_dvbcardspecified,
 		Flag_incompleterecording,
 		Flag_ignorerecording,
+		Flag_recordingfailed,
 		
 		Flag_count,
 	};
@@ -191,6 +192,8 @@ public:
 	void   SetRecordingComplete();
 	bool   IgnoreRecording()			 const {return GetFlag(Flag_ignorerecording);}
 	void   SetIgnoreRecording(bool set = true) {SetFlag(Flag_ignorerecording, set);}
+	bool   HasRecordingFailed()   const {return GetFlag(Flag_recordingfailed);}
+	void   SetRecordingFailed()         {SetFlag(Flag_recordingfailed);}
 
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}

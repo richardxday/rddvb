@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
 			DataSource_Patterns,
 			DataSource_Logs,
 		};
-		ADVBProgList 	  recordedlist, scheduledlist, requestedlist, rejectedlist, combinedlist, runninglist;
+		ADVBProgList 	  recordedlist, scheduledlist, requestedlist, rejectedlist, combinedlist, failureslist, runninglist;
 		ADVBProgList 	  list[2], *proglist = NULL;
 		ADataList	      patternlist;
 		ADVBPatterns::PATTERN filterpattern;
@@ -211,6 +211,7 @@ int main(int argc, char *argv[])
 		requestedlist.ReadFromFile(config.GetRequestedFile());
 		rejectedlist.ReadFromFile(config.GetRejectedFile());
 
+		failureslist.ReadFromFile(config.GetRecordFailuresFile());
 		runninglist.ReadFromFile(config.GetRecordingFile());
 
 		combinedlist.ReadFromFile(config.GetCombinedFile());
@@ -245,6 +246,9 @@ int main(int argc, char *argv[])
 		}
 		else if (val == "combined") {
 			proglist = &combinedlist;
+		}
+		else if (val == "failures") {
+			proglist = &failureslist;
 		}
 		else if (val == "patterns") {
 			datasource = DataSource_Patterns;
