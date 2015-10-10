@@ -495,12 +495,12 @@ int main(int argc, char *argv[])
 					printf(",\"progs\":[");
 
 					for (i = 0; (i < count) && !HasQuit(); i++) {
-						const ADVBProg& prog = proglist->GetProg(offset + i);
+						ADVBProg& prog = proglist->GetProgWritable(offset + i);
 						const ADVBProg *prog2;
 
 						if (i > 0) printf(",");
 
-						if (runninglist.FindUUID(prog)) ((ADVBProg&)prog).SetRunning();
+						if (runninglist.FindUUID(prog)) prog.SetRunning();
 
 						printf("{");
 						printf("%s", prog.ExportToJSON(true).str());
