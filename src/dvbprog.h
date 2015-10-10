@@ -189,8 +189,8 @@ public:
 	void   SetDVBCardSpecified()        {SetFlag(Flag_dvbcardspecified);}
 	bool   IsRecordingComplete()  const {return !GetFlag(Flag_incompleterecording);}
 	void   SetRecordingComplete();
-	bool   CanIgnoreRecording()	  const {return GetFlag(Flag_ignorerecording);}
-	void   SetIgnoreRecording()			{SetFlag(Flag_ignorerecording);}
+	bool   CanIgnoreRecording()			 const {return GetFlag(Flag_ignorerecording);}
+	void   SetIgnoreRecording(bool set = true) {SetFlag(Flag_ignorerecording, set);}
 
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}
