@@ -400,6 +400,7 @@ function populateprogs(id)
 					else if (typeof prog.rejected  != 'undefined') prog1 = prog.rejected;
 
 					if		(prog.flags.running)												 classname = ' class="recording"';
+					else if	(prog.flags.postprocessing)											 classname = ' class="processing"';
 					else if (prog.flags.recordingfailed)									     classname = ' class="failed"';
 					else if (prog.flags.scheduled || (typeof prog.scheduled != 'undefined')) 	 classname = ' class="scheduled"';
 					else if	(prog.flags.recorded  || (typeof prog.recorded  != 'undefined'))   	 classname = ' class="recorded"';
@@ -808,7 +809,7 @@ function recordprogramme(id)
 
 		if (user == defaultuser) user = '';
 
-		if (prog.category.toLowerCase() == 'film') pattern += ' category=' + prog.category.toLowerCase() + ' dir:=Films';
+		if (prog.category.toLowerCase() == 'film') pattern += ' category=' + prog.category.toLowerCase() + ' dir:="Films" onceonly:=1';
 		
 		if (typeof prog.subtitle != 'undefined') pattern += ' subtitle="' + prog.subtitle + '"';
 		

@@ -36,20 +36,21 @@ public:
 	AString GetTempFile(const AString& name, const AString& suffix = "") const;
 	AString GetQueue()						 const {return GetConfigItem("queue", "d");}
 	AString GetFilenameTemplate()			 const {return GetConfigItem("filename", "{title}{sep}{episode}{sep}{date}{sep}{times}{sep}{subtitle}{sep}{suffix}");}
-	AString GetListingsFile()		   		 const {return CatPath(GetDataDir(), GetConfigItem("listings", "dvblistings.dat"));}
-	AString GetFreqScanFile()				 const {return CatPath(GetConfigDir(), GetConfigItem("freqscan", "scanfreqs.conf"));}
-	AString GetChannelsConfFile()	   		 const {return CatPath(GetConfigDir(), GetConfigItem("channelsconf", "channels.conf"));}
-	AString GetDVBChannelsFile()	   		 const {return CatPath(GetConfigDir(), GetConfigItem("dvbchannels", "channels.dat"));}
-	AString GetPatternsFile()		   		 const {return CatPath(GetConfigDir(), GetConfigItem("patterns", "patterns.txt"));}
-	AString GetUserPatternsPattern()		 const {return CatPath(GetConfigDir(), GetConfigItem("patterns", "{#?}-patterns.txt"));}
-	AString GetRecordedFile()		   		 const {return CatPath(GetDataDir(), GetConfigItem("recorded", "recorded.dat"));}
-	AString GetRequestedFile()				 const {return CatPath(GetDataDir(), GetConfigItem("requested", "requested.dat"));}
-	AString GetScheduledFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("scheduled", "scheduled.dat"));}
-	AString GetRejectedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("rejected", "rejected.dat"));}
-	AString GetRecordingFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("recording", "recording.dat"));}
-	AString GetRecordFailuresFile()			 const {return CatPath(GetDataDir(), GetConfigItem("recordfailures", "recordfailures.dat"));}
-	AString GetCombinedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("combined", "combined.dat"));}
-	AString GetDVBCardsFile()                const {return CatPath(GetDataDir(), GetConfigItem("dvbcards", "dvbcards.txt"));}
+	AString GetListingsFile()		   		 const {return CatPath(GetDataDir(), GetConfigItem("listingsfile", "dvblistings.dat"));}
+	AString GetFreqScanFile()				 const {return CatPath(GetConfigDir(), GetConfigItem("freqscanfile", "scanfreqs.conf"));}
+	AString GetChannelsConfFile()	   		 const {return CatPath(GetConfigDir(), GetConfigItem("channelsconffile", "channels.conf"));}
+	AString GetDVBChannelsFile()	   		 const {return CatPath(GetConfigDir(), GetConfigItem("dvbchannelsfile", "channels.dat"));}
+	AString GetPatternsFile()		   		 const {return CatPath(GetConfigDir(), GetConfigItem("patternsfile", "patterns.txt"));}
+	AString GetUserPatternsPattern()		 const {return CatPath(GetConfigDir(), GetConfigItem("patternsfile", "{#?}-patterns.txt"));}
+	AString GetRecordedFile()		   		 const {return CatPath(GetDataDir(), GetConfigItem("recordedfile", "recorded.dat"));}
+	AString GetRequestedFile()				 const {return CatPath(GetDataDir(), GetConfigItem("requestedfile", "requested.dat"));}
+	AString GetScheduledFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("scheduledfile", "scheduled.dat"));}
+	AString GetRejectedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("rejectedfile", "rejected.dat"));}
+	AString GetRecordingFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("recordingfile", "recording.dat"));}
+	AString GetProcessingFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("processingfile", "processing.dat"));}
+	AString GetRecordFailuresFile()			 const {return CatPath(GetDataDir(), GetConfigItem("recordfailuresfile", "recordfailures.dat"));}
+	AString GetCombinedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("combinedfile", "combined.dat"));}
+	AString GetDVBCardsFile()                const {return CatPath(GetDataDir(), GetConfigItem("dvbcardsfile", "dvbcards.txt"));}
 	AString GetLogFile(uint32_t day)         const {return CatPath(GetLogDir(), "dvblog-" + ADateTime(day, 0UL).DateFormat("%Y-%M-%D") + ".txt");}
 	AString GetRecordLogBase()				 const {return "dvbrecordlog-";}
 	AString GetRecordLog(uint32_t day) 		 const {return CatPath(GetLogDir(), GetRecordLogBase() + ADateTime(day, 0UL).DateFormat("%Y-%M") + ".txt");}

@@ -682,6 +682,12 @@ bool ADVBProgList::ReadFromJobList(bool runningonly)
 	return success;
 }
 
+bool ADVBProgList::UpdateCombined(const AString& filename, const FILE_INFO& fileinfo)
+{
+	FILE_INFO fileinfo2;
+	return (::GetFileInfo(filename, &fileinfo2) && (fileinfo2.WriteTime > fileinfo.WriteTime));
+}
+
 void ADVBProgList::UpdateDVBChannels()
 {
 	const ADVBConfig&      config = ADVBConfig::Get();
@@ -701,12 +707,14 @@ void ADVBProgList::UpdateDVBChannels()
 		}
 	}
 }
-
+										 
 bool ADVBProgList::WriteToFile(const AString& filename, bool updatecombined) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
 	bool success = false;
+
+	config.printf("Writing '%s'", filename.str());
 
 	if (fp.open(filename, "wb")) {
 		uint_t i;
@@ -724,17 +732,25 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatecombined) con
 		success = true;
 	}
 
-	if (updatecombined) {
-		FILE_INFO combined_info, scheduled_info, recording_info, recorded_info, failures_info, rejected_info;
+	if (success && updatecombined && (filename != config.GetCombinedFile())) {
+		FILE_INFO combined_info;
 
-		if (!::GetFileInfo(config.GetCombinedFile(),  	   &combined_info) ||
-			(::GetFileInfo(config.GetScheduledFile(), 	   &scheduled_info) && (scheduled_info.WriteTime > combined_info.WriteTime)) ||
-			(::GetFileInfo(config.GetRecordingFile(), 	   &recording_info) && (recording_info.WriteTime > combined_info.WriteTime)) ||
-			(::GetFileInfo(config.GetRecordedFile(),  	   &recorded_info)  && (recorded_info.WriteTime  > combined_info.WriteTime)) ||
-			(::GetFileInfo(config.GetRejectedFile(),  	   &rejected_info)  && (rejected_info.WriteTime  > combined_info.WriteTime)) ||
-			(::GetFileInfo(config.GetRecordFailuresFile(), &failures_info)  && (failures_info.WriteTime  > combined_info.WriteTime))) {
+		if ((filename == config.GetScheduledFile()) 	 ||
+			(filename == config.GetRecordingFile()) 	 ||
+			(filename == config.GetRecordedFile())  	 ||
+			(filename == config.GetRejectedFile())  	 ||
+			(filename == config.GetRecordFailuresFile()) ||
+			(filename == config.GetProcessingFile())     ||
+			!::GetFileInfo(config.GetCombinedFile(),  	   &combined_info) ||
+			UpdateCombined(config.GetScheduledFile(), 	   combined_info)  ||
+			UpdateCombined(config.GetRecordingFile(), 	   combined_info)  ||
+			UpdateCombined(config.GetRecordedFile(),  	   combined_info)  ||
+			UpdateCombined(config.GetRejectedFile(),  	   combined_info)  ||
+			UpdateCombined(config.GetRecordFailuresFile(), combined_info)  ||
+			UpdateCombined(config.GetProcessingFile(),     combined_info)) {
 			CreateCombinedList();
 		}
+		//else config.printf("No need to update combined file");
 	}
 
 	return success;
@@ -2231,7 +2247,7 @@ void ADVBProgList::CreateCombinedList()
 	ADVBProgList list, list2;
 	uint_t i;
 
-	//config.logit("Creating combined list");
+	config.printf("Creating combined list");
 
 	if (!list.ReadFromBinaryFile(config.GetRecordedFile(), false, false, true)) {
 		config.logit("Failed to read recorded programme list for generating combined list");
@@ -2258,6 +2274,17 @@ void ADVBProgList::CreateCombinedList()
 		}
 	}
 	else config.logit("Failed to read running programme list for generating combined list");
+
+	list2.DeleteAll();
+	if (list2.ReadFromBinaryFile(config.GetProcessingFile())) {
+		for (i = 0; i < list2.Count(); i++) {
+			const ADVBProg& prog = list2.GetProg(i);
+			if (!list.FindUUID(prog)) {
+				list.AddProg(prog, true, true);	// remove overlaps from recorded, etc
+			}
+		}
+	}
+	else config.logit("Failed to read processing programme list for generating combined list");
 
 	list2.DeleteAll();
 	if (list2.ReadFromBinaryFile(config.GetRecordFailuresFile())) {
