@@ -69,9 +69,11 @@ int main(int argc, char *argv[])
 		uint_t nframes = (uint_t)((double)AString(argv[arg++]) * fps);
 		uint_t len1    = 0;
 		uint_t len2    = 0;
-
-		if (arg < argc) len1 = (uint_t)((double)AString(argv[arg++]) * fps);
-		if (arg < argc) len2 = (uint_t)((double)AString(argv[arg++]) * fps);
+		double threshold = 10.0;
+		
+		if (arg < argc) len1 	  = (uint_t)((double)AString(argv[arg++]) * fps);
+		if (arg < argc) len2 	  = (uint_t)((double)AString(argv[arg++]) * fps);
+		if (arg < argc) threshold = (double)AString(argv[arg++]);
 
 		len1 = MAX(len1, 1);
 		len2 = MAX(len2, 1);
@@ -95,11 +97,14 @@ int main(int argc, char *argv[])
 					sum -= abs(d);
 				}
 
-				printf("%0.6lf %0.6lf %0.14le\n",
-					   (double)(frame1 + i) / fps,
-					   (double)(frame2 + j) / fps,
-					   (double)sum / (double)totalbytes);
-				
+				double val = (double)sum / (double)totalbytes + threshold;
+				if (val >= 0.0) {
+					printf("%0.6lf %0.6lf %0.14le\n",
+						   (double)(frame1 + i) / fps,
+						   (double)(frame2 + j) / fps,
+						   val);
+				}
+				  
 				uint_t _pc = (100 * ++n) / count;
 				if (_pc > pc) {
 					pc = _pc;
