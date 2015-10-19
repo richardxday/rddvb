@@ -153,6 +153,14 @@ table.proglist tr.failed:hover
 {
 	background-color:#e33;
 }
+table.proglist tr.processing
+{
+	background-color:#f4f;
+}
+table.proglist tr.processing:hover
+{
+	background-color:#e3e;
+}
 table.proglist tr.film
 {
 	background-color:#2ff;

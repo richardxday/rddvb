@@ -163,7 +163,6 @@ int main(int argc, char *argv[])
 			
 		cmd.printf("projectx -ini /home/richard/X.ini \"%s\"", src.str());
 
-		printf("--------------------------------------------------------------------------------\n");
 		printf("Executing: '%s'\n", cmd.str());
 		if (system(cmd) != 0) {
 			printf("**** Failed\n");
@@ -171,7 +170,6 @@ int main(int argc, char *argv[])
 		}
 		remove(basename + ".sup");
 		remove(basename + ".sup.IFO");
-		printf("--------------------------------------------------------------------------------\n");
 	}
 
 	std::vector<SPLIT> splits;
@@ -189,7 +187,6 @@ int main(int argc, char *argv[])
 			uint64_t t2     = 0;
 			uint64_t totallen = 0;
 
-			printf("--------------------------------------------------------------------------------\n");
 			printf("Analysing logfile:\n\n");
 			
 			while (line.ReadLn(fp) >= 0) {
@@ -254,11 +251,9 @@ int main(int argc, char *argv[])
 
 			cmd.printf("avconv -i \"%s.m2v\" -i \"%s.mp2\" -aspect %s -acodec mp3 -vcodec copy -filter:v yadif -v warning -y \"%s\"", basename.str(), basename.str(), bestaspect.str(), dst.str());
 
-			printf("--------------------------------------------------------------------------------\n");
 			printf("Executing: '%s'\n", cmd.str());
 			if (system(cmd) != 0) {
 				printf("**** Failed\n");
-				printf("--------------------------------------------------------------------------------\n");
 				rc = -__LINE__;
 			}
 
@@ -272,13 +267,11 @@ int main(int argc, char *argv[])
 			
 				cmd.printf("avconv -fflags +genpts -i \"%s.m2v\" -i \"%s.mp2\" -acodec copy -vcodec copy -v warning -f mpegts \"%s\"", basename.str(), basename.str(), remuxsrc.str());
 
-				printf("--------------------------------------------------------------------------------\n");
 				printf("Executing: '%s'\n", cmd.str());
 				if (system(cmd) != 0) {
 					printf("**** Failed\n");
 					rc = -__LINE__;
 				}
-				printf("--------------------------------------------------------------------------------\n");
 			}
 
 			std::map<AString,bool>::iterator it;
@@ -302,15 +295,12 @@ int main(int argc, char *argv[])
 							if (split.length > 0) cmd.printf(" -t %s", GenTime(split.length).str());
 							cmd.printf(" -acodec copy -vcodec copy -v warning -y -f mpegts \"%s\"", outfile.str());
 				
-							printf("--------------------------------------------------------------------------------\n");
 							printf("Executing: '%s'\n", cmd.str());
 							if (system(cmd) != 0) {
 								printf("**** Failed\n");
-								printf("--------------------------------------------------------------------------------\n");
 								rc = -__LINE__;
 								break;
 							}
-							printf("--------------------------------------------------------------------------------\n");
 						}
 
 						files.push_back(outfile);
@@ -354,11 +344,9 @@ int main(int argc, char *argv[])
 
 						cmd.printf("avconv -i \"%s\" -aspect %s -acodec mp3 -vcodec copy -filter:v yadif -v warning -y \"%s\"", concatfile.str(), aspect.str(), outputfile.str());
 						
-						printf("--------------------------------------------------------------------------------\n");
 						printf("Executing: '%s'\n", cmd.str());
 						if (system(cmd) != 0) {
 							printf("**** Failed\n");
-							printf("--------------------------------------------------------------------------------\n");
 							rc = -__LINE__;
 							break;
 						}
@@ -368,8 +356,6 @@ int main(int argc, char *argv[])
 												   
 					if (cleanup) remove(concatfile);
 				}
-					
-				printf("--------------------------------------------------------------------------------\n");
 
 				if (cleanup) {
 					for (i = 0; i < files.size(); i++) {

@@ -6,6 +6,7 @@
 #include <rdlib/strsup.h>
 #include <rdlib/Hash.h>
 #include <rdlib/DataList.h>
+#include <rdlib/Recurse.h>
 
 #include "dvbprog.h"
 #include "dvbpatterns.h"
@@ -103,6 +104,7 @@ public:
 	static uint_t SchedulePatterns(const ADateTime& starttime = ADateTime().TimeStamp(true), bool commit = true);
 	static bool WriteToJobList();
 
+	static bool UpdateCombined(const AString& filename, const FILE_INFO& fileinfo);
 	static void CreateCombinedList();
 	static void CheckRecordingFile();
 

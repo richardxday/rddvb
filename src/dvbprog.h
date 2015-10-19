@@ -152,6 +152,7 @@ public:
 		Flag_incompleterecording,
 		Flag_ignorerecording,
 		Flag_recordingfailed,
+		Flag_postprocessing,
 		
 		Flag_count,
 	};
@@ -169,6 +170,7 @@ public:
 	void   SetManualRecording()	        {SetFlag(Flag_manualrecording);}
 	bool   IsRunning() 		   	  const {return GetFlag(Flag_running);}
 	void   SetRunning()		   	  		{SetFlag(Flag_running);}
+	void   ClearRunning()		   	  	{SetFlag(Flag_running, false);}
 	bool   IsMarkOnly()			  const {return GetFlag(Flag_markonly);}
 	void   SetMarkOnly()				{SetFlag(Flag_markonly);}
 	bool   RunPostProcess()       const {return GetFlag(Flag_postprocess);}
@@ -194,6 +196,9 @@ public:
 	void   SetIgnoreRecording(bool set = true) {SetFlag(Flag_ignorerecording, set);}
 	bool   HasRecordingFailed()   const {return GetFlag(Flag_recordingfailed);}
 	void   SetRecordingFailed()         {SetFlag(Flag_recordingfailed);}
+	bool   IsPostProcessing()	  const {return GetFlag(Flag_postprocessing);}
+	void   SetPostProcessing()			{SetFlag(Flag_postprocessing);}
+	void   ClearPostProcessing()		{SetFlag(Flag_postprocessing, false);}
 
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}

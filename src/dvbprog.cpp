@@ -66,6 +66,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(incompleterecording, Flag_incompleterecording, "Programme recorded is incomplete"),
 	DEFINE_FLAG(ignorerecording,     Flag_ignorerecording,     "Programme recorded should be ignored when scheduling"),
 	DEFINE_FLAG(failed,				 Flag_recordingfailed,     "Programme recording failed"),
+	DEFINE_FLAG(postprocessing,		 Flag_postprocessing,	   "Programme recording being processing"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
 	DEFINE_FIELD(series,   	  episode.series,   uint8_t,  "Series"),
@@ -598,6 +599,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	str.printf(",\"incompleterecording\":%u", (uint_t)!IsRecordingComplete());
 	str.printf(",\"ignorerecording\":%u", (uint_t)IgnoreRecording());
 	str.printf(",\"recordingfailed\":%u", (uint_t)HasRecordingFailed());
+	str.printf(",\"postprocessing\":%u", (uint_t)IsPostProcessing());
 	str.printf("}");
 
 	if (data->filesize) str.printf(",\"filesize\":%" FMT64 "u", data->filesize);
@@ -1402,16 +1404,11 @@ void ADVBProg::Record()
 {
 	if (Valid()) {
 		const ADVBConfig& config = ADVBConfig::Get();
-		AString  oldaddlogfile = config.GetAdditionalLogFile();
-		AString  addlogfile    = GetAdditionalLogFile();
 		uint64_t dt, st, et;
 		uint_t   nsecs, nmins;
-		bool     record = true, deladdlogfile = true;
+		bool     record = true;
 		
 		config.printf("------------------------------------------------------------------------------------------------------------------------");
-
-		((ADVBConfig&)config).SetAdditionalLogFile(addlogfile, false);
-
 		config.printf("Starting record of '%s' as '%s'", GetQuickDescription().str(), GetFilename());
 
 		AString pids;
@@ -1426,7 +1423,6 @@ void ADVBProg::Record()
 			pids = GetRecordPIDS();
 						
 			if (pids.CountWords() < 2) {
-				config.addlogit("\n");
 				config.printf("No pids for '%s'", GetQuickDescription().str());
 				reschedule = true;
 				record = false;
@@ -1449,7 +1445,6 @@ void ADVBProg::Record()
 				list.WriteToFile(config.GetScheduledFile());
 			}
 			else {
-				config.addlogit("\n");
 				config.printf("Failed to find %s in scheduled list, cannot copy job ID!", GetTitleAndSubtitle().str());
 			}
 		}
@@ -1464,13 +1459,11 @@ void ADVBProg::Record()
 			nsecs = (et >= dt) ? (uint_t)((et - dt + 1000 - 1) / 1000ULL) : 0;
 
 			if (nmins >= config.GetLatestStart()) {
-				config.addlogit("\n");
 				config.printf("'%s' started too long ago (%u minutes)!", GetTitleAndSubtitle().str(), nmins);
 				reschedule = true;
 				record = false;
 			}
 			else if (nsecs == 0) {
-				config.addlogit("\n");
 				config.printf("'%s' already finished!", GetTitleAndSubtitle().str());
 				reschedule = true;
 				record = false;
@@ -1485,7 +1478,6 @@ void ADVBProg::Record()
 				recordedlist.ReadFromFile(config.GetRecordedFile());
 
 				if (record && ((recordedprog = recordedlist.FindCompleteRecording(*this)) != NULL)) {
-					config.addlogit("\n");
 					config.printf("'%s' already recorded ('%s')!", GetTitleAndSubtitle().str(), recordedprog->GetQuickDescription().str());
 					record = false;
 				}
@@ -1498,8 +1490,6 @@ void ADVBProg::Record()
 			int     res;
 
 			CreateDirectory(filename.PathPart());
-
-			config.addlogit("\n");
 
 			if (fake) {
 				config.printf("**Fake** recording '%s' for %u seconds (%u minutes) to '%s'",
@@ -1524,7 +1514,6 @@ void ADVBProg::Record()
 				// create text file with necessary filename to hold information
 				AStdFile fp;
 
-				config.addlogit("\n");
 				config.printf("Faking recording of '%s' using '%s'", GetTitleAndSubtitle().str(), filename.str());
 
 				if (fp.open(filename, "w")) {
@@ -1536,27 +1525,24 @@ void ADVBProg::Record()
 					res = 0;
 				}
 				else {
-					config.addlogit("\n");
 					config.printf("Unable to create '%s' (fake recording of '%s')", filename.str(), GetTitleAndSubtitle().str());
 					res = -1;
 				}
 			}
 			else {
-				AString listfilename = config.GetRecordingFile();
-
 				config.printf("Running '%s'", cmd.str());
 
-				ADVBProgList::AddToList(listfilename, *this);
+				SetRunning();
+				ADVBProgList::AddToList(config.GetRecordingFile(), *this);
 
-				config.addlogit("\n");
-				config.addlogit("--------------------------------------------------------------------------------\n");
+				config.printf("--------------------------------------------------------------------------------");
 				config.writetorecordlog("start %s", Base64Encode().str());
 				res = system(cmd);
 				config.writetorecordlog("stop %s", Base64Encode().str());
-				config.addlogit("--------------------------------------------------------------------------------\n");
-				config.addlogit("\n");
+				config.printf("--------------------------------------------------------------------------------");
 
-				ADVBProgList::RemoveFromList(listfilename, *this);
+				ADVBProgList::RemoveFromList(config.GetRecordingFile(), *this);
+				ClearRunning();
 			}
 
 			if (res == 0) {
@@ -1571,7 +1557,6 @@ void ADVBProg::Record()
 				SetRecordingComplete();
 
 				if (dt < (st - 15000)) {
-					config.addlogit("\n");
 					config.printf("Warning: '%s' stopped %ss before programme end!", GetTitleAndSubtitle().str(), NUMSTR("", (st - dt) / 1000));
 					reschedule = true;
 					addtorecorded = fake;
@@ -1584,22 +1569,17 @@ void ADVBProg::Record()
 				}
 
 				if (::GetFileInfo(filename, &info)) {
-					config.addlogit("\n");
 					config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", filename.str(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024 * (uint64_t)nsecs)));
 
-					data->filesize = info.FileSize;
+					SetFileSize(info.FileSize);
 
 					if (addtorecorded && (info.FileSize > 0)) {
-						ADVBProgList recordedlist;
-						AString      filename = config.GetRecordedFile();
-
-						config.addlogit("\n");
 						config.printf("Adding '%s' to list of recorded programmes", GetTitleAndSubtitle().str());
 
 						ClearScheduled();
 						SetRecorded();
 
-						ADVBProgList::AddToList(filename, *this, false, false, true);
+						ADVBProgList::AddToList(config.GetRecordedFile(), *this, false, false, true);
 
 						if (IsOnceOnly()) {
 							ADVBPatterns::DeletePattern(user, GetPattern());
@@ -1607,63 +1587,44 @@ void ADVBProg::Record()
 							reschedule = true;
 						}
 
+						SetPostProcessing();
+						ADVBProgList::AddToList(config.GetProcessingFile(), *this, false, false, true);
+
 						if (PostProcess()) OnRecordSuccess();
 						else {
 							failed = true;
-							deladdlogfile = false;
 							OnRecordFailure();
 						}
+						ClearPostProcessing();
+
+						ADVBProgList::RemoveFromList(config.GetProcessingFile(), *this);
 					}
 					else if (!info.FileSize) {
-						config.addlogit("\n");
 						config.printf("Record of '%s' ('%s') is zero length", GetTitleAndSubtitle().str(), filename.str());
 						remove(filename);
 						failed = reschedule = true;
 						OnRecordFailure();
-						deladdlogfile = false;
 					}
 				}
 				else {
-					config.addlogit("\n");
 					config.printf("Record of '%s' ('%s') doesn't exist", GetTitleAndSubtitle().str(), filename.str());
 					failed = reschedule = true;
 					OnRecordFailure();
-					deladdlogfile = false;
 				} 
 			}
 			else {
-				config.addlogit("\n");
 				config.printf("Unable to start record of '%s'", GetTitleAndSubtitle().str());
 				failed = reschedule = true;
 				OnRecordFailure();
-				deladdlogfile = false;
 			} 
 		}
-
-		((ADVBConfig&)config).SetAdditionalLogFile(oldaddlogfile);
-
-		{
-			// to copy additional log file into main log
-			AStdFile fp;
-			if (fp.open(addlogfile)) {
-				AString line;
-
-				while (line.ReadLn(fp) >= 0) {
-					config.logit("%s", line.str());
-				}
-
-				fp.close();
-			}
-		}
-		
-		config.printf("------------------------------------------------------------------------------------------------------------------------");
 
 		if (failed) {
 			ClearScheduled();
 			SetRecordingFailed();
 			
 			ADVBProgList::AddToList(config.GetRecordFailuresFile(), *this);
-	   }
+		}
 		
 		if (reschedule) {
 			config.printf("Rescheduling");
@@ -1672,8 +1633,7 @@ void ADVBProg::Record()
 		}
 		else ADVBProgList::CheckDiskSpace(true);
 
-		// delete additional log file
-		if (deladdlogfile) remove(addlogfile);
+		config.printf("------------------------------------------------------------------------------------------------------------------------");
 	}
 }
 
@@ -1779,6 +1739,17 @@ bool ADVBProg::PostProcess()
 
 			recordedlist.ReadFromFile(filename);
 			if ((prog = recordedlist.FindUUIDWritable(*this)) != NULL) {
+				FILE_INFO info;
+				
+				if (::GetFileInfo(prog->GetFilename(), &info)) {
+					uint_t nsecs = (uint_t)(prog->GetActualLength() / 1000);
+					
+					config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", prog->GetFilename(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024 * (uint64_t)nsecs)));
+
+					prog->SetFileSize(info.FileSize);
+				}
+				else config.printf("File '%s' DOESN'T exists!", prog->GetFilename());
+				
 				prog->SetPostProcessed();
 				recordedlist.WriteToFile(filename);
 			}
