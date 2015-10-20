@@ -231,7 +231,7 @@ function addtimesdata(prog)
 {
 	var str = '';
 
-	if (typeof prog.actstart != 'undefined') {
+	if ((typeof prog.actstart != 'undefined') && (typeof prog.actstop != 'undefined') && (prog.actstop > prog.actstart)) {
 		if (str != '') str += '<br><br>';
 		str += 'Recorded as \'' + prog.filename + '\' (' + prog.actstartdate + ' ' + prog.actstarttime + ' - ' + prog.actstoptime + ': ' + calctime(prog.actstop - prog.actstart) + ')';
 		if (typeof prog.filesize != 'undefined') str += ' filesize ' + ((prog.filesize / (1024 * 1024)) | 0) + 'MB';
@@ -247,7 +247,7 @@ function addtimesdata(prog)
 			str += ' (Programme <b>ignored</b> during scheduling)';
 		}
 	}
-	else if (typeof prog.recstart != 'undefined') {
+	else if ((typeof prog.recstart != 'undefined') && (typeof prog.recstop != 'undefined') && (prog.recstop > prog.recstart)) {
 		if (str != '') str += '<br><br>';
 		str += 'To be recorded as \'' + prog.filename + '\' (' + prog.recstartdate + ' ' + prog.recstarttime + ' - ' + prog.recstoptime + ': ' + calctime(prog.recstop - prog.recstart) + ')';
 
@@ -465,7 +465,15 @@ function populateprogs(id)
 
 						str += '<tr' + classname + '><td class="desc" colspan=8>';
 
-						if (prog.rejected) {
+						if (prog.flags.running) {
+							str += '<span style="font-size:150%;">-- Recording Now --</span><br><br>';
+						}
+						
+						if (prog.flags.postprocessing) {
+							str += '<span style="font-size:150%;">-- Post Processing Now --</span><br><br>';
+						}
+
+						if (prog.flags.rejected) {
 							str += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
 						}
 
@@ -544,9 +552,14 @@ function populateprogs(id)
 						str1 = '';
 
 						if ((progvb > 3) &&
-							(typeof  prog.recorded   == 'undefined') &&
-							(typeof  prog.scheduled  == 'undefined') &&
-							(typeof  prog.rejected   == 'undefined') &&
+							!prog.flags.recorded  	   &&
+							!prog.flags.scheduled 	   &&
+							!prog.flags.rejected   	   &&
+							!prog.flags.failed     	   &&
+							!prog.flags.running        &&
+							!prog.flags.postprocessing &&
+							(typeof prog.recorded  == 'undefined') &&
+							(typeof prog.scheduled == 'undefined') &&
 							((typeof prog.dvbchannel != 'undefined') && (prog.dvbchannel != ''))) {
 							//str1 += '<br><br>';
 							if (typeof response.users != 'undefined') {
@@ -561,7 +574,7 @@ function populateprogs(id)
 							else str1 += defaultuser;
 
 							str1 += '&nbsp;&nbsp;&nbsp;';
-							if (prog.category.toLowerCase() == 'film') {
+							if ((typeof prog.category != 'undefined') && (prog.category.toLowerCase() == 'film')) {
 								str1 += '<button class="addrecord" onclick="recordprogramme(' + i + ')">Record Film</button>';
 							}
 							else {
@@ -653,9 +666,7 @@ function populateprogs(id)
 							}
 							str1 += ':';
 
-							if (((typeof prog.recorded  != 'undefined') ||
-								 (typeof prog.scheduled != 'undefined')) &&
-								(typeof prog1.patternparsed != 'undefined') &&
+							if ((typeof prog1.patternparsed != 'undefined') &&
 								(prog1.patternparsed != '')) {
 								str1 += '<table class="patternlist">';
 								str1 += '<tr><th>Status</th><th>Priority</th><th>User</th><th class="desc">Pattern</th></tr>';
@@ -1566,7 +1577,7 @@ function generatefilterdescription(filter)
 
 	str = 'Page ' + (filter.page + 1) + ' of ' + filter.from;
 	if (fullfilter != '') {
-		str += '\nFiltered using \'' + fullfilter + '\'';
+		str += '\nFiltered using \'' + limitstring(fullfilter) + '\'';
 	}
 	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined') && (filter.expanded < response.progs.length)) {
 		var prog = response.progs[filter.expanded];
@@ -1595,7 +1606,7 @@ function generatefilterdescription(filter)
 	filter.longdesc = str;
 
 	str = 'Page ' + (filter.page + 1) + ' of ' + filter.from;
-	if (filter.titlefilter != '') str += ' \'' + filter.titlefilter + '\'';
+	if (filter.titlefilter != '') str += ' \'' + limitstring(filter.titlefilter) + '\'';
 	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined')) {
 		str += ' (' + title + ')';
 	}
