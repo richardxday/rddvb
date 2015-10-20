@@ -64,20 +64,21 @@ uint32_t ADVBEpisodeHandler::GetEpisode(const AString& key) const
 void ADVBEpisodeHandler::SetEpisode(const AString& key, uint32_t value)
 {
 	episodehash.Insert(key, value);
-	changed = true;
 }
 
 void ADVBEpisodeHandler::AssignEpisode(ADVBProg& prog, bool ignorerepeats)
 {
+	//const ADVBConfig& config = ADVBConfig::Get();
+	
 	if (!prog.IsFilm() && (CompareNoCase(prog.GetTitle(), "Close") != 0)) {
 		if (!prog.GetAssignedEpisode()) {
-			AString key = prog.GetTitle();
-			uint32_t  epn;
-			bool    valid = false;
+			AString  key = prog.GetTitle();
+			uint32_t epn;
+			bool     valid = false;
 
 			key.printf("(%s)", AString(prog.GetChannel()).SearchAndReplace("+1", "").str());
 
-			if (ignorerepeats || !prog.IsRepeatOrPlus1()) {
+			if (ignorerepeats || !prog.IsRepeatOrPlus1() || !episodehash.Exists(key)) {
 				epn = prog.GetStartDT().GetDays() - GetDayOffset(key);
 
 				if (!dayoffsethash.Exists(key)) {
@@ -93,10 +94,12 @@ void ADVBEpisodeHandler::AssignEpisode(ADVBProg& prog, bool ignorerepeats)
 				epn = GetEpisode(key);
 				valid = true;
 			}
-
+			//else debug("Key '%s' doesn't exist in episodehash\n", key.str());
+			
 			if (valid) {
 				prog.SetAssignedEpisode(epn + 1);
 			}
+			//else printf("NOT assigning an episode for '%s'\n", prog.GetQuickDescription().str());
 		}
 	}
 }

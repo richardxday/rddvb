@@ -2258,6 +2258,7 @@ void ADVBProgList::CreateCombinedList()
 		for (i = 0; i < list2.Count(); i++) {
 			const ADVBProg& prog = list2.GetProg(i);
 			if (!list.FindUUID(prog)) {
+				// only add it if it doesn't exist already
 				list.AddProg(prog, false);
 			}
 		}
@@ -2269,6 +2270,7 @@ void ADVBProgList::CreateCombinedList()
 		for (i = 0; i < list2.Count(); i++) {
 			const ADVBProg& prog = list2.GetProg(i);
 			if (!list.FindUUID(prog)) {
+				// only add it if it doesn't exist already
 				list.AddProg(prog);
 			}
 		}
@@ -2279,9 +2281,12 @@ void ADVBProgList::CreateCombinedList()
 	if (list2.ReadFromBinaryFile(config.GetProcessingFile())) {
 		for (i = 0; i < list2.Count(); i++) {
 			const ADVBProg& prog = list2.GetProg(i);
-			if (!list.FindUUID(prog)) {
-				list.AddProg(prog, true, true);	// remove overlaps from recorded, etc
-			}
+			ADVBProg *prog2;
+
+			// modify existing programme if it already exists
+			if ((prog2 = list.FindUUIDWritable(prog)) != NULL) prog2->SetPostProcessing();
+			// or add it if it doesn't
+			else list.AddProg(prog);
 		}
 	}
 	else config.logit("Failed to read processing programme list for generating combined list");
@@ -2290,9 +2295,8 @@ void ADVBProgList::CreateCombinedList()
 	if (list2.ReadFromBinaryFile(config.GetRecordFailuresFile())) {
 		for (i = 0; i < list2.Count(); i++) {
 			const ADVBProg& prog = list2.GetProg(i);
-			if (!list.FindUUID(prog)) {
-				list.AddProg(prog);
-			}
+			// add failures no matter what
+			list.AddProg(prog);
 		}
 	}
 	else config.logit("Failed to read record failures list for generating combined list");
@@ -2302,6 +2306,7 @@ void ADVBProgList::CreateCombinedList()
 		for (i = 0; i < list2.Count(); i++) {
 			const ADVBProg& prog = list2.GetProg(i);
 			if (!list.FindUUID(prog)) {
+				// only add it if it doesn't exist already
 				list.AddProg(prog);
 			}
 		}
