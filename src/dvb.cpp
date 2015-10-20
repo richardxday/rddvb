@@ -25,8 +25,6 @@ bool forcelogging = false;
 
 static bool __DisplaySeries(const char *key, uptr_t value, void *context)
 {
-	const ADVBConfig& config = ADVBConfig::Get();
-
 	UNUSED(context);
 
 	if (value) {
@@ -37,7 +35,7 @@ static bool __DisplaySeries(const char *key, uptr_t value, void *context)
 		for (j = 0; j < serieslist.Count(); j++) {
 			const AString *str = (const AString *)serieslist[j];
 			
-			if (str) config.printf("Programme '%s' series %u: %s", key, j, str->str());
+			if (str) printf("Programme '%s' series %u: %s\n", key, j, str->str());
 		}
 	}
 
@@ -70,8 +68,6 @@ int main(int argc, char *argv[])
 		printf("\t--jobs\t\t\t\tRead programmes from scheduled jobs\n");
 		printf("\t--write <file>\t\t\tWrite listings to file <file> (-w)\n");
 		printf("\t--writetxt <file>\t\tWrite listings to file <file> in text format\n");
-		printf("\t--assign-episodes\t\tAssign episode numbers\n");
-		printf("\t--assign-rec-episodes\t\tAssign episode numbers for recorded programmes\n");
 		printf("\t--fix-pound <file>\t\tFix pound symbols in file\n");
 		printf("\t--update-dvb-channels\t\tUpdate DVB channel assignments\n");
 		printf("\t--update-uuid\t\t\tSet UUID's on every programme\n");
@@ -88,6 +84,7 @@ int main(int argc, char *argv[])
 		printf("\t--find <patterns>\t\tFind programmes matching <patterns> (-f)\n");
 		printf("\t--find-with-file <pattern-file>\tFind programmes matching patterns in patterns file <pattern-file> (-F)\n");
 		printf("\t--find-repeats\t\t\tFor each programme in current list, list repeats (-R)\n");
+		printf("\t--find-similar <datafile>\tFor each programme in current list, find first similar programme in <datafile>\n");
 		printf("\t--delete <patterns>\t\tDelete programmes matching <patterns>\n");
 		printf("\t--delete-with-file <pattern-file> Delete programmes matching patterns in patterns file <pattern-file>\n");
 		printf("\t--schedule\t\t\tSchedule and create jobs for default set of patterns on the main listings file\n");
@@ -122,6 +119,7 @@ int main(int argc, char *argv[])
 		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
 		printf("\t--recover-recorded\t\tAttempt to recover recorded programmes using log files\n");
 		printf("\t--force-failures\t\tAdd current list to recording failures (setting failed flag)\n");
+		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -175,52 +173,53 @@ int main(int argc, char *argv[])
 			else if ((strcmp(argv[i], "--load") == 0) || (strcmp(argv[i], "-l") == 0)) {
 				AString filename = config.GetListingsFile();
 
-				config.printf("Reading main listings file...");
+				printf("Reading main listings file...\n");
 				if (proglist.ReadFromFile(filename)) {
-					config.printf("Read programmes from '%s', total now %u", filename.str(), proglist.Count());
+					printf("Read programmes from '%s', total now %u\n", filename.str(), proglist.Count());
 				}
 				else {
-					config.printf("Failed to read programme list from '%s'", filename.str());
+					printf("Failed to read programme list from '%s'\n", filename.str());
 				}
 			}
 			else if ((strcmp(argv[i], "--read") == 0) || (strcmp(argv[i], "-r") == 0)) {
 				AString filename = argv[++i];
 				
-				if		(filename.ToLower() == "listings")  filename = config.GetListingsFile();
-				else if (filename.ToLower() == "scheduled") filename = config.GetScheduledFile();
-				else if (filename.ToLower() == "recorded")  filename = config.GetRecordedFile();
-				else if (filename.ToLower() == "requested") filename = config.GetRequestedFile();
-				else if (filename.ToLower() == "failures")  filename = config.GetRecordFailuresFile();
-				else if (filename.ToLower() == "rejected")  filename = config.GetRejectedFile();
-				else if (filename.ToLower() == "combined")  filename = config.GetCombinedFile();
+				if		(filename.ToLower() == "listings")   filename = config.GetListingsFile();
+				else if (filename.ToLower() == "scheduled")  filename = config.GetScheduledFile();
+				else if (filename.ToLower() == "recorded")   filename = config.GetRecordedFile();
+				else if (filename.ToLower() == "requested")  filename = config.GetRequestedFile();
+				else if (filename.ToLower() == "failures")   filename = config.GetRecordFailuresFile();
+				else if (filename.ToLower() == "rejected")   filename = config.GetRejectedFile();
+				else if (filename.ToLower() == "combined")   filename = config.GetCombinedFile();
+				else if (filename.ToLower() == "processing") filename = config.GetProcessingFile();
 
-				config.printf("Reading programmes...");
+				printf("Reading programmes...\n");
 				if (proglist.ReadFromFile(filename)) {
-					config.printf("Read programmes from '%s', total now %u", filename.str(), proglist.Count());
+					printf("Read programmes from '%s', total now %u\n", filename.str(), proglist.Count());
 				}
 				else {
-					config.printf("Failed to read programme list from '%s'", filename.str());
+					printf("Failed to read programme list from '%s'\n", filename.str());
 				}
 			}
 			else if (strcmp(argv[i], "--read-radio-listings") == 0) {
 				proglist.ReadRadioListings();
-				config.printf("Read radio listings, total now %u", proglist.Count());
+				printf("Read radio listings, total now %u\n", proglist.Count());
 			}
 			else if (strcmp(argv[i], "--jobs") == 0) {
-				config.printf("Reading programmes from job queue...");
+				printf("Reading programmes from job queue...\n");
 				if (proglist.ReadFromJobList()) {
-					config.printf("Read programmes from job queue, total now %u", proglist.Count());
+					printf("Read programmes from job queue, total now %u\n", proglist.Count());
 				}
 				else {
-					config.printf("Failed to read programme list from job queue");
+					printf("Failed to read programme list from job queue\n");
 				}
 			}
 			else if (strcmp(argv[i], "--assign-episodes") == 0) {
-				config.printf("Assigning episodes...");
+				printf("Assigning episodes...\n");
 				proglist.AssignEpisodes();
 			}
 			else if (strcmp(argv[i], "--assign-rec-episodes") == 0) {
-				config.printf("Assigning episodes (reversed)...");
+				printf("Assigning episodes (reversed)...\n");
 				proglist.AssignEpisodes(true, true);
 			}
 			else if (strcmp(argv[i], "--fix-pound") == 0) {
@@ -229,17 +228,17 @@ int main(int argc, char *argv[])
 				proglist.DeleteAll();
 
 				if (proglist.ReadFromFile(filename)) {
-					config.printf("Read programmes from '%s', total %u", filename.str(), proglist.Count());
-					config.printf("Fixing pound symbols...");
+					printf("Read programmes from '%s', total %u\n", filename.str(), proglist.Count());
+					printf("Fixing pound symbols...\n");
 
 					proglist.SearchAndReplace("\xa3", "£");
 
 					if (proglist.WriteToFile(filename)) {
-						config.printf("Wrote programmes to '%s'", filename.str());
+						printf("Wrote programmes to '%s'\n", filename.str());
 					}
 				}
 				else {
-					config.printf("Failed to read programme list from '%s'", filename.str());
+					printf("Failed to read programme list from '%s'\n", filename.str());
 				}
 			}
 			else if (strcmp(argv[i], "--update-dvb-channels") == 0) {
@@ -260,20 +259,20 @@ int main(int argc, char *argv[])
 				ADVBProgList reslist;
 				AString      patterns = argv[++i], errors;
 
-				config.printf("Finding programmes...");
+				printf("Finding programmes...\n");
 
 				proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
 
 				proglist = reslist;
 
 				if (errors.Valid()) {
-					config.printf("Errors:");
+					printf("Errors:\n");
 
 					uint_t i, n = errors.CountLines();
-					for (i = 0; i < n; i++) config.printf("%s", errors.Line(i).str());
+					for (i = 0; i < n; i++) printf("%s\n", errors.Line(i).str());
 				}
 
-				config.printf("Found %u programme%s", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
+				printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 			}
 			else if ((strcmp(argv[i], "--find-repeats") == 0) || (strcmp(argv[i], "-R") == 0)) {
 				uint_t i;
@@ -304,28 +303,54 @@ int main(int argc, char *argv[])
 					else printf("%s: NO repeats found\n", proglist[i].GetDescription(verbosity).str());
 				}
 			}
+			else if (strcmp(argv[i], "--find-similar") == 0) {
+				ADVBProgList otherlist;
+
+				if (otherlist.ReadFromFile(argv[++i])) {
+					uint_t j;
+					
+					printf("Loading %u programmes into test list\n", otherlist.Count());
+					
+					for (j = 0; j < proglist.Count(); j++) {
+						const ADVBProg *prog;
+
+						if ((prog = otherlist.FindSimilar(proglist[j])) != NULL) {
+							AString desc = prog->GetDescription(verbosity);
+							uint_t k, nl = desc.CountLines();
+
+							printf("Similar to %s:\n", proglist[j].GetDescription(verbosity).str());
+
+							for (k = 0; k < nl; k++) {
+								printf("\t%s\n", desc.Line(k).str());
+							}
+						}
+						else printf("Nothing similar to %s\n", proglist[j].GetDescription(verbosity).str());
+					}
+				}
+				else printf("Failed to read programmes from '%s'\n", argv[i]);
+			}
 			else if ((strcmp(argv[i], "--find-with-file") == 0) || (strcmp(argv[i], "-F") == 0)) {
 				ADVBProgList reslist;
 				AString      patterns, errors;
 				AString      filename = argv[++i];
 
 				if (patterns.ReadFromFile(filename)) {
-					config.printf("Finding programmes...");
+					printf("Finding programmes...\n");
 
 					proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
 				
 					proglist = reslist;
 
 					if (errors.Valid()) {
-						config.printf("Errors:");
+						printf("Errors:\n");
 
 						uint_t i, n = errors.CountLines();
-						for (i = 0; i < n; i++) config.printf("%s", errors.Line(i).str());
+						for (i = 0; i < n; i++) printf("%s", errors.Line(i).str());
 					}
 					
-					config.printf("Found %u programme%s", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
+					printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 				}
-				else config.printf("Failed to read patterns from '%s'", filename.str());
+				else printf("Failed to read patterns from '%s'", filename.str());
 			}
 			else if (strcmp(argv[i], "--delete") == 0) {
 				ADVBProgList reslist;
@@ -333,23 +358,23 @@ int main(int argc, char *argv[])
 				uint_t       i;
 
 				proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
-
-				config.printf("Found %u programme%s", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
+				
+				printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 
 				if (errors.Valid()) {
-					config.printf("Errors:");
+					printf("Errors:\n");
 
 					uint_t i, n = errors.CountLines();
-					for (i = 0; i < n; i++) config.printf("%s", errors.Line(i).str());
+					for (i = 0; i < n; i++) printf("%s\n", errors.Line(i).str());
 				}
 
 				for (i = 0; i < reslist.Count(); i++) {
 					const ADVBProg& prog = reslist.GetProg(i);
 
 					if (proglist.DeleteProg(prog)) {
-						config.printf("Deleted '%s'", prog.GetDescription(verbosity).str());
+						printf("Deleted '%s'\n", prog.GetDescription(verbosity).str());
 					}
-					else config.printf("Failed to delete '%s'!", prog.GetDescription(verbosity).str());
+					else printf("Failed to delete '%s'!\n", prog.GetDescription(verbosity).str());
 				}
 			}
 			else if (strcmp(argv[i], "--delete-with-file") == 0) {
@@ -361,20 +386,25 @@ int main(int argc, char *argv[])
 				if (patterns.ReadFromFile(filename)) {
 					proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
 				
-					config.printf("Found %u programme%s", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
+					printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 
-					if (errors.Valid()) config.printf("Errors: %s", errors.str());
+					if (errors.Valid()) {
+						printf("Errors:\n");
+
+						uint_t i, n = errors.CountLines();
+						for (i = 0; i < n; i++) printf("%s\n", errors.Line(i).str());
+					}
 
 					for (i = 0; i < reslist.Count(); i++) {
 						const ADVBProg& prog = reslist.GetProg(i);
 
 						if (proglist.DeleteProg(prog)) {
-							config.printf("Deleted '%s'", prog.GetDescription(verbosity).str());
+							printf("Deleted '%s'\n", prog.GetDescription(verbosity).str());
 						}
-						else config.printf("Failed to delete '%s'!", prog.GetDescription(verbosity).str());
+						else printf("Failed to delete '%s'!\n", prog.GetDescription(verbosity).str());
 					}
 				}
-				else config.printf("Failed to read patterns from '%s'", filename.str());
+				else printf("Failed to read patterns from '%s'\n", filename.str());
 			}
 			else if ((strcmp(argv[i], "--list") == 0) || (strcmp(argv[i], "-L") == 0)) {
 				uint_t j;
@@ -399,7 +429,7 @@ int main(int argc, char *argv[])
 
 					fp.close();
 				}
-				else config.printf("Failed to open file '%s' for append", argv[i]);
+				else printf("Failed to open file '%s' for append", argv[i]);
 			}
 			else if (strcmp(argv[i], "--list-base64") == 0) {
 				uint_t j;
@@ -463,20 +493,20 @@ int main(int argc, char *argv[])
 				AString filename = argv[++i];
 			
 				if (proglist.WriteToFile(filename)) {
-					config.printf("Wrote %u programmes to '%s'", proglist.Count(), filename.str());
+					printf("Wrote %u programmes to '%s'\n", proglist.Count(), filename.str());
 				}
 				else {
-					config.printf("Failed to write programme list to '%s'", filename.str());
+					printf("Failed to write programme list to '%s'\n", filename.str());
 				}
 			}
 			else if (strcmp(argv[i], "--writetxt") == 0) {
 				AString filename = argv[++i];
 			
 				if (proglist.WriteToTextFile(filename)) {
-					config.printf("Wrote %u programmes to '%s'", proglist.Count(), filename.str());
+					printf("Wrote %u programmes to '%s'\n", proglist.Count(), filename.str());
 				}
 				else {
-					config.printf("Failed to write programme list to '%s'", filename.str());
+					printf("Failed to write programme list to '%s'\n", filename.str());
 				}
 			}
 			else if (strcmp(argv[i], "--schedule") == 0) {
@@ -502,7 +532,7 @@ int main(int argc, char *argv[])
 				ADVBProg prog;
 
 				if (prog.Base64Decode(progstr)) prog.Record();
-				else config.printf("Failed to decode programme '%s'\n", progstr.str());
+				else printf("Failed to decode programme '%s'\n", progstr.str());
 			}
 			else if (strcmp(argv[i], "--add-recorded") == 0) {
 				AString  progstr = argv[++i];
@@ -568,7 +598,7 @@ int main(int argc, char *argv[])
 				AString channel = argv[++i];
 				AString pids    = list.GetPIDList(channel, true);
 
-				config.printf("pids for '%s': %s\n", channel.str(), pids.str());
+				printf("pids for '%s': %s\n", channel.str(), pids.str());
 			}
 			else if (strcmp(argv[i], "--scan") == 0) {
 				ADVBChannelList& list = ADVBChannelList::Get();
@@ -643,7 +673,10 @@ int main(int argc, char *argv[])
 				bool    	 commit        = (strcmp(argv[i - 2], "--change-filename-regex") == 0);
 
 				if (errors.Valid()) {
-					fprintf(stderr, "Errors in regex '%s':\n%s", pattern.str(), errors.str());
+					config.printf("Errors in regex:");
+
+					uint_t i, n = errors.CountLines();
+					for (i = 0; i < n; i++) config.printf("%s", errors.Line(i).str());
 				}
 				else if (reclist.ReadFromFile(config.GetRecordedFile())) {
 					uint_t i;
@@ -719,7 +752,7 @@ int main(int argc, char *argv[])
 
 				proglist.FindSeries(series);
 
-				config.printf("Found series for %u programmes", series.GetItems());
+				printf("Found series for %u programmes\n", series.GetItems());
 				series.Traverse(&__DisplaySeries);
 			}
 			else if (stricmp(argv[i], "--set-recorded-flag") == 0) {
@@ -921,7 +954,7 @@ int main(int argc, char *argv[])
 						file = file->Next();
 					}
 
-					printf("Found %u files\n", nfiles);
+					config.printf("Found %u files", nfiles);
 				}
 				
 				ADVBLock lock("schedule");
@@ -954,7 +987,7 @@ int main(int argc, char *argv[])
 												prog.SetRecordingComplete();
 												prog.ClearScheduled();
 												prog.SetRecorded();
-												printf("'%s' needs adding\n", prog.GetQuickDescription().str());
+												config.printf("'%s' needs adding", prog.GetQuickDescription().str());
 												reclist.AddProg(prog, true, false, true);
 												nadded++;
 											}
@@ -969,8 +1002,10 @@ int main(int argc, char *argv[])
 						file = file->Next();
 					}
 
-					printf("Added %u programmes, count now %u\n", nadded, reclist.Count());
-					reclist.WriteToFile(config.GetRecordedFile());
+					config.printf("Added %u programmes, count now %u\n", nadded, reclist.Count());
+					if (!reclist.WriteToFile(config.GetRecordedFile())) {
+						config.printf("Failed to write recorded list back!");
+					}
 				}
 			}
 			else if (stricmp(argv[i], "--force-failures") == 0) {
@@ -996,6 +1031,35 @@ int main(int argc, char *argv[])
 					}
 				}
 				else config.printf("Failed to read record failure list");
+			}
+			else if (stricmp(argv[i], "--change-user") == 0) {
+				ADVBProgList reslist;
+				AString      patterns = argv[++i], newuser = argv[++i], errors;
+				uint_t i, changed = 0;
+
+				proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
+
+				printf("Found %u programme%s", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
+
+				if (errors.Valid()) {
+					printf("Errors:");
+					
+					uint_t i, n = errors.CountLines();
+					for (i = 0; i < n; i++) printf("%s", errors.Line(i).str());
+				}
+
+				for (i = 0; i < reslist.Count(); i++) {
+					ADVBProg *prog;
+					
+					if ((prog = proglist.FindUUIDWritable(reslist.GetProg(i))) != NULL) {
+						if (prog->GetUser() != newuser) {
+							prog->SetUser(newuser);
+							changed++;
+						}
+					}
+				}
+				
+				printf("Changed %u programme%s", changed, (changed == 1) ? "" : "s");
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();

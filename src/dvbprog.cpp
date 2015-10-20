@@ -18,7 +18,7 @@
 
 #define DEBUG_SAMEPROGRAMME 0
 
-bool ADVBProg::debugsameprogramme = false;
+bool ADVBProg::debugsameprogramme = true;
 
 AHash ADVBProg::fieldhash;
 
@@ -904,7 +904,9 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 
 		if ((verbosity > 4) && GetFilename()[0]) {
 			if (str1.Valid()) str1.printf("\n\n");
-			str1.printf("%s as '%s'", data->actstart ? "Recorded" : (data->recstart ? "To be recorded" : "Would be recorded"), GetFilename());
+			str1.printf("%s as '%s'.", data->actstart ? "Recorded" : (data->recstart ? "To be recorded" : "Would be recorded"), GetFilename());
+
+			if (IsPostProcessing()) str1.printf(" Current being post-processed.");
 		}
 
 		if (str1.Valid()) str.printf("\n%s\n", str1.str());
@@ -1010,12 +1012,19 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 			if (debugsameprogramme) debug("'%s' / '%s': only one subtitle valid: different\n", prog1.GetDescription().str(), prog2.GetDescription().str());
 #endif
 		}
-		else if (prog1.data->assignedepisode && prog2.data->assignedepisode) {
+		else if (prog1.GetAssignedEpisode() && prog2.GetAssignedEpisode()) {
 			// assigned episode information valid in both
 			// -> use episode to determine whether it's the same programme
-			same = (prog1.data->assignedepisode == prog2.data->assignedepisode);
+			same = ((prog1.GetAssignedEpisode() == prog2.GetAssignedEpisode()) &&
+					(CompareNoCase(prog1.GetBaseChannel(), prog2.GetBaseChannel()) == 0));
 #if DEBUG_SAMEPROGRAMME
-			if (debugsameprogramme) debug("'%s' / '%s': assigned episode %u / %u: %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), prog1.data->assignedepisode, prog2.data->assignedepisode, same ? "same" : "different");
+			if (debugsameprogramme) {
+				debug("'%s' / '%s': assigned episode %u / %u (%s  / %s): %s\n",
+					  prog1.GetDescription().str(), prog2.GetDescription().str(),
+					  prog1.GetAssignedEpisode(), prog2.GetAssignedEpisode(),
+					  prog1.GetBaseChannel(), prog2.GetBaseChannel(),
+					  same ? "same" : "different");
+			}
 #endif
 		}
 		else if (prog1.UseDescription() || prog2.UseDescription()) {
@@ -1040,6 +1049,38 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 			same = false;
 #if DEBUG_SAMEPROGRAMME
 			if (debugsameprogramme) debug("'%s' / '%s': prog1 repeat before prog2\n", prog1.GetDescription().str(), prog2.GetDescription().str());
+#endif
+		}
+		else if (ep1.valid && !ep2.valid) {
+			// prog1 episode valid but prog2 episode not valid
+			// -> different programmes
+			same = false;
+#if DEBUG_SAMEPROGRAMME
+			if (debugsameprogramme) debug("'%s' / '%s': prog1 episode valid, prog2 episode invalid\n", prog1.GetDescription().str(), prog2.GetDescription().str());
+#endif
+		}
+		else if (ep2.valid && !ep1.valid) {
+			// prog2 episode valid but prog1 episode not valid
+			// -> different programmes
+			same = false;
+#if DEBUG_SAMEPROGRAMME
+			if (debugsameprogramme) debug("'%s' / '%s': prog2 episode valid, prog1 episode invalid\n", prog1.GetDescription().str(), prog2.GetDescription().str());
+#endif
+		}
+		else if (prog1.GetAssignedEpisode() && !prog2.GetAssignedEpisode()) {
+			// prog1 assigned episode valid but prog2 assigned episode not valid
+			// -> different programmes
+			same = false;
+#if DEBUG_SAMEPROGRAMME
+			if (debugsameprogramme) debug("'%s' / '%s': prog1 assigned episode valid, prog2 assigned episode invalid\n", prog1.GetDescription().str(), prog2.GetDescription().str());
+#endif
+		}
+		else if (prog2.GetAssignedEpisode() && !prog1.GetAssignedEpisode()) {
+			// prog2 assigned episode valid but prog1 assigned episode not valid
+			// -> different programmes
+			same = false;
+#if DEBUG_SAMEPROGRAMME
+			if (debugsameprogramme) debug("'%s' / '%s': prog2 assigned episode valid, prog1 assigned episode invalid\n", prog1.GetDescription().str(), prog2.GetDescription().str());
 #endif
 		}
 		else {
