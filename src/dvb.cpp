@@ -798,26 +798,28 @@ int main(int argc, char *argv[])
 						AString path = recdir.CatPath(dirs.Line(i, ","));
 						AList   dirs;
 
-						CollectFiles(path.PathPart(), path.FilePart(), 0, dirs, FILE_FLAG_IS_DIR, FILE_FLAG_IS_DIR);
+						CollectFiles(path, "*", RECURSE_ALL_SUBDIRS, dirs, FILE_FLAG_IS_DIR, FILE_FLAG_IS_DIR);
 
 						const AString *dir = AString::Cast(dirs.First());
 						while (dir) {
-							config.printf("Searching '%s'...", dir->str());
+							if (dir->FilePart() != "subs") {
+								config.printf("Searching '%s'...", dir->str());
 
-							for (j = 0; j < reclist.Count(); j++) {
-								ADVBProg& prog = reclist.GetProgWritable(j);
+								for (j = 0; j < reclist.Count(); j++) {
+									ADVBProg& prog = reclist.GetProgWritable(j);
 
-								if (!AStdFile::exists(prog.GetFilename())) {
-									AString filename1 = dir->CatPath(AString(prog.GetFilename()).FilePart());
-									AString filename2 = filename1.Prefix() + ".mp4";
+									if (!AStdFile::exists(prog.GetFilename())) {
+										AString filename1 = dir->CatPath(AString(prog.GetFilename()).FilePart());
+										AString filename2 = filename1.Prefix() + ".mp4";
 
-									if (AStdFile::exists(filename1)) {
-										prog.SetFilename(filename1);
-										found++;
-									}
-									else if (AStdFile::exists(filename2)) {
-										prog.SetFilename(filename2);
-										found++;
+										if (AStdFile::exists(filename1)) {
+											prog.SetFilename(filename1);
+											found++;
+										}
+										else if (AStdFile::exists(filename2)) {
+											prog.SetFilename(filename2);
+											found++;
+										}
 									}
 								}
 							}
