@@ -52,6 +52,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FIELD(day, start, date, "Day"),
 	DEFINE_SIMPLE(start, date, "Start"),
 	DEFINE_SIMPLE(stop, date, "Stop"),
+	{"length", ADVBPatterns::FieldType_span, false, 0, "Programme length"},
 
 	DEFINE_SIMPLE(year, uint16_t, "Year"),
 
