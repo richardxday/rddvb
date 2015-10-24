@@ -195,6 +195,10 @@ void ADVBPatterns::GetFieldValue(const FIELD& field, VALUE& value, AString& val)
 			value.u64 = (uint64_t)ADateTime(val, ADateTime::Time_Absolute);
 			break;
 
+		case FieldType_span:
+			value.u64 = (uint64_t)ADateTime(val, ADateTime::Time_Absolute);
+			break;
+
 		case FieldType_uint32_t:
 			value.u32 = (uint32_t)val;
 			break;
@@ -247,6 +251,7 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const FIELD& field, const VALUE& 
 		}
 
 		case FieldType_date:
+		case FieldType_span:
 			memcpy(ptr, &value.u64, sizeof(value.u64));
 			break;
 
@@ -733,6 +738,12 @@ AString ADVBPatterns::ParsePattern(const AString& line, PATTERN& pattern, const 
 						break;
 					}
 
+					case FieldType_span: {
+						ADateTime dt;
+						term->value.u64 = (uint64_t)ADateTime(value, ADateTime::Time_Absolute);
+						break;
+					}
+
 					case FieldType_uint32_t:
 						term->value.u32 = (uint32_t)value;
 						break;
@@ -1035,8 +1046,14 @@ bool ADVBPatterns::MatchString(const TERM& term, const char *str)
 				case Operator_GT:
 					match = (res > 0);
 					break;
+				case Operator_GE:
+					match = (res >= 0);
+					break;
 				case Operator_LT:
 					match = (res < 0);
+					break;
+				case Operator_LE:
+					match = (res <= 0);
 					break;
 			}
 			break;
@@ -1059,9 +1076,15 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 			  
 		if (!RANGE(term.data.opcode, Operator_First_Assignable, Operator_Last_Assignable)) {
 			const uint8_t *ptr = prog.GetDataPtr(field.offset);
+			uint64_t _val;
 			int  res      = 0;
 			bool newmatch = false;
 
+			if (stricmp(field.name, "length") == 0) {
+				_val = prog.GetLength();
+				ptr  = (const uint8_t *)&_val;
+			}
+			
 			if (field.type == FieldType_string) {
 				const char *str;
 				uint16_t offset;
@@ -1116,6 +1139,16 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 						break;
 					}
 
+					case FieldType_span: {
+						uint64_t val;
+
+						memcpy(&val, ptr, sizeof(val));
+
+						//debug("Span: comparing %lu with %lu\n", (ulong_t)val, (ulong_t)term.value.u64);
+						res = COMPARE_ITEMS(val, term.value.u64);
+						break;
+					}
+						
 					case FieldType_uint32_t: {
 						uint32_t val;
 
@@ -1184,8 +1217,14 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 					case Operator_GT:
 						newmatch = (res > 0);
 						break;
+					case Operator_GE:
+						newmatch = (res >= 0);
+						break;
 					case Operator_LT:
 						newmatch = (res < 0);
+						break;
+					case Operator_LE:
+						newmatch = (res <= 0);
 						break;
 				}
 

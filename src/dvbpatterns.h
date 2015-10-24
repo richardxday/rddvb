@@ -68,6 +68,7 @@ protected:
 	enum {
 		FieldType_string = 0,
 		FieldType_date,
+		FieldType_span,
 		FieldType_uint32_t,
 		FieldType_sint32_t,
 		FieldType_uint16_t,
