@@ -67,6 +67,7 @@ var filters = [
 	},
 ];
 var searches = null;
+var link     = null;
 
 function loadpage()
 {
@@ -1658,8 +1659,10 @@ function updatefilterlist(filter)
 	str += '</select>';
 
 	if (filterlist.current != null) {
-		str += '&nbsp;&nbsp;<a href="?from=' + filterlist.current.from + '&amp;titlefilter=' + encodeURIComponent(filterlist.current.titlefilter) + '&amp;timefilter=' + encodeURIComponent(filterlist.current.timefilter) + '&amp;page=' + filterlist.current.page + '&amp;pagesize=' + filterlist.current.pagesize + '" target=_blank>Link</a>';
+		link = '?from=' + filterlist.current.from + '&titlefilter=' + encodeURIComponent(filterlist.current.titlefilter) + '&timefilter=' + encodeURIComponent(filterlist.current.timefilter) + '&page=' + filterlist.current.page + '&pagesize=' + filterlist.current.pagesize;
+		str += '&nbsp;&nbsp;<a href="' + link.replace(/&/g, '&amp;') + '" target=_blank>Link</a>';
 	}
+	else link = null;
 	
 	document.getElementById("filterlist").innerHTML = str;
 }
