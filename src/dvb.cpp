@@ -88,6 +88,7 @@ int main(int argc, char *argv[])
 		printf("\t--delete <patterns>\t\tDelete programmes matching <patterns>\n");
 		printf("\t--delete-with-file <pattern-file> Delete programmes matching patterns in patterns file <pattern-file>\n");
 		printf("\t--delete-recorded\t\tDelete programmes that have been recorded\n");
+		printf("\t--delete-similar\t\tDelete programmes that are similar to others in the list\n");
 		printf("\t--schedule\t\t\tSchedule and create jobs for default set of patterns on the main listings file\n");
 		printf("\t--start-time <time>\t\tSet start time for scheduling\n");
 		printf("\t--fake-schedule\t\t\tPretend to schedule (write files) for default set of patterns on the main listings file\n");
@@ -424,6 +425,21 @@ int main(int argc, char *argv[])
 					printf("Deleted %u programmes\n", ndeleted);
 				}
 				else printf("Failed to read recorded programmes\n");
+			}
+			else if (strcmp(argv[i], "--delete-similar") == 0) {
+				uint_t i, ndeleted = 0;
+
+				for (i = 0; i < proglist.Count(); i++) {
+					const ADVBProg& prog = proglist.GetProg(i);
+					const ADVBProg  *sprog;
+					
+					while ((sprog = proglist.FindSimilar(prog, &prog)) != NULL) {
+						proglist.DeleteProg(*sprog);
+						ndeleted++;
+					}
+				}
+
+				printf("Deleted %u programmes\n", ndeleted);
 			}
 			else if ((strcmp(argv[i], "--list") == 0) || (strcmp(argv[i], "-L") == 0)) {
 				uint_t j;

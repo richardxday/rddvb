@@ -3,7 +3,7 @@ DATADIR="`dvb --datadir`"
 CONFDIR="`dvb --confdir`"
 
 cd ~/programmes-of-interest
-if ! dvb -r "$DATADIR/skylistings.dat" --find-with-file "$CONFDIR/richard-patterns.txt" --delete-recorded -w foundprogrammes.dat --return-count ; then
+if ! dvb -r "$DATADIR/skylistings.dat" --find-with-file "$CONFDIR/richard-patterns.txt" -f "start>=now stop<now+1w plus1=0" --delete-recorded --delete-similar -w foundprogrammes.dat --return-count ; then
   echo "Summary:" >newlist.txt
   dvb -r foundprogrammes.dat -v --list-to-file newlist.txt >/dev/null
   echo "" >>newlist.txt
