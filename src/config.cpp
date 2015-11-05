@@ -129,6 +129,23 @@ AString ADVBConfig::GetFileSuffix(const AString& user, const AString& def) const
 	return suffix;
 }
 
+AString ADVBConfig::GetNamedFile(const AString& name) const
+{
+	AString filename;
+
+	if		(name == "listings")   filename = GetListingsFile();
+	else if (name == "scheduled")  filename = GetScheduledFile();
+	else if (name == "recorded")   filename = GetRecordedFile();
+	else if (name == "requested")  filename = GetRequestedFile();
+	else if (name == "failures")   filename = GetRecordFailuresFile();
+	else if (name == "rejected")   filename = GetRejectedFile();
+	else if (name == "combined")   filename = GetCombinedFile();
+	else if (name == "processing") filename = GetProcessingFile();
+	else						   filename = name;
+	
+	return filename;
+}
+
 AString ADVBConfig::GetProcessingCommand(const AString& user, const AString& filename) const
 {
 	AString format = GetFileFormat(user);

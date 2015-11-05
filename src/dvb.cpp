@@ -84,10 +84,11 @@ int main(int argc, char *argv[])
 		printf("\t--find <patterns>\t\tFind programmes matching <patterns> (-f)\n");
 		printf("\t--find-with-file <pattern-file>\tFind programmes matching patterns in patterns file <pattern-file> (-F)\n");
 		printf("\t--find-repeats\t\t\tFor each programme in current list, list repeats (-R)\n");
-		printf("\t--find-similar <datafile>\tFor each programme in current list, find first similar programme in <datafile>\n");
+		printf("\t--find-similar <file>\tFor each programme in current list, find first similar programme in <file>\n");
 		printf("\t--delete <patterns>\t\tDelete programmes matching <patterns>\n");
 		printf("\t--delete-with-file <pattern-file> Delete programmes matching patterns in patterns file <pattern-file>\n");
 		printf("\t--delete-recorded\t\tDelete programmes that have been recorded\n");
+		printf("\t--delete-using-file <file>\tDelete programmes that are similar to those in file <file>\n");
 		printf("\t--delete-similar\t\tDelete programmes that are similar to others in the list\n");
 		printf("\t--schedule\t\t\tSchedule and create jobs for default set of patterns on the main listings file\n");
 		printf("\t--start-time <time>\t\tSet start time for scheduling\n");
@@ -184,16 +185,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			else if ((strcmp(argv[i], "--read") == 0) || (strcmp(argv[i], "-r") == 0)) {
-				AString filename = argv[++i];
-				
-				if		(filename.ToLower() == "listings")   filename = config.GetListingsFile();
-				else if (filename.ToLower() == "scheduled")  filename = config.GetScheduledFile();
-				else if (filename.ToLower() == "recorded")   filename = config.GetRecordedFile();
-				else if (filename.ToLower() == "requested")  filename = config.GetRequestedFile();
-				else if (filename.ToLower() == "failures")   filename = config.GetRecordFailuresFile();
-				else if (filename.ToLower() == "rejected")   filename = config.GetRejectedFile();
-				else if (filename.ToLower() == "combined")   filename = config.GetCombinedFile();
-				else if (filename.ToLower() == "processing") filename = config.GetProcessingFile();
+				AString filename = config.GetNamedFile(argv[++i]);
 
 				printf("Reading programmes...\n");
 				if (proglist.ReadFromFile(filename)) {
@@ -225,7 +217,7 @@ int main(int argc, char *argv[])
 				proglist.AssignEpisodes(true, true);
 			}
 			else if (strcmp(argv[i], "--fix-pound") == 0) {
-				AString filename = argv[++i];
+				AString filename = config.GetNamedFile(argv[++i]);
 
 				proglist.DeleteAll();
 
@@ -408,14 +400,18 @@ int main(int argc, char *argv[])
 				}
 				else printf("Failed to read patterns from '%s'\n", filename.str());
 			}
-			else if (strcmp(argv[i], "--delete-recorded") == 0) {
-				ADVBProgList recordedlist;
+			else if ((strcmp(argv[i], "--delete-recorded") == 0) ||
+					 (strcmp(argv[i], "--delete-using-file") == 0)) {
+				AString      filename = config.GetRecordedFile(); 
+				ADVBProgList proglist2;
 
-				if (recordedlist.ReadFromFile(config.GetRecordedFile())) {
+				if (strcmp(argv[i], "--delete-using-file") == 0) filename = config.GetNamedFile(argv[++i]);
+
+				if (proglist2.ReadFromFile(filename)) {
 					uint_t i, ndeleted = 0;
 
 					for (i = 0; i < proglist.Count(); ) {
-						if (recordedlist.FindSimilar(proglist.GetProg(i))) {
+						if (proglist2.FindSimilar(proglist.GetProg(i))) {
 							proglist.DeleteProg(i);
 							ndeleted++;
 						}
@@ -424,7 +420,7 @@ int main(int argc, char *argv[])
 
 					printf("Deleted %u programmes\n", ndeleted);
 				}
-				else printf("Failed to read recorded programmes\n");
+				else printf("Failed to read file '%s'\n", filename.str());
 			}
 			else if (strcmp(argv[i], "--delete-similar") == 0) {
 				uint_t i, ndeleted = 0;
@@ -525,7 +521,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			else if ((strcmp(argv[i], "--write") == 0) || (strcmp(argv[i], "-w") == 0)) {
-				AString filename = argv[++i];
+				AString filename = config.GetNamedFile(argv[++i]);
 			
 				if (proglist.WriteToFile(filename)) {
 					printf("Wrote %u programmes to '%s'\n", proglist.Count(), filename.str());
@@ -535,7 +531,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			else if (strcmp(argv[i], "--writetxt") == 0) {
-				AString filename = argv[++i];
+				AString filename = config.GetNamedFile(argv[++i]);
 			
 				if (proglist.WriteToTextFile(filename)) {
 					printf("Wrote %u programmes to '%s'\n", proglist.Count(), filename.str());
