@@ -24,6 +24,8 @@ public:
 	ADVBProg& operator = (const AString&  str);
 	ADVBProg& operator = (const ADVBProg& obj);
 
+	ADVBProg& Modify(const ADVBProg& obj);
+
 	bool Base64Decode(const AString& str);
 
 	bool Valid() const {return (data && data->start && data->stop);}
@@ -152,11 +154,14 @@ public:
 		Flag_incompleterecording,
 		Flag_ignorerecording,
 		Flag_recordingfailed,
+		Flag_recording,
 		Flag_postprocessing,
 		
 		Flag_count,
 	};
+	void     SetFlags(uint32_t flags)	{data->flags = flags;}
 	uint32_t GetFlags()		   	  const {return data->flags;}
+	
 	bool   GetFlag(uint8_t flag)  const {return ((data->flags & (1UL << flag)) != 0);}
 	bool   IsRepeat() 	   	   	  const {return GetFlag(Flag_repeat);}
 	bool   IsPlus1()  	   	   	  const {return GetFlag(Flag_plus1);}
@@ -170,7 +175,7 @@ public:
 	void   SetManualRecording()	        {SetFlag(Flag_manualrecording);}
 	bool   IsRunning() 		   	  const {return GetFlag(Flag_running);}
 	void   SetRunning()		   	  		{SetFlag(Flag_running);}
-	void   ClearRunning()		   	  	{SetFlag(Flag_running, false);}
+	void   ClearRunning()		   	  	{ClrFlag(Flag_running);}
 	bool   IsMarkOnly()			  const {return GetFlag(Flag_markonly);}
 	void   SetMarkOnly()				{SetFlag(Flag_markonly);}
 	bool   RunPostProcess()       const {return GetFlag(Flag_postprocess);}
@@ -196,9 +201,12 @@ public:
 	void   SetIgnoreRecording(bool set = true) {SetFlag(Flag_ignorerecording, set);}
 	bool   HasRecordingFailed()   const {return GetFlag(Flag_recordingfailed);}
 	void   SetRecordingFailed()         {SetFlag(Flag_recordingfailed);}
+	bool   IsRecording() 		  const {return GetFlag(Flag_recording);}
+	void   SetRecording()	   	  		{SetFlag(Flag_recording);}
+	void   ClearRecording()		   	  	{ClrFlag(Flag_recording);}
 	bool   IsPostProcessing()	  const {return GetFlag(Flag_postprocessing);}
 	void   SetPostProcessing()			{SetFlag(Flag_postprocessing);}
-	void   ClearPostProcessing()		{SetFlag(Flag_postprocessing, false);}
+	void   ClearPostProcessing()		{ClrFlag(Flag_postprocessing);}
 
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}
@@ -207,6 +215,9 @@ public:
 	uint_t GetPostHandle()     	  const {return data->posthandle;}
 	uint_t GetDVBCard()	   	   	  const {return data->dvbcard;}
 	uint_t GetJobID()		   	  const {return data->jobid;}
+
+	void   SetPri(sint_t pri)			{data->pri     = pri;}
+	void   SetScore(sint_t score)		{data->score   = score;}
 
 	void   SetDVBCard(uint8_t card)     {data->dvbcard = card;}
 	void   SetJobID(uint_t id)		    {data->jobid   = id;}
@@ -334,8 +345,10 @@ protected:
 	const char *GetString(uint16_t offset)   const {return data->strdata + offset;}
 	bool StringValid(const uint16_t *offset) const {return (offset[1] > offset[0]);}
 	bool SetString(const uint16_t *offset, const char *str);
-	void SetFlag(uint8_t flag, bool val = true);
-	void ClrFlag(uint8_t flag) {SetFlag(flag, false);}
+	
+	uint32_t GetFlagMask(uint8_t flag, bool set = true) const {return set ? (1U << flag) : ~(1U << flag);}
+	void 	 SetFlag(uint8_t flag, bool set = true);
+	void 	 ClrFlag(uint8_t flag) {SetFlag(flag, false);}
 
 	bool MatchString(const TERM& term, const char *str) const;
 	
@@ -358,6 +371,17 @@ protected:
 		StringCount = sizeof(nullprog->strings) / sizeof(nullprog->strings.channel),
 	};
 
+	class FlagsSaver {
+	public:
+		FlagsSaver(ADVBProg *_prog) : prog(_prog),
+									  flags(prog->data->flags) {}
+		~FlagsSaver() {prog->data->flags = flags;}
+
+	protected:
+		ADVBProg *prog;
+		uint32_t flags;
+	};
+	
 protected:
 	DVBPROG  		   *data;
 	uint16_t 		   maxsize;

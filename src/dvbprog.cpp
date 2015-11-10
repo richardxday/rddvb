@@ -52,7 +52,9 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FIELD(day, start, date, "Day"),
 	DEFINE_SIMPLE(start, date, "Start"),
 	DEFINE_SIMPLE(stop, date, "Stop"),
-	{"length", ADVBPatterns::FieldType_span, false, 0, "Programme length"},
+	DEFINE_FIELD(length, start, span, "Programme length"),
+	DEFINE_FIELD(recordlength, recstart, span, "Record length"),
+	DEFINE_FIELD(actuallength, actstart, span, "Actual record length"),
 
 	DEFINE_SIMPLE(year, uint16_t, "Year"),
 
@@ -60,6 +62,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 
 	DEFINE_FLAG(repeat,    		   	 Flag_repeat,    	 	   "Programme is a repeat"),
 	DEFINE_FLAG(plus1,     		   	 Flag_plus1,     	 	   "Programme is on +1"),
+	DEFINE_FLAG(running,			 Flag_running,  	 	   "Programme job running"),
 	DEFINE_FLAG(rejected,  		   	 Flag_rejected,  	 	   "Programme rejected"),
 	DEFINE_FLAG(recorded,  		   	 Flag_recorded,  	 	   "Programme recorded"),
 	DEFINE_FLAG(scheduled, 		   	 Flag_scheduled, 	 	   "Programme scheduled"),
@@ -67,6 +70,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(incompleterecording, Flag_incompleterecording, "Programme recorded is incomplete"),
 	DEFINE_FLAG(ignorerecording,     Flag_ignorerecording,     "Programme recorded should be ignored when scheduling"),
 	DEFINE_FLAG(failed,				 Flag_recordingfailed,     "Programme recording failed"),
+	DEFINE_FLAG(recording,  		 Flag_recording,  	 	   "Programme recording"),
 	DEFINE_FLAG(postprocessing,		 Flag_postprocessing,	   "Programme recording being processing"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
@@ -444,6 +448,33 @@ ADVBProg& ADVBProg::operator = (const ADVBProg& obj)
 	return *this;
 }
 
+ADVBProg& ADVBProg::Modify(const ADVBProg& obj)
+{
+	if (obj.Valid()) {
+		SetRecordStart(obj.GetRecordStart());
+		SetRecordStop(obj.GetRecordStop());
+		SetActualStart(obj.GetActualStart());
+		SetActualStop(obj.GetActualStop());
+
+		SetFlags(obj.GetFlags());
+		
+		SetFileSize(obj.GetFileSize());
+
+		SetUser(obj.GetUser());
+		SetDir(obj.GetDir());
+		SetFilename(obj.GetFilename());
+		SetPattern(obj.GetPattern());
+		SetPrefs(obj.GetPrefs());
+
+		SetPri(obj.GetPri());
+		SetScore(obj.GetScore());
+		SetDVBCard(obj.GetDVBCard());
+		SetJobID(obj.GetJobID());
+	}
+	
+	return *this;
+}
+
 bool ADVBProg::WriteToFile(AStdData& fp) const
 {
 	return (fp.writebytes((uint8_t *)data, sizeof(*data) + data->strings.end) == (slong_t)(sizeof(*data) + data->strings.end));
@@ -592,9 +623,10 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	str.printf(",\"markonly\":%u", (uint_t)IsMarkOnly());
 	str.printf(",\"postprocessed\":%u", (uint_t)IsPostProcessed());
 	str.printf(",\"onceonly\":%u", (uint_t)IsOnceOnly());
+	str.printf(",\"running\":%u", (uint_t)IsRunning());
 	str.printf(",\"rejected\":%u", (uint_t)IsRejected());
 	str.printf(",\"recorded\":%u", (uint_t)IsRecorded());
-	str.printf(",\"running\":%u", (uint_t)IsRunning());
+	str.printf(",\"recording\":%u", (uint_t)IsRecording());
 	str.printf(",\"scheduled\":%u", (uint_t)IsScheduled());
 	str.printf(",\"radioprogramme\":%u", (uint_t)IsRadioProgramme());
 	str.printf(",\"incompleterecording\":%u", (uint_t)!IsRecordingComplete());
@@ -706,10 +738,10 @@ bool ADVBProg::SetString(const uint16_t *offset, const char *str)
 	return success;
 }
 
-void ADVBProg::SetFlag(uint8_t flag, bool val)
+void ADVBProg::SetFlag(uint8_t flag, bool set)
 {
-	if (val) data->flags |=  (1UL << flag);
-	else	 data->flags &= ~(1UL << flag);
+	if (set) data->flags |= GetFlagMask(flag, set);
+	else	 data->flags &= GetFlagMask(flag, set);
 }
 
 int ADVBProg::Compare(const ADVBProg *prog1, const ADVBProg *prog2, const bool *reverse)
@@ -825,7 +857,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 		if (IsPlus1())  str.printf(" (+1)");
 	}
 
-	if (IsRunning()) str.printf(" -*RUNNING*-");
+	if (IsRecording()) str.printf(" -*RECORDING*-");
 
 	if (verbosity > 1) {
 		AString str1;
@@ -1449,6 +1481,8 @@ void ADVBProg::Record()
 		uint64_t dt, st, et;
 		uint_t   nsecs, nmins;
 		bool     record = true;
+
+		SetRunning();
 		
 		config.printf("------------------------------------------------------------------------------------------------------------------------");
 		config.printf("Starting record of '%s' as '%s'", GetQuickDescription().str(), GetFilename());
@@ -1574,7 +1608,7 @@ void ADVBProg::Record()
 			else {
 				config.printf("Running '%s'", cmd.str());
 
-				SetRunning();
+				SetRecording();
 				ADVBProgList::AddToList(config.GetRecordingFile(), *this);
 
 				config.printf("--------------------------------------------------------------------------------");
@@ -1584,7 +1618,7 @@ void ADVBProg::Record()
 				config.printf("--------------------------------------------------------------------------------");
 
 				ADVBProgList::RemoveFromList(config.GetRecordingFile(), *this);
-				ClearRunning();
+				ClearRecording();
 			}
 
 			if (res == 0) {
@@ -1621,8 +1655,12 @@ void ADVBProg::Record()
 						ClearScheduled();
 						SetRecorded();
 
-						ADVBProgList::AddToList(config.GetRecordedFile(), *this, false, false, true);
-
+						{
+							FlagsSaver saver(this);
+							ClearRunning();
+							ADVBProgList::AddToList(config.GetRecordedFile(), *this, false, false, true);
+						}
+						
 						if (IsOnceOnly()) {
 							ADVBPatterns::DeletePattern(user, GetPattern());
 
@@ -1637,9 +1675,8 @@ void ADVBProg::Record()
 							failed = true;
 							OnRecordFailure();
 						}
-						ClearPostProcessing();
-
 						ADVBProgList::RemoveFromList(config.GetProcessingFile(), *this);
+						ClearPostProcessing();
 					}
 					else if (!info.FileSize) {
 						config.printf("Record of '%s' ('%s') is zero length", GetTitleAndSubtitle().str(), filename.str());
@@ -1665,7 +1702,11 @@ void ADVBProg::Record()
 			ClearScheduled();
 			SetRecordingFailed();
 			
-			ADVBProgList::AddToList(config.GetRecordFailuresFile(), *this);
+			{
+				FlagsSaver saver(this);
+				ClearRunning();
+				ADVBProgList::AddToList(config.GetRecordFailuresFile(), *this);
+			}
 		}
 		
 		if (reschedule) {
@@ -1676,6 +1717,8 @@ void ADVBProg::Record()
 		else ADVBProgList::CheckDiskSpace(true);
 
 		config.printf("------------------------------------------------------------------------------------------------------------------------");
+
+		ClearRunning();
 	}
 }
 
