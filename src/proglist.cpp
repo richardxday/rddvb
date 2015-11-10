@@ -682,10 +682,10 @@ bool ADVBProgList::ReadFromJobList(bool runningonly)
 	return success;
 }
 
-bool ADVBProgList::UpdateCombined(const AString& filename, const FILE_INFO& fileinfo)
+bool ADVBProgList::CheckFile(const AString& filename, const AString& targetfilename, const FILE_INFO& fileinfo)
 {
 	FILE_INFO fileinfo2;
-	return (::GetFileInfo(filename, &fileinfo2) && (fileinfo2.WriteTime > fileinfo.WriteTime));
+	return ((filename == targetfilename) || (::GetFileInfo(targetfilename, &fileinfo2) && (fileinfo2.WriteTime > fileinfo.WriteTime)));
 }
 
 void ADVBProgList::UpdateDVBChannels()
@@ -708,7 +708,7 @@ void ADVBProgList::UpdateDVBChannels()
 	}
 }
 										 
-bool ADVBProgList::WriteToFile(const AString& filename, bool updatecombined) const
+bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfiles) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
@@ -732,23 +732,27 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatecombined) con
 		success = true;
 	}
 
-	if (success && updatecombined && (filename != config.GetCombinedFile())) {
-		FILE_INFO combined_info;
+	if (success && updatedependantfiles && (filename != config.GetListingsPlusRecordedFile())) {
+		FILE_INFO fileinfo;
 
-		if ((filename == config.GetScheduledFile()) 	 ||
-			(filename == config.GetRecordingFile()) 	 ||
-			(filename == config.GetRecordedFile())  	 ||
-			(filename == config.GetRejectedFile())  	 ||
-			(filename == config.GetRecordFailuresFile()) ||
-			(filename == config.GetProcessingFile())     ||
-			!::GetFileInfo(config.GetCombinedFile(),  	   &combined_info) ||
-			UpdateCombined(config.GetScheduledFile(), 	   combined_info)  ||
-			UpdateCombined(config.GetRecordingFile(), 	   combined_info)  ||
-			UpdateCombined(config.GetRecordedFile(),  	   combined_info)  ||
-			UpdateCombined(config.GetRejectedFile(),  	   combined_info)  ||
-			UpdateCombined(config.GetRecordFailuresFile(), combined_info)  ||
-			UpdateCombined(config.GetProcessingFile(),     combined_info)) {
-			CreateCombinedList();
+		if (!::GetFileInfo(config.GetListingsPlusRecordedFile(), &fileinfo) ||
+			CheckFile(filename, config.GetListingsFile(),		 fileinfo)) {
+			CreateListingsPlusRecordedFile();
+		}
+		//else config.printf("No need to update combined file");
+	}
+
+	if (success && updatedependantfiles && (filename != config.GetCombinedFile())) {
+		FILE_INFO fileinfo;
+
+		if (!::GetFileInfo(config.GetCombinedFile(),			&fileinfo) ||
+			CheckFile(filename, config.GetRecordedFile(),       fileinfo)  ||
+			CheckFile(filename, config.GetScheduledFile(), 	  	fileinfo)  ||
+			CheckFile(filename, config.GetRecordingFile(), 	  	fileinfo)  ||
+			CheckFile(filename, config.GetRejectedFile(),  	  	fileinfo)  ||
+			CheckFile(filename, config.GetRecordFailuresFile(), fileinfo)  ||
+			CheckFile(filename, config.GetProcessingFile(),     fileinfo)) {
+			CreateCombinedFile();
 		}
 		//else config.printf("No need to update combined file");
 	}
@@ -1108,6 +1112,15 @@ const ADVBProg *ADVBProgList::FindSimilar(const ADVBProg& prog, const ADVBProg *
 	}
 
 	return res;
+}
+
+ADVBProg *ADVBProgList::FindSimilarWritable(const ADVBProg& prog, ADVBProg *startprog)
+{
+	const ADVBProg *res;
+
+	if ((res = FindSimilar(prog, startprog)) != NULL) return FindUUIDWritable(*res);
+
+	return NULL;
 }
 
 const ADVBProg *ADVBProgList::FindCompleteRecording(const ADVBProg& prog) const
@@ -1568,6 +1581,8 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 		res = reslist.Schedule(starttime);
 
 		if (commit) WriteToJobList();
+
+		CreateCombinedFile();
 	}
 	else config.logit("Failed to read listings file '%s'", filename.str());
 
@@ -1581,22 +1596,30 @@ void ADVBProgList::Sort(bool reverse)
 
 void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool sort, bool removeoverlaps, bool reverseorder)
 {
+	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock     lock("schedule");
 	ADVBProgList list;
 
-	list.ReadFromFile(filename);
-	list.AddProg(prog, sort, removeoverlaps, reverseorder);
-	list.WriteToFile(filename);
+	if (list.ReadFromFile(filename)) {
+		list.AddProg(prog, sort, removeoverlaps, reverseorder);
+		if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after adding a programme", filename.str());
+	}
+	else config.logit("Failed to read file '%s' for adding a programme", filename.str());
+
+	if (filename == config.GetRecordedFile()) ModifyFile(config.GetListingsPlusRecordedFile(), prog, true);
 }
 
 void ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
 {
+	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock     lock("schedule");
 	ADVBProgList list;
 
-	list.ReadFromFile(filename);
-	list.DeleteProg(prog);
-	list.WriteToFile(filename);
+	if (list.ReadFromFile(filename)) {
+		list.DeleteProg(prog);
+		if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after removing a programme", filename.str());
+	}
+	else config.logit("Failed to read file '%s' for removing a programme", filename.str());
 }
 
 uint_t ADVBProgList::Schedule(const ADateTime& starttime)
@@ -1701,9 +1724,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 
 		recordedlist.WriteToFile(config.GetRecordedFile(), false);
 	}
-
-	CreateCombinedList();
-
+	
 	return n;
 }
 
@@ -2232,90 +2253,127 @@ bool ADVBProgList::WriteToJobList()
 
 		config.printf("Scheduled %u programmes successfully (%u failed), writing to '%s'", nsucceeded, nfailed, filename.str());
 
-		if (!scheduledlist.WriteToFile(filename)) {
-			config.logit("Failed to write updated schedule list '%s'\n", filename.str());
+		if (!scheduledlist.WriteToFile(filename, false)) {
+			config.logit("Failed to write updated schedule list '%s'", filename.str());
 		}
 	}
 
 	return success;
 }
 
-void ADVBProgList::CreateCombinedList()
+void ADVBProgList::CreateListingsPlusRecordedFile()
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	ADVBProgList list, list2;
+
+	config.printf("Creating listings plus recorded file");
+
+	if (list.ReadFromBinaryFile(config.GetListingsFile()) &&
+		list2.ReadFromBinaryFile(config.GetRecordedFile())) {
+		config.printf("%u programmes in listings, %u programmes in recorded", list.Count(), list2.Count());
+
+		list.CreateHash();
+		list.ModifyProgs(list2, true);
+		
+		if (!list.WriteToFile(config.GetListingsPlusRecordedFile())) {
+			config.logit("Failed to write listings plus recorded file");
+		}
+	}
+	else config.logit("Failed to read listings and/or recorded file");
+}
+
+void ADVBProgList::CreateCombinedFile()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock     lock("schedule");
-	ADVBProgList list, list2;
+	ADVBProgList list;
+
+	config.printf("Creating combined listings");
+
+	if (list.ReadFromBinaryFile(config.GetRecordedFile(), false, false, true)) {
+		list.EnhanceListings();
+		if (!list.WriteToFile(config.GetCombinedFile())) {
+			config.logit("Failed to write combined listings file");
+		}
+	}
+	else config.logit("Failed to read listings plus recorded file for generating combined file");
+}
+
+void ADVBProgList::ModifyProgs(const ADVBProg& prog, bool similar)
+{
+	ADVBProg *prog2 = NULL;
+
+	if (similar) {
+		while ((prog2 = FindSimilarWritable(prog, prog2)) != NULL) {
+			prog2->Modify(prog);
+		}
+
+		if (FindUUIDWritable(prog) == NULL) AddProg(prog);
+	}
+	else if ((prog2 = FindUUIDWritable(prog)) != NULL) {
+		prog2->Modify(prog);
+	}
+	else AddProg(prog);
+}
+
+void ADVBProgList::ModifyProgs(const ADVBProgList& list, bool similar)
+{
 	uint_t i;
 
-	config.printf("Creating combined list");
-
-	if (!list.ReadFromBinaryFile(config.GetRecordedFile(), false, false, true)) {
-		config.logit("Failed to read recorded programme list for generating combined list");
+	for (i = 0; i < list.Count(); i++) {
+		ModifyProgs(list[i], similar);
 	}
+}
 
-	list2.DeleteAll();
-	if (list2.ReadFromBinaryFile(config.GetScheduledFile())) {
-		for (i = 0; i < list2.Count(); i++) {
-			const ADVBProg& prog = list2.GetProg(i);
-			if (!list.FindUUID(prog)) {
-				// only add it if it doesn't exist already
-				list.AddProg(prog, false);
-			}
-		}
+void ADVBProgList::ModifyFile(const AString& filename, const ADVBProg& prog, bool similar)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	ADVBProgList list;
+
+	if (list.ReadFromBinaryFile(filename)) {
+		list.CreateHash();
+		list.ModifyProgs(prog, similar);
+		if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after modification by a programme", filename.str());
 	}
-	else config.logit("Failed to read scheduled programme list for generating combined list");
+	else config.logit("Failed to read file '%s' for modification by a programme", filename.str());
+}
 
-	list2.DeleteAll();
-	if (list2.ReadFromBinaryFile(config.GetRecordingFile())) {
-		for (i = 0; i < list2.Count(); i++) {
-			const ADVBProg& prog = list2.GetProg(i);
-			if (!list.FindUUID(prog)) {
-				// only add it if it doesn't exist already
-				list.AddProg(prog);
-			}
-		}
-	}
-	else config.logit("Failed to read running programme list for generating combined list");
+void ADVBProgList::EnhanceListings()
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	ADVBProgList list;
 
-	list2.DeleteAll();
-	if (list2.ReadFromBinaryFile(config.GetProcessingFile())) {
-		for (i = 0; i < list2.Count(); i++) {
-			const ADVBProg& prog = list2.GetProg(i);
-			ADVBProg *prog2;
-
-			// modify existing programme if it already exists
-			if ((prog2 = list.FindUUIDWritable(prog)) != NULL) prog2->SetPostProcessing();
-			// or add it if it doesn't
-			else list.AddProg(prog);
-		}
-	}
-	else config.logit("Failed to read processing programme list for generating combined list");
-
-	list2.DeleteAll();
-	if (list2.ReadFromBinaryFile(config.GetRecordFailuresFile())) {
-		for (i = 0; i < list2.Count(); i++) {
-			const ADVBProg& prog = list2.GetProg(i);
-			// add failures no matter what
-			list.AddProg(prog);
-		}
-	}
-	else config.logit("Failed to read record failures list for generating combined list");
-
-	list2.DeleteAll();
-	if (list2.ReadFromBinaryFile(config.GetRejectedFile())) {
-		for (i = 0; i < list2.Count(); i++) {
-			const ADVBProg& prog = list2.GetProg(i);
-			if (!list.FindUUID(prog)) {
-				// only add it if it doesn't exist already
-				list.AddProg(prog);
-			}
-		}
-	}
-	else config.logit("Failed to read rejected programme list for generating combined list");
+	CreateHash();
 	
-	if (!list.WriteToFile(config.GetCombinedFile())) {
-		config.logit("Failed to write programme combined list");
+	list.DeleteAll();
+	if (list.ReadFromBinaryFile(config.GetScheduledFile())) {
+		ModifyProgs(list);
 	}
+	else config.logit("Failed to read scheduled programme list for enhancing listings");
+
+	list.DeleteAll();
+	if (list.ReadFromBinaryFile(config.GetRecordingFile())) {
+		ModifyProgs(list);
+	}
+	else config.logit("Failed to read running programme list for enhancing listings");
+
+	list.DeleteAll();
+	if (list.ReadFromBinaryFile(config.GetProcessingFile())) {
+		ModifyProgs(list);
+	}
+	else config.logit("Failed to read processing programme list for enhancing listings");
+
+	list.DeleteAll();
+	if (list.ReadFromBinaryFile(config.GetRecordFailuresFile())) {
+		ModifyProgs(list);
+	}
+	else config.logit("Failed to read record failures list for enhancing listings");
+
+	list.DeleteAll();
+	if (list.ReadFromBinaryFile(config.GetRejectedFile())) {
+		ModifyProgs(list);
+	}
+	else config.logit("Failed to read rejected programme list for enhancing listings");
 }
 
 void ADVBProgList::CheckRecordingFile()
@@ -2330,7 +2388,6 @@ void ADVBProgList::CheckRecordingFile()
 	if (list.ReadFromBinaryFile(config.GetRecordingFile())) {
 		uint64_t now     = (uint64_t)ADateTime().TimeStamp(true);
 		bool     changed = false;
-
 
 		for (i = 0; i < list.Count();) {
 			const ADVBProg& prog = list.GetProg(i);

@@ -508,7 +508,7 @@ int main(int argc, char *argv[])
 
 						if (i > 0) printf(",");
 
-						if (runninglist.FindUUID(prog))    prog.SetRunning();
+						if (runninglist.FindUUID(prog))    prog.SetRecording();
 						if (processinglist.FindUUID(prog)) prog.SetPostProcessing();
 
 						printf("{");

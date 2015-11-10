@@ -37,6 +37,7 @@ public:
 	AString GetQueue()						 const {return GetConfigItem("queue", "d");}
 	AString GetFilenameTemplate()			 const {return GetConfigItem("filename", "{title}{sep}{episode}{sep}{date}{sep}{times}{sep}{subtitle}{sep}{suffix}");}
 	AString GetListingsFile()		   		 const {return CatPath(GetDataDir(), GetConfigItem("listingsfile", "dvblistings.dat"));}
+	AString GetListingsPlusRecordedFile()	 const {return CatPath(GetDataDir(), GetConfigItem("listingsplusrecordedfile", "listingsplusrecorded.dat"));}
 	AString GetFreqScanFile()				 const {return CatPath(GetConfigDir(), GetConfigItem("freqscanfile", "scanfreqs.conf"));}
 	AString GetChannelsConfFile()	   		 const {return CatPath(GetConfigDir(), GetConfigItem("channelsconffile", "channels.conf"));}
 	AString GetDVBChannelsFile()	   		 const {return CatPath(GetConfigDir(), GetConfigItem("dvbchannelsfile", "channels.dat"));}

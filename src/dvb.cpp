@@ -136,7 +136,8 @@ int main(int argc, char *argv[])
 			else if (strcmp(argv[i], "--logdir") == 0)  printf("%s\n", config.GetLogDir().str());
 			else if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0) || (AString(argv[i]).Suffix() == "xmltv") || (AString(argv[i]).Suffix() == "txt")) {
 				AString filename = config.GetListingsFile();
-
+				AString updatefile;
+				
 				if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0)) i++;
 
 				config.printf("Reading main listings file...");
@@ -144,11 +145,11 @@ int main(int argc, char *argv[])
 				proglist.ReadFromFile(filename);
 				config.printf("Read programmes from '%s', total now %u", filename.str(), proglist.Count());
 
-				filename = argv[i];
+				updatefile = argv[i];
 
 				config.printf("Updating from new file...");
-				if (proglist.ReadFromFile(filename)) {
-					config.printf("Read programmes from '%s', total now %u", filename.str(), proglist.Count());
+				if (proglist.ReadFromFile(updatefile)) {
+					config.printf("Read programmes from '%s', total now %u", updatefile.str(), proglist.Count());
 
 					config.printf("Removing old programmes...");
 					proglist.DeleteProgrammesBefore(ADateTime(ADateTime().TimeStamp(true).GetDays() - config.GetDaysToKeep(), 0));
@@ -158,8 +159,6 @@ int main(int argc, char *argv[])
 
 					config.printf("Assigning episode numbers where necessary...");
 					proglist.AssignEpisodes();
-
-					filename = config.GetListingsFile();
 
 					config.printf("Writing main listings file...");
 					if (proglist.WriteToFile(filename)) {
@@ -247,7 +246,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			else if (strcmp(argv[i], "--update-combined") == 0) {
-				ADVBProgList::CreateCombinedList();
+				ADVBProgList::CreateCombinedFile();
 			}
 			else if ((strcmp(argv[i], "--find") == 0) || (strcmp(argv[i], "-f") == 0)) {
 				ADVBProgList reslist;
