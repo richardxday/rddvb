@@ -31,7 +31,7 @@ public:
 	
 	void UpdateDVBChannels();
 
-	bool WriteToFile(const AString& filename, bool updatecombined = true) const;
+	bool WriteToFile(const AString& filename, bool updatedependantfiles = true) const;
 	bool WriteToTextFile(const AString& filename) const;
 
 	void SearchAndReplace(const AString& search, const AString& replace);
@@ -72,8 +72,13 @@ public:
 	void FindProgrammes(ADVBProgList& dest, const AString& patterns, AString& errors, const AString& sep = "\n", uint_t maxmatches = MAX_UNSIGNED(uint_t)) const;
 
 	const ADVBProg *FindSimilar(const ADVBProg& prog, const ADVBProg *startprog = NULL) const;
+	ADVBProg       *FindSimilarWritable(const ADVBProg& prog, ADVBProg *startprog = NULL);
 	const ADVBProg *FindCompleteRecording(const ADVBProg& prog) const;
-	
+
+	void ModifyProgs(const ADVBProg&     prog, bool similar = false);
+	void ModifyProgs(const ADVBProgList& list, bool similar = false);
+	static void ModifyFile(const AString& filename, const ADVBProg& prog, bool similar = false);
+
 	uint_t FindSimilarProgrammes(ADVBProgList& dest, const ADVBProg& prog, uint_t index = 0) const;
 
 	void Sort(bool reverse = false);
@@ -100,12 +105,15 @@ public:
 	void FindPopularTitles(AList& list, const POPULARITY_FACTORS& factors) const {FindPopularTitles(list, &ScoreProgrammeByPopularityFactors, (void *)&factors);}
 	void FindPopularTitles(AList& list, double (*fn)(const ADVBProg& prog, void *context), void *context = NULL) const;
 
+	void EnhanceListings();
+	
 	static void UnscheduleAllProgrammes();
 	static uint_t SchedulePatterns(const ADateTime& starttime = ADateTime().TimeStamp(true), bool commit = true);
 	static bool WriteToJobList();
 
-	static bool UpdateCombined(const AString& filename, const FILE_INFO& fileinfo);
-	static void CreateCombinedList();
+	static bool CheckFile(const AString& filename, const AString& targetfilename, const FILE_INFO& fileinfo);
+	static void CreateListingsPlusRecordedFile();
+	static void CreateCombinedFile();
 	static void CheckRecordingFile();
 
 	static void AddToList(const AString& filename, const ADVBProg& prog, bool sort = true, bool removeoverlaps = false, bool reverseorder = false);
