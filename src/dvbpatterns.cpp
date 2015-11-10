@@ -1076,15 +1076,9 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 			  
 		if (!RANGE(term.data.opcode, Operator_First_Assignable, Operator_Last_Assignable)) {
 			const uint8_t *ptr = prog.GetDataPtr(field.offset);
-			uint64_t _val;
 			int  res      = 0;
 			bool newmatch = false;
 
-			if (stricmp(field.name, "length") == 0) {
-				_val = prog.GetLength();
-				ptr  = (const uint8_t *)&_val;
-			}
-			
 			if (field.type == FieldType_string) {
 				const char *str;
 				uint16_t offset;
@@ -1140,10 +1134,12 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 					}
 
 					case FieldType_span: {
-						uint64_t val;
+						uint64_t val1, val2, val;
 
-						memcpy(&val, ptr, sizeof(val));
+						memcpy(&val1, ptr, sizeof(val1)); ptr += sizeof(val1);
+						memcpy(&val2, ptr, sizeof(val2));
 
+						val = SUBZ(val2, val1);
 						//debug("Span: comparing %lu with %lu\n", (ulong_t)val, (ulong_t)term.value.u64);
 						res = COMPARE_ITEMS(val, term.value.u64);
 						break;
