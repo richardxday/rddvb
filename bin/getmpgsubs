@@ -1,6 +1,0 @@
-#!/bin/sh
-SRC=$1
-LOGFILE=${SRC%.*}_log.txt
-SUBTITLES=${SRC%.*}.sup
-projectx -ini ~/XSubs.ini "$SRC" >/dev/null
-rm "$LOGFILE" "$SUBTITLES" "$SUBTITLES.IFO"
