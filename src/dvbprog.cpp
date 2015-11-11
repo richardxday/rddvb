@@ -52,9 +52,13 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FIELD(day, start, date, "Day"),
 	DEFINE_SIMPLE(start, date, "Start"),
 	DEFINE_SIMPLE(stop, date, "Stop"),
+	DEFINE_SIMPLE(recstart, date, "Record start"),
+	DEFINE_SIMPLE(recstop, date, "Record stop"),
+	DEFINE_SIMPLE(actstart, date, "Actual record start"),
+	DEFINE_SIMPLE(actstop, date, "Actual record stop"),
 	DEFINE_FIELD(length, start, span, "Programme length"),
-	DEFINE_FIELD(recordlength, recstart, span, "Record length"),
-	DEFINE_FIELD(actuallength, actstart, span, "Actual record length"),
+	DEFINE_FIELD(reclength, recstart, span, "Record length"),
+	DEFINE_FIELD(actlength, actstart, span, "Actual record length"),
 
 	DEFINE_SIMPLE(year, uint16_t, "Year"),
 
