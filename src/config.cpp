@@ -147,6 +147,15 @@ AString ADVBConfig::GetNamedFile(const AString& name) const
 	return filename;
 }
 
+AString ADVBConfig::GetRelativePath(const AString& filename) const
+{
+	AString res;
+
+	if (filename.StartsWith(GetRecordingsDir())) res = filename.Mid(GetRecordingsDir().len());
+	
+	return res;
+}
+
 AString ADVBConfig::GetProcessingCommand(const AString& user, const AString& filename) const
 {
 	AString format = GetFileFormat(user);

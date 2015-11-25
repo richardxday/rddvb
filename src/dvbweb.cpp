@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 			index = (index + 1) % NUMBEROF(list);
 
 			AString filter = val;
-			ADVBPatterns::ParsePattern(filter, filterpattern);
+			ADVBPatterns::ParsePattern(filter, filterpattern, errors);
 			proglist->FindProgrammes(*reslist, filter, errors, (filter.Pos("\n") >= 0) ? "\n" : ";");
 			proglist = reslist;
 		}
