@@ -77,7 +77,7 @@ protected:
 		FieldType_sint8_t,
 		FieldType_prog,
 		FieldType_flag,
-		FieldType_lastflag = FieldType_flag + 31,
+		FieldType_lastflag = FieldType_flag + 63,
 	};
 
 	enum {

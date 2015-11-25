@@ -158,11 +158,14 @@ public:
 		Flag_postprocessing,
 		
 		Flag_count,
+
+		_Flag_extra_start = 32,
+		Flag_exists = _Flag_extra_start,
 	};
 	void     SetFlags(uint32_t flags)	{data->flags = flags;}
 	uint32_t GetFlags()		   	  const {return data->flags;}
 	
-	bool   GetFlag(uint8_t flag)  const {return ((data->flags & (1UL << flag)) != 0);}
+	bool   GetFlag(uint8_t flag)  const;
 	bool   IsRepeat() 	   	   	  const {return GetFlag(Flag_repeat);}
 	bool   IsPlus1()  	   	   	  const {return GetFlag(Flag_plus1);}
 	bool   IsRepeatOrPlus1()   	  const {return IsRepeat() || IsPlus1();}
