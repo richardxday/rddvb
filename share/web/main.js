@@ -241,7 +241,10 @@ function addtimesdata(prog)
 		str += '.';
 
 		if (typeof prog.exists != 'undefined') {
-			str += ' Programme <b>' + (prog.exists ? 'Available' : 'Unavailable') + '</b>.';
+			str += ' ';
+			if (typeof prog.path != 'undefined') str += '<a href="/videos' + prog.path + '" download>';
+			str += 'Programme <b>' + (prog.exists ? 'Available' : 'Unavailable') + '</b>.';
+			if (typeof prog.path != 'undefined') str += '</a>';
 		}
 
 		if ((typeof prog.flags.ignorerecording != 'undefined') && prog.flags.ignorerecording) {
@@ -359,6 +362,24 @@ function populatedates(prog)
 	prog.actstartdate = getdatestring(prog.actstart);
 }
 
+function adddownloadlink(prog)
+{
+	var str = '';
+	
+	str += '<a href="/videos' + prog.path + '" download title="Download ' + prog.title + ' to computer">Download</a>';
+	if ((typeof prog.subpaths != 'undefined') && (prog.subpaths.length > 0)) {
+		var i;
+
+		str += '<br>(Sub files:';
+		for (i = 0; i < prog.subpaths.length; i++) {
+			str += '&nbsp;<a href="/videos' + prog.subpaths[i] + '" download title="Download ' + prog.title + ' sub file ' + (i + 1) + ' to computer">' + (i + 1) + '</a>';
+		}
+		str += ')';
+	}
+	
+	return str;
+}
+
 function populateprogs(id)
 {
 	var astr = '';
@@ -457,6 +478,12 @@ function populateprogs(id)
 					}
 
 					str += '{reltime}';
+					str += '</td><td style="font-size:90%;">';
+					if (typeof prog.path != 'undefined') str += adddownloadlink(prog);
+					else if ((typeof prog.recorded != 'undefined') &&
+							 (typeof prog.recorded.path != 'undefined')) str += adddownloadlink(prog.recorded);
+					else str += '&nbsp;';
+					str += '</td><td>';
 					str += '<td style="width:20px;cursor:pointer;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
 					str += '</td></tr>';
 
@@ -464,7 +491,7 @@ function populateprogs(id)
 					if (progvb > 1) {
 						var str1 = '';
 
-						str += '<tr' + classname + '><td class="desc" colspan=8>';
+						str += '<tr' + classname + '><td class="desc" colspan=10>';
 
 						if (prog.flags.running) {
 							str += '<span style="font-size:150%;">-- Recording Now --</span><br><br>';

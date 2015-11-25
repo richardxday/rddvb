@@ -811,10 +811,11 @@ int main(int argc, char *argv[])
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
 					uint_t i, j, n = dirs.CountLines(",");
 					uint_t found = 0;
-
+					
 					for (j = 0; j < reclist.Count(); j++) {
 						ADVBProg& prog = reclist.GetProgWritable(j);
-
+						FILE_INFO info;
+												
 						if (!AStdFile::exists(prog.GetFilename())) {
 							AString filename1 = prog.GenerateFilename();
 							if (AStdFile::exists(filename1)) {
@@ -828,6 +829,7 @@ int main(int argc, char *argv[])
 						AString path = recdir.CatPath(dirs.Line(i, ","));
 						AList   dirs;
 
+						dirs.Add(new AString(path));
 						CollectFiles(path, "*", RECURSE_ALL_SUBDIRS, dirs, FILE_FLAG_IS_DIR, FILE_FLAG_IS_DIR);
 
 						const AString *dir = AString::Cast(dirs.First());
@@ -838,10 +840,10 @@ int main(int argc, char *argv[])
 								for (j = 0; j < reclist.Count(); j++) {
 									ADVBProg& prog = reclist.GetProgWritable(j);
 
-									if (!AStdFile::exists(prog.GetFilename())) {
+									if (!AStdFile::exists(prog.GetFilename()) || config.GetRelativePath(prog.GetFilename()).Empty()) {
 										AString filename1 = dir->CatPath(AString(prog.GetFilename()).FilePart());
 										AString filename2 = filename1.Prefix() + ".mp4";
-
+										
 										if (AStdFile::exists(filename1)) {
 											prog.SetFilename(filename1);
 											found++;

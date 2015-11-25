@@ -81,6 +81,8 @@ public:
 	AString GetPriorityDVBPIDs()			 const {return GetConfigItem("prioritypids", "");}
 	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");}
 
+	AString GetRelativePath(const AString& filename) const;
+	
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 	void printf(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 	void vlogit(const char *fmt, va_list ap, bool show = false) const;

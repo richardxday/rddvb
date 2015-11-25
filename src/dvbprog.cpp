@@ -545,6 +545,7 @@ AString ADVBProg::ExportToText() const
 
 AString ADVBProg::ExportToJSON(bool includebase64) const
 {
+	const ADVBConfig& config = ADVBConfig::Get();
 	AString str;
 	const char *p;
 
@@ -654,8 +655,30 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 		str.printf(",\"jobid\":%u", data->jobid);
 		str.printf(",\"dvbcard\":%u", (uint_t)data->dvbcard);
 
-		if (data->actstart && data->actstop && GetString(data->strings.filename)[0]) {
-			str.printf(",\"exists\":%u", (uint_t)AStdFile::exists(GetString(data->strings.filename)));
+		const AString filename = GetString(data->strings.filename);
+		if (data->actstart && data->actstop && filename[0]) {
+			str.printf(",\"exists\":%u", (uint_t)AStdFile::exists(filename));
+
+			AString relpath;
+			if (AStdFile::exists(filename) && (relpath = config.GetRelativePath(filename)).Valid()) {
+				str.printf(",\"path\":\"%s\"", JSONFormat(relpath).str());
+				str.printf(",\"subpaths\":[");
+				
+				AList list;
+				CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, list);
+				const AString *subfile = AString::Cast(list.First());
+				bool first = true;
+				while (subfile) {
+					if ((*subfile != filename) && (relpath = config.GetRelativePath(*subfile)).Valid()) {
+						if (first) first = false;
+						else str.printf(",");
+						str.printf("\"%s\"", JSONFormat(relpath).str());
+					}
+					subfile = subfile->Next();
+				}
+
+				str.printf("]");
+			}
 		}
 	}
 
