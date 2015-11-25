@@ -1194,12 +1194,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 					}
 
 					case FieldType_flag...FieldType_lastflag: {
-						uint32_t flags, mask = 1UL << (field.type - FieldType_flag);
-						uint8_t  cmp;
-
-						memcpy(&flags, ptr, sizeof(flags));
-
-						cmp = ((flags & mask) != 0);
+						uint8_t cmp = prog.GetFlag(field.type - FieldType_flag);
 
 						res = COMPARE_ITEMS(cmp, term.value.u8);
 						break;

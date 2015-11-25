@@ -67,15 +67,18 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(repeat,    		   	 Flag_repeat,    	 	   "Programme is a repeat"),
 	DEFINE_FLAG(plus1,     		   	 Flag_plus1,     	 	   "Programme is on +1"),
 	DEFINE_FLAG(running,			 Flag_running,  	 	   "Programme job running"),
+	DEFINE_FLAG(onceonly,  		   	 Flag_onceonly,  	 	   "Programme to be recorded and then the pattern deleted"),
 	DEFINE_FLAG(rejected,  		   	 Flag_rejected,  	 	   "Programme rejected"),
 	DEFINE_FLAG(recorded,  		   	 Flag_recorded,  	 	   "Programme recorded"),
 	DEFINE_FLAG(scheduled, 		   	 Flag_scheduled, 	 	   "Programme scheduled"),
+	DEFINE_FLAG(dvbcardspecified, 	 Flag_dvbcardspecified,    "Programme to be recorded on specified DVB card"),
 	DEFINE_FLAG(radioprogramme,    	 Flag_radioprogramme,      "Programme is a Radio programme"),
 	DEFINE_FLAG(incompleterecording, Flag_incompleterecording, "Programme recorded is incomplete"),
 	DEFINE_FLAG(ignorerecording,     Flag_ignorerecording,     "Programme recorded should be ignored when scheduling"),
 	DEFINE_FLAG(failed,				 Flag_recordingfailed,     "Programme recording failed"),
 	DEFINE_FLAG(recording,  		 Flag_recording,  	 	   "Programme recording"),
 	DEFINE_FLAG(postprocessing,		 Flag_postprocessing,	   "Programme recording being processing"),
+	DEFINE_FLAG(exists,				 Flag_exists,    	 	   "Programme exists"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
 	DEFINE_FIELD(series,   	  episode.series,   uint8_t,  "Series"),
@@ -291,6 +294,21 @@ bool ADVBProg::FieldExists(const AString& str, const AString& field, int p, int 
 	else if (pos) *pos = -1;
 
 	return (p1 >= p);
+}
+
+bool ADVBProg::GetFlag(uint8_t flag) const
+{
+	bool set = false;
+	
+	if (flag < Flag_count) set = ((data->flags & (1UL << flag)) != 0);
+
+	switch (flag) {
+		case Flag_exists:
+			set = AStdFile::exists(GetFilename());
+			break;
+	}
+
+	return set;
 }
 
 AString ADVBProg::GetField(const AString& str, const AString& field, int p, int *pos)
@@ -621,23 +639,12 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 
 	str.printf(",\"flags\":{");
 	str.printf("\"bitmap\":%lu", (ulong_t)data->flags);
-	str.printf(",\"repeat\":%u", (uint_t)IsRepeat());
-	str.printf(",\"plus1\":%u", (uint_t)IsPlus1());
-	str.printf(",\"urgent\":%u", (uint_t)IsUrgent());
-	str.printf(",\"manual\":%u", (uint_t)IsManualRecording());
-	str.printf(",\"markonly\":%u", (uint_t)IsMarkOnly());
-	str.printf(",\"postprocessed\":%u", (uint_t)IsPostProcessed());
-	str.printf(",\"onceonly\":%u", (uint_t)IsOnceOnly());
-	str.printf(",\"running\":%u", (uint_t)IsRunning());
-	str.printf(",\"rejected\":%u", (uint_t)IsRejected());
-	str.printf(",\"recorded\":%u", (uint_t)IsRecorded());
-	str.printf(",\"recording\":%u", (uint_t)IsRecording());
-	str.printf(",\"scheduled\":%u", (uint_t)IsScheduled());
-	str.printf(",\"radioprogramme\":%u", (uint_t)IsRadioProgramme());
-	str.printf(",\"incompleterecording\":%u", (uint_t)!IsRecordingComplete());
-	str.printf(",\"ignorerecording\":%u", (uint_t)IgnoreRecording());
-	str.printf(",\"recordingfailed\":%u", (uint_t)HasRecordingFailed());
-	str.printf(",\"postprocessing\":%u", (uint_t)IsPostProcessing());
+	uint_t i;
+	for (i = 0; i < NUMBEROF(fields); i++) {
+		if (RANGE(fields[i].type, ADVBPatterns::FieldType_flag, ADVBPatterns::FieldType_lastflag)) {
+			str.printf(",\"%s\":%u", fields[i].name, (uint_t)GetFlag(fields[i].type - ADVBPatterns::FieldType_flag));
+		}
+	}
 	str.printf("}");
 
 	if (data->filesize) str.printf(",\"filesize\":%" FMT64 "u", data->filesize);
