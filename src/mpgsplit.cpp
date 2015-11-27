@@ -74,6 +74,7 @@ void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<
 		AStdFile fp1, fp2;
 						
 		if (fp1.open(srcsubfile)) {
+			CreateDirectory(dstsubfile.PathPart());
 			if (fp2.open(dstsubfile, "w")) {
 				AString line;
 
@@ -310,6 +311,7 @@ int main(int argc, char *argv[])
 				AString outputfile;
 				outputfile.printf("%s%s.%s", dst.Prefix().str(), outputindex ? AString(".%u").Arg(outputindex).str() : "", dst.Suffix().str());
 				
+				CreateDirectory(outputfile.PathPart());
 				if (!AStdFile::exists(outputfile)) {
 					AStdFile ofp;
 					AString  concatfile;
