@@ -42,7 +42,7 @@ nodist_pkginclude_HEADERS =
 
 DISTCLEANFILES =
 
-bin_PROGRAMS = dvb dvbweb mpgsplit videosig sigcmp
+bin_PROGRAMS = dvb dvbweb videosig sigcmp
 
 dvb_LDADD =										\
 	$(RDLIB_LIBS)								\
@@ -69,15 +69,6 @@ dvbweb_SOURCES =								\
 	dvbweb.cpp
 
 EXTRA_dvbweb_DEPENDENCIES = $(lib_LTLIBRARIES)
-
-mpgsplit_LDADD =								\
-	$(RDLIB_LIBS)
-
-mpgsplit_CPPFLAGS =								\
-	$(RDLIB_CFLAGS)
-
-mpgsplit_SOURCES =								\
-	mpgsplit.cpp
 
 videosig_LDADD =								\
 	$(RDLIB_LIBS)

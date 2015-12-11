@@ -3,6 +3,8 @@
 
 #include <stdarg.h>
 
+#include <vector>
+
 #include <rdlib/strsup.h>
 #include <rdlib/DateTime.h>
 #include <rdlib/DataList.h>
@@ -156,6 +158,7 @@ public:
 		Flag_recordingfailed,
 		Flag_recording,
 		Flag_postprocessing,
+		Flag_notify,
 		
 		Flag_count,
 
@@ -210,6 +213,8 @@ public:
 	bool   IsPostProcessing()	  const {return GetFlag(Flag_postprocessing);}
 	void   SetPostProcessing()			{SetFlag(Flag_postprocessing);}
 	void   ClearPostProcessing()		{ClrFlag(Flag_postprocessing);}
+	bool   NotifySet()	  		  const {return GetFlag(Flag_notify);}
+	void   SetNotify()	  		  		{SetFlag(Flag_notify);}
 
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}
@@ -240,8 +245,6 @@ public:
 	AString GenerateFilename() const;
 	void    GenerateRecordData(uint64_t recstarttime);
 
-	AString GetProcessingCommands();
-
 	bool WriteToJobQueue();
 	bool ReadFromJob(const AString& filename);
 
@@ -263,6 +266,8 @@ public:
 	static int CompareScore(const ADVBProg& prog1, const ADVBProg& prog2);
 
 	AString Base64Encode() const {return ::Base64Encode((const uint8_t *)data, sizeof(*data) + data->strings.end);}
+
+	AString GetLinkToFile() const;
 
 	void Record();
 	bool OnRecordSuccess() const;
@@ -361,12 +366,25 @@ protected:
 	void Init();
 
 	AString GetRecordPIDS(bool update = true) const;
-	AString GenerateRecordCommand(uint_t nsecs, const AString& pids, AString& filename) const;
+	AString GenerateRecordCommand(uint_t nsecs, const AString& pids) const;
 	AString GeneratePostProcessCommand() const;
 
-	AString GetSourceFile() const;
+	AString GetSourceFilename() const;
 	AString GetAdditionalLogFile() const;
 	AString ReplaceTerms(const AString& str) const;
+
+	static uint64_t CalcTime(const char *str);
+	static AString GenTime(uint64_t t, const char *format = "%02u:%02u:%02u.%03u");
+	static AString GetParentheses(const AString& line, int p = 0);
+	static void CopyFile(AStdData& fp1, AStdData& fp2);
+
+	typedef struct {
+		AString  aspect;
+		uint64_t start, length;
+	} SPLIT;
+
+	void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect);
+	bool ConvertVideoFile(bool cleanup = true);
 
 	static const DVBPROG *nullprog;
 

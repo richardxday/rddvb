@@ -9,7 +9,7 @@
 #include <rdlib/StdFile.h>
 #include <rdlib/Recurse.h>
 
-uint64_t CalcTime(const char *str)
+static uint64_t CalcTime(const char *str)
 {
 	uint_t hrs = 0, mins = 0, secs = 0, ms = 0;
 	uint64_t t = 0;
@@ -24,7 +24,7 @@ uint64_t CalcTime(const char *str)
 	return t;
 }
 
-AString GenTime(uint64_t t, const char *format = "%02u:%02u:%02u.%03u")
+static AString GenTime(uint64_t t, const char *format = "%02u:%02u:%02u.%03u")
 {
 	AString  res;
 	uint32_t sec = (uint32_t)(t / 1000);
@@ -39,11 +39,11 @@ AString GenTime(uint64_t t, const char *format = "%02u:%02u:%02u.%03u")
 	return res;
 }
 
-AString GetParentheses(const AString& line, int p = 0)
+static AString GetParentheses(const AString& line, int p = 0)
 {
 	int p1, p2;
 	
-	if (((p1 = line.Pos("(", p)) >= 0) && ((p2 = line.Pos(")", p1)) >= 0)) {
+	if (((p1 = line.Pos("(", p)) >= 0) && ((p2 = line.LastPos(")", p1)) >= 0)) {
 		p1++;
 		return line.Mid(p1, p2 - p1);
 	}
@@ -51,7 +51,7 @@ AString GetParentheses(const AString& line, int p = 0)
 	return "";
 }
 
-void CopyFile(AStdData& fp1, AStdData& fp2)
+static void CopyFile(AStdData& fp1, AStdData& fp2)
 {
 	static uint8_t buffer[65536];
 	slong_t l;
@@ -59,12 +59,7 @@ void CopyFile(AStdData& fp1, AStdData& fp2)
 	while ((l = fp1.readbytes(buffer, sizeof(buffer))) > 0) fp2.writebytes(buffer, l);
 }
 
-typedef struct {
-	AString aspect;
-	uint64_t  start, length;
-} SPLIT;
-
-void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect)
+static void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect)
 {
 	FILE_INFO info;
 	
@@ -132,30 +127,14 @@ void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<
 	else printf("'subs' directory doesn't exist\n");
 }
 
-int main(int argc, char *argv[])
+int ProcessFile(const AString& src, const AString& dst, std::map<AString,bool>& desired_aspects, bool cleanup = true)
 {
 	AStdFile fp;
-	bool cleanup = true;
-	
-	if (argc < 3) {
-		fprintf(stderr, "Usage: mpgsplit <src-file> <dst-file> [<aspect>...]\n");
-		exit(10);
-	}
-
-	AString src      = argv[1];
-	AString dst      = argv[2];
 	AString basename = src.Prefix();
 	AString remuxsrc = basename + "_Remuxed.mpg";
 	AString logfile  = basename + "_log.txt";
-	std::map<AString,bool> desired_aspects;
-	int     rc = 0, arg;
-
-	for (arg = 3; arg < argc; arg++) {
-		if (argv[arg][0] == '-') {
-			if (stricmp(argv[arg], "-keep") == 0) cleanup = false;
-		}
-		else desired_aspects[AString(argv[arg])] = true;
-	}
+	AString videoargs = "-vcodec copy";
+	int     rc = 0;
 
 	if (!AStdFile::exists(AString("%s.m2v").Arg(basename)) ||
 		!AStdFile::exists(AString("%s.mp2").Arg(basename)) ||
@@ -250,7 +229,7 @@ int main(int argc, char *argv[])
 
 			printf("No need to split file\n");
 
-			cmd.printf("avconv -i \"%s.m2v\" -i \"%s.mp2\" -aspect %s -acodec mp3 -vcodec copy -filter:v yadif -v warning -y \"%s\"", basename.str(), basename.str(), bestaspect.str(), dst.str());
+			cmd.printf("avconv -i \"%s.m2v\" -i \"%s.mp2\" -aspect %s -acodec mp3 %s -filter:v yadif -v warning -y \"%s\"", basename.str(), basename.str(), bestaspect.str(), videoargs.str(), dst.str());
 
 			printf("Executing: '%s'\n", cmd.str());
 			if (system(cmd) != 0) {
@@ -344,7 +323,7 @@ int main(int argc, char *argv[])
 					if (!rc) {
 						AString cmd;
 
-						cmd.printf("avconv -i \"%s\" -aspect %s -acodec mp3 -vcodec copy -filter:v yadif -v warning -y \"%s\"", concatfile.str(), aspect.str(), outputfile.str());
+						cmd.printf("avconv -i \"%s\" -aspect %s -acodec mp3 %s -filter:v yadif -v warning -y \"%s\"", concatfile.str(), aspect.str(), videoargs.str(), outputfile.str());
 						
 						printf("Executing: '%s'\n", cmd.str());
 						if (system(cmd) != 0) {
@@ -386,3 +365,25 @@ int main(int argc, char *argv[])
 	
 	return rc;
 }
+	
+int main(int argc, char *argv[])
+{
+	std::map<AString,bool> desired_aspects;
+	int  arg;
+	bool cleanup = true;
+	
+	if (argc < 3) {
+		fprintf(stderr, "Usage: mpgsplit <src-file> <dst-file> [<aspect>...]\n");
+		exit(10);
+	}
+
+	for (arg = 3; arg < argc; arg++) {
+		if (argv[arg][0] == '-') {
+			if (stricmp(argv[arg], "-keep") == 0) cleanup = false;
+		}
+		else desired_aspects[AString(argv[arg])] = true;
+	}
+
+	return ProcessFile(argv[1], argv[2], desired_aspects, cleanup);
+}
+
