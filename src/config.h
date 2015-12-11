@@ -61,9 +61,7 @@ public:
 
 	AString GetNamedFile(const AString& name) const;
 	
-	AString GetFileFormat(const AString& user) const {return GetUserConfigItem(user, "format", "");}
-	AString GetFileSuffix(const AString& user, const AString& def = "mpg") const;
-	AString GetProcessingCommand(const AString& user, const AString& filename) const;
+	AString GetFileSuffix(const AString& user, const AString& def = "mpg") const {return GetUserConfigItem(user, "filesuffix", def);}
 	AString ReplaceTerms(const AString& user, const AString& str) const;
 	
 	uint_t  GetPhysicalDVBCard(uint_t n = 0) const;
@@ -81,6 +79,13 @@ public:
 	AString GetPriorityDVBPIDs()			 const {return GetConfigItem("prioritypids", "");}
 	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");}
 
+	AString GetBaseURL()					 const {return GetConfigItem("baseurl", "http://richardday.duckdns.org");}
+
+	bool    ForceSubs(const AString& user)         const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
+	AString GetProcessCommand(const AString& user) const {return GetUserConfigItem(user, "processcmd", "avconv");}
+	AString GetVideoArgs(const AString& user)      const {return GetUserConfigItem(user, "videoargs", "-vcodec copy");}
+	AString GetAudioArgs(const AString& user)      const {return GetUserConfigItem(user, "audioargs", "-acodec mp3");}
+	
 	AString GetRelativePath(const AString& filename) const;
 	
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;

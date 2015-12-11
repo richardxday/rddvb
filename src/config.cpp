@@ -113,22 +113,6 @@ AString ADVBConfig::GetConfigItem(const AString& name, const AString& defval) co
 	return defval;
 }
 
-AString ADVBConfig::GetFileSuffix(const AString& user, const AString& def) const
-{
-	AString format = GetFileFormat(user);
-	AString proc   = GetUserConfigItem(user, "proc", GetUserConfigItem(user, "proc:" + format, ""));
-	AString suffix;
-	
-	if		(proc.Valid()) suffix = GetUserConfigItem(user, "proc:suffix", GetUserConfigItem(user, "filesuffix", def));
-	else if ((format == "h264") || (format == "dvb")) {
-		suffix = GetUserConfigItem(user, format + ":suffix", GetUserConfigItem(user, "filesuffix", "mp4"));
-	}
-	else if (format.Valid()) suffix = GetUserConfigItem(user, format + ":suffix", def);
-	else				     suffix = GetUserConfigItem(user, "filesuffix", def);
-
-	return suffix;
-}
-
 AString ADVBConfig::GetNamedFile(const AString& name) const
 {
 	AString filename;
@@ -151,50 +135,9 @@ AString ADVBConfig::GetRelativePath(const AString& filename) const
 {
 	AString res;
 
-	if (filename.StartsWith(GetRecordingsDir())) res = filename.Mid(GetRecordingsDir().len());
+	if (filename.StartsWith(GetRecordingsDir())) res = AString("/videos").CatPath(filename.Mid(GetRecordingsDir().len()));
 	
 	return res;
-}
-
-AString ADVBConfig::GetProcessingCommand(const AString& user, const AString& filename) const
-{
-	AString format = GetFileFormat(user);
-	AString proc   = GetUserConfigItem(user, "proc", GetUserConfigItem(user, "proc:" + format, ""));
-	AString cmd;
-
-	if		(proc.Valid()) cmd = proc;
-	else if (format == "h264") {
-		cmd.printf("avconv -i - -acodec %s -vcodec libx264 -crf %s -preset %s -tune %s -filter:v %s -v %s %s %s -y \"%s\"",
-				   GetUserConfigItem(user, format + ":acodec", 	 "mp3").str(),
-				   GetUserConfigItem(user, format + ":crf",    	 "18").str(),
-				   GetUserConfigItem(user, format + ":preset", 	 "veryfast").str(),
-				   GetUserConfigItem(user, format + ":tune",   	 "animation").str(),
-				   GetUserConfigItem(user, "video:filter",       "yadif").str(),
-				   GetUserConfigItem(user, "video:warninglevel", "warning").str(),
-				   GetUserConfigItem(user, "video:args",         "").str(),
-				   GetUserConfigItem(user, format + ":args",     "").str(),
-				   filename.str());
-	}
-	else if (format == "dvb") {
-		cmd.printf("avconv -i - -acodec copy -vcodec copy -filter:v %s -v %s %s %s -y \"%s\"",
-				   GetUserConfigItem(user, "video:filter",       "yadif").str(),
-				   GetUserConfigItem(user, "video:warninglevel", "warning").str(),
-				   GetUserConfigItem(user, "video:args",         "").str(),
-				   GetUserConfigItem(user, format + ":args",     "").str(),
-				   filename.str());
-	}
-	else if (format == "avconv") {
-		cmd.printf("avconv -i - -acodec %s -vcodec %s -filter:v %s -v %s %s %s -y \"%s\"",
-				   GetUserConfigItem(user, format + ":acodec",   "copy").str(),
-				   GetUserConfigItem(user, format + ":vcodec",   "copy").str(),
-				   GetUserConfigItem(user, "video:filter",       "yadif").str(),
-				   GetUserConfigItem(user, "video:warninglevel", "warning").str(),
-				   GetUserConfigItem(user, "video:args",         "").str(),
-				   GetUserConfigItem(user, format + ":args",     "").str(),
-				   filename.str());
-	}
-
-	return ReplaceTerms(user, cmd);
 }
 
 AString ADVBConfig::ReplaceTerms(const AString& user, const AString& _str) const

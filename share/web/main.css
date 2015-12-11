@@ -189,7 +189,7 @@ table.proglist td.title
 {
 	text-align:left;
 	width:100%;
-	white-space:normal;
+	white-space:nowrap;
 	word-wrap:break-word;
 }
 table.proglist td.desc

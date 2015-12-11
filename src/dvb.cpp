@@ -116,11 +116,9 @@ int main(int argc, char *argv[])
 		printf("\t--set-recorded-flag\t\tSet recorded flag on all programmes in recorded list\n");
 		printf("\t--set-ignore-flag <patterns>\tSet ignore recording flag on programmes matching pattern\n");
 		printf("\t--clr-ignore-flag <patterns>\tClear ignore recording flag on programmes matching pattern\n");
-		printf("\t--show-record-command\t\tShow record command for each programme in list\n");
 		printf("\t--check-disk-space\t\tCheck disk space for all patterns\n");
 		printf("\t--update-recording-complete\tUpdate recording complete flag in every recorded programme\n");
 		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
-		printf("\t--recover-recorded\t\tAttempt to recover recorded programmes using log files\n");
 		printf("\t--force-failures\t\tAdd current list to recording failures (setting failed flag)\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
@@ -942,106 +940,6 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
-			else if (stricmp(argv[i], "--show-record-command") == 0) {
-				uint_t i;
-
-				for (i = 0; i < proglist.Count(); i++) {
-					ADVBProg& prog = proglist.GetProgWritable(i);
-
-					printf("%s:\n", prog.GetQuickDescription().str());
-					AString cmd = prog.GetProcessingCommands().str();
-					uint_t j, n = cmd.CountLines();
-					for (j = 0; j < n; j++) printf("  %s\n", cmd.Line(j).str());
-				}
-			}
-			else if (stricmp(argv[i], "--recover-recorded") == 0) {
-				std::map<AString,RECORDDETAILS> details;
-				
-				{
-					AList files;
-					CollectFiles(config.GetLogDir(), "dvblog-*.txt", 0, files);
-					uint_t nfiles = 0;
-					
-					const AString *file = AString::Cast(files.First());
-					while (file) {
-						AStdFile fp;
-
-						if (fp.open(*file, "r")) {
-							AString line;
-
-							while (line.ReadLn(fp) >= 0) {
-								if ((line.Word(2) == "File") && (line.Words(4, 3) == "exists and is")) {
-									AString        filename = line.Word(3).DeQuotify().FilePart().Prefix();
-									RECORDDETAILS& detail   = details[filename];
-
-									detail.filename = line.Word(3).DeQuotify().FilePart();
-									detail.length   = (uint64_t)line.Word(8) * 1000ul;
-									detail.filesize = (uint64_t)line.Word(7) * 1024ul * 1024ul;
-
-									nfiles++;
-								}
-							}
-							
-							fp.close();
-						}
-					
-						file = file->Next();
-					}
-
-					config.printf("Found %u files", nfiles);
-				}
-				
-				ADVBLock lock("schedule");
-				ADVBProgList reclist;
-
-				if (reclist.ReadFromFile(config.GetRecordedFile())) {
-					AList  files;
-					uint_t nadded = 0;
-					
-					CollectFiles(config.GetLogDir(), config.GetRecordLogBase() + "*.txt", 0, files);
-
-					const AString *file = AString::Cast(files.First());
-					while (file) {
-						AStdFile fp;
-
-						if (fp.open(*file, "r")) {
-							AString line;
-
-							while (line.ReadLn(fp) >= 0) {
-								if ((line.Word(2) == "stop") && (line.CountWords() >= 4)) {
-									ADVBProg prog;
-
-									if (prog.Base64Decode(line.Word(3))) {
-										if (!reclist.FindUUID(prog)) {
-											std::map<AString,RECORDDETAILS>::iterator it;
-											
-											if ((it = details.find(AString(prog.GetFilename()).FilePart().Prefix())) != details.end()) {
-												prog.SetActualStop(prog.GetActualStart() + it->second.length);
-												prog.SetFileSize(it->second.filesize);
-												prog.SetRecordingComplete();
-												prog.ClearScheduled();
-												prog.SetRecorded();
-												config.printf("'%s' needs adding", prog.GetQuickDescription().str());
-												reclist.AddProg(prog, true, false, true);
-												nadded++;
-											}
-										}
-									}
-								}
-							}
-
-							fp.close();
-						}
-					
-						file = file->Next();
-					}
-
-					config.printf("Added %u programmes, count now %u\n", nadded, reclist.Count());
-					if (!reclist.WriteToFile(config.GetRecordedFile())) {
-						config.printf("Failed to write recorded list back!");
-					}
-				}
-			}
 			else if (stricmp(argv[i], "--force-failures") == 0) {
 				ADVBLock     lock("schedule");
 				ADVBProgList failureslist;
@@ -1065,6 +963,15 @@ int main(int argc, char *argv[])
 					}
 				}
 				else config.printf("Failed to read record failure list");
+			}
+			else if (stricmp(argv[i], "--test-notify") == 0) {
+				uint_t i;
+
+				for (i = 0; i < proglist.Count(); i++) {
+					ADVBProg& prog = proglist.GetProgWritable(i);
+					prog.SetNotify();
+					prog.OnRecordSuccess();
+				}
 			}
 			else if (stricmp(argv[i], "--change-user") == 0) {
 				ADVBProgList reslist;
