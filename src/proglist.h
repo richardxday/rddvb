@@ -112,7 +112,6 @@ public:
 	static bool WriteToJobList();
 
 	static bool CheckFile(const AString& filename, const AString& targetfilename, const FILE_INFO& fileinfo);
-	static void CreateListingsPlusRecordedFile();
 	static void CreateCombinedFile();
 	static void CheckRecordingFile();
 

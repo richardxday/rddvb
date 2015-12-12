@@ -732,16 +732,6 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 		success = true;
 	}
 
-	if (success && updatedependantfiles && (filename != config.GetListingsPlusRecordedFile())) {
-		FILE_INFO fileinfo;
-
-		if (!::GetFileInfo(config.GetListingsPlusRecordedFile(), &fileinfo) ||
-			CheckFile(filename, config.GetListingsFile(),		 fileinfo)) {
-			CreateListingsPlusRecordedFile();
-		}
-		//else config.printf("No need to update combined file");
-	}
-
 	if (success && updatedependantfiles && (filename != config.GetCombinedFile())) {
 		FILE_INFO fileinfo;
 
@@ -1605,8 +1595,6 @@ void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool
 		if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after adding a programme", filename.str());
 	}
 	else config.logit("Failed to read file '%s' for adding a programme", filename.str());
-
-	if (filename == config.GetRecordedFile()) ModifyFile(config.GetListingsPlusRecordedFile(), prog, true);
 }
 
 void ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
@@ -2259,27 +2247,6 @@ bool ADVBProgList::WriteToJobList()
 	}
 
 	return success;
-}
-
-void ADVBProgList::CreateListingsPlusRecordedFile()
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBProgList list, list2;
-
-	config.printf("Creating listings plus recorded file");
-
-	if (list.ReadFromBinaryFile(config.GetListingsFile()) &&
-		list2.ReadFromBinaryFile(config.GetRecordedFile())) {
-		config.printf("%u programmes in listings, %u programmes in recorded", list.Count(), list2.Count());
-
-		list.CreateHash();
-		list.ModifyProgs(list2, true);
-		
-		if (!list.WriteToFile(config.GetListingsPlusRecordedFile())) {
-			config.logit("Failed to write listings plus recorded file");
-		}
-	}
-	else config.logit("Failed to read listings and/or recorded file");
 }
 
 void ADVBProgList::CreateCombinedFile()

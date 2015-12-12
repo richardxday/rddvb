@@ -117,16 +117,15 @@ AString ADVBConfig::GetNamedFile(const AString& name) const
 {
 	AString filename;
 
-	if		(name == "listings")			 filename = GetListingsFile();
-	else if	(name == "listingsplusrecorded") filename = GetListingsPlusRecordedFile();
-	else if (name == "scheduled")  	  		 filename = GetScheduledFile();
-	else if (name == "recorded")   	  		 filename = GetRecordedFile();
-	else if (name == "requested")  	  		 filename = GetRequestedFile();
-	else if (name == "failures")   	  		 filename = GetRecordFailuresFile();
-	else if (name == "rejected")   	  		 filename = GetRejectedFile();
-	else if (name == "combined")   	  		 filename = GetCombinedFile();
-	else if (name == "processing") 	  		 filename = GetProcessingFile();
-	else						   	  		 filename = name;
+	if		(name == "listings")	filename = GetListingsFile();
+	else if (name == "scheduled")  	filename = GetScheduledFile();
+	else if (name == "recorded")   	filename = GetRecordedFile();
+	else if (name == "requested")  	filename = GetRequestedFile();
+	else if (name == "failures")   	filename = GetRecordFailuresFile();
+	else if (name == "rejected")   	filename = GetRejectedFile();
+	else if (name == "combined")   	filename = GetCombinedFile();
+	else if (name == "processing") 	filename = GetProcessingFile();
+	else						   	filename = name;
 	
 	return filename;
 }
