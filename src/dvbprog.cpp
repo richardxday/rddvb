@@ -2082,7 +2082,7 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 		!AStdFile::exists(logfile)) {
 		AString cmd;
 			
-		cmd.printf("projectx -ini %s/X.ini \"%s\"", getenv("HOME"), src.str());
+		cmd.printf("projectx -ini %s/X.ini \"%s\"", config.GetConfigDir().str(), src.str());
 
 		config.printf("Executing: '%s'", cmd.str());
 		if (system(cmd) != 0) {
@@ -2149,7 +2149,7 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 				SPLIT split = {aspect, t1, 0};
 				splits.push_back(split);
 
-				config.printf("%-6s @ %s for %s", split.aspect.str(), GenTime(split.start).str(), GenTime(split.length).str());
+				config.printf("%-6s @ %s for %s", split.aspect.str(), GenTime(split.start).str(), GenTime(totallen).str());
 
 				if (totallen > 0) lengths[aspect] += totallen - t1;
 				if (bestaspect.Empty() || (lengths[aspect] > lengths[bestaspect])) bestaspect = aspect;
