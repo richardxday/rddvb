@@ -120,6 +120,7 @@ int main(int argc, char *argv[])
 		printf("\t--update-recording-complete\tUpdate recording complete flag in every recorded programme\n");
 		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
 		printf("\t--force-failures\t\tAdd current list to recording failures (setting failed flag)\n");
+		printf("\t--post-process\t\tPost process files in current list (this WILL alter the record list data)\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
@@ -1001,6 +1002,16 @@ int main(int argc, char *argv[])
 				}
 				
 				printf("Changed %u programme%s", changed, (changed == 1) ? "" : "s");
+			}
+			else if (stricmp(argv[i], "--post-process") == 0) {
+				uint_t i;
+
+				for (i = 0; i < proglist.Count(); i++) {
+					ADVBProg& prog = proglist.GetProgWritable(i);
+
+					printf("Post processing '%s':\n", prog.GetQuickDescription().str());
+					prog.PostProcess();
+				}
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();

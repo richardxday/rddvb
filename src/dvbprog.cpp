@@ -1852,46 +1852,51 @@ AString ADVBProg::GeneratePostProcessCommand() const
 bool ADVBProg::PostProcess()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString postcmd;
-	bool postprocessed = false;
-	bool success       = ConvertVideoFile();
-	
-	if (success && (postcmd = GeneratePostProcessCommand()).Valid()) {
-		config.printf("Running post process command '%s'", postcmd.str());
+	AString srcfile = GetSourceFilename();
+	bool    success = false;
 
-		if (system("nice " + postcmd) == 0) postprocessed = true;
-		else {
-			config.printf("Command '%s' failed!", postcmd.str());
-			success = false;
-		}
-	}
+	if (AStdFile::exists(srcfile)) {
+		if (ConvertVideoFile()) {
+			AString postcmd;
+			bool postprocessed = false;
 	
-	if (success) {
-		ADVBLock     lock("schedule");
-		ADVBProgList recordedlist;
-		AString  	 filename = config.GetRecordedFile();
-		ADVBProg 	 *prog;
+			if ((postcmd = GeneratePostProcessCommand()).Valid()) {
+				config.printf("Running post process command '%s'", postcmd.str());
 
-		recordedlist.ReadFromFile(filename);
-		if ((prog = recordedlist.FindUUIDWritable(*this)) != NULL) {
-			FILE_INFO info;
+				if (system("nice " + postcmd) == 0) success = postprocessed = true;
+				else config.printf("Command '%s' failed!", postcmd.str());
+			}
+			else success = true;
+	
+			if (success) {
+				ADVBLock     lock("schedule");
+				ADVBProgList recordedlist;
+				AString  	 filename = config.GetRecordedFile();
+				ADVBProg 	 *prog;
+
+				recordedlist.ReadFromFile(filename);
+				if ((prog = recordedlist.FindUUIDWritable(*this)) != NULL) {
+					FILE_INFO info;
 				
-			if (::GetFileInfo(prog->GetFilename(), &info)) {
-				uint_t nsecs = (uint_t)(prog->GetActualLength() / 1000);
+					if (::GetFileInfo(prog->GetFilename(), &info)) {
+						uint_t nsecs = (uint_t)(prog->GetActualLength() / 1000);
 					
-				config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", prog->GetFilename(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024 * (uint64_t)nsecs)));
+						config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", prog->GetFilename(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024 * (uint64_t)nsecs)));
 
-				prog->SetFileSize(info.FileSize);
-				if (postprocessed) prog->SetPostProcessed();
-				recordedlist.WriteToFile(filename);
-			}
-			else {
-				config.printf("File '%s' DOESN'T exists!", prog->GetFilename());
-				success = false;
+						prog->SetFileSize(info.FileSize);
+						if (postprocessed) prog->SetPostProcessed();
+						recordedlist.WriteToFile(filename);
+					}
+					else {
+						config.printf("File '%s' DOESN'T exists!", prog->GetFilename());
+						success = false;
+					}
+				}
 			}
 		}
 	}
-
+	else config.printf("Source file '%s' DOESN'T exists!", srcfile.str());
+	
 	return success;
 }
 
@@ -1970,11 +1975,11 @@ AString ADVBProg::GetParentheses(const AString& line, int p)
 {
 	int p1, p2;
 	
-	if (((p1 = line.Pos("(", p)) >= 0) && ((p2 = line.LastPos(")", p1)) >= 0)) {
+	if (((p1 = line.Pos("(", p)) >= 0) && ((p2 = line.Pos(")", p1)) >= 0)) {
 		p1++;
 		return line.Mid(p1, p2 - p1);
 	}
-
+	
 	return "";
 }
 
@@ -2111,6 +2116,7 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 			
 				if ((p = line.PosNoCase(videomarker)) >= 0) {
 					aspect = GetParentheses(line, p);
+					config.printf("Found aspect '%s'", aspect.str());
 				}
 
 				if ((p = line.PosNoCase(formatmarker)) >= 0) {
@@ -2143,6 +2149,8 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 				SPLIT split = {aspect, t1, 0};
 				splits.push_back(split);
 
+				config.printf("%-6s @ %s for %s", split.aspect.str(), GenTime(split.start).str(), GenTime(split.length).str());
+
 				if (totallen > 0) lengths[aspect] += totallen - t1;
 				if (bestaspect.Empty() || (lengths[aspect] > lengths[bestaspect])) bestaspect = aspect;
 			}
@@ -2160,13 +2168,13 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 		}
 	}
 
-	if (success) {		
+	if (success) {
 		if (splits.size() == 1) {
 			AString cmd;
 
 			config.printf("No need to split file");
 
-			cmd.printf("%s -i \"%s.m2v\" -i \"%s.mp2\" -aspect %s %s %s -filter:v yadif -v warning -y \"%s\"", proccmd.str(), basename.str(), basename.str(), bestaspect.str(), audioargs.str(), videoargs.str(), dst.str());
+			cmd.printf("%s -i \"%s.m2v\" -i \"%s.mp2\" -aspect %s %s %s -v warning -y \"%s\"", proccmd.str(), basename.str(), basename.str(), bestaspect.str(), audioargs.str(), videoargs.str(), dst.str());
 
 			config.printf("Executing: '%s'", cmd.str());
 			if (system(cmd) != 0) {
@@ -2260,7 +2268,7 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 					if (success) {
 						AString cmd;
 
-						cmd.printf("%s -i \"%s\" -aspect %s %s %s -filter:v yadif -v warning -y \"%s\"", proccmd.str(), concatfile.str(), aspect.str(), audioargs.str(), videoargs.str(), outputfile.str());
+						cmd.printf("%s -i \"%s\" -aspect %s %s %s -v warning -y \"%s\"", proccmd.str(), concatfile.str(), aspect.str(), audioargs.str(), videoargs.str(), outputfile.str());
 						
 						config.printf("Executing: '%s'", cmd.str());
 						if (system(cmd) != 0) {
