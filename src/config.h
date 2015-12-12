@@ -60,7 +60,7 @@ public:
 
 	AString GetNamedFile(const AString& name) const;
 	
-	AString GetFileSuffix(const AString& user, const AString& def = "mpg") const {return GetUserConfigItem(user, "filesuffix", def);}
+	AString GetFileSuffix(const AString& user, const AString& def = "mp4") const {return GetUserConfigItem(user, "filesuffix", def);}
 	AString ReplaceTerms(const AString& user, const AString& str) const;
 	
 	uint_t  GetPhysicalDVBCard(uint_t n = 0) const;
