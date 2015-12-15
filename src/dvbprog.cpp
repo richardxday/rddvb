@@ -1666,6 +1666,9 @@ void ADVBProg::Record()
 					config.printf("Warning: '%s' is incomplete! (%ss missing from the start, %ss missing from the end)", GetTitleAndSubtitle().str(),
 								  NUMSTR("", MAX((sint64_t)(data->actstart - MIN(data->start, data->recstart)), 0) / 1000),
 								  NUMSTR("", MAX((sint64_t)(data->recstop  - data->actstop), 0) / 1000));
+
+					// force reschedule
+					reschedule = true;
 				}
 
 				if (::GetFileInfo(filename, &info)) {
@@ -1685,7 +1688,7 @@ void ADVBProg::Record()
 							ADVBProgList::AddToList(config.GetRecordedFile(), *this, false, false, true);
 						}
 						
-						if (IsOnceOnly()) {
+						if (IsOnceOnly() && IsRecordingComplete()) {
 							ADVBPatterns::DeletePattern(user, GetPattern());
 
 							reschedule = true;
