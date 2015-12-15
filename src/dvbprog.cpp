@@ -1668,7 +1668,7 @@ void ADVBProg::Record()
 								  NUMSTR("", MAX((sint64_t)(data->recstop  - data->actstop), 0) / 1000));
 
 					// force reschedule
-					reschedule = true;
+					failed = true;
 				}
 
 				if (::GetFileInfo(filename, &info)) {
@@ -1702,33 +1702,31 @@ void ADVBProg::Record()
 						ADVBProgList::RemoveFromList(config.GetProcessingFile(), *this);
 						ClearPostProcessing();
 
-						if (success) OnRecordSuccess();
-						else {
-							failed = true;
-							OnRecordFailure();
-						}
+						failed |= !success;
+						
+						if (!failed) OnRecordSuccess();
 					}
 					else if (!info.FileSize) {
 						config.printf("Record of '%s' ('%s') is zero length", GetTitleAndSubtitle().str(), filename.str());
 						remove(filename);
-						failed = reschedule = true;
-						OnRecordFailure();
+						failed = true;
 					}
 				}
 				else {
 					config.printf("Record of '%s' ('%s') doesn't exist", GetTitleAndSubtitle().str(), filename.str());
-					failed = reschedule = true;
-					OnRecordFailure();
+					failed = true;
 				} 
 			}
 			else {
 				config.printf("Unable to start record of '%s'", GetTitleAndSubtitle().str());
-				failed = reschedule = true;
-				OnRecordFailure();
+				failed = true;
 			} 
 		}
 
 		if (failed) {
+			OnRecordFailure();
+			reschedule = true;
+			
 			ClearScheduled();
 			SetRecordingFailed();
 			
