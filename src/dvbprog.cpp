@@ -1590,6 +1590,7 @@ void ADVBProg::Record()
 			int     res;
 
 			CreateDirectory(filename.PathPart());
+			CreateDirectory(AString(GetFilename()).PathPart());
 
 			if (fake) {
 				config.printf("**Fake** recording '%s' for %u seconds (%u minutes) to '%s'",
@@ -2078,6 +2079,8 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 	AString  audioargs = config.GetAudioArgs(GetUser());
 	bool     success   = true;
 
+	CreateDirectory(dst.PathPart());
+	
 	if (!AStdFile::exists(AString("%s.m2v").Arg(basename)) ||
 		!AStdFile::exists(AString("%s.mp2").Arg(basename)) ||
 		!AStdFile::exists(logfile)) {
