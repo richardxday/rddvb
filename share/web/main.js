@@ -423,7 +423,7 @@ function populateprogs(id)
 
 					if		(prog.flags.running)												 classname = ' class="recording"';
 					else if	(prog.flags.postprocessing)											 classname = ' class="processing"';
-					else if (prog.flags.recordingfailed)									     classname = ' class="failed"';
+					else if (prog.flags.failed)													 classname = ' class="failed"';
 					else if (prog.flags.scheduled || (typeof prog.scheduled != 'undefined')) 	 classname = ' class="scheduled"';
 					else if	(prog.flags.recorded  || (typeof prog.recorded  != 'undefined'))   	 classname = ' class="recorded"';
 					else if (prog.flags.rejected  || (typeof prog.rejected  != 'undefined'))	 classname = ' class="rejected"';
@@ -505,7 +505,7 @@ function populateprogs(id)
 							str += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
 						}
 
-						if (prog.flags.recordingfailed) {
+						if (prog.flags.failed) {
 							str += '<span style="font-size:150%;">-- Recording Failed --</span><br><br>';
 						}
 

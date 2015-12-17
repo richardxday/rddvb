@@ -187,6 +187,7 @@ public:
 	bool   RunPostProcess()       const {return GetFlag(Flag_postprocess);}
 	bool   IsPostProcessed()	  const {return GetFlag(Flag_postprocessed);}
 	void   SetPostProcessed()			{SetFlag(Flag_postprocessed);}
+	void   ClearPostProcessed()			{ClrFlag(Flag_postprocessed);}
 	bool   IsOnceOnly()			  const {return GetFlag(Flag_onceonly);}
 	void   SetOnceOnly()				{SetFlag(Flag_onceonly);}
 	bool   IsRejected()			  const {return GetFlag(Flag_rejected);}
@@ -203,10 +204,11 @@ public:
 	void   SetDVBCardSpecified()        {SetFlag(Flag_dvbcardspecified);}
 	bool   IsRecordingComplete()  const {return !GetFlag(Flag_incompleterecording);}
 	void   SetRecordingComplete();
-	bool   IgnoreRecording()			 const {return GetFlag(Flag_ignorerecording);}
+	bool   IgnoreRecording()	  const {return GetFlag(Flag_ignorerecording);}
 	void   SetIgnoreRecording(bool set = true) {SetFlag(Flag_ignorerecording, set);}
 	bool   HasRecordingFailed()   const {return GetFlag(Flag_recordingfailed);}
 	void   SetRecordingFailed()         {SetFlag(Flag_recordingfailed);}
+	void   ClearRecordingFailed()       {ClrFlag(Flag_recordingfailed);}
 	bool   IsRecording() 		  const {return GetFlag(Flag_recording);}
 	void   SetRecording()	   	  		{SetFlag(Flag_recording);}
 	void   ClearRecording()		   	  	{ClrFlag(Flag_recording);}

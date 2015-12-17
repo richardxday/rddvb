@@ -90,14 +90,14 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 
 	DEFINE_FIELD(assignedepisode, assignedepisode, uint16_t, "Assigned episode"),
 
-	DEFINE_FLAG_ASSIGN(usedesc,		  Flag_usedesc, "Use description"),
-	DEFINE_FLAG_ASSIGN(allowrepeats,  Flag_allowrepeats, "Allow repeats to be recorded"),
+	DEFINE_FLAG_ASSIGN(usedesc,		  Flag_usedesc,       "Use description"),
+	DEFINE_FLAG_ASSIGN(allowrepeats,  Flag_allowrepeats,  "Allow repeats to be recorded"),
 	DEFINE_FLAG_ASSIGN(fakerecording, Flag_fakerecording, "Do not record, just pretend to"),
-	DEFINE_FLAG_ASSIGN(urgent,		  Flag_urgent, "Record as soon as possible"),
-	DEFINE_FLAG_ASSIGN(markonly,	  Flag_markonly, "Do not record, just mark as recorded"),
-	DEFINE_FLAG_ASSIGN(postprocess,	  Flag_postprocess, "Post process programme"),
-	DEFINE_FLAG_ASSIGN(onceonly,	  Flag_onceonly, "Once recorded, delete the pattern"),
-	DEFINE_FLAG_ASSIGN(notify,		  Flag_notify, "Once recorded, run 'notifycmd'"),
+	DEFINE_FLAG_ASSIGN(urgent,		  Flag_urgent,   	  "Record as soon as possible"),
+	DEFINE_FLAG_ASSIGN(markonly,	  Flag_markonly, 	  "Do not record, just mark as recorded"),
+	DEFINE_FLAG_ASSIGN(postprocess,	  Flag_postprocess,   "Post process programme"),
+	DEFINE_FLAG_ASSIGN(onceonly,	  Flag_onceonly,      "Once recorded, delete the pattern"),
+	DEFINE_FLAG_ASSIGN(notify,		  Flag_notify,        "Once recorded, run 'notifycmd'"),
 
 	DEFINE_ASSIGN(pri,        pri,        	 	sint8_t, "Scheduling priority"),
 	DEFINE_ASSIGN(score,	  score,			sint16_t, "Record score"),
@@ -643,10 +643,14 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 
 	str.printf(",\"flags\":{");
 	str.printf("\"bitmap\":%lu", (ulong_t)data->flags);
-	uint_t i;
-	for (i = 0; i < NUMBEROF(fields); i++) {
-		if (RANGE(fields[i].type, ADVBPatterns::FieldType_flag, ADVBPatterns::FieldType_lastflag)) {
-			str.printf(",\"%s\":%u", fields[i].name, (uint_t)GetFlag(fields[i].type - ADVBPatterns::FieldType_flag));
+	{
+		uint_t i;
+		AHash hash(20);
+		for (i = 0; i < NUMBEROF(fields); i++) {
+			if (RANGE(fields[i].type, ADVBPatterns::FieldType_flag, ADVBPatterns::FieldType_lastflag) && !hash.Exists(fields[i].name)) {
+				hash.Insert(fields[i].name, 0);
+				str.printf(",\"%s\":%u", fields[i].name, (uint_t)GetFlag(fields[i].type - ADVBPatterns::FieldType_flag));
+			}
 		}
 	}
 	str.printf("}");
@@ -792,7 +796,6 @@ int ADVBProg::Compare(const ADVBProg *prog1, const ADVBProg *prog2, const bool *
 			 ((res = CompareNoCase(prog1->GetTitle(),   prog2->GetTitle()))   == 0)) {
 		res = CompareNoCase(prog1->GetSubtitle(), prog2->GetSubtitle());
 	}
-		
 
 	if (reverse && *reverse) res = -res;
 
@@ -1686,7 +1689,7 @@ void ADVBProg::Record()
 						{
 							FlagsSaver saver(this);
 							ClearRunning();
-							ADVBProgList::AddToList(config.GetRecordedFile(), *this, false, false, true);
+							ADVBProgList::AddToList(config.GetRecordedFile(), *this);
 						}
 						
 						if (IsOnceOnly() && IsRecordingComplete()) {
@@ -1696,16 +1699,14 @@ void ADVBProg::Record()
 						}
 
 						SetPostProcessing();
-						ADVBProgList::AddToList(config.GetProcessingFile(), *this, false, false, true);
+						ADVBProgList::AddToList(config.GetProcessingFile(), *this);
 
 						bool success = PostProcess();
 
 						ADVBProgList::RemoveFromList(config.GetProcessingFile(), *this);
 						ClearPostProcessing();
-
-						failed |= !success;
 						
-						if (!failed) OnRecordSuccess();
+						if (success) OnRecordSuccess();
 					}
 					else if (!info.FileSize) {
 						config.printf("Record of '%s' ('%s') is zero length", GetTitleAndSubtitle().str(), filename.str());
@@ -1887,6 +1888,7 @@ bool ADVBProg::PostProcess()
 
 						prog->SetFileSize(info.FileSize);
 						if (postprocessed) prog->SetPostProcessed();
+						else			   prog->ClearPostProcessed();
 						recordedlist.WriteToFile(filename);
 					}
 					else {

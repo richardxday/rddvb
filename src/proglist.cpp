@@ -2060,7 +2060,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 		else if (prog.IsMarkOnly()) {
 			config.logit("Adding '%s' to recorded list (Mark Only)", prog.GetQuickDescription().str());
 
-			recordedlist.AddProg(prog, false, false, true);
+			recordedlist.AddProg(prog, false);
 
 			DeleteProg(i);
 		}
@@ -2257,7 +2257,7 @@ void ADVBProgList::CreateCombinedFile()
 
 	config.printf("Creating combined listings");
 
-	if (list.ReadFromBinaryFile(config.GetRecordedFile(), false, false, true)) {
+	if (list.ReadFromBinaryFile(config.GetRecordedFile())) {
 		list.EnhanceListings();
 		if (!list.WriteToFile(config.GetCombinedFile())) {
 			config.logit("Failed to write combined listings file");
