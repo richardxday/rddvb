@@ -67,6 +67,8 @@ int main(int argc, char *argv[])
 		printf("\t--read-radio-listings\t\tDownload BBC radio listings\n");
 		printf("\t--jobs\t\t\t\tRead programmes from scheduled jobs\n");
 		printf("\t--write <file>\t\t\tWrite listings to file <file> (-w)\n");
+		printf("\t--sort\t\t\t\tSort list in chronological order\n");
+		printf("\t--sort-rev\t\t\tSort list in reverse-chronological order\n");
 		printf("\t--writetxt <file>\t\tWrite listings to file <file> in text format\n");
 		printf("\t--fix-pound <file>\t\tFix pound symbols in file\n");
 		printf("\t--update-dvb-channels\t\tUpdate DVB channel assignments\n");
@@ -120,7 +122,7 @@ int main(int argc, char *argv[])
 		printf("\t--update-recording-complete\tUpdate recording complete flag in every recorded programme\n");
 		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
 		printf("\t--force-failures\t\tAdd current list to recording failures (setting failed flag)\n");
-		printf("\t--post-process\t\tPost process files in current list (this WILL alter the record list data)\n");
+		printf("\t--post-process\t\t\tPost process files in current list (this WILL alter the record list data)\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
@@ -538,6 +540,11 @@ int main(int argc, char *argv[])
 					printf("Failed to write programme list to '%s'\n", filename.str());
 				}
 			}
+			else if ((strcmp(argv[i], "--sort") == 0) || (strcmp(argv[i], "-sort-rev") == 0)) {
+				bool reverse = (strcmp(argv[i], "-sort-rev") == 0);
+				proglist.Sort(reverse);
+				printf("%sorted list\n", reverse ? "Reverse s" : "S");
+			}
 			else if (strcmp(argv[i], "--schedule") == 0) {
 				ADVBProgList::SchedulePatterns();
 			}
@@ -575,6 +582,8 @@ int main(int argc, char *argv[])
 					config.printf("Adding %s to recorded...", prog.GetQuickDescription().str());
 					
 					prog.ClearScheduled();
+					prog.ClearRecording();
+					prog.ClearRunning();
 					prog.SetRecorded();
 					prog.SetActualStart(prog.GetRecordStart());
 					prog.SetActualStop(prog.GetRecordStop());
@@ -591,17 +600,7 @@ int main(int argc, char *argv[])
 					}
 					else config.printf("File '%s' *doesn't* exists", filename.str());
 
-					{
-						ADVBLock lock("schedule");
-						ADVBProgList recordedlist;
-						AString      filename = config.GetRecordedFile();
-						
-						recordedlist.ReadFromFile(filename);
-						recordedlist.AddProg(prog, true, false, true);
-						recordedlist.WriteToFile(filename);
-
-						config.printf("Recorded list now has %u programmes", recordedlist.Count());
-					}
+					ADVBProgList::AddToList(config.GetRecordedFile(), prog, true, true);
 				}
 				else config.printf("Failed to decode programme '%s'\n", progstr.str());
 			}
@@ -949,7 +948,7 @@ int main(int argc, char *argv[])
 					uint_t i;
 
 					for (i = 0; i < proglist.Count(); i++) {
-						failureslist.AddProg(proglist.GetProg(i), false, false, false);
+						failureslist.AddProg(proglist.GetProg(i), false);
 					}
 
 					for (i = 0; i < failureslist.Count(); i++) {
@@ -1022,6 +1021,6 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-
+	
 	return res;
 }
