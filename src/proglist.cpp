@@ -317,7 +317,7 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 						}
 						
 						if (AddProg(str, true, true) < 0) {
-							config.printf("Failed to add prog!\n");
+							config.printf("Failed to add prog!");
 							success = false;
 						}
 					}
@@ -360,8 +360,8 @@ bool ADVBProgList::ReadFromTextFile(const AString& filename)
 		while ((p1 = data.Pos("\n\n", p)) >= 0) {
 			str.Create(data.str() + p, p1 + 1 - p, false);
 
-			if (AddProg(str, notempty, notempty) < 0) {
-				config.printf("Failed to add prog\n");
+			if ((str.CountWords() > 0) && AddProg(str, notempty, notempty) < 0) {
+				config.printf("Failed to add prog");
 				success = false;
 			}
 
@@ -575,7 +575,7 @@ bool ADVBProgList::ReadFromBinaryFile(const AString& filename, bool sort, bool r
 		while (pos < size) {
 			if ((prog = fp).Valid()) {
 				if (AddProg(prog, sort, removeoverlaps, reverseorder) < 0) {
-					config.printf("Failed to add prog!\n");
+					config.printf("Failed to add prog!");
 				}
 			}
 
@@ -594,6 +594,7 @@ bool ADVBProgList::ReadFromBinaryFile(const AString& filename, bool sort, bool r
 
 bool ADVBProgList::ReadFromFile(const AString& filename)
 {
+	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
 	bool notempty = (Count() != 0);
 	bool success  = false;
@@ -606,10 +607,11 @@ bool ADVBProgList::ReadFromFile(const AString& filename)
 	else if (filename.Suffix() == "txt") {
 		success = ReadFromTextFile(filename);
 	}
-	else {
+	else if (filename.Suffix() == "dat") {
 		success = ReadFromBinaryFile(filename, notempty, notempty);
 	}
-
+	else config.printf("Unrecognized suffix '%s' for file '%s'", filename.Suffix().str(), filename.str());
+	
 	return success;
 }
 
@@ -716,22 +718,25 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 
 	config.printf("Writing '%s'", filename.str());
 
-	if (fp.open(filename, "wb")) {
-		uint_t i;
+	if		(filename.Suffix() == "txt") success = WriteToTextFile(filename);
+	else if (filename.Suffix() == "dat") {
+		if (fp.open(filename, "wb")) {
+			uint_t i;
 
-		for (i = 0; i < Count(); i++) {
-			const ADVBProg& prog = GetProg(i);
+			for (i = 0; i < Count(); i++) {
+				const ADVBProg& prog = GetProg(i);
 
-			prog.WriteToFile(fp);
+				prog.WriteToFile(fp);
 
-			if (HasQuit()) break;
+				if (HasQuit()) break;
+			}
+
+			fp.close();
+
+			success = true;
 		}
-
-		fp.close();
-
-		success = true;
 	}
-
+	
 	if (success && updatedependantfiles && (filename != config.GetCombinedFile())) {
 		FILE_INFO fileinfo;
 
@@ -1568,6 +1573,37 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 		
 		config.logit("Found %u programmes from %u patterns", reslist.Count(), patternlist.Count());
 
+		if (AStdFile::exists(config.GetExtraRecordFile())) {
+			AString data;
+
+			if (data.ReadFromFile(config.GetExtraRecordFile())) {
+				AString str;
+				uint_t n = 0;
+				int p = 0, p1;
+				
+				while ((p1 = data.Pos("\n\n", p)) >= 0) {
+					ADVBProg prog;
+					
+					str.Create(data.str() + p, p1 + 1 - p, false);
+
+					if (str.CountWords() > 0) {
+						prog = str;
+						if (prog.Valid()) {
+							if (prog.GetStopDT() > starttime) {
+								if (reslist.AddProg(prog, true) >= 0) n++;
+								else config.printf("Failed to add extra prog");
+							}
+						}
+						else config.printf("Extra prog is invalid!");
+					}
+					
+					p = p1 + 1;
+				}
+
+				if (n) config.printf("Added %u extra programmes to record", n);
+			}
+		}
+		
 		res = reslist.Schedule(starttime);
 
 		if (commit) WriteToJobList();

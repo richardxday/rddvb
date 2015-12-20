@@ -278,8 +278,6 @@ public:
 
 	static bool FilePatternExists(const AString& filename);
 
-	static void Record(const AString& channel, uint_t mins = 0);
-
 	static bool debugsameprogramme;
 
 protected:
@@ -350,6 +348,7 @@ protected:
 
 	static void SwapBytes(DVBPROG *prog);
 
+	uint64_t GetDate(const AString& str, const AString& fieldname) const;
 	AString ValidFilename(const AString& str) const;
 
 	const char *GetString(uint16_t offset)   const {return data->strdata + offset;}
@@ -367,14 +366,16 @@ protected:
 	static void StaticInit();
 	void Init();
 
-	AString GetRecordPIDS(bool update = true) const;
+	bool    GetRecordPIDS(AString& pids, bool update = true) const;
 	AString GenerateRecordCommand(uint_t nsecs, const AString& pids) const;
 	AString GeneratePostProcessCommand() const;
 
 	AString GetSourceFilename() const;
-	AString GetAdditionalLogFile() const;
 	AString ReplaceTerms(const AString& str) const;
 
+	AString GetLogFile() const;
+	bool    RunCommand(const AString& cmd) const;
+	
 	static uint64_t CalcTime(const char *str);
 	static AString GenTime(uint64_t t, const char *format = "%02u:%02u:%02u.%03u");
 	static AString GetParentheses(const AString& line, int p = 0);

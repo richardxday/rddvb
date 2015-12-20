@@ -355,19 +355,30 @@ void ADVBProg::SetRecordingComplete()
 	SetFlag(Flag_incompleterecording, !((data->actstart <= (data->start + maxreclag)) && (data->actstop >= MIN(data->stop, data->recstop - 1000))));
 }
 
+uint64_t ADVBProg::GetDate(const AString& str, const AString& fieldname) const
+{
+	AString date = GetField(str, fieldname);
+
+	if (date.Empty())   return 0;
+	if (date[0] == '$') return (uint64_t)date;
+
+	return (uint64_t)ADateTime(date).LocalToUTC();
+}
+
 ADVBProg& ADVBProg::operator = (const AString& str)
 {
 	static const AString tsod = "tsod.plus-1.";
 	const ADVBConfig& config = ADVBConfig::Get();
-
+	AString _str;
+	
 	Delete();
 
-	data->start           = (uint64_t)GetField(str, "start");
-	data->stop            = (uint64_t)GetField(str, "stop");
-	data->recstart        = (uint64_t)GetField(str, "recstart");
-	data->recstop         = (uint64_t)GetField(str, "recstop");
-	data->actstart        = (uint64_t)GetField(str, "actstart");
-	data->actstop         = (uint64_t)GetField(str, "actstop");
+	data->start           = GetDate(str, "start");
+	data->stop            = GetDate(str, "stop");
+	data->recstart        = GetDate(str, "recstart");
+	data->recstop         = GetDate(str, "recstop");
+	data->actstart        = GetDate(str, "actstart");
+	data->actstop         = GetDate(str, "actstop");
 	if (FieldExists(str, "episodenum")) {
 		data->episode     = GetEpisode(GetField(str, "episodenum"));
 	}
@@ -403,7 +414,9 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	else SetString(&data->strings.basechannel, channel);
 
 	SetString(&data->strings.channelid, GetField(str, "channelid"));
-	SetString(&data->strings.dvbchannel, GetField(str, "dvbchannel"));
+	AString dvbchannel = GetField(str, "dvbchannel");
+	if (dvbchannel.Empty()) dvbchannel = ADVBChannelList::Get().LookupDVBChannel(channel);
+	SetString(&data->strings.dvbchannel, dvbchannel);
 	SetString(&data->strings.desc, GetField(str, "desc"));
 	SetString(&data->strings.category, GetField(str, "category"));
 	SetString(&data->strings.director, GetField(str, "director"));
@@ -1259,7 +1272,7 @@ void ADVBProg::GenerateRecordData(uint64_t recstarttime)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString filename;
-
+	
 	if (!data->recstart) {
 		data->recstart = GetStart() - (uint64_t)data->prehandle  * 60000ULL;
 		data->recstart = MAX(data->recstart, recstarttime);
@@ -1470,20 +1483,14 @@ int ADVBProg::CompareScore(const ADVBProg& prog1, const ADVBProg& prog2)
 	return res;
 }
 
-AString ADVBProg::GetAdditionalLogFile() const
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	return config.GetLogDir().CatPath(AString(GetFilename()).FilePart().Prefix() + ".txt");
-}
-
-AString ADVBProg::GetRecordPIDS(bool update) const
+bool ADVBProg::GetRecordPIDS(AString& pids, bool update) const
 {
 	ADVBChannelList& channellist = ADVBChannelList::Get();
 	AString dvbchannel = GetDVBChannel();
 
 	if (dvbchannel.Empty()) dvbchannel = GetChannel();
 	
-	return channellist.GetPIDList(dvbchannel, update);
+	return channellist.GetPIDList(dvbchannel, pids, update);
 }
 
 AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
@@ -1523,11 +1530,11 @@ void ADVBProg::Record()
 		bool	failed     = false;
 		
 		if (record && !fake) {
-			pids = GetRecordPIDS();
+			GetRecordPIDS(pids);
 						
 			if (pids.CountWords() < 2) {
 				config.printf("No pids for '%s'", GetQuickDescription().str());
-				reschedule = true;
+				failed = true;
 				record = false;
 			}
 		}
@@ -1724,6 +1731,7 @@ void ADVBProg::Record()
 				failed = true;
 			} 
 		}
+		else config.printf("NOT recording '%s'", GetTitleAndSubtitle().str());
 
 		if (failed) {
 			OnRecordFailure();
@@ -1760,7 +1768,6 @@ AString ADVBProg::GetSourceFilename() const
 
 AString ADVBProg::ReplaceTerms(const AString& str) const
 {
-	const ADVBConfig& config = ADVBConfig::Get();
 	AString date  = GetStartDT().UTCToLocal().DateFormat("%Y-%M-%D");
 	AString times = GetStartDT().UTCToLocal().DateFormat("%h%m") + "-" + GetStopDT().UTCToLocal().DateFormat("%h%m");
 
@@ -1776,8 +1783,7 @@ AString ADVBProg::ReplaceTerms(const AString& str) const
 			.SearchAndReplace("{user}", GetUser())
 			.SearchAndReplace("{srcfile}", GetSourceFilename())
 			.SearchAndReplace("{filename}", GetFilename())
-			.SearchAndReplace("{logfile}", config.GetLogFile())
-			.SearchAndReplace("{addlogfile}", GetAdditionalLogFile())
+			.SearchAndReplace("{logfile}", GetLogFile())
 			.SearchAndReplace("{link}", GetLinkToFile()));
 }
 
@@ -1796,22 +1802,14 @@ bool ADVBProg::OnRecordSuccess() const
 
 	if ((cmd = config.GetUserConfigItem(user, "recordsuccesscmd")).Valid()) {
 		cmd = ReplaceTerms(cmd);
-		
-		//config.printf("Running '%s' after successful record", cmd.str());
-		if (system("nice " + cmd) != 0) {
-			config.printf("Command '%s' failed!", cmd.str());
-			success = false;
-		}
+
+		success = RunCommand("nice " + cmd);
 	}
 
 	if (NotifySet() && (cmd = config.GetUserConfigItem(user, "notifycmd")).Valid()) {
 		cmd = ReplaceTerms(cmd);
 		
-		//config.printf("Running '%s' after successful record", cmd.str());
-		if (system("nice " + cmd) != 0) {
-			config.printf("Command '%s' failed!", cmd.str());
-			success = false;
-		}
+		success = RunCommand("nice " + cmd);
 	}
 
 	return success;
@@ -1826,11 +1824,7 @@ bool ADVBProg::OnRecordFailure() const
 	if ((cmd = config.GetUserConfigItem(user, "recordfailurecmd")).Valid()) {
 		cmd = ReplaceTerms(cmd);
 		
-		//config.printf("Running '%s' after failed record", cmd.str());
-		if (system("nice " + cmd) != 0) {
-			config.printf("Command '%s' failed!", cmd.str());
-			success = false;
-		}
+		success = RunCommand("nice " + cmd);
 	}
 
 	return success;
@@ -1852,6 +1846,35 @@ AString ADVBProg::GeneratePostProcessCommand() const
 	return postcmd;
 }
 
+AString ADVBProg::GetLogFile() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	return config.GetLogDir().CatPath(AString(GetFilename()).FilePart().Prefix() + ".txt");
+}
+
+bool ADVBProg::RunCommand(const AString& cmd) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString   logfile = GetLogFile();
+	ADateTime starttime, stoptime;
+	bool success = false;
+
+	if		(GetActualStart()) starttime = GetActualStartDT().UTCToLocal();
+	else if (GetRecordStart()) starttime = GetRecordStartDT().UTCToLocal();
+	else if (GetStart())       starttime = GetStartDT().UTCToLocal();
+
+	config.ExtractLogData(starttime, stoptime, logfile);
+
+	config.printf("Running command '%s'", cmd.str());
+
+	if (system(cmd) == 0) success = true;
+	else config.printf("Command '%s' failed!", cmd.str());
+
+	remove(logfile);
+	
+	return success;
+}
+
 bool ADVBProg::PostProcess()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -1866,8 +1889,7 @@ bool ADVBProg::PostProcess()
 			if ((postcmd = GeneratePostProcessCommand()).Valid()) {
 				config.printf("Running post process command '%s'", postcmd.str());
 
-				if (system("nice " + postcmd) == 0) success = postprocessed = true;
-				else config.printf("Command '%s' failed!", postcmd.str());
+				success = postprocessed = RunCommand("nice " + postcmd);
 			}
 			else success = true;
 	
@@ -1902,47 +1924,6 @@ bool ADVBProg::PostProcess()
 	else config.printf("Source file '%s' DOESN'T exists!", srcfile.str());
 	
 	return success;
-}
-
-void ADVBProg::Record(const AString& channel, uint_t mins)
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBChannelList& channellist = ADVBChannelList::Get();
-	AString pids;
-
-	config.printf("------------------------------------------------------------------------------------------------------------------------");
-	config.printf("Starting record on channel '%s'", channel.str());
-
-	pids = channellist.GetPIDList(channel, true);
-
-	if (pids.CountWords() >= 2) {
-		AString filename;
-		AString cmd;
-
-		config.printf("Recording freq %sHz pids %s", pids.Word(0).str(), pids.Words(1).str());
-
-		filename.printf("dvbrec.%s.mpg", ADateTime().DateFormat("%Y-%M-%D.%h-%m-%s").str());
-
-		cmd.printf("dvbstream");
-
-		if (mins) cmd.printf(" -n %u", mins * 60);
-
-		cmd.printf(" -f %s -o >\"%s\" 2>>%s",
-				   pids.str(),
-				   filename.str(),
-				   config.GetLogFile(ADateTime().GetDays()).str());
-
-		int res;
-		if ((res = system(cmd)) == 0) {
-			config.printf("Recording finished");
-		}
-		else config.logit("Recording failed, return code %d", res);
-	}
-	else {
-		config.printf("No pids for channel '%s'", channel.str());
-	}
-
-	config.printf("------------------------------------------------------------------------------------------------------------------------");
 }
 
 uint64_t ADVBProg::CalcTime(const char *str)
