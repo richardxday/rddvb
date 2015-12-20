@@ -154,7 +154,7 @@ ADVBChannelList::CHANNEL *ADVBChannelList::GetChannel(const AString& name, bool 
 	return chan;
 }
 
-void ADVBChannelList::Update(uint32_t freq, bool verbose)
+bool ADVBChannelList::Update(uint32_t freq, bool verbose)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
@@ -166,7 +166,7 @@ void ADVBChannelList::Update(uint32_t freq, bool verbose)
 
 	sifilename = config.GetTempFile("pids", ".txt");
 
-	cmd.printf("dvbtune -c %u -f %u -i >%s 2>>%s", config.GetPhysicalDVBCard(0), (uint_t)freq, sifilename.str(), config.GetLogFile(ADateTime().GetDays()).str());
+	cmd.printf("timeout 10s dvbtune -c %u -f %u -i >%s 2>>%s", config.GetPhysicalDVBCard(0), (uint_t)freq, sifilename.str(), config.GetLogFile(ADateTime().GetDays()).str());
 
 	if (system(cmd) == 0) {
 		if (fp.open(sifilename)) {
@@ -241,15 +241,20 @@ void ADVBChannelList::Update(uint32_t freq, bool verbose)
 	}
 
 	remove(sifilename);
+
+	return success;
 }
 
-void ADVBChannelList::Update(const AString& channel, bool verbose)
+bool ADVBChannelList::Update(const AString& channel, bool verbose)
 {
 	const CHANNEL *chan;
-
+	bool success = false;
+	
 	if ((chan = GetChannel(channel)) != NULL) {
-		Update(chan->freq, verbose);
+		success = Update(chan->freq, verbose);
 	}
+
+	return success;
 }
 
 int ADVBChannelList::__CompareItems(uptr_t a, uptr_t b, void *context)
@@ -315,14 +320,14 @@ void ADVBChannelList::UpdateAll(bool verbose)
 	}
 }
 
-AString ADVBChannelList::GetPIDList(const AString& channel, bool update)
+bool ADVBChannelList::GetPIDList(const AString& channel, AString& pids, bool update)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	const CHANNEL *chan;
-	AString pids;
 	AString str;
-
-	if (update) Update(channel);
+	bool    success = true;
+	
+	if (update) success &= Update(channel);
 
 	if ((chan = GetChannel(channel)) != NULL) {
 		pids.printf("%u", chan->freq);
@@ -341,10 +346,15 @@ AString ADVBChannelList::GetPIDList(const AString& channel, bool update)
 		if ((str = config.GetExtraDVBPIDs()).Valid()) {
 			pids.printf(" %s", str.str());
 		}
-	}
-	//else config.printf("Failed to find channel '%s'", channel.str());
 
-	return pids.Words(0, 9);
+		pids = pids.Words(0, 9);
+	}
+	else {
+		config.printf("Failed to find channel '%s'", channel.str());
+		success = false;
+	}
+	
+	return success;
 }
 
 AString ADVBChannelList::LookupDVBChannel(const AString& channel) const

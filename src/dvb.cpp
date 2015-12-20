@@ -100,7 +100,6 @@ int main(int argc, char *argv[])
 		printf("\t--schedule-list\t\t\tSchedule current list of programmes (-S)\n");
 		printf("\t--record <prog>\t\t\tRecord programme <prog> (Base64 encoded)\n");
 		printf("\t--add-recorded <prog>\t\tAdd recorded programme <prog> to recorded list (Base64 encoded)\n");
-		printf("\t--record-now <channel>[:<mins>]\tRecord channel <channel>\n");
 		printf("\t--record-list\t\t\tSet the current list to record, ensuring they don't clash with the current set of jobs\n");
 		printf("\t--pids <channel>\t\tFind PIDs (all streams) associated with channel <channel>\n");
 		printf("\t--scan <freq>[,<freq>...]\tScan frequencies <freq>MHz for DVB channels\n");
@@ -123,6 +122,7 @@ int main(int argc, char *argv[])
 		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
 		printf("\t--force-failures\t\tAdd current list to recording failures (setting failed flag)\n");
 		printf("\t--post-process\t\t\tPost process files in current list (this WILL alter the record list data)\n");
+		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
@@ -604,27 +604,15 @@ int main(int argc, char *argv[])
 				}
 				else config.printf("Failed to decode programme '%s'\n", progstr.str());
 			}
-			else if (strcmp(argv[i], "--record-now") == 0) {
-				AString arg = argv[++i];
-				AString channel;
-				uint_t mins = 0;
-				int p;
-
-				if ((p = arg.Pos(":")) >= 0) {
-					channel = arg.Left(p);
-					mins    = (uint_t)arg.Mid(p + 1);
-				}
-				else channel = arg;
-
-				ADVBProg::Record(channel, mins);
-			}
 			else if (strcmp(argv[i], "--record-list") == 0) {
 				proglist.SimpleSchedule();
 			}
 			else if (strcmp(argv[i], "--pids") == 0) {
 				ADVBChannelList& list = ADVBChannelList::Get();
 				AString channel = argv[++i];
-				AString pids    = list.GetPIDList(channel, true);
+				AString pids;
+
+				list.GetPIDList(channel, pids, true);
 
 				printf("pids for '%s': %s\n", channel.str(), pids.str());
 			}
@@ -655,9 +643,6 @@ int main(int argc, char *argv[])
 			}
 			else if (strcmp(argv[i], "--cards") == 0) {
 				findcards();
-			}
-			else if (strcmp(argv[i], "--log") == 0) {
-				ADVBConfig::GetWriteable().SetAdditionalLogFile(argv[++i]);
 			}
 			else if (strcmp(argv[i], "--change-filename") == 0) {
 				ADVBLock lock("schedule");
@@ -1010,6 +995,16 @@ int main(int argc, char *argv[])
 
 					printf("Post processing '%s':\n", prog.GetQuickDescription().str());
 					prog.PostProcess();
+				}
+			}
+			else if (stricmp(argv[i], "--record-success") == 0) {
+				uint_t i;
+
+				for (i = 0; i < proglist.Count(); i++) {
+					ADVBProg& prog = proglist.GetProgWritable(i);
+
+					printf("Running record success for '%s'\n", prog.GetQuickDescription().str());
+					prog.OnRecordSuccess();
 				}
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {

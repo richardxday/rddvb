@@ -50,6 +50,7 @@ public:
 	AString GetProcessingFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("processingfile", "processing.dat"));}
 	AString GetRecordFailuresFile()			 const {return CatPath(GetDataDir(), GetConfigItem("recordfailuresfile", "recordfailures.dat"));}
 	AString GetCombinedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("combinedfile", "combined.dat"));}
+	AString GetExtraRecordFile()			 const {return CatPath(GetDataDir(), GetConfigItem("extrarecordfile", "extrarecordprogrammes.txt"));}
 	AString GetDVBCardsFile()                const {return CatPath(GetDataDir(), GetConfigItem("dvbcardsfile", "dvbcards.txt"));}
 	AString GetLogFile(uint32_t day)         const {return CatPath(GetLogDir(), "dvblog-" + ADateTime(day, 0UL).DateFormat("%Y-%M-%D") + ".txt");}
 	AString GetRecordLogBase()				 const {return "dvbrecordlog-";}
@@ -91,19 +92,16 @@ public:
 	void printf(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 	void vlogit(const char *fmt, va_list ap, bool show = false) const;
 
-	void addlogit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
-
 	void writetorecordlog(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 
-	void SetAdditionalLogFile(const AString& filename, bool timestamps = true) {additionallogfilename = filename; additionallogneedstimestamps = timestamps;}
-	const AString& GetAdditionalLogFile() const {return additionallogfilename;}
-
-	AString GetLogFile() const {return additionallogfilename.Valid() ? additionallogfilename : GetLogFile(ADateTime().GetDays());}
+	AString GetLogFile() const {return GetLogFile(ADateTime().GetDays());}
 
 	const AString& GetFilename() const {return config.GetFilename();}
 
 	const AString& GetDefaultInterRecTime() const;
 
+	bool ExtractLogData(const ADateTime& start, const ADateTime& end, const AString& filename) const;
+	
 protected:
 	void MapDVBCards();
 
@@ -113,11 +111,9 @@ private:
 
 protected:
 	ASettingsHandler config;
-	AString          additionallogfilename;
 	AHash			 defaults;
 	ADataList		 dvbcards;
 	bool			 webresponse;
-	bool			 additionallogneedstimestamps;
 };
 
 #endif

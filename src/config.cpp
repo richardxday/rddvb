@@ -16,8 +16,7 @@
 
 ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false),
 						   defaults(20, &AString::DeleteString),
-						   webresponse(false),
-						   additionallogneedstimestamps(false)
+						   webresponse(false)
 {
 	static const struct {
 		const char *name;
@@ -38,8 +37,6 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		defaults.Insert(__defaults[i].name, (uptr_t)new AString(__defaults[i].value));
 	}
 	
-	additionallogfilename = GetConfigItem("additionallogfile");
-
 	CreateDirectory(GetConfigDir());
 	CreateDirectory(GetDataDir());
 	CreateDirectory(GetLogDir());
@@ -117,15 +114,16 @@ AString ADVBConfig::GetNamedFile(const AString& name) const
 {
 	AString filename;
 
-	if		(name == "listings")	filename = GetListingsFile();
-	else if (name == "scheduled")  	filename = GetScheduledFile();
-	else if (name == "recorded")   	filename = GetRecordedFile();
-	else if (name == "requested")  	filename = GetRequestedFile();
-	else if (name == "failures")   	filename = GetRecordFailuresFile();
-	else if (name == "rejected")   	filename = GetRejectedFile();
-	else if (name == "combined")   	filename = GetCombinedFile();
-	else if (name == "processing") 	filename = GetProcessingFile();
-	else						   	filename = name;
+	if		(name == "listings")			  filename = GetListingsFile();
+	else if (name == "scheduled")  			  filename = GetScheduledFile();
+	else if (name == "recorded")   			  filename = GetRecordedFile();
+	else if (name == "requested")  			  filename = GetRequestedFile();
+	else if (name == "failures")   			  filename = GetRecordFailuresFile();
+	else if (name == "rejected")   			  filename = GetRejectedFile();
+	else if (name == "combined")   			  filename = GetCombinedFile();
+	else if (name == "processing") 			  filename = GetProcessingFile();
+	else if (name == "extrarecordprogrammes") filename = GetExtraRecordFile();
+	else									  filename = name;
 	
 	return filename;
 }
@@ -234,35 +232,8 @@ void ADVBConfig::vlogit(const char *fmt, va_list ap, bool show) const
 		fp.close();
 	}
 
-	if (additionallogfilename.Valid() && fp.open(additionallogfilename, "a")) {
-		if (additionallogneedstimestamps) {
-			fp.printf("%s: ", dt.DateFormat("%Y-%M-%D %h:%m:%s.%S").str());
-		}
-		fp.printf("%s\n", str.str());
-		fp.close();
-	}
-
 	if (show && !webresponse) {
 		Stdout->printf("%s\n", str.str());
-	}
-}
-
-void ADVBConfig::addlogit(const char *fmt, ...) const
-{
-	AStdFile fp;
-
-	if (additionallogfilename.Valid() && fp.open(additionallogfilename, "a")) {
-		va_list ap;
-
-		if (additionallogneedstimestamps) {
-			fp.printf("%s: ", ADateTime().DateFormat("%Y-%M-%D %h:%m:%s.%S").str());
-		}
-
-		va_start(ap, fmt);
-		fp.vprintf(fmt, ap);
-		va_end(ap);
-
-		fp.close();
 	}
 }
 
@@ -341,3 +312,41 @@ void ADVBConfig::ListUsers(AList& list) const
 
 	list.Sort(&AString::AlphaCompareCase);
 }
+
+bool ADVBConfig::ExtractLogData(const ADateTime& start, const ADateTime& end, const AString& filename) const
+{
+	AStdFile dst;
+	bool success = false;
+	
+	if (dst.open(filename, "w")) {
+		ADateTime dt;
+		uint32_t day1 = start.GetDays();
+		uint32_t day2 = end.GetDays();
+		uint32_t day;
+		bool     valid = false;
+		
+		for (day = day1; day <= day2; day++) {
+			AStdFile src;
+
+			if (src.open(GetLogFile(day))) {
+				AString line;
+
+				while (line.ReadLn(src) >= 0) {
+					valid |= dt.FromTimeStamp(line.Words(0, 2));
+
+					if (valid) {
+						if ((dt >= start) && (dt <= end)) dst.printf("%s\n", line.str());
+						if (dt >= end) break;
+					}
+				}
+				
+				src.close();
+			}
+		}
+		
+		dst.close();
+	}
+
+	return success;
+}
+
