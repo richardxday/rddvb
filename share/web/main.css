@@ -147,11 +147,11 @@ table.proglist tr.rejected:hover
 }
 table.proglist tr.failed
 {
-	background-color:#f44;
+	background-color:#f66;
 }
 table.proglist tr.failed:hover
 {
-	background-color:#e33;
+	background-color:#e55;
 }
 table.proglist tr.processing
 {
