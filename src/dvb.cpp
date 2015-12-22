@@ -994,7 +994,7 @@ int main(int argc, char *argv[])
 					ADVBProg& prog = proglist.GetProgWritable(i);
 
 					printf("Post processing '%s':\n", prog.GetQuickDescription().str());
-					prog.PostProcess();
+					prog.PostProcess(true);
 				}
 			}
 			else if (stricmp(argv[i], "--record-success") == 0) {

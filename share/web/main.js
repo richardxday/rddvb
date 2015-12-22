@@ -367,6 +367,7 @@ function adddownloadlink(prog)
 	var str = '';
 	
 	str += '<a href="' + prog.path + '" download title="Download ' + prog.title + ' to computer">Download</a>';
+	str += ' or <a href="video.php?prog=' + encodeURIComponent(prog.base64) + '" title="Watch ' + prog.title + ' in browser" target=_blank>Watch</a>';
 	if ((typeof prog.subpaths != 'undefined') && (prog.subpaths.length > 0)) {
 		var i;
 
@@ -421,8 +422,8 @@ function populateprogs(id)
 					else if (typeof prog.scheduled != 'undefined') prog1 = prog.scheduled;
 					else if (typeof prog.rejected  != 'undefined') prog1 = prog.rejected;
 
-					if		(prog.flags.running)												 classname = ' class="recording"';
-					else if	(prog.flags.postprocessing)											 classname = ' class="processing"';
+					if		(prog.flags.postprocessing)											 classname = ' class="processing"';
+					else if	(prog.flags.running)												 classname = ' class="recording"';
 					else if (prog.flags.failed)													 classname = ' class="failed"';
 					else if (prog.flags.scheduled || (typeof prog.scheduled != 'undefined')) 	 classname = ' class="scheduled"';
 					else if	(prog.flags.recorded  || (typeof prog.recorded  != 'undefined'))   	 classname = ' class="recorded"';
@@ -493,20 +494,17 @@ function populateprogs(id)
 
 						str += '<tr' + classname + '><td class="desc" colspan=10>';
 
-						if (prog.flags.running) {
-							str += '<span style="font-size:150%;">-- Recording Now --</span><br><br>';
-						}
-						
 						if (prog.flags.postprocessing) {
 							str += '<span style="font-size:150%;">-- Post Processing Now --</span><br><br>';
 						}
-
-						if (prog.flags.rejected) {
-							str += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
+						else if (prog.flags.running) {
+							str += '<span style="font-size:150%;">-- Recording Now --</span><br><br>';
 						}
-
-						if (prog.flags.failed) {
+						else if (prog.flags.failed) {
 							str += '<span style="font-size:150%;">-- Recording Failed --</span><br><br>';
+						}
+						else if (prog.flags.rejected) {
+							str += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
 						}
 
 						if ((progvb > 1) && (typeof prog.desc != 'undefined')) {
