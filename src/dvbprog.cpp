@@ -1875,14 +1875,14 @@ bool ADVBProg::RunCommand(const AString& cmd) const
 	return success;
 }
 
-bool ADVBProg::PostProcess()
+bool ADVBProg::PostProcess(bool verbose)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString srcfile = GetSourceFilename();
 	bool    success = false;
 
 	if (AStdFile::exists(srcfile)) {
-		if (ConvertVideoFile()) {
+		if (ConvertVideoFile(verbose)) {
 			AString postcmd;
 			bool postprocessed = false;
 	
@@ -2048,7 +2048,7 @@ void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const st
 	else config.printf("'subs' directory doesn't exist");
 }
 
-bool ADVBProg::ConvertVideoFile(bool cleanup)
+bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
@@ -2057,9 +2057,9 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 	AString  basename  = src.Prefix();
 	AString  remuxsrc  = basename + "_Remuxed.mpg";
 	AString  logfile   = basename + "_log.txt";
-	AString  proccmd   = config.GetProcessCommand(GetUser());
-	AString  videoargs = config.GetVideoArgs(GetUser());
-	AString  audioargs = config.GetAudioArgs(GetUser());
+	AString  proccmd   = config.GetProcessCommand(GetUser(), GetCategory());
+	AString  videoargs = config.GetVideoArgs(GetUser(), GetCategory());
+	AString  audioargs = config.GetAudioArgs(GetUser(), GetCategory());
 	bool     success   = true;
 
 	CreateDirectory(dst.PathPart());
@@ -2069,7 +2069,7 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 		!AStdFile::exists(logfile)) {
 		AString cmd;
 			
-		cmd.printf("projectx -ini %s/X.ini \"%s\"", config.GetConfigDir().str(), src.str());
+		cmd.printf("nice projectx -ini %s/X.ini \"%s\"", config.GetConfigDir().str(), src.str());
 
 		config.printf("Executing: '%s'", cmd.str());
 		if (system(cmd) != 0) {
@@ -2161,7 +2161,15 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 
 			config.printf("No need to split file");
 
-			cmd.printf("%s -i \"%s.m2v\" -i \"%s.mp2\" -aspect %s %s %s -v warning -y \"%s\"", proccmd.str(), basename.str(), basename.str(), bestaspect.str(), audioargs.str(), videoargs.str(), dst.str());
+			cmd.printf("nice %s -i \"%s.m2v\" -i \"%s.mp2\" -v %s -aspect %s %s %s -y \"%s\"",
+					   proccmd.str(),
+					   basename.str(),
+					   basename.str(),
+					   config.GetProcessLogLevel(GetUser(), verbose).str(),
+					   bestaspect.str(),
+					   audioargs.str(),
+					   videoargs.str(),
+					   dst.str());
 
 			config.printf("Executing: '%s'", cmd.str());
 			if (system(cmd) != 0) {
@@ -2177,7 +2185,7 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 			if (!AStdFile::exists(remuxsrc)) {
 				AString cmd;
 			
-				cmd.printf("%s -fflags +genpts -i \"%s.m2v\" -i \"%s.mp2\" -acodec copy -vcodec copy -v warning -f mpegts \"%s\"", proccmd.str(), basename.str(), basename.str(), remuxsrc.str());
+				cmd.printf("nice %s -fflags +genpts -i \"%s.m2v\" -i \"%s.mp2\" -acodec copy -vcodec copy -v warning -f mpegts \"%s\"", proccmd.str(), basename.str(), basename.str(), remuxsrc.str());
 
 				config.printf("Executing: '%s'", cmd.str());
 				if (system(cmd) != 0) {
@@ -2203,7 +2211,7 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 						outfile.printf("%s-%s-%u.mpg", basename.str(), aspect.SearchAndReplace(":", "_").str(), i);
 
 						if (!AStdFile::exists(outfile)) {
-							cmd.printf("%s -fflags +genpts -i \"%s\" -ss %s", proccmd.str(), remuxsrc.str(), GenTime(split.start).str());
+							cmd.printf("nice %s -fflags +genpts -i \"%s\" -ss %s", proccmd.str(), remuxsrc.str(), GenTime(split.start).str());
 							if (split.length > 0) cmd.printf(" -t %s", GenTime(split.length).str());
 							cmd.printf(" -acodec copy -vcodec copy -v warning -y -f mpegts \"%s\"", outfile.str());
 				
@@ -2255,7 +2263,14 @@ bool ADVBProg::ConvertVideoFile(bool cleanup)
 					if (success) {
 						AString cmd;
 
-						cmd.printf("%s -i \"%s\" -aspect %s %s %s -v warning -y \"%s\"", proccmd.str(), concatfile.str(), aspect.str(), audioargs.str(), videoargs.str(), outputfile.str());
+						cmd.printf("nice %s -i \"%s\" -v %s -aspect %s %s %s -y \"%s\"",
+								   proccmd.str(),
+								   concatfile.str(),
+								   config.GetProcessLogLevel(GetUser(), verbose).str(),
+								   aspect.str(),
+								   audioargs.str(),
+								   videoargs.str(),
+								   outputfile.str());
 						
 						config.printf("Executing: '%s'", cmd.str());
 						if (system(cmd) != 0) {

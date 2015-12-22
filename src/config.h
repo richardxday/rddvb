@@ -82,10 +82,12 @@ public:
 	AString GetBaseURL()					 const {return GetConfigItem("baseurl", "http://richardday.duckdns.org");}
 
 	bool    ForceSubs(const AString& user)         const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
-	AString GetProcessCommand(const AString& user) const {return GetUserConfigItem(user, "processcmd", "avconv");}
-	AString GetVideoArgs(const AString& user)      const {return GetUserConfigItem(user, "videoargs", "-vcodec copy");}
-	AString GetAudioArgs(const AString& user)      const {return GetUserConfigItem(user, "audioargs", "-acodec mp3");}
-	
+	AString GetProcessCommand(const AString& user, const AString& category) const {return GetUserConfigItem(user, "processcmd:" + category, GetUserConfigItem(user, "processcmd", "avconv"));}
+	AString GetVideoArgs(const AString& user, const AString& category) 		const {return GetUserConfigItem(user, "videoargs:" + category, GetUserConfigItem(user, "videoargs", "-vcodec copy"));}
+	AString GetAudioArgs(const AString& user, const AString& category) 		const {return GetUserConfigItem(user, "audioargs:" + category, GetUserConfigItem(user, "audioargs", "-acodec mp3"));}
+
+	AString GetProcessLogLevel(const AString& user, bool verbose) const {return verbose ? GetUserConfigItem(user, "processloglevel:verbose", "info") : GetUserConfigItem(user, "processloglevel:normal", "warning");}
+
 	AString GetRelativePath(const AString& filename) const;
 	
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;

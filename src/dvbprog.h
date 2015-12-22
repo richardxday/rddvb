@@ -274,7 +274,7 @@ public:
 	void Record();
 	bool OnRecordSuccess() const;
 	bool OnRecordFailure() const;
-	bool PostProcess();
+	bool PostProcess(bool verbose = false);
 
 	static bool FilePatternExists(const AString& filename);
 
@@ -387,7 +387,7 @@ protected:
 	} SPLIT;
 
 	void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect);
-	bool ConvertVideoFile(bool cleanup = true);
+	bool ConvertVideoFile(bool verbose, bool cleanup = true);
 
 	static const DVBPROG *nullprog;
 
