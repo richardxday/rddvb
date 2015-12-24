@@ -1626,11 +1626,9 @@ void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool
 	ADVBLock     lock("schedule");
 	ADVBProgList list;
 
-	if (list.ReadFromFile(filename)) {
-		list.AddProg(prog, sort, removeoverlaps, reverseorder);
-		if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after adding a programme", filename.str());
-	}
-	else config.logit("Failed to read file '%s' for adding a programme", filename.str());
+	if (list.ReadFromFile(filename)) config.logit("Failed to read file '%s' for adding a programme", filename.str());
+	list.AddProg(prog, sort, removeoverlaps, reverseorder);
+	if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after adding a programme", filename.str());
 }
 
 void ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)

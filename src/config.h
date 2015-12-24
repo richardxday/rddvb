@@ -20,6 +20,9 @@ public:
 	AString GetConfigItem(const AString& name, const AString& defval) const;
 	AString GetUserConfigItem(const AString& user, const AString& name) const {return GetConfigItem(user + ":" + name, GetConfigItem(name));}
 	AString GetUserConfigItem(const AString& user, const AString& name, const AString& defval) const {return GetConfigItem(user + ":" + name, GetConfigItem(name, defval));}
+	AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name) const {return GetUserConfigItem(user, name + ":" + subitem, GetUserConfigItem(user, name, GetConfigItem(name + ":" + subitem, GetConfigItem(name))));}
+	AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name, const AString& defval) const {return GetUserConfigItem(user, name + ":" + subitem, GetUserConfigItem(user, name, GetConfigItem(name + ":" + subitem, GetConfigItem(name, defval))));}
+
 	bool    ConfigItemExists(const AString& name) const {return config.Exists(name);}
 	bool    UserConfigItemExists(const AString& user, const AString& name) const {return ConfigItemExists(user + ":" + name);}
 
@@ -63,6 +66,7 @@ public:
 	
 	AString GetFileSuffix(const AString& user, const AString& def = "mp4") const {return GetUserConfigItem(user, "filesuffix", def);}
 	AString ReplaceTerms(const AString& user, const AString& str) const;
+	AString ReplaceTerms(const AString& user, const AString& subitem, const AString& str) const;
 	
 	uint_t  GetPhysicalDVBCard(uint_t n = 0) const;
 	uint_t  GetMaxDVBCards()				 const {return (uint_t)GetConfigItem("maxcards", "1");}
@@ -82,11 +86,11 @@ public:
 	AString GetBaseURL()					 const {return GetConfigItem("baseurl", "http://richardday.duckdns.org");}
 
 	bool    ForceSubs(const AString& user)         const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
-	AString GetProcessCommand(const AString& user, const AString& category) const {return GetUserConfigItem(user, "processcmd:" + category, GetUserConfigItem(user, "processcmd", "avconv"));}
-	AString GetVideoArgs(const AString& user, const AString& category) 		const {return GetUserConfigItem(user, "videoargs:" + category, GetUserConfigItem(user, "videoargs", "-vcodec copy"));}
-	AString GetAudioArgs(const AString& user, const AString& category) 		const {return GetUserConfigItem(user, "audioargs:" + category, GetUserConfigItem(user, "audioargs", "-acodec mp3"));}
 
-	AString GetProcessLogLevel(const AString& user, bool verbose) const {return verbose ? GetUserConfigItem(user, "processloglevel:verbose", "info") : GetUserConfigItem(user, "processloglevel:normal", "warning");}
+	AString GetEncodeCommand(const AString& user, const AString& category) const {return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodecmd", "avconv"));}
+	AString GetEncodeArgs(const AString& user, const AString& category)    const {return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodeargs"));}
+
+	AString GetEncodeLogLevel(const AString& user, bool verbose) const {return verbose ? GetUserConfigItem(user, "processloglevel:verbose", "warning") : GetUserConfigItem(user, "processloglevel:normal", "error");}
 
 	AString GetRelativePath(const AString& filename) const;
 	
@@ -106,7 +110,8 @@ public:
 	
 protected:
 	void MapDVBCards();
-
+	void CheckUpdate() const;
+	
 private:
 	ADVBConfig();
 	~ADVBConfig() {}

@@ -121,6 +121,7 @@ int main(int argc, char *argv[])
 		printf("\t--update-recording-complete\tUpdate recording complete flag in every recorded programme\n");
 		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
 		printf("\t--force-failures\t\tAdd current list to recording failures (setting failed flag)\n");
+		printf("\t--show-encoding-args\t\tShow encoding arguments for programmes in current list\n");
 		printf("\t--post-process\t\t\tPost process files in current list (this WILL alter the record list data)\n");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
@@ -987,13 +988,33 @@ int main(int argc, char *argv[])
 				
 				printf("Changed %u programme%s", changed, (changed == 1) ? "" : "s");
 			}
+			else if (stricmp(argv[i], "--show-encoding-args") == 0) {
+				uint_t i;
+
+				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
+					const ADVBProg& prog = proglist.GetProg(i);
+					AString proccmd = config.GetEncodeCommand(prog.GetUser(), prog.GetCategory());
+					AString args    = config.GetEncodeArgs(prog.GetUser(), prog.GetCategory());
+					uint_t  j, n = args.CountLines(";");
+
+					printf("%s:\n", prog.GetQuickDescription().str());
+
+					for (j = 0; j < n; j++) {
+						printf("\tCommand: %s %s\n",
+							   proccmd.str(),
+							   args.Line(j, ";").Words(0).str());
+					}
+					
+					printf("\n");
+				}
+			}
 			else if (stricmp(argv[i], "--post-process") == 0) {
 				uint_t i;
 
-				for (i = 0; i < proglist.Count(); i++) {
+				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
 					ADVBProg& prog = proglist.GetProgWritable(i);
 
-					printf("Post processing '%s':\n", prog.GetQuickDescription().str());
+					printf("Post processing file %u/%u - '%s':\n", i + 1, proglist.Count(), prog.GetQuickDescription().str());
 					prog.PostProcess(true);
 				}
 			}

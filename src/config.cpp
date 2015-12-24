@@ -26,6 +26,24 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		{"posthandle", "3"},
 		{"pri", "0"},
 		{"dir", ""},
+		{"h264crf",      	 "19"},
+		{"maxvideorate", 	 "1200k"},
+		{"aacbitrate", 	 	 "160k"},
+		{"mp3bitrate", 	 	 "160k"},
+		{"copyvideo", 	 	 "-vcodec copy"},
+		{"copyaudio", 	 	 "-acodec copy"},
+		{"mp3audio",  	 	 "-acodec mp3 -b:a {conf:mp3bitrate}"},
+		{"h264preset",   	 "veryfast"},
+		{"h264bufsize",  	 "2000k"},
+		{"videodeinterlace", "yadif"},
+		{"videofilter",  	 "-filter:v {conf:videodeinterlace}"},
+		{"filters",		 	 "{conf:videofilter} {conf:audiofilter}"},
+		{"encodeflags",	 	 "-movflags +faststart"},
+		{"h264video", 	 	 "-vcodec libx264 -preset {conf:h264preset} -crf {conf:h264crf} -maxrate {conf:maxvideorate} -bufsize {conf:h264bufsize} {conf:encodeflags} {conf:filters}"},
+		{"aacaudio",  	 	 "-acodec libfdk_aac -b:a {conf:aacbitrate}"},
+		{"encodecopy",   	 "{conf:copyvideo} {conf:mp3audio}"},
+		{"encodeh264",   	 "{conf:h264video} {conf:aacaudio}"},
+		{"encodeargs",   	 "{conf:encodeh264}"},
 	};
 	uint_t i;
 
@@ -96,18 +114,39 @@ AString ADVBConfig::GetTempFile(const AString& name, const AString& suffix) cons
 	return GetTempDir().CatPath(AString("%s_%08lx%s").Arg(name).Arg(::GetTickCount()).Arg(suffix));
 }
 
+void ADVBConfig::CheckUpdate() const
+{
+	ASettingsHandler& wrconfig = *const_cast<ASettingsHandler *>(&config);
+	if (wrconfig.CheckRead()) wrconfig.Read();
+}
+
 AString ADVBConfig::GetConfigItem(const AString& name) const
 {
-	if (config.Exists(name)) return config.Get(name);
+	const AString *def = NULL;
+	AString res;
+	
+	CheckUpdate();
+	
+	if (config.Exists(name)) res = config.Get(name);
+	else if ((def = (const AString *)defaults.Read(name)) != NULL) res = *def;
 
-	const AString *def = (const AString *)defaults.Read(name);
-	return def ? *def : AString();
+	//debug("Request for '%s' (def: '%s'): '%s'\n", name.str(), def ? def->str() : "<notset>", res.str());
+
+	return res;
 }
 
 AString ADVBConfig::GetConfigItem(const AString& name, const AString& defval) const
 {
-	if (config.Exists(name)) return config.Get(name);
-	return defval;
+	AString res;
+
+	CheckUpdate();
+
+	if (config.Exists(name)) res = config.Get(name);
+	else					 res = defval;
+	
+	//debug("Request for '%s' (def: '%s'): '%s'\n", name.str(), defval.str(), res.str());
+
+	return res;
 }
 
 AString ADVBConfig::GetNamedFile(const AString& name) const
@@ -140,14 +179,26 @@ AString ADVBConfig::GetRelativePath(const AString& filename) const
 AString ADVBConfig::ReplaceTerms(const AString& user, const AString& _str) const
 {
 	AString str = _str;
-	int p = 0, p1, p2;
+	int p1, p2;
 	
-	while (((p1 = str.Pos("{conf:", p)) >= 0) && ((p2 = str.Pos("}", p1)) >= 0)) {
-		AString item = GetUserConfigItem(user, str.Mid(p1 + 8, p2 - p1 - 8));
+	while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.Pos("}", p1)) >= 0)) {
+		AString item = GetUserConfigItem(user, str.Mid(p1 + 6, p2 - p1 - 6));
 
 		str = str.Left(p1) + item + str.Mid(p2 + 1);
+	}
 
-		p = p1 + item.len();
+	return str;
+}
+
+AString ADVBConfig::ReplaceTerms(const AString& user, const AString& subitem, const AString& _str) const
+{
+	AString str = _str;
+	int p1, p2;
+	
+	while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.Pos("}", p1)) >= 0)) {
+		AString item = GetUserSubItemConfigItem(user, subitem, str.Mid(p1 + 6, p2 - p1 - 6));
+
+		str = str.Left(p1) + item + str.Mid(p2 + 1);
 	}
 
 	return str;
