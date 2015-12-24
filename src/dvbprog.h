@@ -164,6 +164,7 @@ public:
 
 		_Flag_extra_start = 32,
 		Flag_exists = _Flag_extra_start,
+		Flag_srcexists,
 	};
 	void     SetFlags(uint32_t flags)	{data->flags = flags;}
 	uint32_t GetFlags()		   	  const {return data->flags;}
@@ -374,7 +375,7 @@ protected:
 	AString ReplaceTerms(const AString& str) const;
 
 	AString GetLogFile() const;
-	bool    RunCommand(const AString& cmd) const;
+	bool    RunCommand(const AString& cmd, bool logoutput = false) const;
 	
 	static uint64_t CalcTime(const char *str);
 	static AString GenTime(uint64_t t, const char *format = "%02u:%02u:%02u.%03u");
@@ -388,6 +389,7 @@ protected:
 
 	void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect);
 	bool ConvertVideoFile(bool verbose, bool cleanup = true);
+	bool EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose);
 
 	static const DVBPROG *nullprog;
 

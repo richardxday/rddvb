@@ -81,6 +81,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(recording,  		 Flag_recording,  	 	   "Programme recording"),
 	DEFINE_FLAG(postprocessing,		 Flag_postprocessing,	   "Programme recording being processing"),
 	DEFINE_FLAG(exists,				 Flag_exists,    	 	   "Programme exists"),
+	DEFINE_FLAG(srcexists,			 Flag_srcexists,    	   "Programme source file exists"),
 	DEFINE_FLAG(notify,				 Flag_notify,    	 	   "Notify by when programme has recorded"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
@@ -309,6 +310,10 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 	switch (flag) {
 		case Flag_exists:
 			set = AStdFile::exists(GetFilename());
+			break;
+
+		case Flag_srcexists:
+			set = AStdFile::exists(GetSourceFilename());
 			break;
 	}
 
@@ -1852,23 +1857,43 @@ AString ADVBProg::GetLogFile() const
 	return config.GetLogDir().CatPath(AString(GetFilename()).FilePart().Prefix() + ".txt");
 }
 
-bool ADVBProg::RunCommand(const AString& cmd) const
+bool ADVBProg::RunCommand(const AString& cmd, bool logoutput) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
+	AString   scmd;
+	AString   cmdlogfile = config.GetLogDir().CatPath(AString(GetFilename()).FilePart().Prefix() + "_cmd.txt");
 	AString   logfile = GetLogFile();
-	ADateTime starttime, stoptime;
 	bool success = false;
 
-	if		(GetActualStart()) starttime = GetActualStartDT().UTCToLocal();
-	else if (GetRecordStart()) starttime = GetRecordStartDT().UTCToLocal();
-	else if (GetStart())       starttime = GetStartDT().UTCToLocal();
-
-	config.ExtractLogData(starttime, stoptime, logfile);
-
+	if (cmd.Pos(logfile) >= 0) {
+		ADateTime starttime, stoptime;
+		
+		if		(GetActualStart()) starttime = GetActualStartDT().UTCToLocal();
+		else if (GetRecordStart()) starttime = GetRecordStartDT().UTCToLocal();
+		else if (GetStart())       starttime = GetStartDT().UTCToLocal();
+		
+		config.ExtractLogData(starttime, stoptime, logfile);
+	}
+	
 	config.printf("Running command '%s'", cmd.str());
 
-	if (system(cmd) == 0) success = true;
-	else config.printf("Command '%s' failed!", cmd.str());
+	scmd = cmd;
+	if (logoutput) scmd.printf(" >\"%s\" 2>&1", cmdlogfile.str()); 
+
+	success = (system(scmd) == 0);
+
+	if (logoutput) {
+		AStdFile fp;
+		if (fp.open(cmdlogfile)) {
+			AString line;
+			while (line.ReadLn(fp) >= 0) config.logit("%s", line.str());
+			fp.close();
+		}
+
+		remove(cmdlogfile);
+	}
+	
+	if (!success) config.printf("Command '%s' failed!", cmd.str());
 
 	remove(logfile);
 	
@@ -1881,47 +1906,44 @@ bool ADVBProg::PostProcess(bool verbose)
 	AString srcfile = GetSourceFilename();
 	bool    success = false;
 
-	if (AStdFile::exists(srcfile)) {
-		if (ConvertVideoFile(verbose)) {
-			AString postcmd;
-			bool postprocessed = false;
+	if (ConvertVideoFile(verbose)) {
+		AString postcmd;
+		bool postprocessed = false;
 	
-			if ((postcmd = GeneratePostProcessCommand()).Valid()) {
-				config.printf("Running post process command '%s'", postcmd.str());
+		if ((postcmd = GeneratePostProcessCommand()).Valid()) {
+			config.printf("Running post process command '%s'", postcmd.str());
 
-				success = postprocessed = RunCommand("nice " + postcmd);
-			}
-			else success = true;
+			success = postprocessed = RunCommand("nice " + postcmd);
+		}
+		else success = true;
 	
-			if (success) {
-				ADVBLock     lock("schedule");
-				ADVBProgList recordedlist;
-				AString  	 filename = config.GetRecordedFile();
-				ADVBProg 	 *prog;
+		if (success) {
+			ADVBLock     lock("schedule");
+			ADVBProgList recordedlist;
+			AString  	 filename = config.GetRecordedFile();
+			ADVBProg 	 *prog;
 
-				recordedlist.ReadFromFile(filename);
-				if ((prog = recordedlist.FindUUIDWritable(*this)) != NULL) {
-					FILE_INFO info;
+			recordedlist.ReadFromFile(filename);
+			if ((prog = recordedlist.FindUUIDWritable(*this)) != NULL) {
+				FILE_INFO info;
 				
-					if (::GetFileInfo(prog->GetFilename(), &info)) {
-						uint_t nsecs = (uint_t)(prog->GetActualLength() / 1000);
+				if (::GetFileInfo(prog->GetFilename(), &info)) {
+					uint_t nsecs = (uint_t)(prog->GetActualLength() / 1000);
 					
-						config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", prog->GetFilename(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024 * (uint64_t)nsecs)));
+					config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", prog->GetFilename(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024 * (uint64_t)nsecs)));
 
-						prog->SetFileSize(info.FileSize);
-						if (postprocessed) prog->SetPostProcessed();
-						else			   prog->ClearPostProcessed();
-						recordedlist.WriteToFile(filename);
-					}
-					else {
-						config.printf("File '%s' DOESN'T exists!", prog->GetFilename());
-						success = false;
-					}
+					prog->SetFileSize(info.FileSize);
+					if (postprocessed) prog->SetPostProcessed();
+					else			   prog->ClearPostProcessed();
+					recordedlist.WriteToFile(filename);
+				}
+				else {
+					config.printf("File '%s' DOESN'T exists!", prog->GetFilename());
+					success = false;
 				}
 			}
 		}
 	}
-	else config.printf("Source file '%s' DOESN'T exists!", srcfile.str());
 	
 	return success;
 }
@@ -2048,34 +2070,59 @@ void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const st
 	else config.printf("'subs' directory doesn't exist");
 }
 
+bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString proccmd = config.GetEncodeCommand(GetUser(), GetCategory());
+	AString args    = config.GetEncodeArgs(GetUser(), GetCategory());
+	uint_t  i, n = args.CountLines(";");
+	bool    success = true;
+
+	for (i = 0; i < n; i++) {
+		AString append;
+		AString cmd;
+
+		if (i) append.printf("-%u", i);
+				
+		cmd.printf("nice %s %s -v %s -aspect %s %s -y \"%s\"",
+				   proccmd.str(),
+				   inputfiles.str(),
+				   config.GetEncodeLogLevel(GetUser(), verbose).str(),
+				   aspect.str(),
+				   args.Line(i, ";").Words(0).str(),
+				   (outputfile.Prefix() + append + "." + outputfile.Suffix()).str());
+		
+		success &= RunCommand(cmd, !verbose);
+	}
+
+	return success;
+}
+
 bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
-	AString  src       = GetSourceFilename();
-	AString  dst       = GetFilename();
-	AString  basename  = src.Prefix();
-	AString  remuxsrc  = basename + "_Remuxed.mpg";
-	AString  logfile   = basename + "_log.txt";
-	AString  proccmd   = config.GetProcessCommand(GetUser(), GetCategory());
-	AString  videoargs = config.GetVideoArgs(GetUser(), GetCategory());
-	AString  audioargs = config.GetAudioArgs(GetUser(), GetCategory());
-	bool     success   = true;
+	AString  src      = GetSourceFilename();
+	AString  src2     = src.Prefix() + "." + config.GetFileSuffix(GetUser());
+	AString  dst      = GetFilename();
+	AString  basename = src.Prefix();
+	AString  remuxsrc = basename + "_Remuxed.mpg";
+	AString  logfile  = basename + "_log.txt";
+	AString  proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
+	AString  args     = config.GetEncodeArgs(GetUser(), GetCategory());
+	bool     success  = true;
 
 	CreateDirectory(dst.PathPart());
-	
-	if (!AStdFile::exists(AString("%s.m2v").Arg(basename)) ||
-		!AStdFile::exists(AString("%s.mp2").Arg(basename)) ||
-		!AStdFile::exists(logfile)) {
+
+	if (AStdFile::exists(src) &&
+		(!AStdFile::exists(AString("%s.m2v").Arg(basename)) ||
+		 !AStdFile::exists(AString("%s.mp2").Arg(basename)) ||
+		 !AStdFile::exists(logfile))) {
 		AString cmd;
 			
 		cmd.printf("nice projectx -ini %s/X.ini \"%s\"", config.GetConfigDir().str(), src.str());
 
-		config.printf("Executing: '%s'", cmd.str());
-		if (system(cmd) != 0) {
-			config.printf("**** Failed");
-			success = false;
-		}
+		success &= RunCommand(cmd, !verbose);
 		remove(basename + ".sup");
 		remove(basename + ".sup.IFO");
 	}
@@ -2085,7 +2132,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 	std::map<AString,bool> desired_aspects;
 	AString bestaspect;
 	
-	if (success) {
+	if (success && AStdFile::exists(src)) {
 		if (fp.open(logfile)) {
 			static const AString formatmarker = "new format in next leading sequenceheader detected";
 			static const AString videomarker  = "video basics";
@@ -2154,30 +2201,54 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 			success = false;
 		}
 	}
+	else if (!AStdFile::exists(src2)) {
+		config.printf("No source file (either '%s' or '%s') found!", src.str(), src2.str());
+		success = false;
+	}
 
 	if (success) {
-		if (splits.size() == 1) {
+		if (!splits.size() && AStdFile::exists(src2)) {
+			config.printf("Using existing file '%s'", src2.str());
+
 			AString cmd;
+			cmd.printf("%s -i \"%s\" 2>&1 | grep -o -E \"DAR [0-9]+:[0-9]+\" >\"%s\"", proccmd.str(), src2.str(), logfile.str());
+			(void)(system(cmd) == 0);
+			
+			AStdFile fp;
+			if (fp.open(logfile)) {
+				AString line;
 
-			config.printf("No need to split file");
+				while (line.ReadLn(fp) >= 0) {
+					if (line.Pos("DAR ") == 0) {
+						bestaspect = line.Mid(4);
+						break;
+					}
+				}
 
-			cmd.printf("nice %s -i \"%s.m2v\" -i \"%s.mp2\" -v %s -aspect %s %s %s -y \"%s\"",
-					   proccmd.str(),
-					   basename.str(),
-					   basename.str(),
-					   config.GetProcessLogLevel(GetUser(), verbose).str(),
-					   bestaspect.str(),
-					   audioargs.str(),
-					   videoargs.str(),
-					   dst.str());
-
-			config.printf("Executing: '%s'", cmd.str());
-			if (system(cmd) != 0) {
-				config.printf("Command '%s' failed", cmd.str());
-				success = false;
+				fp.close();
 			}
 
-			if (success) ConvertSubtitles(src, dst, splits, bestaspect);
+			remove(logfile);
+
+			if (bestaspect.Empty()) {
+				bestaspect = "16:9";
+				config.printf("Unknown aspect, defaulting to %s", bestaspect.str());
+			}
+			
+			AString inputfiles;
+			inputfiles.printf("-i \"%s\"", src2.str());
+			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
+		}
+		else if (splits.size() == 1) {			
+			config.printf("No need to split file");
+
+			ConvertSubtitles(src, dst, splits, bestaspect);
+
+			AString inputfiles;
+			inputfiles.printf("-i \"%s.m2v\" -i \"%s.mp2\"", 
+							  basename.str(),
+							  basename.str());
+			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
 		}
 		else {
 			config.printf("Splitting file...");
@@ -2187,11 +2258,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 			
 				cmd.printf("nice %s -fflags +genpts -i \"%s.m2v\" -i \"%s.mp2\" -acodec copy -vcodec copy -v warning -f mpegts \"%s\"", proccmd.str(), basename.str(), basename.str(), remuxsrc.str());
 
-				config.printf("Executing: '%s'", cmd.str());
-				if (system(cmd) != 0) {
-					config.printf("Command '%s' failed", cmd.str());
-					success = false;
-				}
+				success &= RunCommand(cmd, !verbose);
 			}
 
 			std::map<AString,bool>::iterator it;
@@ -2215,12 +2282,8 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 							if (split.length > 0) cmd.printf(" -t %s", GenTime(split.length).str());
 							cmd.printf(" -acodec copy -vcodec copy -v warning -y -f mpegts \"%s\"", outfile.str());
 				
-							config.printf("Executing: '%s'", cmd.str());
-							if (system(cmd) != 0) {
-								config.printf("Command '%s' failed", cmd.str());
-								success = false;
-								break;
-							}
+							success &= RunCommand(cmd, !verbose);
+							if (!success) break;
 						}
 
 						files.push_back(outfile);
@@ -2261,27 +2324,13 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 					}
 
 					if (success) {
-						AString cmd;
+						ConvertSubtitles(src, dst, splits, bestaspect);
 
-						cmd.printf("nice %s -i \"%s\" -v %s -aspect %s %s %s -y \"%s\"",
-								   proccmd.str(),
-								   concatfile.str(),
-								   config.GetProcessLogLevel(GetUser(), verbose).str(),
-								   aspect.str(),
-								   audioargs.str(),
-								   videoargs.str(),
-								   outputfile.str());
-						
-						config.printf("Executing: '%s'", cmd.str());
-						if (system(cmd) != 0) {
-							config.printf("Command '%s' failed", cmd.str());
-							success = false;
-							break;
-						}
+						AString inputfiles;
+						inputfiles.printf("-i \"%s\"", concatfile.str());
+						success &= EncodeFile(inputfiles, aspect, outputfile, verbose);
 					}
 
-					if (success) ConvertSubtitles(src, outputfile, splits, aspect);
-												   
 					if (cleanup) remove(concatfile);
 				}
 
