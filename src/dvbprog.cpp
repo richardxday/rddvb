@@ -2070,7 +2070,45 @@ void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const st
 	else config.printf("'subs' directory doesn't exist");
 }
 
-bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose)
+bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
+{
+	static const AString pattern = ParseRegex("Format# : {#?}");
+	AString cmd;
+	AString logfile = filename.Prefix() + "_format.txt";
+	bool    success = false;
+
+	format.Delete();
+	
+	cmd.printf("mediainfo \"%s\" --LogFile=\"%s\" >/dev/null", filename.str(), logfile.str());
+	if (system(cmd) == 0) {
+		AStdFile fp;
+
+		if (fp.open(logfile)) {
+			AString line;
+
+			while (line.ReadLn(fp) >= 0) {
+				ADataList regions;
+
+				if (MatchRegex(line, pattern, regions) && (regions.Count() > 0)) {
+					const REGEXREGION& region = *(const REGEXREGION *)regions.List();
+					
+					if (format.Valid()) format += ",";
+					format += line.Mid(region.pos, region.len);
+
+					success = true;
+				}
+			}
+			
+			fp.close();
+		}
+	}
+
+	remove(logfile);
+
+	return success;
+}
+
+bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString proccmd = config.GetEncodeCommand(GetUser(), GetCategory());
@@ -2097,6 +2135,7 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 
 	return success;
 }
+
 
 bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 {

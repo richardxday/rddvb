@@ -279,6 +279,8 @@ public:
 
 	static bool FilePatternExists(const AString& filename);
 
+	static bool GetFileFormat(const AString& filename, AString& format);
+
 	static bool debugsameprogramme;
 
 protected:
@@ -388,8 +390,8 @@ protected:
 	} SPLIT;
 
 	void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect);
+	bool EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose) const;
 	bool ConvertVideoFile(bool verbose, bool cleanup = true);
-	bool EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose);
 
 	static const DVBPROG *nullprog;
 
