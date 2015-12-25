@@ -122,6 +122,7 @@ int main(int argc, char *argv[])
 		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
 		printf("\t--force-failures\t\tAdd current list to recording failures (setting failed flag)\n");
 		printf("\t--show-encoding-args\t\tShow encoding arguments for programmes in current list\n");
+		printf("\t--show-file-format\t\tShow file format of encoded programme\n");
 		printf("\t--post-process\t\t\tPost process files in current list (this WILL alter the record list data)\n");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
@@ -1006,6 +1007,21 @@ int main(int argc, char *argv[])
 					}
 					
 					printf("\n");
+				}
+			}
+			else if (stricmp(argv[i], "--show-file-format") == 0) {
+				uint_t i;
+
+				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
+					const ADVBProg& prog = proglist.GetProg(i);
+					AString format;
+
+					if (AStdFile::exists(prog.GetFilename())) {
+						if (ADVBProg::GetFileFormat(prog.GetFilename(), format)) {
+							printf("%s: %s\n", prog.GetQuickDescription().str(), format.str());
+						}
+						else printf("%s: unknown\n", prog.GetQuickDescription().str());
+					}
 				}
 			}
 			else if (stricmp(argv[i], "--post-process") == 0) {
