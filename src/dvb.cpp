@@ -1014,9 +1014,10 @@ int main(int argc, char *argv[])
 
 				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
 					const ADVBProg& prog = proglist.GetProg(i);
-					AString format;
 
 					if (AStdFile::exists(prog.GetFilename())) {
+						AString format;
+						
 						if (ADVBProg::GetFileFormat(prog.GetFilename(), format)) {
 							printf("%s: %s\n", prog.GetQuickDescription().str(), format.str());
 						}
