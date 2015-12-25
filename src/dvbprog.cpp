@@ -2079,7 +2079,7 @@ bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
 
 	format.Delete();
 	
-	cmd.printf("mediainfo \"%s\" --LogFile=\"%s\" >/dev/null", filename.str(), logfile.str());
+	cmd.printf("mediainfo \"%s\" >\"%s\"", filename.str(), logfile.str());
 	if (system(cmd) == 0) {
 		AStdFile fp;
 
@@ -2090,8 +2090,10 @@ bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
 				ADataList regions;
 
 				if (MatchRegex(line, pattern, regions) && (regions.Count() > 0)) {
-					const REGEXREGION& region = *(const REGEXREGION *)regions.List();
+					const REGEXREGION& region = *(const REGEXREGION *)regions[0];
 					
+					//debug("Line: '%s', region {%u, %u}: %s\n", line.str(), region.pos, region.len, line.Mid(region.pos, region.len).str());
+
 					if (format.Valid()) format += ",";
 					format += line.Mid(region.pos, region.len);
 
