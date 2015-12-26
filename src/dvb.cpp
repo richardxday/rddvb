@@ -124,6 +124,7 @@ int main(int argc, char *argv[])
 		printf("\t--show-encoding-args\t\tShow encoding arguments for programmes in current list\n");
 		printf("\t--show-file-format\t\tShow file format of encoded programme\n");
 		printf("\t--post-process\t\t\tPost process files in current list (this WILL alter the record list data)\n");
+		printf("\t--post-process-if-format\tPost process files in current list if file is the wrong format (this WILL alter the record list data)\n");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
@@ -1033,6 +1034,22 @@ int main(int argc, char *argv[])
 
 					printf("Post processing file %u/%u - '%s':\n", i + 1, proglist.Count(), prog.GetQuickDescription().str());
 					prog.PostProcess(true);
+				}
+			}
+			else if (stricmp(argv[i], "--post-process-if-format") == 0) {
+				uint_t i;
+
+				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
+					ADVBProg& prog = proglist.GetProgWritable(i);
+					AString filename = prog.GetFilename();
+					AString format;
+					
+					if (!AStdFile::exists(filename) ||
+						!ADVBProg::GetFileFormat(filename, format) ||
+						(format != "MPEG-4,AVC,AAC")) {
+						printf("Post processing file %u/%u - '%s':\n", i + 1, proglist.Count(), prog.GetQuickDescription().str());
+						//prog.PostProcess(true);
+					}
 				}
 			}
 			else if (stricmp(argv[i], "--record-success") == 0) {
