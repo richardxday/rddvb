@@ -1046,9 +1046,9 @@ int main(int argc, char *argv[])
 					
 					if (!AStdFile::exists(filename) ||
 						!ADVBProg::GetFileFormat(filename, format) ||
-						(format != "MPEG-4,AVC,AAC")) {
+						(format.Pos("AVC") < 0)) {
 						printf("Post processing file %u/%u - '%s':\n", i + 1, proglist.Count(), prog.GetQuickDescription().str());
-						//prog.PostProcess(true);
+						prog.PostProcess(true);
 					}
 				}
 			}

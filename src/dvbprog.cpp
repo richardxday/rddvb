@@ -2079,7 +2079,7 @@ bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
 
 	format.Delete();
 	
-	cmd.printf("mediainfo \"%s\" >\"%s\"", filename.str(), logfile.str());
+	cmd.printf("mediainfo \"%s\" 2>/dev/null >\"%s\"", filename.str(), logfile.str());
 	if (system(cmd) == 0) {
 		AStdFile fp;
 
