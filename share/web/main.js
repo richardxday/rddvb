@@ -480,7 +480,8 @@ function populateprogs(id)
 
 					str += '{reltime}';
 					str += '</td><td style="font-size:90%;">';
-					if (typeof prog.path != 'undefined') str += adddownloadlink(prog);
+					if (prog.flags.postprocessing || prog.flags.running) str += '&nbsp;';
+					else if (typeof prog.path != 'undefined') str += adddownloadlink(prog);
 					else if ((typeof prog.recorded != 'undefined') &&
 							 (typeof prog.recorded.path != 'undefined')) str += adddownloadlink(prog.recorded);
 					else str += '&nbsp;';
