@@ -1711,13 +1711,7 @@ void ADVBProg::Record()
 							reschedule = true;
 						}
 
-						SetPostProcessing();
-						ADVBProgList::AddToList(config.GetProcessingFile(), *this);
-
 						bool success = PostProcess();
-
-						ADVBProgList::RemoveFromList(config.GetProcessingFile(), *this);
-						ClearPostProcessing();
 						
 						if (success) OnRecordSuccess();
 					}
@@ -1907,6 +1901,9 @@ bool ADVBProg::PostProcess(bool verbose)
 	AString srcfile = GetSourceFilename();
 	bool    success = false;
 
+	SetPostProcessing();
+	ADVBProgList::AddToList(config.GetProcessingFile(), *this);
+
 	if (ConvertVideoFile(verbose)) {
 		AString postcmd;
 		bool postprocessed = false;
@@ -1945,7 +1942,10 @@ bool ADVBProg::PostProcess(bool verbose)
 			}
 		}
 	}
-	
+
+	ADVBProgList::RemoveFromList(config.GetProcessingFile(), *this);
+	ClearPostProcessing();
+
 	return success;
 }
 
