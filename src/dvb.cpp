@@ -543,8 +543,8 @@ int main(int argc, char *argv[])
 					printf("Failed to write programme list to '%s'\n", filename.str());
 				}
 			}
-			else if ((strcmp(argv[i], "--sort") == 0) || (strcmp(argv[i], "-sort-rev") == 0)) {
-				bool reverse = (strcmp(argv[i], "-sort-rev") == 0);
+			else if ((strcmp(argv[i], "--sort") == 0) || (strcmp(argv[i], "--sort-rev") == 0)) {
+				bool reverse = (strcmp(argv[i], "--sort-rev") == 0);
 				proglist.Sort(reverse);
 				printf("%sorted list\n", reverse ? "Reverse s" : "S");
 			}
@@ -1046,7 +1046,7 @@ int main(int argc, char *argv[])
 					
 					if (!AStdFile::exists(filename) ||
 						!ADVBProg::GetFileFormat(filename, format) ||
-						(format.Pos("AVC") < 0)) {
+						(format.Pos("MPEG Video") >= 0)) {
 						printf("Post processing file %u/%u - '%s':\n", i + 1, proglist.Count(), prog.GetQuickDescription().str());
 						prog.PostProcess(true);
 					}

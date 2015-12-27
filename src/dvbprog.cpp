@@ -313,7 +313,8 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 			break;
 
 		case Flag_srcexists:
-			set = AStdFile::exists(GetSourceFilename());
+			set = (AStdFile::exists(GetSourceFilename()) ||
+				   AStdFile::exists(AString(GetSourceFilename()).Prefix() + "." + ADVBConfig::Get().GetFileSuffix(GetUser())));
 			break;
 	}
 
