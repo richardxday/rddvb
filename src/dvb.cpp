@@ -1032,7 +1032,7 @@ int main(int argc, char *argv[])
 				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
 					ADVBProg& prog = proglist.GetProgWritable(i);
 
-					printf("Post processing file %u/%u - '%s':\n", i + 1, proglist.Count(), prog.GetQuickDescription().str());
+					config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
 					prog.PostProcess(true);
 				}
 			}
@@ -1047,7 +1047,7 @@ int main(int argc, char *argv[])
 					if (!AStdFile::exists(filename) ||
 						!ADVBProg::GetFileFormat(filename, format) ||
 						(format.Pos("MPEG Video") >= 0)) {
-						printf("Post processing file %u/%u - '%s':\n", i + 1, proglist.Count(), prog.GetQuickDescription().str());
+						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
 						prog.PostProcess(true);
 					}
 				}
