@@ -125,6 +125,7 @@ int main(int argc, char *argv[])
 		printf("\t--show-file-format\t\tShow file format of encoded programme\n");
 		printf("\t--post-process\t\t\tPost process files in current list (this WILL alter the record list data)\n");
 		printf("\t--post-process-if-format\tPost process files in current list if file is the wrong format (this WILL alter the record list data)\n");
+		printf("\t--generate-sig\t\t\tGenerate signature file for files in current list (assuming source file exists)");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
@@ -968,7 +969,7 @@ int main(int argc, char *argv[])
 
 				proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
 
-				printf("Found %u programme%s", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
+				printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 
 				if (errors.Valid()) {
 					printf("Errors:");
@@ -988,7 +989,7 @@ int main(int argc, char *argv[])
 					}
 				}
 				
-				printf("Changed %u programme%s", changed, (changed == 1) ? "" : "s");
+				printf("Changed %u programme%s\n", changed, (changed == 1) ? "" : "s");
 			}
 			else if (stricmp(argv[i], "--show-encoding-args") == 0) {
 				uint_t i;
@@ -1049,6 +1050,21 @@ int main(int argc, char *argv[])
 						(format.Pos("MPEG Video") >= 0)) {
 						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
 						prog.PostProcess(true);
+					}
+				}
+			}
+			else if (stricmp(argv[i], "--generate-sig") == 0) {
+				uint_t i;
+
+				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
+					const ADVBProg& prog = proglist.GetProg(i);
+					AString filename = prog.GetSourceFilename();
+					
+					if (!AStdFile::exists(filename)) filename = filename.Prefix() + config.GetFileSuffix(prog.GetUser());
+
+					if (AStdFile::exists(filename)) {
+						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
+						prog.GenerateSignatureFile(filename, filename.Prefix());
 					}
 				}
 			}
