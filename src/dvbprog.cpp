@@ -2139,15 +2139,36 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 	return success;
 }
 
+bool ADVBProg::GenerateSignatureFile(const AString& src, const AString& dst) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	bool success = true;
+
+	if ((uint_t)config.GetUserSubItemConfigItem(GetUser(), GetCategory(), "videosig", "0") != 0) {
+		AString cmd;
+		uint_t  s = (uint_t)config.GetConfigItem("videosigsize", "256");
+		uint_t  n = (uint_t)config.GetConfigItem("videosigcount", "8");
+
+		cmd.printf("nice avconv -i \"%s\" -s %ux%u -pix_fmt rgb24 -vcodec rawvideo -f rawvideo pipe: | videosig -s %ux%u -n %u -of \"%s.sig\"",
+				   src.str(),
+				   s, s,
+				   s, s,
+				   n,
+				   dst.str());
+		success = RunCommand(cmd);
+	}
+	
+	return success;
+}
 
 bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
 	AString  src      = GetSourceFilename();
-	AString  src2     = src.Prefix() + "." + config.GetFileSuffix(GetUser());
 	AString  dst      = GetFilename();
 	AString  basename = src.Prefix();
+	AString  src2     = basename + "." + config.GetFileSuffix(GetUser());
 	AString  remuxsrc = basename + "_Remuxed.mpg";
 	AString  logfile  = basename + "_log.txt";
 	AString  proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
@@ -2173,6 +2194,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 	std::map<AString,uint64_t> lengths;
 	std::map<AString,bool> desired_aspects;
 	AString bestaspect;
+	AList   delfiles;
 	
 	if (success && AStdFile::exists(src)) {
 		if (fp.open(logfile)) {
@@ -2280,6 +2302,8 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 			AString inputfiles;
 			inputfiles.printf("-i \"%s\"", src2.str());
 			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
+
+			GenerateSignatureFile(src2, basename);
 		}
 		else if (splits.size() == 1) {			
 			config.printf("No need to split file");
@@ -2291,6 +2315,8 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 							  basename.str(),
 							  basename.str());
 			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
+
+			GenerateSignatureFile(basename + ".m2v", basename);
 		}
 		else {
 			config.printf("Splitting file...");
@@ -2368,31 +2394,32 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 					if (success) {
 						ConvertSubtitles(src, dst, splits, bestaspect);
 
+						GenerateSignatureFile(concatfile, outputfile.Prefix());
+
 						AString inputfiles;
 						inputfiles.printf("-i \"%s\"", concatfile.str());
 						success &= EncodeFile(inputfiles, aspect, outputfile, verbose);
 					}
 
-					if (cleanup) remove(concatfile);
+					remove(concatfile);
 				}
 
-				if (cleanup) {
-					for (i = 0; i < files.size(); i++) {
-						remove(files[i]);
-					}
+				for (i = 0; i < files.size(); i++) {
+					remove(files[i]);
 				}
 			}
 		}
 	}
 
 	if (success && cleanup) {
-		remove(basename + ".m2v");
-		remove(basename + ".mp2");
+		delfiles.Add(new AString(basename + ".m2v"));
+		delfiles.Add(new AString(basename + ".mp2"));
 
-		AList subfiles;
-		CollectFiles(src.PathPart(), src.FilePart().Prefix() + ".sup.*", RECURSE_ALL_SUBDIRS, subfiles);
+		CollectFiles(basename.PathPart(), basename.FilePart() + ".sup.*", RECURSE_ALL_SUBDIRS, delfiles);
+		CollectFiles(basename.PathPart(), basename.FilePart() + "-*.m2v", RECURSE_ALL_SUBDIRS, delfiles);
+		CollectFiles(basename.PathPart(), basename.FilePart() + "-*.mp2", RECURSE_ALL_SUBDIRS, delfiles);
 
-		const AString *file = AString::Cast(subfiles.First());
+		const AString *file = AString::Cast(delfiles.First());
 		while (file) {
 			remove(*file);
 			file = file->Next();

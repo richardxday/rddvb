@@ -115,6 +115,8 @@ public:
 	bool SetPattern(const char 	  *str)    	   {return SetString(&data->strings.pattern, 	str);}
 	bool SetPrefs(const char   	  *str)    	   {return SetString(&data->strings.prefs,   	str);}
 
+	AString GetSourceFilename() const;
+
 	AString GetPrefItem(const AString& name, const AString& defval = "") const;
 
 	typedef PACKEDSTRUCT {
@@ -276,6 +278,7 @@ public:
 	bool OnRecordSuccess() const;
 	bool OnRecordFailure() const;
 	bool PostProcess(bool verbose = false);
+	bool GenerateSignatureFile(const AString& src, const AString& dst) const;
 
 	static bool FilePatternExists(const AString& filename);
 
@@ -373,7 +376,6 @@ protected:
 	AString GenerateRecordCommand(uint_t nsecs, const AString& pids) const;
 	AString GeneratePostProcessCommand() const;
 
-	AString GetSourceFilename() const;
 	AString ReplaceTerms(const AString& str) const;
 
 	AString GetLogFile() const;
