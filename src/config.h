@@ -35,6 +35,7 @@ public:
 	AString GetRecordingsSubDir(const AString& user) const {return user.Valid() ? GetUserConfigItem(user, "dir") : GetConfigItem("dir");}
 	AString GetRecordingsDir(const AString& user) const {return CatPath(GetRecordingsDir(), GetRecordingsSubDir(user));}
 	AString GetRecordingsStorageDir(const AString& user) const {return CatPath(GetRecordingsDir(), GetUserConfigItem(user, "storagedir", "Backup"));}
+	AString GetVideoSignatureDir(const AString& user) const {return CatPath(GetRecordingsDir(), GetUserConfigItem(user, "videosigdir", "Signatures"));}
 	AString GetTempDir()              		 const {return GetConfigItem("tempdir", GetDataDir().CatPath("temp"));}
 	AString GetTempFile(const AString& name, const AString& suffix = "") const;
 	AString GetQueue()						 const {return GetConfigItem("queue", "d");}
