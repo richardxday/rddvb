@@ -288,11 +288,13 @@ function populateusers()
 			if ((username == defaultuser) || (username == '')) {
 				str += findfromfilter('Combined', '', defaulttimefilter, 'Combined', 'Search for recordings in combined listings for the default user') + '&nbsp;';
 				str += findfromfilter('Requested', '', '', 'Requested', 'Search for requested recordings for the default user') + '&nbsp;';
+				str += findfromfilter('Recorded', '', '', 'Recorded', 'Search for recordings for the default user') + '&nbsp;';
 				str += findfromfilter('Patterns', 'user=""', '', 'Patterns', 'Display scheduling patterns for the default user') + '&nbsp;';
 			}
 			else {
 				str += findfromfilter('Combined', 'user="' + username + '"', defaulttimefilter, 'Combined', 'Search for recordings in combined listings for user ' + username) + '&nbsp;';
 				str += findfromfilter('Requested', 'user="' + username + '"', '', 'Requested', 'Search for requested recordings for user ' + username) + '&nbsp;';
+				str += findfromfilter('Recorded', 'user="' + username + '"', '', 'Recorded', 'Search for recorded programmes for user ' + username) + '&nbsp;';
 				str += findfromfilter('Patterns', 'user="' + username + '"', '', 'Patterns', 'Display scheduling patterns for user ' + username) + '&nbsp;';
 			}
 			str += '</td>';
@@ -321,6 +323,7 @@ function populateusers()
                 str += '<td>';
 				str += findfromfilter('Combined', 'filename@<"' + diskspace.fullfolder + '"', defaulttimefilter, 'Combined', 'Search for recordings in combined listings with folder ' + diskspace.folder) + '&nbsp;';
 				str += findfromfilter('Requested', 'filename@<"' + diskspace.fullfolder + '"', '', 'Requested', 'Search for requested recordings with folder ' + diskspace.folder) + '&nbsp;';
+				str += findfromfilter('Recorded', 'filename@<"' + diskspace.fullfolder + '"', '', 'Recorded', 'Search for recorded programmes with folder ' + diskspace.folder) + '&nbsp;';
 				str += findfromfilter('Patterns', 'filename@<"' + diskspace.fullfolder + '"', '', 'Patterns', 'Display scheduling patterns with folder ' + diskspace.folder) + '&nbsp;';
                 str += '</td>';
 
@@ -725,6 +728,8 @@ function populateprogs(id)
 						str1 += findfromfilter('Combined', 'prog="' + prog.base64 + '"', '', 'Combined', 'Search for scheduled/recorded occurrences of this programme');
 						str1 += '</td><td>';
 						str1 += findfromfilter('Requested', 'prog="' + prog.base64 + '"', '', 'Requested', 'Search for requested recordings of this programme');
+						str1 += '</td><td>';
+						str1 += findfromfilter('Recorded', 'prog="' + prog.base64 + '"', '', 'Recorded', 'Search for recordiongs of this programme');
 						str1 += '</td></tr>';
 						str1 += '<tr><td>Title</td><td>';
 						str1 += findfromfilter('Listings', 'title="' + prog.title + '"', '', 'Listings', 'Search for occurrences of programmes with this title');
@@ -732,6 +737,8 @@ function populateprogs(id)
 						str1 += findfromfilter('Combined', 'title="' + prog.title + '"', '', 'Combined', 'Search for scheduled/recorded occurrences of programmes with this title');
 						str1 += '</td><td>';
 						str1 += findfromfilter('Requested', 'title="' + prog.title + '"', '', 'Requested', 'Search for requested recordings of programmes with this title');
+						str1 += '</td><td>';
+						str1 += findfromfilter('Recorded', 'title="' + prog.title + '"', '', 'Recorded', 'Search for recorded programmes with this title');
 						str1 += '</td></tr>';
 						if (typeof prog.subtitle != 'undefined') {
 							str1 += '<tr><td>Title / Subtitle</td><td>';
@@ -740,6 +747,8 @@ function populateprogs(id)
 							str1 += findfromfilter('Combined', 'title="' + prog.title + '" subtitle="' + prog.subtitle + '"', '', 'Combined', 'Search for scheduled/recorded occurrences of programmes with this title and subtitle');
 							str1 += '</td><td>';
 							str1 += findfromfilter('Requested', 'title="' + prog.title + '" subtitle="' + prog.subtitle + '"', '', 'Requested', 'Search for requested recordings of programmes with this title and subtitle');
+							str1 += '</td><td>';
+							str1 += findfromfilter('Recorded', 'title="' + prog.title + '" subtitle="' + prog.subtitle + '"', '', 'Recorded', 'Search for recorded programmes with this title and subtitle');
 							str1 += '</td></tr>';
 						}
 						str1 += '<tr><td>Clashes</td><td>';
@@ -760,6 +769,12 @@ function populateprogs(id)
 											   '',
 											   'Requested',
 											   'Search for clashes in requested programmes with this programme');
+						str1 += '</td><td>';
+						str1 += findfromfilter('Recorded',
+											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + (new Date(prog.start)).toISOString() + '" ' + 'start<"' + (new Date(prog.stop)).toISOString() + '"',
+											   '',
+											   'Recorded',
+											   'Search for clashes in recorded programmes with this programme');
 						str1 += '</td></tr></table>';
 
 						if (str1 != '') {
