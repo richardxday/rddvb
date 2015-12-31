@@ -2394,11 +2394,11 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 					if (success) {
 						ConvertSubtitles(src, dst, splits, bestaspect);
 
-						GenerateSignatureFile(concatfile, outputfile.Prefix());
-
 						AString inputfiles;
 						inputfiles.printf("-i \"%s\"", concatfile.str());
 						success &= EncodeFile(inputfiles, aspect, outputfile, verbose);
+
+						GenerateSignatureFile(concatfile, outputfile.Prefix());
 					}
 
 					remove(concatfile);
