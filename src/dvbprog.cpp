@@ -2142,8 +2142,11 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 bool ADVBProg::GenerateSignatureFile(const AString& src, const AString& dst) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
+	AString dir = config.GetVideoSignatureDir(GetUser()).CatPath(ValidFilename(GetBaseChannel()));
 	bool success = true;
 
+	CreateDirectory(dir);
+	
 	if ((uint_t)config.GetUserSubItemConfigItem(GetUser(), GetCategory(), "videosig", "0") != 0) {
 		AString cmd;
 		uint_t  s = (uint_t)config.GetConfigItem("videosigsize", "256");
@@ -2154,7 +2157,7 @@ bool ADVBProg::GenerateSignatureFile(const AString& src, const AString& dst) con
 				   s, s,
 				   s, s,
 				   n,
-				   dst.str());
+				   dir.CatPath(dst).str());
 		success = RunCommand(cmd);
 	}
 	
@@ -2303,7 +2306,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 			inputfiles.printf("-i \"%s\"", src2.str());
 			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
 
-			GenerateSignatureFile(src2, basename);
+			GenerateSignatureFile(src2, basename.FilePart());
 		}
 		else if (splits.size() == 1) {			
 			config.printf("No need to split file");
@@ -2316,7 +2319,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 							  basename.str());
 			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
 
-			GenerateSignatureFile(basename + ".m2v", basename);
+			GenerateSignatureFile(basename + ".m2v", basename.FilePart());
 		}
 		else {
 			config.printf("Splitting file...");
@@ -2398,7 +2401,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 						inputfiles.printf("-i \"%s\"", concatfile.str());
 						success &= EncodeFile(inputfiles, aspect, outputfile, verbose);
 
-						GenerateSignatureFile(concatfile, outputfile.Prefix());
+						GenerateSignatureFile(concatfile, outputfile.FilePart().Prefix());
 					}
 
 					remove(concatfile);
