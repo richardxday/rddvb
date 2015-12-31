@@ -310,35 +310,44 @@ void ADVBConfig::writetorecordlog(const char *fmt, ...) const
 
 void ADVBConfig::ListUsers(AList& list) const
 {
-	const AStringPairWithInt *item = config.GetFirst();
-	AHash 	users(10);
-	AList 	userpatterns;
-	AString filepattern 	   = GetUserPatternsPattern();
-	AString filepattern_parsed = ParseRegex(filepattern);
-
+	AHash 	 users(10);
+	AList 	 userpatterns;
+	AString  filepattern 	   = GetUserPatternsPattern();
+	AString  filepattern_parsed = ParseRegex(filepattern);
+	AString  _users             = GetConfigItem("users");
+	AStdFile fp;
+	uint_t   i, n = _users.CountColumns();
+	
 	//debug("Reading users from config %s\n", config.GetFilename().str());
 
-	while (item) {
-		if (item->Integer == ASettingsHandler::PairType_Value) {
-			const AString& str = item->String1;
-			AString word = str.Word(0);
+	for (i = 0; i < n; i++) {
+		AString user = _users.Column(i).Words(0);
+
+		if (!users.Exists(user)) {
+			users.Insert(user, 0);
+			list.Add(new AString(user));
+		}
+	}
+
+	if (fp.open(GetPatternsFile())) {
+		AString line;
+
+		while (line.ReadLn(fp) >= 0) {
+			AString user;
 			int p;
+			
+			if		((p = line.PosNoCase(" user:=")) >= 0) user = line.Mid(p + 7).Word(0).DeQuotify();
+			else if (line.PosNoCase("user:=") == 0)        user = line.Mid(6).Word(0).DeQuotify();
 
-			//debug("Item: %s=%s\n", item->String1.str(), item->String2.str());
-
-			if ((p = word.Pos(":")) >= 0) {
-				AString user = word.Left(p);
-
-				if (!users.Exists(user)) {
-					users.Insert(user, 0);
-					list.Add(new AString(user));
-				}
+			if (user.Valid() && !users.Exists(user)) {
+				users.Insert(user, 0);
+				list.Add(new AString(user));
 			}
 		}
 
-		item = item->Next();
+		fp.close();
 	}
-
+	
 	::CollectFiles(filepattern.PathPart(), filepattern.FilePart(), 0, userpatterns);
 
 	const AString *file = AString::Cast(userpatterns.First());
