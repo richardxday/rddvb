@@ -695,8 +695,8 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 
 			AString relpath;
 			if (AStdFile::exists(filename) && (relpath = config.GetRelativePath(filename)).Valid()) {
-				str.printf(",\"path\":\"%s\"", JSONFormat(relpath).str());
-				str.printf(",\"subpaths\":[");
+				str.printf(",\"file\":\"%s\"", JSONFormat(relpath).str());
+				str.printf(",\"subfiles\":[");
 				
 				AList list;
 				CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, list);
@@ -2139,25 +2139,31 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 	return success;
 }
 
+AString ADVBProg::GetSignatureFilename(const AString& dstname) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	return config.GetVideoSignatureDir(GetUser()).CatPath(ValidFilename(GetBaseChannel()), dstname.FilePart().Prefix() + ".sig");
+}
+
 bool ADVBProg::GenerateSignatureFile(const AString& src, const AString& dst) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString dir = config.GetVideoSignatureDir(GetUser()).CatPath(ValidFilename(GetBaseChannel()));
+	AString sigfile = GetSignatureFilename(dst);
 	bool success = true;
 
-	CreateDirectory(dir);
+	CreateDirectory(sigfile.PathPart());
 	
 	if ((uint_t)config.GetUserSubItemConfigItem(GetUser(), GetCategory(), "videosig", "0") != 0) {
 		AString cmd;
 		uint_t  s = (uint_t)config.GetConfigItem("videosigsize", "256");
 		uint_t  n = (uint_t)config.GetConfigItem("videosigcount", "8");
 
-		cmd.printf("nice avconv -i \"%s\" -s %ux%u -pix_fmt rgb24 -vcodec rawvideo -f rawvideo pipe: | videosig -s %ux%u -n %u -of \"%s.sig\"",
+		cmd.printf("nice avconv -i \"%s\" -s %ux%u -pix_fmt rgb24 -vcodec rawvideo -f rawvideo pipe: | videosig -s %ux%u -n %u -of \"%s\"",
 				   src.str(),
 				   s, s,
 				   s, s,
 				   n,
-				   dir.CatPath(dst).str());
+				   sigfile.str());
 		success = RunCommand(cmd);
 	}
 	
@@ -2306,7 +2312,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 			inputfiles.printf("-i \"%s\"", src2.str());
 			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
 
-			GenerateSignatureFile(src2, basename.FilePart());
+			GenerateSignatureFile(src2, dst);
 		}
 		else if (splits.size() == 1) {			
 			config.printf("No need to split file");
@@ -2319,7 +2325,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 							  basename.str());
 			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
 
-			GenerateSignatureFile(basename + ".m2v", basename.FilePart());
+			GenerateSignatureFile(basename + ".m2v", dst);
 		}
 		else {
 			config.printf("Splitting file...");
@@ -2401,7 +2407,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 						inputfiles.printf("-i \"%s\"", concatfile.str());
 						success &= EncodeFile(inputfiles, aspect, outputfile, verbose);
 
-						GenerateSignatureFile(concatfile, outputfile.FilePart().Prefix());
+						GenerateSignatureFile(concatfile, outputfile);
 					}
 
 					remove(concatfile);

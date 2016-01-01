@@ -217,7 +217,7 @@ table.progsearch a.progsearch,table.users
 {
 	font-size:100%;
 }
-table.proglist a.addrecord,select.addrecord,button.addrecord
+table.proglist a.addrecord,select.addrecord,button.addrecord,button.delrecord
 {
 	font-size:130%;
 }
