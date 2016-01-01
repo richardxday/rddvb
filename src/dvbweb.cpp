@@ -15,8 +15,6 @@
 #include "dvbpatterns.h"
 #include "findcards.h"
 
-#define DELETEFILE(f) errors.printf("Deleting '%s'\n", (f).str())
-
 bool Value(const AHash& vars, AString& val, const AString& var)
 {
 	AString *p;
@@ -235,11 +233,11 @@ int main(int argc, char *argv[])
 
 					CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, subfiles);
 
-					DELETEFILE(filename);
+					remove(filename);
 
 					const AString *subfile = AString::Cast(subfiles.First());
 					while (subfile) {
-						DELETEFILE(*subfile);
+						remove(*subfile);
 						subfile = subfile->Next();
 					}
 				}
