@@ -1901,7 +1901,9 @@ bool ADVBProg::PostProcess(bool verbose)
 	AString srcfile = GetSourceFilename();
 	bool    success = false;
 
-	SetFilename(GenerateFilename());
+	if (AString(GetFilename()).Suffix() != config.GetFileSuffix(GetUser())) {
+		SetFilename(AString(GetFilename()).Suffix() + "." + config.GetFileSuffix(GetUser()));
+	}
 	
 	SetPostProcessing();
 	ADVBProgList::AddToList(config.GetProcessingFile(), *this);
