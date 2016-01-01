@@ -1991,12 +1991,38 @@ AString ADVBProg::GetParentheses(const AString& line, int p)
 	return "";
 }
 
-void ADVBProg::CopyFile(AStdData& fp1, AStdData& fp2)
+bool ADVBProg::CopyFile(AStdData& fp1, AStdData& fp2)
 {
 	static uint8_t buffer[65536];
-	slong_t l;
+	const ADVBConfig& config = ADVBConfig::Get();
+	slong_t sl = -1, dl = -1;
+	
+	while ((sl = fp1.readbytes(buffer, sizeof(buffer))) > 0) {
+		if ((dl = fp2.writebytes(buffer, sl)) != sl) {
+			config.logit("Failed to write %ld bytes (%ld written)", sl, dl);
+			break;
+		}
+	}
 
-	while ((l = fp1.readbytes(buffer, sizeof(buffer))) > 0) fp2.writebytes(buffer, l);
+	return (dl == sl);
+}
+
+bool ADVBProg::CopyFile(const AString& src, const AString& dst, bool binary)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AStdFile fp1, fp2;
+	bool success = false;
+	
+	if (fp1.open(src, binary ? "rb" : "r")) {
+		if (fp2.open(dst, binary ? "wb" : "w")) {
+			success = CopyFile(fp1, fp2);
+			if (!success) config.logit("Failed to copy '%s' to '%s': transfer failed", src.str(), dst.str());
+		}
+		else config.logit("Failed to copy '%s' to '%s': failed to open '%s' for writing", src.str(), dst.str(), dst.str());
+	}
+	else config.logit("Failed to copy '%s' to '%s': failed to open '%s' for reading", src.str(), dst.str(), src.str());
+
+	return success;
 }
 
 void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect)
@@ -2052,19 +2078,8 @@ void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const st
 
 			srcsubfile = src.Prefix() + ".sup.sub";
 			dstsubfile = dst.PathPart().CatPath("subs", dst.FilePart().Prefix() + ".sup.sub");
-			if (fp1.open(srcsubfile, "rb")) {
-				if (fp2.open(dstsubfile, "wb")) {
-					config.printf("Copying '%s' to '%s'", srcsubfile.str(), dstsubfile.str());
-								
-					CopyFile(fp1, fp2);
-								
-					fp2.close();
-				}
-				else config.printf("Failed to open sub file '%s' for writing", dstsubfile.str());
-			
-				fp1.close();
-			}
-			else config.printf("Failed to open sub file '%s' for reading", srcsubfile.str());
+
+			CopyFile(srcsubfile, dstsubfile);
 		}
 		else config.printf("Failed to open sub file '%s' for reading", srcsubfile.str());
 	}
@@ -2275,8 +2290,29 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 		}
 	}
 	else if (!AStdFile::exists(src2)) {
-		config.printf("No source file (either '%s' or '%s') found!", src.str(), src2.str());
-		success = false;
+		AString format;
+		
+		if (AStdFile::exists(dst)) {
+			if (GetFileFormat(dst, format)) {
+				if ((format.Pos("MPEG Video") >= 0) ||
+					(format.Pos("MPEG-TS")    >= 0)) {
+					config.printf("Copying '%s' to '%s'", dst.str(), src2.str());
+					success = CopyFile(dst, src2);
+				}
+				else {
+					config.printf("Cannot use '%s' as source because its format is '%s'", dst.str(), format.str());
+					success = false;
+				}
+			}
+			else {
+				config.printf("Failed to get format of '%s'", dst.str());
+				success = false;
+			}
+		}
+		else {
+			config.printf("No source file (either '%s' or '%s') found!", src.str(), src2.str());
+			success = false;
+		}
 	}
 
 	if (success) {
