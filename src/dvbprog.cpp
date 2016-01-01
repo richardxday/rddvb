@@ -1901,6 +1901,8 @@ bool ADVBProg::PostProcess(bool verbose)
 	AString srcfile = GetSourceFilename();
 	bool    success = false;
 
+	SetFilename(GenerateFilename());
+	
 	SetPostProcessing();
 	ADVBProgList::AddToList(config.GetProcessingFile(), *this);
 
