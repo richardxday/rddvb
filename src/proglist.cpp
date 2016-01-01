@@ -902,10 +902,12 @@ ADVBProg& ADVBProgList::GetProgWritable(uint_t n) const
 
 bool ADVBProgList::DeleteProg(uint_t n)
 {
+	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProg *prog = (ADVBProg *)proglist[n];
 	bool success = false;
 
 	if (prog) {
+		config.logit("Deleting programme %u from list ('%s')", n, prog->GetQuickDescription().str());
 		proglist.RemoveIndex(n);
 		if (proghash.Valid()) proghash.Remove(prog->GetUUID());
 		delete prog;
@@ -1638,8 +1640,8 @@ void ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
 	ADVBProgList list;
 
 	if (list.ReadFromFile(filename)) {
-		list.DeleteProg(prog);
-		if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after removing a programme", filename.str());
+		if		(!list.DeleteProg(prog))	  config.logit("Failed to find programme '%s' in list to remove it!", prog.GetQuickDescription().str());
+		else if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after removing a programme", filename.str());
 	}
 	else config.logit("Failed to read file '%s' for removing a programme", filename.str());
 }

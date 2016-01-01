@@ -68,6 +68,7 @@ var filters = [
 ];
 var searches = null;
 var link     = null;
+var globals  = null;
 
 function loadpage()
 {
@@ -242,9 +243,9 @@ function addtimesdata(prog)
 
 		if (typeof prog.exists != 'undefined') {
 			str += ' ';
-			if (typeof prog.path != 'undefined') str += '<a href="/videos' + prog.path + '" download>';
+			if (typeof prog.file != 'undefined') str += '<a href="/videos' + prog.file + '" download>';
 			str += 'Programme <b>' + (prog.exists ? 'Available' : 'Unavailable') + '</b>.';
-			if (typeof prog.path != 'undefined') str += '</a>';
+			if (typeof prog.file != 'undefined') str += '</a>';
 		}
 
 		if ((typeof prog.flags.ignorerecording != 'undefined') && prog.flags.ignorerecording) {
@@ -369,14 +370,14 @@ function adddownloadlink(prog)
 {
 	var str = '';
 	
-	str += '<a href="' + prog.path + '" download title="Download ' + prog.title + ' to computer">Download</a>';
+	str += '<a href="' + prog.file + '" download title="Download ' + prog.title + ' to computer">Download</a>';
 	str += ' or <a href="video.php?prog=' + encodeURIComponent(prog.base64) + '" title="Watch ' + prog.title + ' in browser" target=_blank>Watch</a>';
-	if ((typeof prog.subpaths != 'undefined') && (prog.subpaths.length > 0)) {
+	if ((typeof prog.subfiles != 'undefined') && (prog.subfiles.length > 0)) {
 		var i;
 
 		str += '<br>(Sub files:';
-		for (i = 0; i < prog.subpaths.length; i++) {
-			str += '&nbsp;<a href="' + prog.subpaths[i] + '" download title="Download ' + prog.title + ' sub file ' + (i + 1) + ' to computer">' + (i + 1) + '</a>';
+		for (i = 0; i < prog.subfiles.length; i++) {
+			str += '&nbsp;<a href="' + prog.subfiles[i] + '" download title="Download ' + prog.title + ' sub file ' + (i + 1) + ' to computer">' + (i + 1) + '</a>';
 		}
 		str += ')';
 	}
@@ -484,9 +485,9 @@ function populateprogs(id)
 					str += '{reltime}';
 					str += '</td><td style="font-size:90%;">';
 					if (prog.flags.postprocessing || prog.flags.running) str += '&nbsp;';
-					else if (typeof prog.path != 'undefined') str += adddownloadlink(prog);
+					else if (typeof prog.file != 'undefined') str += adddownloadlink(prog);
 					else if ((typeof prog.recorded != 'undefined') &&
-							 (typeof prog.recorded.path != 'undefined')) str += adddownloadlink(prog.recorded);
+							 (typeof prog.recorded.file != 'undefined')) str += adddownloadlink(prog.recorded);
 					else str += '&nbsp;';
 					str += '</td><td>';
 					str += '<td style="width:20px;cursor:pointer;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
@@ -612,6 +613,16 @@ function populateprogs(id)
 								str1 += '&nbsp;&nbsp;&nbsp;';
 								str1 += '<button class="addrecord" onclick="recordseries(' + i + ')">Record Series</button>';
 							}
+							str1 += '<br><br>';
+						}
+
+						if ((progvb > 3) && prog.flags.recorded &&
+							((globals != null) && (typeof globals.candelete != 'undefined') && globals.candelete)) {
+							if ((typeof prog.flags.exists != 'undefined') && prog.flags.exists) {
+								str1 += '<button class="delrecord" onclick="deletevideo(' + i + ')">Delete Video</button>';
+								str1 += '&nbsp;&nbsp;&nbsp;';
+							}
+							str1 += '<button class="delrecord" onclick="deleteprogramme(' + i + ')">Delete Programme</button>';
 							str1 += '<br><br>';
 						}
 
@@ -866,7 +877,7 @@ function recordprogramme(id)
 		
 		if (typeof prog.subtitle != 'undefined') pattern += ' subtitle="' + prog.subtitle + '"';
 		
-		postdata += "edit=add\n";
+		postdata += "editpattern=add\n";
 		postdata += "newuser=" + user + "\n";
 		postdata += "newpattern=" + pattern + "\n";
 		postdata += "schedule=commit\n";
@@ -885,12 +896,54 @@ function recordseries(id)
 
 		if (user == defaultuser) user = '';
 
-		postdata += "edit=add\n";
+		postdata += "editpattern=add\n";
 		postdata += "newuser=" + user + "\n";
 		postdata += "newpattern=" + pattern + "\n";
 		postdata += "schedule=commit\n";
 
 		dvbrequest({from:"Combined", titlefilter:pattern, timefilter:defaulttimefilter}, postdata);
+	}
+}
+
+function deletevideo(id)
+{
+	if (typeof response.progs[id] != 'undefined') {
+		var prog = response.progs[id];
+		var postdata = '';
+
+		postdata += "deleteprogramme=" + prog.uuid + "\n";
+		postdata += "type=video\n";
+
+		var progname = prog.title;
+		if (typeof prog.subtitle != 'undefined') {
+			progname += ' / ' + prog.subtitle;
+		}
+		
+		if (confirm("Delete video for '" + progname + "'?")) {
+			dvbrequest({from:"Combined", titlefilter:"", timefilter:defaulttimefilter}, postdata);
+		}
+	}
+}
+
+function deleteprogramme(id)
+{
+	if (typeof response.progs[id] != 'undefined') {
+		var prog = response.progs[id];
+		var postdata = '';
+
+		postdata += "deleteprogramme=" + prog.uuid + "\n";
+		postdata += "type=recordlist\n";
+
+		var progname = prog.title;
+		if (typeof prog.subtitle != 'undefined') {
+			progname += ' / ' + prog.subtitle;
+		}
+		
+		if (confirm("Delete '" + progname + "' from list of recordings?")) {
+			if (confirm("Are you really sure you want to delete '" + progname + "' from list of recordings?")) {
+				dvbrequest({from:"Combined", titlefilter:"", timefilter:defaulttimefilter, expanded:-1}, postdata);
+			}
+		}
 	}
 }
 
@@ -904,7 +957,7 @@ function addrecfromlisting(id)
 		
 		if (user == defaultuser) user = '';
 
-		postdata += "edit=add\n";
+		postdata += "editpattern=add\n";
 		postdata += "newuser=" + user + "\n";
 		postdata += "newpattern=" + pattern + "\n";
 
@@ -1276,7 +1329,7 @@ function updatepattern(index)
 			if (user == defaultuser) user = '';
 
 			if (pattern != '') {
-				postdata += "edit=update\n";
+				postdata += "editpattern=update\n";
 				postdata += "user=" + patterns[index].user + "\n";
 				postdata += "pattern=" + patterns[index].pattern + "\n";
 				postdata += "newuser=" + user + "\n";
@@ -1294,7 +1347,7 @@ function enablepattern(index)
 		if (!patterns[index].enabled) {
 			var postdata = "";
 
-			postdata += "edit=enable\n";
+			postdata += "editpattern=enable\n";
 			postdata += "user=" + patterns[index].user + "\n";
 			postdata += "pattern=" + patterns[index].pattern + "\n";
 			
@@ -1309,7 +1362,7 @@ function disablepattern(index)
 		if (patterns[index].enabled) {
 			var postdata = "";
 
-			postdata += "edit=disable\n";
+			postdata += "editpattern=disable\n";
 			postdata += "user=" + patterns[index].user + "\n";
 			postdata += "pattern=" + patterns[index].pattern + "\n";
 			
@@ -1324,7 +1377,7 @@ function deletepattern(index)
 		if (confirm("Delete pattern:\n\n'" + patterns[index].pattern + "'?")) {
 			var postdata = "";
 
-			postdata += "edit=delete\n";
+			postdata += "editpattern=delete\n";
 			postdata += "user=" + patterns[index].user + "\n";
 			postdata += "pattern=" + patterns[index].pattern + "\n";
 			
@@ -1353,7 +1406,7 @@ function addpattern(srcobject)
 	if (pattern != '') {
 		var postdata = "";
 
-		postdata += "edit=add\n";
+		postdata += "editpattern=add\n";
 		postdata += "newuser=" + user + "\n";
 		postdata += "newpattern=" + pattern + "\n";
 
@@ -1471,12 +1524,14 @@ function dvbrequest(filter, postdata)
 					if (xmlhttp.status == 200) {
 						response = JSON.parse(xmlhttp.responseText);
 
+						if (typeof response.globals != 'undefined') globals = response.globals;
+
 						var errors = '';
 						if ((typeof response.errors != 'undefined') && (response.errors != '')) {
 							errors = '<br><div class="finderrors">' + response.errors + '</div>';
 						}
 						document.getElementById("finderrors").innerHTML = errors;
-
+						
 						if (typeof response.searches != 'undefined') {
 							searches = {
 								ref:response.searchesref,

@@ -15,6 +15,8 @@
 #include "dvbpatterns.h"
 #include "findcards.h"
 
+#define DELETEFILE(f) errors.printf("Deleting '%s'\n", (f).str())
+
 bool Value(const AHash& vars, AString& val, const AString& var)
 {
 	AString *p;
@@ -137,7 +139,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (Value(vars, val, "edit")) {
+	if (Value(vars, val, "editpattern")) {
 		AString edit = val.ToLower();
 		AString user, pattern;
 		AString newuser, newpattern;
@@ -163,7 +165,6 @@ int main(int argc, char *argv[])
 			ADVBPatterns::DeletePattern(user, pattern);
 		}
 	}
-
 	if (Value(vars, val, "schedule")) {
 		bool commit = (val == "commit");
 
@@ -219,6 +220,45 @@ int main(int argc, char *argv[])
 		combinedlist.CreateHash();
 		combinedlist.FindSeries(fullseries);
 
+		if (Value(vars, val, "deleteprogramme")) {
+			const ADVBProg *pprog;
+
+			if ((pprog = recordedlist.FindUUID(val)) != NULL) {
+				ADVBProg prog = *pprog;
+				AString  type;
+
+				Value(vars, type, "type");
+			
+				if ((type == "all") || (type == "video")) {
+					AString filename = prog.GetFilename();
+					AList   subfiles;
+
+					CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, subfiles);
+
+					DELETEFILE(filename);
+
+					const AString *subfile = AString::Cast(subfiles.First());
+					while (subfile) {
+						DELETEFILE(*subfile);
+						subfile = subfile->Next();
+					}
+				}
+
+				if ((type == "all") || (type == "recordlist")) {
+					ADVBProgList::RemoveFromList(config.GetRecordedFile(), prog);
+
+					recordedlist.DeleteAll();
+					recordedlist.ReadFromFile(config.GetRecordedFile());
+					recordedlist.CreateHash();
+
+					combinedlist.DeleteAll();
+					combinedlist.ReadFromFile(config.GetCombinedFile());
+					combinedlist.CreateHash();
+				}
+			}
+			else errors.printf("Failed to decode progeamme for file deletion");
+		}
+	
 		{
 			AString errors;		// use local var to prevent global one being modified
 			ADVBProgList::ReadPatterns(patternlist, errors);
@@ -515,28 +555,28 @@ int main(int argc, char *argv[])
 						printf("%s", prog.ExportToJSON(true).str());
 						printpattern(patterns, prog);
 
-						if ((prog2 = scheduledlist.FindUUID(prog)) != NULL) {
+						if (((prog2 = scheduledlist.FindUUID(prog)) != NULL) && (*prog2 != prog)) {
 							printf(",\"scheduled\":{");
 							printf("%s", prog2->ExportToJSON().str());
 							printpattern(patterns, *prog2);
 							printf("}");
 						}
 
-						if ((prog2 = recordedlist.FindSimilar(prog)) != NULL) {
+						if (((prog2 = recordedlist.FindSimilar(prog)) != NULL) && (*prog2 != prog)) {
 							printf(",\"recorded\":{");
 							printf("%s", prog2->ExportToJSON().str());
 							printpattern(patterns, *prog2);
 							printf("}");
 						}
 
-						if ((prog2 = rejectedlist.FindUUID(prog)) != NULL) {
+						if (((prog2 = rejectedlist.FindUUID(prog)) != NULL) && (*prog2 != prog)) {
 							printf(",\"rejected\":{");
 							printf("%s", prog2->ExportToJSON().str());
 							printpattern(patterns, *prog2);
 							printf("}");
 						}
 
-						if ((prog2 = failureslist.FindUUID(prog)) != NULL) {
+						if (((prog2 = failureslist.FindUUID(prog)) != NULL) && (*prog2 != prog)) {
 							printf(",\"failed\":{");
 							printf("%s", prog2->ExportToJSON().str());
 							printpattern(patterns, *prog2);
@@ -624,6 +664,12 @@ int main(int argc, char *argv[])
 				printf(",\"requested\":%u", requestedlist.Count());
 				printf(",\"rejected\":%u", rejectedlist.Count());
 				printf(",\"combined\":%u", combinedlist.Count());
+				printf("}");
+			}
+
+			{
+				printf(",\"globals\":{");
+				printf("\"candelete\":%s", (uint_t)config.GetConfigItem("webcandelete", "0") ? "true" : "false");
 				printf("}");
 			}
 		}
