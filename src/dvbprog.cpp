@@ -1902,7 +1902,7 @@ bool ADVBProg::PostProcess(bool verbose)
 	bool    success = false;
 
 	if (AString(GetFilename()).Suffix() != config.GetFileSuffix(GetUser())) {
-		SetFilename(AString(GetFilename()).Suffix() + "." + config.GetFileSuffix(GetUser()));
+		SetFilename(AString(GetFilename()).Prefix() + "." + config.GetFileSuffix(GetUser()));
 	}
 	
 	SetPostProcessing();
