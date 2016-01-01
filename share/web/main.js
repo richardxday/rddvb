@@ -616,16 +616,6 @@ function populateprogs(id)
 							str1 += '<br><br>';
 						}
 
-						if ((progvb > 3) && prog.flags.recorded &&
-							((globals != null) && (typeof globals.candelete != 'undefined') && globals.candelete)) {
-							if ((typeof prog.flags.exists != 'undefined') && prog.flags.exists) {
-								str1 += '<button class="delrecord" onclick="deletevideo(' + i + ')">Delete Video</button>';
-								str1 += '&nbsp;&nbsp;&nbsp;';
-							}
-							str1 += '<button class="delrecord" onclick="deleteprogramme(' + i + ')">Delete Programme</button>';
-							str1 += '<br><br>';
-						}
-
 						if ((progvb > 3) &&
 							(typeof prog.episode != 'undefined')) {
 							var j, k, n = 1, series = (typeof prog.episode.series != 'undefined');
@@ -788,6 +778,16 @@ function populateprogs(id)
 											   'Search for clashes in recorded programmes with this programme');
 						str1 += '</td></tr></table>';
 
+						if ((progvb > 3) && prog.flags.recorded &&
+							((globals != null) && (typeof globals.candelete != 'undefined') && globals.candelete)) {
+							str1 += '<br>';
+							if ((typeof prog.flags.exists != 'undefined') && prog.flags.exists) {
+								str1 += '<button class="delrecord" onclick="deletevideo(' + i + ')">Delete Video</button>';
+								str1 += '&nbsp;&nbsp;&nbsp;';
+							}
+							str1 += '<button class="delrecord" onclick="deleteprogramme(' + i + ')">Delete Programme</button>';
+						}
+						
 						if (str1 != '') {
 							str += '<br><br>';
 							str += str1;
@@ -795,7 +795,7 @@ function populateprogs(id)
 
 						str += '</td></tr>';
 					}
-					
+
 					response.progs[i].html = {};
 					response.progs[i].html.selected = selected;
 					response.progs[i].html.str      = str;
