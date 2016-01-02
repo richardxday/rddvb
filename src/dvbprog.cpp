@@ -2008,7 +2008,7 @@ bool ADVBProg::CopyFile(AStdData& fp1, AStdData& fp2)
 		}
 	}
 
-	return (dl == sl);
+	return (sl <= 0);
 }
 
 bool ADVBProg::CopyFile(const AString& src, const AString& dst, bool binary)
