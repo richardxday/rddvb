@@ -52,6 +52,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 
 	DEFINE_FIELD(on, start, date, "Day"),
 	DEFINE_FIELD(day, start, date, "Day"),
+	DEFINE_FIELD(age, stop, age, "Age"),
 	DEFINE_SIMPLE(start, date, "Start"),
 	DEFINE_SIMPLE(stop, date, "Stop"),
 	DEFINE_SIMPLE(recstart, date, "Record start"),
@@ -2479,3 +2480,33 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 	
 	return success;
 }
+
+void ADVBProg::GetEncodedFiles(AList& files) const
+{
+	AString filename = GetFilename();
+	
+	files.Add(new AString(filename));	
+	CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, files);
+}
+
+bool ADVBProg::DeleteEncodedFiles() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AList files;
+	
+	GetEncodedFiles(files);
+
+	const AString *file = AString::Cast(files.First());
+	bool  success = (file != NULL);
+	while (file) {
+		bool filedeleted = (remove(*file) == 0);
+		
+		config.printf("Delete file '%s': %s", file->str(), filedeleted ? "success" : "failed");
+		success &= filedeleted;
+		
+		file = file->Next();
+	}
+
+	return success;
+}
+

@@ -281,6 +281,9 @@ public:
 	bool PostProcess(bool verbose = false);
 	bool GenerateSignatureFile(const AString& src, const AString& dst) const;
 
+	void GetEncodedFiles(AList& files) const;
+	bool DeleteEncodedFiles() const;
+	
 	static bool FilePatternExists(const AString& filename);
 
 	static bool GetFileFormat(const AString& filename, AString& format);
