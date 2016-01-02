@@ -35,7 +35,7 @@ public:
 		delete (PATTERN *)item;
 	}
 
-	static AString ParsePattern(const AString& line, PATTERN& pattern, const AString& user = "");
+	static AString ParsePattern(const AString& _line, PATTERN& pattern, const AString& user = "");
 	static AString RemoveDuplicateTerms(PATTERN& pattern);
 
 	static bool Match(const ADVBProg& prog, const PATTERN& pattern);
@@ -69,6 +69,7 @@ protected:
 		FieldType_string = 0,
 		FieldType_date,
 		FieldType_span,
+		FieldType_age,
 		FieldType_uint32_t,
 		FieldType_sint32_t,
 		FieldType_uint16_t,

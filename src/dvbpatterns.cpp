@@ -192,10 +192,8 @@ void ADVBPatterns::GetFieldValue(const FIELD& field, VALUE& value, AString& val)
 			break;
 
 		case FieldType_date:
-			value.u64 = (uint64_t)ADateTime(val, ADateTime::Time_Absolute);
-			break;
-
 		case FieldType_span:
+		case FieldType_age:
 			value.u64 = (uint64_t)ADateTime(val, ADateTime::Time_Absolute);
 			break;
 
@@ -252,6 +250,7 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const FIELD& field, const VALUE& 
 
 		case FieldType_date:
 		case FieldType_span:
+		case FieldType_age:
 			memcpy(ptr, &value.u64, sizeof(value.u64));
 			break;
 
@@ -495,11 +494,12 @@ bool ADVBPatterns::ParsePattern(ADataList& patternlist, const AString& line, ASt
 	return success;
 }
 
-AString ADVBPatterns::ParsePattern(const AString& line, PATTERN& pattern, const AString& user)
+AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const AString& user)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADataList& list   = pattern.list;
 	AString&   errors = pattern.errors;
+	AString    line   = _line; //config.ReplaceTerms(_line, user);
 	TERM   *term;
 	uint_t i;
 
@@ -738,9 +738,12 @@ AString ADVBPatterns::ParsePattern(const AString& line, PATTERN& pattern, const 
 						break;
 					}
 
-					case FieldType_span: {
+					case FieldType_span:
+					case FieldType_age: {
 						ADateTime dt;
+						//ADateTime::EnableDebugStrToDate(true);
 						term->value.u64 = (uint64_t)ADateTime(value, ADateTime::Time_Absolute);
+						//ADateTime::EnableDebugStrToDate(false);
 						break;
 					}
 
@@ -1144,7 +1147,19 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 						res = COMPARE_ITEMS(val, term.value.u64);
 						break;
 					}
-						
+
+					case FieldType_age: {
+						uint64_t val1, val2, val;
+
+						memcpy(&val1, ptr, sizeof(val1));
+						val2 = (uint64_t)ADateTime().TimeStamp(true);
+
+						val = SUBZ(val2, val1);
+						//debug("Age: comparing %lu with %lu\n", (ulong_t)val, (ulong_t)term.value.u64);
+						res = COMPARE_ITEMS(val, term.value.u64);
+						break;
+					}
+
 					case FieldType_uint32_t: {
 						uint32_t val;
 
