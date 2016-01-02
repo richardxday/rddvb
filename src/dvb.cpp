@@ -1048,7 +1048,7 @@ int main(int argc, char *argv[])
 					if (!AStdFile::exists(filename) ||
 						!ADVBProg::GetFileFormat(filename, format) ||
 						(format.Pos("MPEG Video") >= 0) ||
-						(format.Pos("MPEG-TS")    >= 0)) {
+						(format == "MPEG-TS")) {
 						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
 						prog.PostProcess(true);
 					}

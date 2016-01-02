@@ -2299,7 +2299,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 		if (AStdFile::exists(dst)) {
 			if (GetFileFormat(dst, format)) {
 				if ((format.Pos("MPEG Video") >= 0) ||
-					(format.Pos("MPEG-TS")    >= 0)) {
+					(format == "MPEG-TS")) {
 					config.printf("Copying '%s' to '%s'", dst.str(), src2.str());
 					success = CopyFile(dst, src2);
 				}
