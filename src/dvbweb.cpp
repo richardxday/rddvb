@@ -228,17 +228,8 @@ int main(int argc, char *argv[])
 				Value(vars, type, "type");
 			
 				if ((type == "all") || (type == "video")) {
-					AString filename = prog.GetFilename();
-					AList   subfiles;
-
-					CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, subfiles);
-
-					remove(filename);
-
-					const AString *subfile = AString::Cast(subfiles.First());
-					while (subfile) {
-						remove(*subfile);
-						subfile = subfile->Next();
+					if (!prog.DeleteEncodedFiles()) {
+						errors.printf("Failed to delete all files");
 					}
 				}
 
