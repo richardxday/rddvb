@@ -2485,7 +2485,6 @@ void ADVBProg::GetEncodedFiles(AList& files) const
 {
 	AString filename = GetFilename();
 	
-	files.Add(new AString(filename));	
 	CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, files);
 }
 
