@@ -87,7 +87,8 @@ videosig_LDADD =								\
 	$(RDLIB_LIBS)
 
 videosig_CPPFLAGS =								\
-	$(RDLIB_CFLAGS)
+	$(RDLIB_CFLAGS)								\
+	$(RDDVB_CFLAGS)
 
 videosig_SOURCES =								\
 	videosig.cpp
@@ -96,7 +97,8 @@ sigcmp_LDADD =									\
 	$(RDLIB_LIBS)
 
 sigcmp_CPPFLAGS =								\
-	$(RDLIB_CFLAGS)
+	$(RDLIB_CFLAGS)								\
+	$(RDDVB_CFLAGS)
 
 sigcmp_SOURCES =								\
 	sigcmp.cpp
