@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 		inbuf.resize(wid * hgt * 3);
 		outbuf.resize(n * n * 3);
 
-		while (ifp->readbytes(&inbuf[0], inbuf.size()) == inbuf.size()) {
+		while (ifp->readbytes(&inbuf[0], inbuf.size()) == (slong_t)inbuf.size()) {
 			uint8_t *p = &outbuf[0];
 			uint_t i, j, div = 2 * (n + 1);
 
