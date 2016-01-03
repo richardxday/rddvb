@@ -920,7 +920,7 @@ function deletevideo(id)
 		}
 		
 		if (confirm("Delete video for '" + progname + "'?")) {
-			dvbrequest({from:"Combined", titlefilter:"", timefilter:defaulttimefilter}, postdata);
+			dvbrequest({expanded:-1}, postdata);
 		}
 	}
 }
@@ -941,7 +941,7 @@ function deleteprogramme(id)
 		
 		if (confirm("Delete '" + progname + "' from list of recordings?")) {
 			if (confirm("Are you really sure you want to delete '" + progname + "' from list of recordings?")) {
-				dvbrequest({from:"Combined", titlefilter:"", timefilter:defaulttimefilter, expanded:-1}, postdata);
+				dvbrequest({expanded:-1}, postdata);
 			}
 		}
 	}
