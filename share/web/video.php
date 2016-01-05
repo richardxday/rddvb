@@ -27,7 +27,7 @@ if (isset($prog['subtitle'])) echo " / " . $prog['subtitle'];
 echo "</h1><br>\n";
 
 echo '<center><video autoplay controls>' . "\n";
-echo '<source src="' . $prog['path'] . '" />' . "\n";
+echo '<source src="' . $prog['file'] . '" />' . "\n";
 echo '</video></center>' . "\n";
 echo "<br><br>\n";
 
