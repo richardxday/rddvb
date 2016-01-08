@@ -2324,26 +2324,31 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 		if (!splits.size() && AStdFile::exists(src2)) {
 			config.printf("Using existing file '%s'", src2.str());
 
-			AString cmd;
-			cmd.printf("%s -i \"%s\" 2>&1 | grep -o -E \"DAR [0-9]+:[0-9]+\" >\"%s\"", proccmd.str(), src2.str(), logfile.str());
-			(void)(system(cmd) == 0);
+			bestaspect = config.GetConfigItem("aspect:" + ValidFilename(GetTitle()));
+			if (bestaspect.Valid()) config.printf("Using aspect '%s' from conf file", bestaspect.str());
 			
-			AStdFile fp;
-			if (fp.open(logfile)) {
-				AString line;
-
-				while (line.ReadLn(fp) >= 0) {
-					if (line.Pos("DAR ") == 0) {
-						bestaspect = line.Mid(4);
-						break;
+			if (bestaspect.Empty()) {
+				AString cmd;
+				cmd.printf("%s -i \"%s\" 2>&1 | grep -o -E \"DAR [0-9]+:[0-9]+\" >\"%s\"", proccmd.str(), src2.str(), logfile.str());
+				(void)(system(cmd) == 0);
+				
+				AStdFile fp;
+				if (fp.open(logfile)) {
+					AString line;
+					
+					while (line.ReadLn(fp) >= 0) {
+						if (line.Pos("DAR ") == 0) {
+							bestaspect = line.Mid(4);
+							break;
+						}
 					}
+					
+					fp.close();
 				}
-
-				fp.close();
+				
+				remove(logfile);
 			}
-
-			remove(logfile);
-
+			
 			if (bestaspect.Empty()) {
 				bestaspect = "16:9";
 				config.printf("Unknown aspect, defaulting to %s", bestaspect.str());
