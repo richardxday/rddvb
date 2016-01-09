@@ -227,26 +227,26 @@ void ADVBProg::SwapBytes(DVBPROG *prog)
 ADVBProg& ADVBProg::operator = (AStdData& fp)
 {
 	DVBPROG _data;
-	sint32_t n;
-	bool   success = false;
+	slong_t n;
+	bool    success = false;
 
 	Delete();
 
-	if ((n = fp.readbytes((uint8_t *)&_data, sizeof(_data))) == (sint32_t)sizeof(_data)) {
+	if ((n = fp.readbytes((uint8_t *)&_data, sizeof(_data))) == (slong_t)sizeof(_data)) {
 		if (_data.bigendian != (uint8_t)MachineIsBigEndian()) SwapBytes(data);
 
 		if ((sizeof(_data) + _data.strings.end) > maxsize) {
 			if (data) free(data);
 
 			maxsize = sizeof(_data) + _data.strings.end;
-			data = (DVBPROG *)calloc(1, maxsize);
+			data    = (DVBPROG *)calloc(1, maxsize);
 			data->bigendian = (uint8_t)MachineIsBigEndian();
 		}
 
 		if (data && ((sizeof(_data) + _data.strings.end) <= maxsize)) {
 			memcpy(data, &_data, sizeof(*data));
 				
-			if ((n = fp.readbytes(data->strdata, _data.strings.end)) == (sint32_t)_data.strings.end) {
+			if ((n = fp.readbytes(data->strdata, _data.strings.end)) == (slong_t)_data.strings.end) {
 				success = true;
 			}
 		}
