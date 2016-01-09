@@ -1071,10 +1071,11 @@ int main(int argc, char *argv[])
 					const ADVBProg& prog = proglist.GetProg(i);
 					AString filename = prog.GetSourceFilename();
 					
-					if (!AStdFile::exists(filename)) filename = filename.Prefix() + config.GetFileSuffix(prog.GetUser());
+					if (!AStdFile::exists(filename)) filename = filename.Prefix() + "." + config.GetFileSuffix(prog.GetUser());
+					if (!AStdFile::exists(filename)) filename = prog.GetFilename();
 
 					if (AStdFile::exists(filename)) {
-						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
+						config.printf("Generating signature file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
 						prog.GenerateSignatureFile(filename, filename.Prefix());
 					}
 				}
