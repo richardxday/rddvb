@@ -1034,8 +1034,12 @@ int main(int argc, char *argv[])
 				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
 					ADVBProg& prog = proglist.GetProgWritable(i);
 
-					config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
-					prog.PostProcess(true);
+					if (AStdFile::exists(prog.GetSourceFilename()) ||
+						AStdFile::exists(prog.GetSource2Filename()) ||
+						AStdFile::exists(prog.GetFilename())) {
+						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
+						prog.PostProcess(true);
+					}
 				}
 			}
 			else if (stricmp(argv[i], "--post-process-if-format") == 0) {
@@ -1046,10 +1050,13 @@ int main(int argc, char *argv[])
 					AString filename = prog.GetFilename();
 					AString format;
 					
-					if (!AStdFile::exists(filename) ||
-						!ADVBProg::GetFileFormat(filename, format) ||
-						(format.Pos("MPEG Video") >= 0) ||
-						(format == "MPEG-TS")) {
+					if ((!AStdFile::exists(filename) ||
+						 !ADVBProg::GetFileFormat(filename, format) ||
+						 (format.Pos("MPEG Video") >= 0) ||
+						 (format == "MPEG-TS")) &&
+						(AStdFile::exists(prog.GetSourceFilename()) ||
+						 AStdFile::exists(prog.GetSource2Filename()) ||
+						 AStdFile::exists(prog.GetFilename()))) {
 						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
 						prog.PostProcess(true);
 					}

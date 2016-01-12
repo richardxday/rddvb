@@ -1767,6 +1767,12 @@ AString ADVBProg::GetSourceFilename() const
 	return config.GetRecordingsStorageDir(GetUser()).CatPath(AString(GetFilename()).FilePart().Prefix() + ".mpg");
 }
 
+AString ADVBProg::GetSource2Filename() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	return config.GetRecordingsStorageDir(GetUser()).CatPath(AString(GetFilename()).FilePart().Prefix() + "." + config.GetFileSuffix(GetUser()));
+}
+
 AString ADVBProg::ReplaceTerms(const AString& str) const
 {
 	AString date  = GetStartDT().UTCToLocal().DateFormat("%Y-%M-%D");
@@ -2197,7 +2203,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 	AString  src      = GetSourceFilename();
 	AString  dst      = GetFilename();
 	AString  basename = src.Prefix();
-	AString  src2     = basename + "." + config.GetFileSuffix(GetUser());
+	AString  src2     = GetSource2Filename();
 	AString  remuxsrc = basename + "_Remuxed.mpg";
 	AString  logfile  = basename + "_log.txt";
 	AString  proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());

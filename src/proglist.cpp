@@ -902,12 +902,10 @@ ADVBProg& ADVBProgList::GetProgWritable(uint_t n) const
 
 bool ADVBProgList::DeleteProg(uint_t n)
 {
-	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProg *prog = (ADVBProg *)proglist[n];
 	bool success = false;
 
 	if (prog) {
-		config.logit("Deleting programme %u from list ('%s')", n, prog->GetQuickDescription().str());
 		proglist.RemoveIndex(n);
 		if (proghash.Valid()) proghash.Remove(prog->GetUUID());
 		delete prog;
