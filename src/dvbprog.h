@@ -116,6 +116,7 @@ public:
 	bool SetPrefs(const char   	  *str)    	   {return SetString(&data->strings.prefs,   	str);}
 
 	AString GetSourceFilename() const;
+	AString GetSource2Filename() const;
 	AString GetSignatureFilename(const AString& dstname) const;
 
 	AString GetPrefItem(const AString& name, const AString& defval = "") const;
