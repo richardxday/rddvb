@@ -1544,6 +1544,7 @@ function dvbrequest(filter, postdata)
 
 								searches.view[i] = search.search;
 								searches.view[i].timefilter = "";
+								searches.view[i].fetch = true;
 								
 								str += '<button onclick="dvbrequest(searches.view[' + i + '])">' + search.title + '</button><br>';
 							}
