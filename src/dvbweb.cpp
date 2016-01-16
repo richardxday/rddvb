@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 		if (Value(vars, val, "deleteprogramme")) {
 			const ADVBProg *pprog;
 
-			if ((pprog = recordedlist.FindUUID(val)) != NULL) {
+			if ((pprog = combinedlist.FindUUID(val)) != NULL) {
 				ADVBProg prog = *pprog;
 				AString  type;
 
@@ -234,6 +234,9 @@ int main(int argc, char *argv[])
 				}
 
 				if ((type == "all") || (type == "recordlist")) {
+					config.logit("Deleting '%s' from recorded and failed lists", prog.GetQuickDescription().str());
+					
+					ADVBProgList::RemoveFromList(config.GetRecordFailuresFile(), prog);
 					ADVBProgList::RemoveFromList(config.GetRecordedFile(), prog);
 
 					recordedlist.DeleteAll();
@@ -243,9 +246,12 @@ int main(int argc, char *argv[])
 					combinedlist.DeleteAll();
 					combinedlist.ReadFromFile(config.GetCombinedFile());
 					combinedlist.CreateHash();
+
+					failureslist.DeleteAll();
+					failureslist.ReadFromFile(config.GetRecordFailuresFile());
 				}
 			}
-			else errors.printf("Failed to decode progeamme for file deletion");
+			else errors.printf("Failed to find UUID '%s' for file deletion", val.str());
 		}
 	
 		{
