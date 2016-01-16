@@ -7,6 +7,7 @@
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
+#include <rdlib/XMLDecode.h>
 
 #include "config.h"
 #include "proglist.h"
@@ -81,7 +82,7 @@ int ADVBProgList::SortChannels(uptr_t item1, uptr_t item2, void *pContext)
 	return CompareNoCase(name1, name2);
 }
 
-void ADVBProgList::AddXMLTVChannel(const AString& channel)
+void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
 {
 	static const REPLACEMENT replacements[] = {
 		{" +1", "+1"},
@@ -120,14 +121,16 @@ void ADVBProgList::AddXMLTVChannel(const AString& channel)
 		{"Pick TV", "Pick"},
 		{"Spike TV", "Spike"},
 	};
-	AString id   = channel.GetField("channel id=\"", "\"");
-	AString name = channel.GetField("<display-name>", "</display-name>").DeHTMLify();
+	AString id   = channel.GetAttribute("id");
+	AString name = channel.GetChildValue("display-name");
 
-	//debug("Found channel id '%s' name '%s' from '%s' ('%s')\n", id.str(), name.str(), channel.str(), channel.GetXMLAttributes().str());
-	
-	name = ReplaceStrings(name, replacements, NUMBEROF(replacements));
+	if (id.Valid() && name.Valid()) {
+		name = ReplaceStrings(name, replacements, NUMBEROF(replacements));
 
-	AddChannel(id, name);
+		//debug("Channel %s=%s\n", id.str(), name.str());
+		
+		AddChannel(id, name);
+	}
 }
 
 void ADVBProgList::AddChannel(const AString& id, const AString& name)
@@ -199,6 +202,7 @@ bool ADVBProgList::ValidChannelID(const AString& channelid) const
 		AString suffix  = "." + channel.Line(0, "=");
 
 		if (channelid.EndsWithNoCase(suffix)) {
+			//debug("Channel ID '%s' is invalid (suffix='%s')\n", channelid.str(), suffix.str());
 			valid = false;
 			break;
 		}
@@ -211,6 +215,7 @@ bool ADVBProgList::ValidChannelID(const AString& channelid) const
 			AString region  = channel.Line(1, "=") + suffix;
 		
 			if (channelid.EndsWithNoCase(region)) {
+				//debug("Channel ID '%s' is valid again (region='%s')\n", channelid.str(), region.str());
 				valid = true;
 				break;
 			}
@@ -218,6 +223,22 @@ bool ADVBProgList::ValidChannelID(const AString& channelid) const
 	}
 
 	return valid;
+}
+
+void ADVBProgList::GetProgrammeValues(AString& str, const AStructuredNode *pNode, const AString& prefix) const
+{
+	while (pNode) {
+		AString key = prefix + pNode->Key.SearchAndReplace("-", "");
+		
+		if (pNode->Value.Valid() || !pNode->GetChildren()) str.printf("%s=%s\n", key.str(), pNode->Value.str());
+		
+		if (pNode->GetChildren()) {
+			if (key == "video") GetProgrammeValues(str, pNode->GetChildren(), key);
+			else				GetProgrammeValues(str, pNode->GetChildren());
+		}
+		
+		pNode = pNode->Next();
+	}
 }
 
 bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
@@ -247,85 +268,71 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 			if (channel.Valid()) {
 				channel += line;
 				if (channel.PosNoCase("</channel>") >= 0) {
-					channel = channel.DeHTMLify();
-					AddXMLTVChannel(channel);
+					const AStructuredNode *pNode;
+					AStructuredNode _node;
 
+					if (DecodeXML(_node, channel) && ((pNode = _node.GetChildren()) != NULL)) {
+						AddXMLTVChannel(*pNode);
+					}
+					else config.printf("Failed to decode channel data ('%s')", channel.str());
+					
 					channel.Delete();
 				}
 			}
 			else if (programme.Valid()) {
 				programme += line;
 				if (programme.PosNoCase("</programme>") >= 0) {
-					AString channelid = programme.GetField(" channel=\"", "\"").DeHTMLify();
-					AString channel   = LookupXMLTVChannel(channelid);
+					const AStructuredNode *pNode;
+					AStructuredNode _node;
 
-					if (!channelidvalidhash.Exists(channelid)) {
-						bool valid = ValidChannelID(channelid);
+					if (DecodeXML(_node, programme) && ((pNode = _node.GetChildren()) != NULL)) {
+						AString channelid = pNode->GetAttribute("channel");
+						AString channel   = LookupXMLTVChannel(channelid);
 
-						channelidvalidhash.Insert(channelid, (uint_t)valid);
+						if (!channelidvalidhash.Exists(channelid)) {
+							bool valid = ValidChannelID(channelid);
 
-						if (!valid) debug("Channel ID '%s' (channel '%s') is%s valid\n", channelid.str(), channel.str(), valid ? "" : " NOT");
-					}
+							channelidvalidhash.Insert(channelid, (uint_t)valid);
 
-					if (channelidvalidhash.Read(channelid)) {
-						ADateTime start, stop;
-						AString   str;
+							if (!valid) debug("Channel ID '%s' (channel '%s') is%s valid\n", channelid.str(), channel.str(), valid ? "" : " NOT");
+						}
 
-						start.StrToDate(programme.GetField(" start=\"", "\""), ADateTime::Time_Absolute);
-						stop.StrToDate(programme.GetField(" stop=\"", "\""), ADateTime::Time_Absolute);
+						if (channelidvalidhash.Read(channelid)) {
+							ADateTime start, stop;
+							AString   str;
+
+							start.StrToDate(pNode->GetAttribute("start"), ADateTime::Time_Absolute);
+							stop.StrToDate(pNode->GetAttribute("stop"), ADateTime::Time_Absolute);
 
 #if 0
-						{
-							static AStdFile fp;
-							if (!fp.isopen()) fp.open("dates.txt", "w");
-							if (fp.isopen()) {
-								fp.printf("Start %s -> %s\n", programme.GetField(" start=\"", "\"").str(), start.DateFormat("%Y-%M-%D %h:%m:%s.%S").str());
-								fp.printf("Stop  %s -> %s\n", programme.GetField(" stop=\"", "\"").str(), stop.DateFormat("%Y-%M-%D %h:%m:%s.%S").str());
+							{
+								static AStdFile fp;
+								if (!fp.isopen()) fp.open("dates.txt", "w");
+								if (fp.isopen()) {
+									fp.printf("Start %s -> %s\n", programme.GetField(" start=\"", "\"").str(), start.DateFormat("%Y-%M-%D %h:%m:%s.%S").str());
+									fp.printf("Stop  %s -> %s\n", programme.GetField(" stop=\"", "\"").str(), stop.DateFormat("%Y-%M-%D %h:%m:%s.%S").str());
+								}
 							}
-						}
 #endif
 
-						str.printf("\n");
-						str.printf("start=%s\n", ADVBProg::GetHex(start).str());
-						str.printf("stop=%s\n",  ADVBProg::GetHex(stop).str());
+							str.printf("\n");
+							str.printf("start=%s\n", ADVBProg::GetHex(start).str());
+							str.printf("stop=%s\n",  ADVBProg::GetHex(stop).str());
 
-						str.printf("channel=%s\n", channel.str());
-						str.printf("channelid=%s\n", channelid.str());
+							str.printf("channel=%s\n", channel.str());
+							str.printf("channelid=%s\n", channelid.str());
 
-						AString attrs = programme.GetXMLAttributes();
-						uint_t i, n = attrs.CountLines("\n", 0);
-						for (i = 1; i < n; i++) {
-							AString line = attrs.Line(i, "\n", 0);
-							AString var, value;
-							bool valid = false;
-
-							if (line.Left(2) == "</") {
-								var   = line.Mid(2).SearchAndReplace(">", "").Word(0);
-								value = attrs.Line(i - 1, "\n", 0);
-								if ((i >= 2) && (value == "</value>")) value = attrs.Line(i - 2, "\n", 0);
-								valid = ((var != "value") && (value.FirstChar() != '<'));
+							GetProgrammeValues(str, pNode->GetChildren());
+							
+							//debug("%s", str.str());
+							
+							if (AddProg(str, true, true) < 0) {
+								config.printf("Failed to add prog!");
+								success = false;
 							}
-							else if ((line.FirstChar() == '<') && (line.Right(2) == "/>")) {
-								var   = line.Mid(1).SearchAndReplace("/>", "").Word(0);
-								value = line.Mid(1 + var.len(), line.len() - 1 - var.len() - 2).Words(0);
-								valid = (var != "value");
-							}
-
-							if (valid) {
-								var   = var.SearchAndReplace("-", "");
-								value = value.DeHTMLify();
-
-								str.printf("%s=%s\n", var.str(), value.str());
-							}
-						}
-
-						//debug("AddTV: %s\n", str.str());
-						
-						if (AddProg(str, true, true) < 0) {
-							config.printf("Failed to add prog!");
-							success = false;
 						}
 					}
+					else config.printf("Failed to decode programme data ('%s')", programme.str());
 
 					programme.Delete();
 				}

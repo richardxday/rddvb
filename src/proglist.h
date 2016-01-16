@@ -7,6 +7,7 @@
 #include <rdlib/Hash.h>
 #include <rdlib/DataList.h>
 #include <rdlib/Recurse.h>
+#include <rdlib/StructuredNode.h>
 
 #include "dvbprog.h"
 #include "dvbpatterns.h"
@@ -128,9 +129,11 @@ protected:
 
 	bool ValidChannelID(const AString& channelid) const;
 
-	void AddXMLTVChannel(const AString& channel);
+	void AddXMLTVChannel(const AStructuredNode& channel);
 	void AddChannel(const AString& id, const AString& name);
 	int  AddProg(const ADVBProg *prog, bool sort = true, bool removeoverlaps = false, bool reverseorder = false);
+
+	void GetProgrammeValues(AString& str, const AStructuredNode *pNode, const AString& prefix = "") const;
 
 	ADVBProg *FindOverlap(const ADVBProg& prog1, const ADVBProg *prog2 = NULL) const;
 	ADVBProg *FindRecordOverlap(const ADVBProg& prog1, const ADVBProg *prog2 = NULL) const;
