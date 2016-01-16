@@ -1202,20 +1202,21 @@ AString ADVBProg::GetPrefItem(const AString& name, const AString& defval) const
 	return res;
 }
 
-AString ADVBProg::ValidFilename(const AString& str) const
+AString ADVBProg::ValidFilename(const AString& str, bool dir) const
 {
 	AString res;
-	AStringUpdate updater(&res);
-	uint_t i, l = str.len();
+	sint_t i;
 
-	for (i = 0; i < l; i++) {
-		char c = str[i];
+	{
+		AStringUpdate updater(&res);
 
-		if		(IsSymbolChar(c) || (c == '.') || (c == '-')) updater.Update(c);
-		else if ((c == '/') || IsWhiteSpace(c)) updater.Update('_');
+		for (i = 0; i < str.len(); i++) {
+			char c = str[i];
+
+			if		(IsSymbolChar(c) || (c == '.') || (c == '-') || (dir && (c == ' '))) updater.Update(c);
+			else if ((c == '/') || IsWhiteSpace(c)) updater.Update('_');
+		}
 	}
-
-	updater.Flush();
 
 	return res;
 }
@@ -1239,6 +1240,7 @@ AString ADVBProg::GenerateFilename(const AString& templ) const
 	AString filename = config.ReplaceTerms(GetUser(),
 										   CatPath(dir, templ)
 										   .SearchAndReplace("{title}", ValidFilename(GetTitle()))
+										   .SearchAndReplace("{titledir}", ValidFilename(GetTitle(), true))
 										   .SearchAndReplace("{subtitle}", ValidFilename(GetSubtitle()))
 										   .SearchAndReplace("{episode}", ValidFilename(GetEpisodeString()))
 										   .SearchAndReplace("{channel}", ValidFilename(GetChannel()))
