@@ -118,10 +118,13 @@ void ADVBProgList::AddXMLTVChannel(const AString& channel)
 		{"CBBC Channel", "CBBC"},
 		{"Community Channel", "Community"},
 		{"Pick TV", "Pick"},
+		{"Spike TV", "Spike"},
 	};
 	AString id   = channel.GetField("channel id=\"", "\"");
 	AString name = channel.GetField("<display-name>", "</display-name>").DeHTMLify();
 
+	//debug("Found channel id '%s' name '%s' from '%s' ('%s')\n", id.str(), name.str(), channel.str(), channel.GetXMLAttributes().str());
+	
 	name = ReplaceStrings(name, replacements, NUMBEROF(replacements));
 
 	AddChannel(id, name);
@@ -138,8 +141,8 @@ void ADVBProgList::AddChannel(const AString& id, const AString& name)
 			channel->id   = id;
 			channel->name = name;
 
-			//ADVBConfig::Get().logit("Added channel id '%s' name '%s'", channel->id.str(), channel->name.str());
-
+			//debug("Added channel id '%s' name '%s'\n", channel->id.str(), channel->name.str());
+			
 			channelhash.Insert(id, (uptr_t)channel);
 			channellist.Add((uptr_t)channel);
 
@@ -315,6 +318,8 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 								str.printf("%s=%s\n", var.str(), value.str());
 							}
 						}
+
+						//debug("AddTV: %s\n", str.str());
 						
 						if (AddProg(str, true, true) < 0) {
 							config.printf("Failed to add prog!");
