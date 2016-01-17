@@ -269,7 +269,8 @@ function populateusers()
 
 	if (typeof response.users != 'undefined') {
 		str += '<table class="users">';
-		str += '<tr><th>User</th><th>Default Folder</th><th>Freespace</th><th>Lists</th></tr>';
+		str += '<tr><th colspan=4 style="text-align: left">&nbsp;Default User Folders</th></tr>';
+		str += '<tr><th>User</th><th>Folder</th><th>Freespace</th><th>Search</th></tr>';
 
 		for (i = 0; i < response.users.length; i++) {
 			var user     = response.users[i];
@@ -303,7 +304,8 @@ function populateusers()
 		}
 
 		if (typeof response.diskspace != 'undefined') {
-			str += '<tr><th>User</th><th>Folders Used By Patterns</th><th>Freespace</th><th>State</th></tr>';
+			str += '<tr><th colspan=4 style="text-align: left">&nbsp;Folders Used By Scheduled Programmes</th></tr>';
+			str += '<tr><th>User</th><th>Folder</th><th>Freespace</th><th>Search</th></tr>';
 
 			for (i = 0; i < response.diskspace.length; i++) {
 				var diskspace  = response.diskspace[i];
@@ -778,7 +780,7 @@ function populateprogs(id)
 											   'Search for clashes in recorded programmes with this programme');
 						str1 += '</td></tr></table>';
 
-						if ((progvb > 3) && prog.flags.recorded &&
+						if ((progvb > 3) && (prog.flags.recorded || (typeof prog.failed != 'undefined')) &&
 							((globals != null) && (typeof globals.candelete != 'undefined') && globals.candelete)) {
 							str1 += '<br>';
 							if ((typeof prog.flags.exists != 'undefined') && prog.flags.exists) {
