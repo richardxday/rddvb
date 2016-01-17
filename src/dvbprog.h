@@ -248,6 +248,7 @@ public:
 	AString GetTitleSubtitleAndChannel() const;
 	AString GetQuickDescription() const;
 
+	AString GetRecordingSubDir() const;
 	AString GenerateFilename(const AString& templ) const;
 	AString GenerateFilename() const;
 	void    GenerateRecordData(uint64_t recstarttime);
@@ -382,6 +383,7 @@ protected:
 	AString GeneratePostProcessCommand() const;
 
 	AString ReplaceTerms(const AString& str) const;
+	AString ReplaceFilenameTerms(const AString& str) const;
 
 	AString GetLogFile() const;
 	bool    RunCommand(const AString& cmd, bool logoutput = false) const;

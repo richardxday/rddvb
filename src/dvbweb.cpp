@@ -650,7 +650,7 @@ int main(int argc, char *argv[])
 				printf("]");
 			}
 
-			ADVBProgList::CheckDiskSpace(patternlist, false, true);
+			ADVBProgList::CheckDiskSpace(false, true);
 
 			{
 				printf(",\"counts\":{");
