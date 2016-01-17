@@ -859,11 +859,7 @@ int main(int argc, char *argv[])
 				else config.printf("Failed to read recorded programme list");
 			}
 			else if (stricmp(argv[i], "--check-disk-space") == 0) {
-				ADataList patternlist;
-				AString   errors;
-
-				ADVBProgList::ReadPatterns(patternlist, errors);
-				ADVBProgList::CheckDiskSpace(patternlist, true);
+				ADVBProgList::CheckDiskSpace(true);
 			}
 			else if (stricmp(argv[i], "--update-recording-complete") == 0) {
 				ADVBLock lock("schedule");

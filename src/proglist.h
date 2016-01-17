@@ -67,7 +67,6 @@ public:
 	static void ReadPatterns(ADataList& patternlist, AString& errors, bool sort = true);
 
 	static bool CheckDiskSpace(bool runcmd = false, bool report = false);
-	static bool CheckDiskSpace(const ADataList& patternlist, bool runcmd = false, bool report = false);
 
 	void FindProgrammes(ADVBProgList& dest, const ADataList& patternlist, uint_t maxmatches = MAX_UNSIGNED(uint_t)) const;
 	void FindProgrammes(ADVBProgList& dest, const AString& patterns, AString& errors, const AString& sep = "\n", uint_t maxmatches = MAX_UNSIGNED(uint_t)) const;
@@ -83,6 +82,7 @@ public:
 	uint_t FindSimilarProgrammes(ADVBProgList& dest, const ADVBProg& prog, uint_t index = 0) const;
 
 	void Sort(bool reverse = false);
+	void Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), void *pContext = NULL);
 
 	void PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgList& rejectedlist, uint64_t recstarttime);
 	uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));

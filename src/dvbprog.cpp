@@ -1231,37 +1231,49 @@ void ADVBProg::SearchAndReplace(const AString& search, const AString& replace)
 	}
 }
 
+AString ADVBProg::ReplaceFilenameTerms(const AString& str) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString date  = GetStartDT().UTCToLocal().DateFormat("%Y-%M-%D");
+	AString times = GetStartDT().UTCToLocal().DateFormat("%h%m") + "-" + GetStopDT().UTCToLocal().DateFormat("%h%m");
+	AString res   = config.ReplaceTerms(GetUser(),
+										str
+										.SearchAndReplace("{title}", ValidFilename(GetTitle()))
+										.SearchAndReplace("{titledir}", ValidFilename(GetTitle(), true))
+										.SearchAndReplace("{subtitle}", ValidFilename(GetSubtitle()))
+										.SearchAndReplace("{episode}", ValidFilename(GetEpisodeString()))
+										.SearchAndReplace("{channel}", ValidFilename(GetChannel()))
+										.SearchAndReplace("{date}", ValidFilename(date))
+										.SearchAndReplace("{times}", ValidFilename(times))
+										.SearchAndReplace("{user}", ValidFilename(GetUser()))
+										.SearchAndReplace("{suffix}", config.GetFileSuffix(GetUser())));
+
+	while (res.Pos("{sep}{sep}") >= 0) {
+		res = res.SearchAndReplace("{sep}{sep}", "{sep}");
+	}
+	
+	res = res.SearchAndReplace("{sep}", ".");
+
+	return res;
+}
+
+AString ADVBProg::GetRecordingSubDir() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString subdir = GetDir();
+	return ReplaceFilenameTerms(subdir.Valid() ? subdir : config.GetRecordingsSubDir(GetUser(), GetCategory()));
+}
+
 AString ADVBProg::GenerateFilename(const AString& templ) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString dir      = CatPath(config.GetRecordingsDir(), GetDir());
-	AString date     = GetStartDT().UTCToLocal().DateFormat("%Y-%M-%D");
-	AString times    = GetStartDT().UTCToLocal().DateFormat("%h%m") + "-" + GetStopDT().UTCToLocal().DateFormat("%h%m");
-	AString filename = config.ReplaceTerms(GetUser(),
-										   CatPath(dir, templ)
-										   .SearchAndReplace("{title}", ValidFilename(GetTitle()))
-										   .SearchAndReplace("{titledir}", ValidFilename(GetTitle(), true))
-										   .SearchAndReplace("{subtitle}", ValidFilename(GetSubtitle()))
-										   .SearchAndReplace("{episode}", ValidFilename(GetEpisodeString()))
-										   .SearchAndReplace("{channel}", ValidFilename(GetChannel()))
-										   .SearchAndReplace("{date}", ValidFilename(date))
-										   .SearchAndReplace("{times}", ValidFilename(times))
-										   .SearchAndReplace("{user}", ValidFilename(GetUser()))
-										   .SearchAndReplace("{suffix}", config.GetFileSuffix(GetUser())));
-
-	while (filename.Pos("{sep}{sep}") >= 0) {
-		filename = filename.SearchAndReplace("{sep}{sep}", "{sep}");
-	}
-	
-	filename = filename.SearchAndReplace("{sep}", ".");
-
-	return filename;
+	return CatPath(config.GetRecordingsDir(), GetRecordingSubDir()).CatPath(ReplaceFilenameTerms(templ));
 }
 
 AString ADVBProg::GenerateFilename() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	return GenerateFilename(config.GetFilenameTemplate());
+	return GenerateFilename(config.GetFilenameTemplate(GetUser(), GetCategory()));
 }
 
 static bool __fileexists(const FILE_INFO *file, void *Context)

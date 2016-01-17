@@ -1391,16 +1391,6 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
 	if (sort) patternlist.Sort(&SortPatterns);
 }
 
-bool ADVBProgList::CheckDiskSpace(bool runcmd, bool report)
-{
-	ADataList patternlist;
-	AString   errors;
-
-	ReadPatterns(patternlist, errors);
-	
-	return CheckDiskSpace(patternlist, runcmd, report);
-}
-
 int ADVBProgList::SortProgsByUserThenDir(uptr_t item1, uptr_t item2, void *pContext)
 {
 	const ADVBProg& prog1 = *(const ADVBProg *)item1;
@@ -1411,40 +1401,24 @@ int ADVBProgList::SortProgsByUserThenDir(uptr_t item1, uptr_t item2, void *pCont
 
 	if ((res = strcmp(prog1.GetUser(), prog2.GetUser())) != 0) return res;
 
-	return strcmp(prog1.GetDir(), prog2.GetDir());
+	return strcmp(prog1.GetFilename(), prog2.GetFilename());
 }
 
-bool ADVBProgList::CheckDiskSpace(const ADataList& patternlist, bool runcmd, bool report)
+bool ADVBProgList::CheckDiskSpace(bool runcmd, bool report)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AStdFile  fp;
-	AHash     hash(30);
-	ADataList proglist;
-	AString   filename;
-	double    lowlimit = config.GetLowSpaceWarningLimit();
-	uint_t    i, userlen = 0;
-	bool      first = true;
-	bool      okay  = true;
+	ADVBProgList proglist;
+	AStdFile  	 fp;
+	AHash     	 hash(30);
+	AString   	 filename;
+	double    	 lowlimit = config.GetLowSpaceWarningLimit();
+	uint_t    	 i, userlen = 0;
+	bool      	 first = true;
+	bool      	 okay  = true;
 
-	proglist.SetDestructor(&DeleteProg);
-
-	for (i = 0; i < patternlist.Count(); i++) {
-		const ADVBProg::PATTERN& pattern = *(const ADVBProg::PATTERN *)patternlist[i];
-		ADVBProg *prog;
-
-		if ((prog = new ADVBProg) != NULL) {
-			prog->SetUser(pattern.user);
-			prog->AssignValues(pattern);
-
-			proglist.Add(prog);
-
-			AString user = prog->GetUser();
-			userlen = MAX(userlen, (uint_t)user.len());
-		}
-	}
-
+	proglist.ReadFromFile(config.GetScheduledFile());
 	proglist.Sort(&SortProgsByUserThenDir);
-
+	
 	if (report) printf(",\"diskspace\":[");
 
 	if (runcmd) {
@@ -1457,14 +1431,18 @@ bool ADVBProgList::CheckDiskSpace(const ADataList& patternlist, bool runcmd, boo
 	AString fmt;
 	fmt.printf("%%-%us %%6.1lfG %%s", userlen);
 
+	AString recdir = config.GetRecordingsDir();
 	for (i = 0; i < proglist.Count(); i++) {
-		const ADVBProg& prog = *(const ADVBProg *)proglist[i];
-		AString  user, dir, rdir;
+		const ADVBProg& prog = proglist[i];
+		AString user, dir, rdir;
 
 		user = prog.GetUser();
-		dir  = prog.GetDir();
-		rdir = config.GetRecordingsDir().CatPath(dir);
+		rdir = AString(prog.GetFilename()).PathPart();
+		if (rdir.StartsWith(recdir)) dir = rdir.Mid(recdir.len() + 1);
+		else						 dir = rdir;
 
+		//printf("\nUser '%s' dir '%s' rdir '%s'\n", user.str(), dir.str(), rdir.str());
+		
 		if (!hash.Exists(rdir)) {
 			struct statvfs fiData;
 
@@ -1486,7 +1464,7 @@ bool ADVBProgList::CheckDiskSpace(const ADataList& patternlist, bool runcmd, boo
 					printf("}");
 				}
 
-				str.printf(fmt, prog.GetUser(), gb, rdir.str());
+				str.printf(fmt, prog.GetUser(), gb, dir.str());
 				if (gb < lowlimit) {
 					str.printf(" Warning!");
 					okay = false;
@@ -1577,8 +1555,6 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 
 		config.printf("Checking disk space");
 
-		CheckDiskSpace(patternlist, true);
-
 		config.printf("Finding programmes using %u patterns", patternlist.Count());
 
 		proglist.FindProgrammes(reslist, patternlist);
@@ -1615,12 +1591,14 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 				if (n) config.printf("Added %u extra programmes to record", n);
 			}
 		}
-		
+
 		res = reslist.Schedule(starttime);
 
 		if (commit) WriteToJobList();
 
 		CreateCombinedFile();
+		
+		ADVBProgList::CheckDiskSpace(true);
 	}
 	else config.logit("Failed to read listings file '%s'", filename.str());
 
@@ -1630,6 +1608,11 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 void ADVBProgList::Sort(bool reverse)
 {
 	proglist.Sort(&SortProgs, &reverse);
+}
+
+void ADVBProgList::Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), void *pContext)
+{
+	proglist.Sort(fn, pContext);
 }
 
 void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool sort, bool removeoverlaps, bool reverseorder)
@@ -2064,7 +2047,16 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	if (runninglist.ReadFromFile(config.GetRecordingFile())) {
 		config.logit("Found %u running programmes:", runninglist.Count());
 		for (i = 0; i < runninglist.Count(); i++) {
-			config.logit("%c %s", (runninglist.GetProg(i).GetDVBCard() == card) ? '*' : ' ', runninglist.GetProg(i).GetDescription(1).str());
+			const ADVBProg& prog = runninglist[i];
+
+			if (prog.GetDVBCard() == card) {
+				uint64_t endtime = prog.GetRecordStop() + 60000 - 1;
+				endtime  -= endtime % 60000;
+				recstarttime = MAX(recstarttime, endtime);
+				config.logit("Adjusting earliest record start time to %s", ADateTime(recstarttime).DateToStr().str());
+			}
+			
+			config.logit("%c %s", (prog.GetDVBCard() == card) ? '*' : ' ', prog.GetDescription(1).str());
 		}
 		config.logit("--------------------------------------------------------------------------------");
 	}
@@ -2130,9 +2122,9 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	}
 	config.logit("--------------------------------------------------------------------------------");
 
-	ADVBProg::debugsameprogramme = true;
+	//ADVBProg::debugsameprogramme = true;
 	PrioritizeProgrammes(scheduledlist, rejectedlist, recstarttime);
-	ADVBProg::debugsameprogramme = false;
+	//ADVBProg::debugsameprogramme = false;
 
 	if (scheduledlist.FindFirstRecordOverlap()) {
 		config.printf("Error: found overlap in schedule list for card %u!", dvbcard);		
