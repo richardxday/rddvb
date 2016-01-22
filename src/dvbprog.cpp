@@ -2224,7 +2224,6 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 	AString  dst      = GetFilename();
 	AString  basename = src.Prefix();
 	AString  src2     = GetSource2Filename();
-	AString  remuxsrc = basename + "_Remuxed.mpg";
 	AString  logfile  = basename + "_log.txt";
 	AString  proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
 	AString  args     = config.GetEncodeArgs(GetUser(), GetCategory());
@@ -2247,7 +2246,6 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 
 	std::vector<SPLIT> splits;
 	std::map<AString,uint64_t> lengths;
-	std::map<AString,bool> desired_aspects;
 	AString bestaspect;
 	AList   delfiles;
 	
@@ -2310,10 +2308,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 
 			fp.close();
 
-			if (bestaspect.Valid()) {
-				config.printf("Best aspect is %s with %s", bestaspect.str(), GenTime(lengths[bestaspect]).str());
-				desired_aspects[bestaspect] = true;
-			}
+			if (bestaspect.Valid()) config.printf("Best aspect is %s with %s", bestaspect.str(), GenTime(lengths[bestaspect]).str());
 		}
 		else {
 			config.printf("Failed to open log file '%s'", logfile.str());
@@ -2400,6 +2395,8 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 			GenerateSignatureFile(basename + ".m2v", dst);
 		}
 		else {
+			AString remuxsrc = basename + "_Remuxed.mpg";
+			
 			config.printf("Splitting file...");
 			
 			if (!AStdFile::exists(remuxsrc)) {
@@ -2410,92 +2407,76 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 				success &= RunCommand(cmd, !verbose);
 			}
 
-			std::map<AString,bool>::iterator it;
-			uint_t outputindex = 0;
-			for (it = desired_aspects.begin(); (it != desired_aspects.end()) && success; ++it, outputindex++) {
-				std::vector<AString> files;
-				AString aspect = it->first;
-				uint_t i;
+			std::vector<AString> files;
+			uint_t i;
 			
-				for (i = 0; i < splits.size(); i++) {
-					const SPLIT& split = splits[i];
+			for (i = 0; i < splits.size(); i++) {
+				const SPLIT& split = splits[i];
 					
-					if (split.aspect == aspect) {
-						AString cmd;
-						AString outfile;
+				if (split.aspect == bestaspect) {
+					AString cmd;
+					AString outfile;
 					
-						outfile.printf("%s-%s-%u.mpg", basename.str(), aspect.SearchAndReplace(":", "_").str(), i);
+					outfile.printf("%s-%s-%u.mpg", basename.str(), bestaspect.SearchAndReplace(":", "_").str(), i);
 
-						if (!AStdFile::exists(outfile)) {
-							cmd.printf("nice %s -fflags +genpts -i \"%s\" -ss %s", proccmd.str(), remuxsrc.str(), GenTime(split.start).str());
-							if (split.length > 0) cmd.printf(" -t %s", GenTime(split.length).str());
-							cmd.printf(" -acodec copy -vcodec copy -v warning -y -f mpegts \"%s\"", outfile.str());
+					if (!AStdFile::exists(outfile)) {
+						cmd.printf("nice %s -fflags +genpts -i \"%s\" -ss %s", proccmd.str(), remuxsrc.str(), GenTime(split.start).str());
+						if (split.length > 0) cmd.printf(" -t %s", GenTime(split.length).str());
+						cmd.printf(" -acodec copy -vcodec copy -v warning -y -f mpegts \"%s\"", outfile.str());
 				
-							success &= RunCommand(cmd, !verbose);
-							if (!success) break;
-						}
-
-						files.push_back(outfile);
+						success &= RunCommand(cmd, !verbose);
+						if (!success) break;
 					}
+
+					files.push_back(outfile);
 				}
+			}
 
-				AString outputfile;
-				outputfile.printf("%s%s.%s", dst.Prefix().str(), outputindex ? AString(".%u").Arg(outputindex).str() : "", dst.Suffix().str());
-				
-				CreateDirectory(outputfile.PathPart());
-				if (!AStdFile::exists(outputfile)) {
-					AStdFile ofp;
-					AString  concatfile;
+			AStdFile ofp;
+			AString  concatfile = basename + "_Concat.mpg";
+			if (ofp.open(concatfile, "wb")) {
+				for (i = 0; i < files.size(); i++) {
+					AStdFile ifp;
 
-					concatfile = outputfile.Prefix() + "_Concat.mpg";
-
-					if (ofp.open(concatfile, "wb")) {
-						for (i = 0; i < files.size(); i++) {
-							AStdFile ifp;
-
-							if (ifp.open(files[i], "rb")) {
-								config.printf("Adding '%s'...", files[i].str());
-								CopyFile(ifp, ofp);
-								ifp.close();
-							}
-							else {
-								config.printf("Failed to open '%s' for reading", files[i].str());
-								success = false;
-								break;
-							}
-						}
-
-						ofp.close();
+					if (ifp.open(files[i], "rb")) {
+						config.printf("Adding '%s'...", files[i].str());
+						CopyFile(ifp, ofp);
+						ifp.close();
 					}
 					else {
-						config.printf("Failed to open '%s' for writing", concatfile.str());
+						config.printf("Failed to open '%s' for reading", files[i].str());
 						success = false;
+						break;
 					}
-
-					if (success) {
-						ConvertSubtitles(src, dst, splits, bestaspect);
-
-						AString inputfiles;
-						inputfiles.printf("-i \"%s\"", concatfile.str());
-						success &= EncodeFile(inputfiles, aspect, outputfile, verbose);
-
-						GenerateSignatureFile(concatfile, outputfile);
-					}
-
-					remove(concatfile);
 				}
 
-				for (i = 0; i < files.size(); i++) {
-					remove(files[i]);
-				}
+				ofp.close();
+			}
+			else {
+				config.printf("Failed to open '%s' for writing", concatfile.str());
+				success = false;
+			}
+
+			if (success) {
+				ConvertSubtitles(src, dst, splits, bestaspect);
+
+				AString inputfiles;
+				inputfiles.printf("-i \"%s\"", concatfile.str());
+				success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
+
+				GenerateSignatureFile(concatfile, dst);
+			}
+
+			remove(concatfile);
+			remove(remuxsrc);
+
+			for (i = 0; i < files.size(); i++) {
+				remove(files[i]);
 			}
 		}
 	}
 
 	if (success && cleanup) {
-		delfiles.Add(new AString(basename + ".m2v"));
-		delfiles.Add(new AString(basename + ".mp2"));
-
 		CollectFiles(basename.PathPart(), basename.FilePart() + ".sup.*", RECURSE_ALL_SUBDIRS, delfiles);
 		CollectFiles(basename.PathPart(), basename.FilePart() + "-*.m2v", RECURSE_ALL_SUBDIRS, delfiles);
 		CollectFiles(basename.PathPart(), basename.FilePart() + "-*.mp2", RECURSE_ALL_SUBDIRS, delfiles);
@@ -2505,7 +2486,8 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 			remove(*file);
 			file = file->Next();
 		}
-		remove(remuxsrc);
+		remove(basename + ".m2v");
+		remove(basename + ".mp2");
 		remove(logfile);
 	}
 	
