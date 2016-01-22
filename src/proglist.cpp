@@ -2008,14 +2008,11 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	ADVBProgList runninglist;
 	AString  filename;
 	uint64_t recstarttime = (uint64_t)starttime;
-	uint64_t lateststart  = SUBZ((uint64_t)starttime, (uint64_t)config.GetLatestStart() * 60000ULL);		// set latest start of programmes to be scheduled
-	uint_t   dvbcard = config.GetPhysicalDVBCard(card);
+	uint_t   dvbcard      = config.GetPhysicalDVBCard(card);
 	uint_t   i;
 
 	// allow at least 30s before first schedule point
 	recstarttime += 30000ULL;
-	// round up to the next minute
-	recstarttime += 60000ULL - (recstarttime % 60000ULL);
 
 	if (Count() == 0) {
 		config.printf("All programmes can be recorded!");
@@ -2050,9 +2047,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 			const ADVBProg& prog = runninglist[i];
 
 			if (prog.GetDVBCard() == card) {
-				uint64_t endtime = prog.GetRecordStop() + 60000 - 1;
-				endtime  -= endtime % 60000;
-				recstarttime = MAX(recstarttime, endtime);
+				recstarttime = MAX(recstarttime, prog.GetRecordStop() + 10000);
 				config.logit("Adjusting earliest record start time to %s", ADateTime(recstarttime).DateToStr().str());
 			}
 			
@@ -2060,7 +2055,12 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 		}
 		config.logit("--------------------------------------------------------------------------------");
 	}
+
+	// round up to the next minute
+	recstarttime += 60000ULL - (recstarttime % 60000ULL);
 	
+	uint64_t lateststart  = SUBZ((uint64_t)recstarttime, (uint64_t)config.GetLatestStart() * 60000ULL);		// set latest start of programmes to be scheduled
+
 	// first, remove programmes that do not have a valid DVB channel
 	// then, remove any that have already finished
 	// then, remove any that overlap with any running job(s)
