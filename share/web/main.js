@@ -780,7 +780,7 @@ function populateprogs(id)
 											   'Search for clashes in recorded programmes with this programme');
 						str1 += '</td></tr></table>';
 
-						if ((progvb > 3) && (prog.flags.recorded || (typeof prog.failed != 'undefined')) &&
+						if ((progvb > 3) && (prog.flags.recorded || prog.flags.failed) &&
 							((globals != null) && (typeof globals.candelete != 'undefined') && globals.candelete)) {
 							str1 += '<br>';
 							if ((typeof prog.flags.exists != 'undefined') && prog.flags.exists) {
@@ -1810,6 +1810,6 @@ function abortfind()
 function reschedule()
 {
 	if (confirm("Schedule all programmes?")) {
-		dvbrequest(filterlist.current, 'schedule=commit');
+		dvbrequest({from:"Combined",titlefilter:"",timefilter:defaulttimefilter,expanded:-1,fetch:true}, 'schedule=commit');
 	}
 }
