@@ -2156,24 +2156,30 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString proccmd = config.GetEncodeCommand(GetUser(), GetCategory());
 	AString args    = config.GetEncodeArgs(GetUser(), GetCategory());
+	AString tempdst = config.GetRecordingsStorageDir(GetUser()).CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
 	uint_t  i, n = args.CountLines(";");
 	bool    success = true;
 
 	for (i = 0; i < n; i++) {
-		AString append;
 		AString cmd;
-
-		if (i) append.printf("-%u", i);
-				
+		
 		cmd.printf("nice %s %s -v %s -aspect %s %s -y \"%s\"",
 				   proccmd.str(),
 				   inputfiles.str(),
 				   config.GetEncodeLogLevel(GetUser(), verbose).str(),
 				   aspect.str(),
 				   args.Line(i, ";").Words(0).str(),
-				   (outputfile.Prefix() + append + "." + outputfile.Suffix()).str());
+				   tempdst.str());
 		
-		success &= RunCommand(cmd, !verbose);
+		if (RunCommand(cmd, !verbose)) {
+			AString append;
+
+			if (i) append.printf("-%u", i);
+			
+			success &= CopyFile(tempdst, outputfile.Prefix() + append + "." + outputfile.Suffix(), true);
+			remove(tempdst);
+		}
+		else success = false;
 	}
 
 	return success;
