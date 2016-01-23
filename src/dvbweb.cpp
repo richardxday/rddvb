@@ -623,7 +623,7 @@ int main(int argc, char *argv[])
 
 					for (i = 0; (i < count) && !HasQuit(); i++) {
 						if (i > 0) printf(",");
-						printf("\"%s\"", JSONFormat(logdata.Line(offset + i, "\n", 0).SearchAndReplace("  ", "&nbsp;")).str());
+						printf("\"%s\"", JSONFormat(logdata.Line(offset + i, "\n", 0).SearchAndReplace("\t", " ").StripUnprintable()).str());
 					}
 
 					printf("]");
