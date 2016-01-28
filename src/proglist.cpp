@@ -372,7 +372,7 @@ bool ADVBProgList::ReadFromTextFile(const AString& filename)
 		while ((p1 = data.Pos("\n\n", p)) >= 0) {
 			str.Create(data.str() + p, p1 + 1 - p, false);
 
-			if ((str.CountWords() > 0) && AddProg(str, notempty, notempty) < 0) {
+			if ((str.CountWords() > 0) && (AddProg(str, notempty, notempty) < 0)) {
 				config.printf("Failed to add prog");
 				success = false;
 			}
@@ -781,6 +781,7 @@ bool ADVBProgList::WriteToTextFile(const AString& filename) const
 			if (HasQuit()) break;
 		}
 
+		fp.printf("\n");
 		fp.close();
 
 		success = true;

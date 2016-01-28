@@ -386,6 +386,10 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	data->recstop         = GetDate(str, "recstop");
 	data->actstart        = GetDate(str, "actstart");
 	data->actstop         = GetDate(str, "actstop");
+
+	data->filesize = (uint64_t)GetField(str, "filesize");
+	data->flags    = (uint32_t)GetField(str, "flags");
+
 	if (FieldExists(str, "episodenum")) {
 		data->episode     = GetEpisode(GetField(str, "episodenum"));
 	}
@@ -395,11 +399,6 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 		data->episode.episodes = (uint_t)GetField(str, "episodes");
 		data->episode.valid    = (data->episode.series || data->episode.episode || data->episode.episodes);
 	}
-	data->assignedepisode = (uint16_t)GetField(str, "assignedepisode");
-	if (FieldExists(str, "date")) {
-		data->year = (uint16_t)GetField(str, "date");
-	}
-	else data->year = (uint16_t)GetField(str, "year");
 	
 	SetString(&data->strings.title, GetField(str, "title"));
 	SetString(&data->strings.subtitle, GetField(str, "subtitle"));
@@ -431,7 +430,7 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 
 	if (FieldExists(str, "previouslyshown")) SetFlag(Flag_repeat);
 
-	AString actors, actor;
+	AString actors = GetField(str, "actors").SearchAndReplace(",", "\n"), actor;
 	int p = 0;
 
 	while ((actor = GetField(str, "actor", p, &p)).Valid()) {
@@ -440,16 +439,24 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	}
 	SetString(&data->strings.actors, actors);
 
-	SetUUID();
+	SetString(&data->strings.prefs, GetField(str, "prefs").SearchAndReplace(",", "\n"));
 
 	SetUser(GetField(str, "user"));
 	if (FieldExists(str, "dir")) SetDir(GetField(str, "dir"));
 	else						 SetDir(config.GetUserConfigItem(GetUser(), "dir"));
 	SetFilename(GetField(str, "filename"));
 	SetPattern(GetField(str, "pattern"));
+	
+	SetUUID();
 
-	data->jobid = (uint_t)GetField(str, "jobid");
-	data->score = (sint_t)GetField(str, "score");
+	data->assignedepisode = (uint16_t)GetField(str, "assignedepisode");
+	if (FieldExists(str, "date")) {
+		data->year = (uint16_t)GetField(str, "date");
+	}
+	else data->year = (uint16_t)GetField(str, "year");
+
+	data->jobid    = (uint_t)GetField(str, "jobid");
+	data->score    = (sint_t)GetField(str, "score");
 
 	if (FieldExists(str, "prehandle")) 	data->prehandle  = (uint_t)GetField(str, "prehandle");
 	else							   	data->prehandle  = (uint_t)config.GetUserConfigItem(GetUser(), "prehandle");
@@ -460,7 +467,7 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 
 	data->dvbcard 	 = (uint_t)GetField(str, "card");
 
-	SearchAndReplace("\xa3", "£");
+	SearchAndReplace("\xc2\xa3", "£");
 
 	if (!Valid()) Delete();
 
@@ -564,9 +571,9 @@ AString ADVBProg::ExportToText() const
 	if (data->episode.episode) str.printf("episode=%u\n", (uint_t)data->episode.episode);
 	if (data->episode.episodes) str.printf("episodes=%u\n", (uint_t)data->episode.episodes);
 
+	if (data->filesize) str.printf("filesize=%s\n", NUMSTR("", data->filesize));
 	str.printf("flags=$%08x\n", data->flags);
 
-	if (data->filesize) str.printf("filesize=%s\n", NUMSTR("", data->filesize));
 	if (data->assignedepisode) str.printf("assignedepisode=%u\n", data->assignedepisode);
 	if (data->year) str.printf("year=%u\n", data->year);
 

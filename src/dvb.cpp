@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
 		printf("\t--find-with-file <pattern-file>\tFind programmes matching patterns in patterns file <pattern-file> (-F)\n");
 		printf("\t--find-repeats\t\t\tFor each programme in current list, list repeats (-R)\n");
 		printf("\t--find-similar <file>\tFor each programme in current list, find first similar programme in <file>\n");
+		printf("\t--delete-all\t\t\tDelete all programmes\n");
 		printf("\t--delete <patterns>\t\tDelete programmes matching <patterns>\n");
 		printf("\t--delete-with-file <pattern-file> Delete programmes matching patterns in patterns file <pattern-file>\n");
 		printf("\t--delete-recorded\t\tDelete programmes that have been recorded\n");
@@ -350,6 +351,9 @@ int main(int argc, char *argv[])
 					printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 				}
 				else printf("Failed to read patterns from '%s'", filename.str());
+			}
+			else if (strcmp(argv[i], "--delete-all") == 0) {
+				proglist.DeleteAll();
 			}
 			else if (strcmp(argv[i], "--delete") == 0) {
 				ADVBProgList reslist;
