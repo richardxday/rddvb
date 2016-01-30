@@ -1463,6 +1463,8 @@ bool ADVBProgList::CheckDiskSpace(bool runcmd, bool report)
 		else						 dir = rdir;
 
 		//printf("\nUser '%s' dir '%s' rdir '%s'\n", user.str(), dir.str(), rdir.str());
+
+		CreateDirectory(rdir);
 		
 		if (!hash.Exists(rdir)) {
 			struct statvfs fiData;
