@@ -471,7 +471,10 @@ function populateprogs(id)
 						else str += str1;
 						str += '</span>';
 					}
-					else if (typeof prog.assignedepisode != 'undefined') {
+					else if ((typeof prog.brandseriesepisode != 'undefined') && (prog.brandseriesepisode != '')) {
+						str += '<span style="font-size:90%;">F' + prog.brandseriesepisode + '</span>';
+					}
+					else if ((typeof prog.assignedepisode != 'undefined') && (prog.assignedepisode != '')) {
 						str += '<span style="font-size:90%;">F' + prog.assignedepisode + '</span>';
 					}
 					else str += '&nbsp;';
