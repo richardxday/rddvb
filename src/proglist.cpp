@@ -15,6 +15,7 @@
 #include "episodehandler.h"
 #include "dvblock.h"
 #include "dvbpatterns.h"
+#include "iconcache.h"
 
 /*--------------------------------------------------------------------------------*/
 
@@ -125,11 +126,18 @@ void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
 	AString name = channel.GetChildValue("display-name");
 
 	if (id.Valid() && name.Valid()) {
+		const AStructuredNode *iconnode;
+		AString icon;
+		
+		if ((iconnode = channel.FindChild("icon")) != NULL) icon = iconnode->GetAttribute("src");
+
 		name = ReplaceStrings(name, replacements, NUMBEROF(replacements));
 
 		//debug("Channel %s=%s\n", id.str(), name.str());
 		
 		AddChannel(id, name);
+
+		ADVBIconCache::Get().SetIcon("channel", name, icon);
 	}
 }
 
@@ -143,7 +151,7 @@ void ADVBProgList::AddChannel(const AString& id, const AString& name)
 		if ((channel = new CHANNEL) != NULL) {
 			channel->id   = id;
 			channel->name = name;
-
+			
 			//debug("Added channel id '%s' name '%s'\n", channel->id.str(), channel->name.str());
 			
 			channelhash.Insert(id, (uptr_t)channel);
@@ -173,7 +181,7 @@ AString ADVBProgList::LookupXMLTVChannel(const AString& id) const
 {
 	const CHANNEL *channel;
 
-	if ((channel = GetChannel(id)) != NULL) return channel->name;
+	if ((channel = GetChannelByID(id)) != NULL) return channel->name;
 
 	return "";
 }
@@ -227,10 +235,16 @@ bool ADVBProgList::ValidChannelID(const AString& channelid) const
 
 void ADVBProgList::GetProgrammeValues(AString& str, const AStructuredNode *pNode, const AString& prefix) const
 {
+	const AKeyValuePair *pAttr;
+	
 	while (pNode) {
-		AString key = prefix + pNode->Key.SearchAndReplace("-", "");
+		AString key   = prefix + pNode->Key.SearchAndReplace("-", "");
+		AString value = pNode->Value;
+
+		if ((key == "episodenum") && ((pAttr = pNode->FindAttribute("system")) != NULL)) key += ":" + pAttr->Value;
+		if ((key == "icon")       && ((pAttr = pNode->FindAttribute("src"))    != NULL)) value = pAttr->Value;
 		
-		if (pNode->Value.Valid() || !pNode->GetChildren()) str.printf("%s=%s\n", key.str(), pNode->Value.str());
+		if (value.Valid() || !pNode->GetChildren()) str.printf("%s=%s\n", key.str(), value.str());
 		
 		if (pNode->GetChildren()) {
 			if (key == "video") GetProgrammeValues(str, pNode->GetChildren(), key);
@@ -288,7 +302,8 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 					if (DecodeXML(_node, programme) && ((pNode = _node.GetChildren()) != NULL)) {
 						AString channelid = pNode->GetAttribute("channel");
 						AString channel   = LookupXMLTVChannel(channelid);
-
+						const CHANNEL *chandata;
+						
 						if (!channelidvalidhash.Exists(channelid)) {
 							bool valid = ValidChannelID(channelid);
 
@@ -297,7 +312,7 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 							if (!valid) debug("Channel ID '%s' (channel '%s') is%s valid\n", channelid.str(), channel.str(), valid ? "" : " NOT");
 						}
 
-						if (channelidvalidhash.Read(channelid)) {
+						if ((chandata = GetChannelByID(channelid)) != NULL) {
 							ADateTime start, stop;
 							AString   str;
 
@@ -584,21 +599,22 @@ bool ADVBProgList::ReadFromBinaryFile(const AString& filename, bool sort, bool r
 		sint32_t size = fp.tell(), pos = 0;
 		fp.rewind();
 
-		while (pos < size) {
+		success = true;
+
+		while (success && (pos < size)) {
 			if ((prog = fp).Valid()) {
 				if (AddProg(prog, sort, removeoverlaps, reverseorder) < 0) {
 					config.printf("Failed to add prog!");
+					success = false;
 				}
 			}
 
 			pos = fp.tell();
-
+			
 			if (HasQuit()) break;
 		}
 
 		//config.printf("Read data from '%s', parsing complete", filename.str());
-
-		success = true;
 	}
 
 	return success;
@@ -735,17 +751,21 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 		if (fp.open(filename, "wb")) {
 			uint_t i;
 
+			success = true;
+
 			for (i = 0; i < Count(); i++) {
 				const ADVBProg& prog = GetProg(i);
 
-				prog.WriteToFile(fp);
+				if (!prog.WriteToFile(fp)) {
+					config.printf("Failed to write programme %u/%u to file '%s'", i, Count(), filename.str());
+					success = false;
+					break;
+				}
 
 				if (HasQuit()) break;
 			}
-
+			
 			fp.close();
-
-			success = true;
 		}
 	}
 	

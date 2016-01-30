@@ -23,6 +23,7 @@ librddvb_@RDDVB_MAJORMINOR@_la_SOURCES = 		\
 	dvbprog.cpp									\
 	episodehandler.cpp							\
 	findcards.cpp								\
+	iconcache.cpp								\
 	proglist.cpp
 
 pkginclude_HEADERS = 							\
@@ -34,6 +35,7 @@ pkginclude_HEADERS = 							\
 	dvbprog.h									\
 	episodehandler.h							\
 	findcards.h									\
+	iconcache.h									\
 	proglist.h
 
 noinst_HEADERS =

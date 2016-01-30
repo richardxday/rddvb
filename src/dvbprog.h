@@ -13,6 +13,8 @@
 
 #include "dvbpatterns.h"
 
+#define DVBDATVERSION 2
+
 class ADVBProgList;
 class ADVBProg {
 public:
@@ -98,6 +100,9 @@ public:
 	const char *GetCategory()		 	 const {return GetString(data->strings.category);}
 	const char *GetDirector()		 	 const {return GetString(data->strings.director);}
 	const char *GetEpisodeNum()		 	 const {return GetString(data->strings.episodenum);}
+#if DVBDATVERSION > 1
+	const char *GetBrandSeriesEpisode()	 const {return GetString(data->strings.brandseriesepisode);}
+#endif
 	const char *GetUser()			 	 const {return GetString(data->strings.user);}
 	const char *GetDir()			 	 const {return GetString(data->strings.dir);}
 	const char *GetFilename()		 	 const {return GetString(data->strings.filename);}
@@ -302,6 +307,9 @@ protected:
 	static bool    	FieldExists(const AString& str, const AString& field, int p = 0, int *pos = NULL);
 	static AString 	GetField(const AString& str, const AString& field, int p = 0, int *pos = NULL);
 
+	AString GetProgrammeKey() const;
+	
+#if DVBDATVERSION==1
 	typedef PACKEDSTRUCT {
 		uint64_t start;
 		uint64_t stop;
@@ -350,7 +358,58 @@ protected:
 
 		char     strdata[0];
 	} DVBPROG;
+#else
+	typedef PACKEDSTRUCT {
+		uint64_t start;
+		uint64_t stop;
+		uint64_t recstart;
+		uint64_t recstop;
+		uint64_t actstart;
+		uint64_t actstop;
 
+		uint64_t filesize;
+		uint32_t flags;
+
+		EPISODE  episode;
+
+		uint16_t assignedepisode;
+		uint16_t year;
+		uint16_t jobid;
+		sint16_t score;
+
+		uint8_t  prehandle;
+		uint8_t  posthandle;
+		uint8_t  dvbcard;
+		sint8_t  pri;
+
+		PACKEDSTRUCT {
+			uint16_t channel;
+			uint16_t basechannel;
+			uint16_t channelid;
+			uint16_t dvbchannel;
+			uint16_t title;
+			uint16_t subtitle;
+			uint16_t desc;
+			uint16_t category;
+			uint16_t director;
+			uint16_t episodenum;
+			uint16_t brandseriesepisode;
+			uint16_t user;
+			uint16_t dir;
+			uint16_t filename;
+			uint16_t pattern;
+			uint16_t uuid;
+			uint16_t actors;
+			uint16_t prefs;
+			uint16_t icon;
+			uint16_t reserved[4];
+			uint16_t end;
+		} strings;
+
+		char     strdata[0];
+	} DVBPROG;
+#endif
+	
 	uint8_t *GetDataPtr(uint16_t offset) const {return (uint8_t *)((uptr_t)data + offset);}
 
 	static uint16_t GetUserDataOffset();

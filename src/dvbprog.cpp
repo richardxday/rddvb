@@ -17,6 +17,7 @@
 #include "channellist.h"
 #include "dvblock.h"
 #include "dvbpatterns.h"
+#include "iconcache.h"
 
 #define DEBUG_SAMEPROGRAMME 0
 
@@ -221,7 +222,9 @@ void ADVBProg::SwapBytes(DVBPROG *prog)
 	prog->jobid           = ::SwapBytes(prog->jobid);
 	prog->score           = ::SwapBytes((uint16_t)prog->score);
 
+#if DVBDATVERSION==1
 	prog->bigendian       = (uint8_t)MachineIsBigEndian();
+#endif
 }
 
 ADVBProg& ADVBProg::operator = (AStdData& fp)
@@ -232,6 +235,7 @@ ADVBProg& ADVBProg::operator = (AStdData& fp)
 
 	Delete();
 
+#if DVBDATVERSION==1
 	if ((n = fp.readbytes((uint8_t *)&_data, sizeof(_data))) == (slong_t)sizeof(_data)) {
 		if (_data.bigendian != (uint8_t)MachineIsBigEndian()) SwapBytes(data);
 
@@ -251,7 +255,37 @@ ADVBProg& ADVBProg::operator = (AStdData& fp)
 			}
 		}
 	}
+#else
+	static const uint8_t bigendian = (uint8_t)MachineIsBigEndian();
+	uint8_t header;
+	
+	if (fp.readitem(header)) {
+		uint8_t version = header & 127;
+		bool    swap    = ((header >> 7) != bigendian);
 
+		(void)version;
+		
+		if ((n = fp.readbytes((uint8_t *)&_data, sizeof(_data))) == (slong_t)sizeof(_data)) {
+			if (swap) SwapBytes(data);
+
+			if ((sizeof(_data) + _data.strings.end) > maxsize) {
+				if (data) free(data);
+
+				maxsize = sizeof(_data) + _data.strings.end;
+				data    = (DVBPROG *)calloc(1, maxsize);
+			}
+
+			if (data && ((sizeof(_data) + _data.strings.end) <= maxsize)) {
+				memcpy(data, &_data, sizeof(*data));
+				
+				if ((n = fp.readbytes(data->strdata, _data.strings.end)) == (slong_t)_data.strings.end) {
+					success = true;
+				}
+			}
+		}
+	}
+#endif
+	
 	if (!success) Delete();
 
 	return *this;
@@ -269,7 +303,9 @@ bool ADVBProg::Base64Decode(const AString& str)
 			if (data) free(data);
 			maxsize = len;
 			data    = (DVBPROG *)calloc(1, maxsize);
+#if DVBDATVERSION==1
 			data->bigendian = (uint8_t)MachineIsBigEndian();
+#endif
 		}
 
 		if (data) {
@@ -372,6 +408,15 @@ uint64_t ADVBProg::GetDate(const AString& str, const AString& fieldname) const
 	return (uint64_t)ADateTime(date).LocalToUTC();
 }
 
+AString ADVBProg::GetProgrammeKey() const
+{
+	AString key = GetTitle();
+
+	if (IsFilm()) key += ":Film";
+	
+	return key;
+}
+
 ADVBProg& ADVBProg::operator = (const AString& str)
 {
 	static const AString tsod = "tsod.plus-1.";
@@ -390,14 +435,25 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	data->filesize = (uint64_t)GetField(str, "filesize");
 	data->flags    = (uint32_t)GetField(str, "flags");
 
-	if (FieldExists(str, "episodenum")) {
-		data->episode     = GetEpisode(GetField(str, "episodenum"));
-	}
-	else {
-		data->episode.series   = (uint_t)GetField(str, "series");
-		data->episode.episode  = (uint_t)GetField(str, "episode");
-		data->episode.episodes = (uint_t)GetField(str, "episodes");
-		data->episode.valid    = (data->episode.series || data->episode.episode || data->episode.episodes);
+	if (FieldExists(str, "episodenum:xmltv_ns")) SetString(&data->strings.episodenum, GetField(str, "episodenum:xmltv_ns"));
+	else										 SetString(&data->strings.episodenum, GetField(str, "episodenum"));
+
+#if DVBDATVERSION > 1
+	if		(FieldExists(str, "episodenum:brand.series.episode")) SetString(&data->strings.brandseriesepisode, GetField(str, "episodenum:brand.series.episode"));
+	else if (FieldExists(str, "brandseriesepisode"))			  SetString(&data->strings.brandseriesepisode, GetField(str, "brandseriesepisode"));
+#endif
+
+	{
+		const char *pstr;
+		if ((pstr = GetString(data->strings.episodenum))[0]) {
+			data->episode = GetEpisode(pstr);
+		}
+		else {
+			data->episode.series   = (uint_t)GetField(str, "series");
+			data->episode.episode  = (uint_t)GetField(str, "episode");
+			data->episode.episodes = (uint_t)GetField(str, "episodes");
+			data->episode.valid    = (data->episode.series || data->episode.episode || data->episode.episodes);
+		}
 	}
 	
 	SetString(&data->strings.title, GetField(str, "title"));
@@ -426,7 +482,6 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	SetString(&data->strings.desc, GetField(str, "desc"));
 	SetString(&data->strings.category, GetField(str, "category"));
 	SetString(&data->strings.director, GetField(str, "director"));
-	SetString(&data->strings.episodenum, GetField(str, "episodenum"));
 
 	if (FieldExists(str, "previouslyshown")) SetFlag(Flag_repeat);
 
@@ -440,7 +495,7 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	SetString(&data->strings.actors, actors);
 
 	SetString(&data->strings.prefs, GetField(str, "prefs").SearchAndReplace(",", "\n"));
-
+	
 	SetUser(GetField(str, "user"));
 	if (FieldExists(str, "dir")) SetDir(GetField(str, "dir"));
 	else						 SetDir(config.GetUserConfigItem(GetUser(), "dir"));
@@ -448,6 +503,14 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	SetPattern(GetField(str, "pattern"));
 	
 	SetUUID();
+
+#if DVBDATVERSION > 1
+	if (FieldExists(str, "icon")) {
+		AString icon = GetField(str, "icon");
+		SetString(&data->strings.icon, icon);
+		ADVBIconCache::Get().SetIcon("programme", GetProgrammeKey(), icon);
+	}
+#endif
 
 	data->assignedepisode = (uint16_t)GetField(str, "assignedepisode");
 	if (FieldExists(str, "date")) {
@@ -486,7 +549,9 @@ ADVBProg& ADVBProg::operator = (const ADVBProg& obj)
 
 			maxsize = sizeof(*obj.data) + obj.data->strings.end;
 			data = (DVBPROG *)calloc(1, maxsize);
+#if DVBDATVERSION==1
 			data->bigendian = (uint8_t)MachineIsBigEndian();
+#endif
 		}
 
 		if (data && ((sizeof(*obj.data) + obj.data->strings.end) <= maxsize)) {
@@ -530,7 +595,12 @@ ADVBProg& ADVBProg::Modify(const ADVBProg& obj)
 
 bool ADVBProg::WriteToFile(AStdData& fp) const
 {
+#if DVBDATVERSION==1
 	return (fp.writebytes((uint8_t *)data, sizeof(*data) + data->strings.end) == (slong_t)(sizeof(*data) + data->strings.end));
+#else
+	static const uint8_t header = ((uint8_t)MachineIsBigEndian() << 7) | DVBDATVERSION;
+	return (fp.writeitem(header) && (fp.writebytes((uint8_t *)data, sizeof(*data) + data->strings.end) == (slong_t)(sizeof(*data) + data->strings.end)));
+#endif
 }
 
 AString ADVBProg::ExportToText() const
@@ -574,6 +644,14 @@ AString ADVBProg::ExportToText() const
 	if (data->filesize) str.printf("filesize=%s\n", NUMSTR("", data->filesize));
 	str.printf("flags=$%08x\n", data->flags);
 
+#if DVBDATVERSION > 1
+	if ((p = GetString(data->strings.brandseriesepisode))[0]) str.printf("brandseriesepisode=%s\n", p);
+
+	AString icon = GetString(data->strings.icon);
+	if (icon.Empty()) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
+	if (icon.Valid()) str.printf("icon=%s\n", icon.str());
+#endif
+	
 	if (data->assignedepisode) str.printf("assignedepisode=%u\n", data->assignedepisode);
 	if (data->year) str.printf("year=%u\n", data->year);
 
@@ -591,6 +669,7 @@ AString ADVBProg::ExportToText() const
 
 	return str;
 }
+
 
 AString ADVBProg::ExportToJSON(bool includebase64) const
 {
@@ -667,6 +746,16 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 		}
 		str.printf("}");
 	}
+
+#if DVBDATVERSION > 1
+	if ((p = GetString(data->strings.brandseriesepisode))[0]) str.printf(",\"brandseriesepisode\":\"%s\"", JSONFormat(p).str());
+
+	AString icon = GetString(data->strings.icon);
+	if (icon.Empty()) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
+	if (icon.Valid()) str.printf(",\"icon\":\"%s\"", JSONFormat(icon).str());
+
+	if ((icon = ADVBIconCache::Get().GetIcon("channel", GetChannel())).Valid()) str.printf(",\"channelicon\":\"%s\"", JSONFormat(icon).str());
+#endif
 
 	str.printf(",\"flags\":{");
 	str.printf("\"bitmap\":%lu", (ulong_t)data->flags);
@@ -747,7 +836,9 @@ void ADVBProg::Delete()
 			strings[i] = i;
 		}
 
+#if DVBDATVERSION==1
 		data->bigendian = (uint8_t)MachineIsBigEndian();
+#endif
 	}
 }
 
@@ -1085,6 +1176,15 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 #endif
 			same = true;
 		}
+#if DVBDATVERSION > 1
+		else if (prog1.GetBrandSeriesEpisode()[0] && prog2.GetBrandSeriesEpisode()[0]) {
+			// brand.series.episode is valid in both -> sameness can be determined
+			same = (CompareCase(prog1.GetBrandSeriesEpisode(), prog2.GetBrandSeriesEpisode()) == 0);
+#if DEBUG_SAMEPROGRAMME
+			if (debugsameprogramme) debug("'%s' / '%s': brand.series.episode '%s' / '%s': %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), prog1.GetBrandSeriesEpisode(), prog2.GetBrandSeriesEpisode(), same ? "same" : "different");
+#endif
+		}
+#endif
 		else if (prog1.IsFilm() && prog2.IsFilm()) {
 			// both programmes are films
 			// -> definitely the same programme
