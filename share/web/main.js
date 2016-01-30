@@ -1,6 +1,8 @@
 var defaultuser = 'default';
 var defaulttimefilter = 'start>=yesterday,midnight';
 
+var iconimgsize = 'width=57 height=32';
+var iconimgbigsize = 'width=171 height=96';
 var daynames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 var monthnames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 var response = null;
@@ -443,6 +445,9 @@ function populateprogs(id)
 					str += '</td><td>';
 					str += findfilter('stop>"' + (new Date(prog.start)).toISOString() + '" start<"' + (new Date(prog.stop)).toISOString() + '"', prog.starttime + ' - ' + prog.stoptime, 'Search for programmes during these times');
 					str += '</td><td>';
+					if (typeof prog.channelicon != 'undefined') str += '<a href="' + prog.channelicon + '"><img src="' + prog.channelicon + '" ' + iconimgsize + ' /></a>';
+					else										str += '&nbsp;';
+					str += '</td><td>';
 					str += find('channel', prog.channel, 'Seach for programmes on this channel');
 
 					str += '</td><td>';
@@ -477,6 +482,10 @@ function populateprogs(id)
 					}
 					else str += '&nbsp;';
 
+					str += '</td><td>';
+					if (typeof prog.icon != 'undefined') str += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" ' + iconimgsize + ' /></a>';
+					else								 str += '&nbsp;';
+
 					str += '</td><td class="title">';
 					str += find('title', prog.title) + imdb(prog.title);
 
@@ -499,7 +508,8 @@ function populateprogs(id)
 					if (progvb > 1) {
 						var str1 = '';
 
-						str += '<tr' + classname + '><td class="desc" colspan=10>';
+						str += '<tr' + classname + '>';
+						str += '<td class="desc" colspan=12>';
 
 						if (prog.flags.postprocessing) {
 							str += '<span style="font-size:150%;">-- Post Processing Now --</span><br><br>';
@@ -514,10 +524,20 @@ function populateprogs(id)
 							str += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
 						}
 
+						if ((progvb > 1) && (typeof prog.icon != 'undefined')) {
+							str += '<table class="proglist" style="border:0px"><tr' + classname + '><td style="border:0px">';
+							str += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" ' + iconimgbigsize + ' /></a>';
+							str += '</td><td class="desc" style="width:100%">';
+						}
+
 						if ((progvb > 1) && (typeof prog.desc != 'undefined')) {
 							str += prog.desc;
 						}
 
+						if ((progvb > 1) && (typeof prog.icon != 'undefined')) {
+							str += '</td></tr></table>';
+						}
+						
 						if ((progvb > 2) && (typeof prog.category != 'undefined')) {
 							if (str1 != '') str1 += ' ';
 							str1 += find('category', prog.category) + '.';

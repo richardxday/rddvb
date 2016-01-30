@@ -55,8 +55,8 @@ public:
 		AString name;
 	} CHANNEL;
 	uint_t ChannelCount() const {return channellist.Count();}
-	const CHANNEL *GetChannel(uint_t n) {return (const CHANNEL *)channellist[n];}
-	const CHANNEL *GetChannel(const AString& id) const {return (const CHANNEL *)channelhash.Read(id);}
+	const CHANNEL *GetChannelIndex(uint_t n)		 const {return (const CHANNEL *)channellist[n];}
+	const CHANNEL *GetChannelByID(const AString& id) const {return (const CHANNEL *)channelhash.Read(id);}
 
 	void CreateHash();
 	const ADVBProg *FindUUID(const ADVBProg& prog) const {return FindUUID(prog.GetUUID());}

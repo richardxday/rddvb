@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
 				uint_t j, ndvb = 0;
 
 				for (j = 0; j < proglist.ChannelCount(); j++) {
-					const ADVBProgList::CHANNEL *channel = proglist.GetChannel(j);
+					const ADVBProgList::CHANNEL *channel = proglist.GetChannelIndex(j);
 					AString dvbchannel = list.LookupDVBChannel(channel->name);
 
 					printf("Channel %u/%u: '%s' (DVB '%s', XMLTV channel-id '%s')\n", j + 1, proglist.ChannelCount(), channel->name.str(), dvbchannel.str(), channel->id.str());
