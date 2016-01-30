@@ -51,6 +51,11 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_STRING(filename, "Recorded filename"),
 	DEFINE_FIELD(actor, strings.actors, string, "Actor(s)"),
 
+#if DVBDATVERSION > 1
+	DEFINE_STRING(brandseriesepisode, "Brand, series and episode"),
+	DEFINE_STRING(icon, "Programme icon"),
+#endif
+	
 	DEFINE_FIELD(on, start, date, "Day"),
 	DEFINE_FIELD(day, start, date, "Day"),
 	DEFINE_FIELD(age, stop, age, "Age"),
