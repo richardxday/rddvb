@@ -111,6 +111,12 @@ public:
 	const char *GetActors()			 	 const {return GetString(data->strings.actors);}
 	const char *GetPrefs()			 	 const {return GetString(data->strings.prefs);}
 
+#if DVBDATVERSION > 1
+	const char *GetRating()				 const {return GetString(data->strings.rating);}
+	const char *GetSubCategory()		 const {return GetString(data->strings.subcategory);}
+	void SetSubCategory(const AString& str)    {SetString(&data->strings.subcategory, str);}
+#endif
+
 	bool SetUUID();
 
 	bool SetDVBChannel(const char *str)    	   {return SetString(&data->strings.dvbchannel, str);}
@@ -243,6 +249,8 @@ public:
 	void   SetJobID(uint_t id)		    {data->jobid   = id;}
 
 	bool   RecordDataValid()   	  const {return (data->recstart || data->recstop);}
+
+	static const char *PreProcessString(const char *field, AString& temp, const char *str);
 
 	static int Compare(const ADVBProg *prog1, const ADVBProg *prog2, const bool *reverse = NULL);
 
@@ -402,7 +410,9 @@ protected:
 			uint16_t actors;
 			uint16_t prefs;
 			uint16_t icon;
-			uint16_t reserved[4];
+			uint16_t rating;
+			uint16_t subcategory;
+			uint16_t reserved[2];
 			uint16_t end;
 		} strings;
 
@@ -414,6 +424,7 @@ protected:
 
 	static uint16_t GetUserDataOffset();
 	static uint16_t GetActorsDataOffset();
+	static uint16_t GetSubCategoryDataOffset();
 	static uint16_t GetPriDataOffset();
 	static uint16_t GetScoreDataOffset();
 

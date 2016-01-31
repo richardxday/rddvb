@@ -451,33 +451,48 @@ function populateprogs(id)
 					str += find('channel', prog.channel, 'Seach for programmes on this channel');
 
 					str += '</td><td>';
+					str += '<span style="font-size:90%;">';
+					var str1 = '';
 					if (typeof prog.episode != 'undefined') {
-						var str1 = '';
+						var str2 = '';
 
 						if (typeof prog.episode.series != 'undefined') {
-							str1 += 'S' + prog.episode.series;
+							str2 += 'S' + prog.episode.series;
 						}
 						if (typeof prog.episode.episode != 'undefined') {
-							str1 += 'E' + strpad(prog.episode.episode, 2);
+							str2 += 'E' + strpad(prog.episode.episode, 2);
 						}
 						if (typeof prog.episode.episodes != 'undefined') {
-							str1 += 'T' + strpad(prog.episode.episodes, 2);
+							str2 += 'T' + strpad(prog.episode.episodes, 2);
 						}
 
-						str += '<span style="font-size:90%;">';
 						if (typeof prog.episode.series != 'undefined') {	
-							str += findfromfilter('Combined', 'title="' + prog.title + '" series=' + prog.episode.series, '', str1, 'View series ' + prog.episode.series + ' scheduled/recorded of this programme');
+							str1 += findfromfilter('Combined', 'title="' + prog.title + '" series=' + prog.episode.series, '', str2, 'View series ' + prog.episode.series + ' scheduled/recorded of this programme');
 						}
-						else str += str1;
-						str += '</span>';
+						else str1 += str2;
 					}
-					else if ((typeof prog.brandseriesepisode != 'undefined') && (prog.brandseriesepisode != '')) {
-						str += '<span style="font-size:90%;">F' + prog.brandseriesepisode + '</span>';
+
+					if ((typeof prog.brandseriesepisode != 'undefined') && (prog.brandseriesepisode.full != '')) {
+						var str2 = '';
+
+						if (prog.brandseriesepisode.brand != '') str2 += findfromfilter('Combined', 'brandseriesepisode~"' + prog.brandseriesepisode.brand + '.*.*"', '', prog.brandseriesepisode.brand, 'View programmes of this brand in scheduled/recorded programmes');
+						if (prog.brandseriesepisode.series != '') {
+							if (str2 != '') str2 += '&nbsp;';
+							str2 += findfromfilter('Combined', 'brandseriesepisode~"' + prog.brandseriesepisode.brand + '.' + prog.brandseriesepisode.series + '.*"', '', prog.brandseriesepisode.series, 'View programmes of this series in scheduled/recorded programmes');
+						}
+						if (prog.brandseriesepisode.episode != '') {
+							if (str2 != '') str2 += '&nbsp;';
+							str2 += findfromfilter('Combined', 'brandseriesepisode~"' + prog.brandseriesepisode.brand + '.' + prog.brandseriesepisode.series + '.' + prog.brandseriesepisode.episode + '"', '', prog.brandseriesepisode.episode, 'View programmes of this episode in scheduled/recorded programmes');
+						}
+
+						if (str1 != '') str1 += '<br>';
+						str1 += str2;
 					}
-					else if ((typeof prog.assignedepisode != 'undefined') && (prog.assignedepisode != '')) {
-						str += '<span style="font-size:90%;">F' + prog.assignedepisode + '</span>';
-					}
-					else str += '&nbsp;';
+
+					if (str1 != '') str += str1;
+					else			str += '<br>&nbsp;'
+					
+					str += '</span>';
 
 					str += '</td><td>';
 					if (typeof prog1.user != 'undefined') {
@@ -543,7 +558,23 @@ function populateprogs(id)
 						
 						if ((progvb > 2) && (typeof prog.category != 'undefined')) {
 							if (str1 != '') str1 += ' ';
-							str1 += find('category', prog.category) + '.';
+							str1 += find('category', prog.category);
+							if (typeof prog.subcategory != 'undefined') {
+								str1 += ' (';
+
+								var j;
+								for (j = 0; j < prog.subcategory.length; j++) {
+									if (j) str1 += ', ';
+									str1 += find('subcategory', prog.subcategory[j]);
+								}
+								str1 += ')';
+							}
+							str1 += '.';
+						}
+
+						if ((progvb > 2) && (typeof prog.rating != 'undefined')) {
+							if (str1 != '') str1 += ' ';
+							str1 += find('rating', prog.rating) + '.';
 						}
 
 						if ((progvb > 2) && (typeof prog.director != 'undefined')) {
@@ -898,7 +929,7 @@ function recordprogramme(id)
 
 		if (user == defaultuser) user = '';
 
-		if (prog.category.toLowerCase() == 'film') pattern += ' category=' + prog.category.toLowerCase() + ' dir:="Films" onceonly:=1';
+		if (prog.category.toLowerCase() == 'film') pattern += ' category=' + prog.category.toLowerCase() + ' dir:="Films" onceonly:=1 pri:=-3';
 		
 		if (typeof prog.subtitle != 'undefined') pattern += ' subtitle="' + prog.subtitle + '"';
 		

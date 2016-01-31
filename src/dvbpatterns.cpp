@@ -1008,7 +1008,10 @@ AString ADVBPatterns::RemoveDuplicateTerms(PATTERN& pattern)
 
 bool ADVBPatterns::MatchString(const TERM& term, const char *str)
 {
+	AString temp;
 	bool match = false;
+
+	str = ADVBProg::PreProcessString(term.field->name, temp, str);
 	
 	switch (term.data.opcode & ~Operator_Inverted) {
 		case Operator_Regex:
@@ -1090,11 +1093,20 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 				str = prog.GetString(offset);
 
 				if (field.offset == ADVBProg::GetActorsDataOffset()) {
-					AString actors(str);
-					uint_t j, m = actors.CountLines();
+					AString _str(str);
+					uint_t j, m = _str.CountLines();
 
 					for (j = 0; j < m; j++) {
-						newmatch = MatchString(term, actors.Line(j));
+						newmatch = MatchString(term, _str.Line(j));
+						if (newmatch) break;
+					}
+				}
+				if (field.offset == ADVBProg::GetSubCategoryDataOffset()) {
+					AString _str(str);
+					uint_t j, m = _str.CountLines();
+
+					for (j = 0; j < m; j++) {
+						newmatch = MatchString(term, _str.Line(j));
 						if (newmatch) break;
 					}
 				}

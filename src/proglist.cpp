@@ -243,6 +243,7 @@ void ADVBProgList::GetProgrammeValues(AString& str, const AStructuredNode *pNode
 
 		if ((key == "episodenum") && ((pAttr = pNode->FindAttribute("system")) != NULL)) key += ":" + pAttr->Value;
 		if ((key == "icon")       && ((pAttr = pNode->FindAttribute("src"))    != NULL)) value = pAttr->Value;
+		if (key == "rating")														     value = pNode->GetChildValue("value");
 		
 		if (value.Valid() || !pNode->GetChildren()) str.printf("%s=%s\n", key.str(), value.str());
 		
@@ -614,6 +615,29 @@ bool ADVBProgList::ReadFromBinaryFile(const AString& filename, bool sort, bool r
 			if (HasQuit()) break;
 		}
 
+#if 0
+		if (success) {
+			uint_t i;
+			bool   changed = false;
+			
+			for (i = 0; i < Count(); i++) {
+				ADVBProg& prog = GetProgWritable(i);
+				AString   str1 = prog.GetSubCategory();
+				AString   str2 = str1.SearchAndReplace(",", "\n");
+
+				if (str2 != str1) {
+					prog.SetSubCategory(str2 + "\n");
+					changed = true;
+				}
+			}
+
+			if (changed) {
+				config.printf("Updating '%s'", filename.str());
+				WriteToFile(filename);
+			}
+		}
+#endif
+		
 		//config.printf("Read data from '%s', parsing complete", filename.str());
 	}
 
