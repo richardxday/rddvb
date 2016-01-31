@@ -54,6 +54,12 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 #if DVBDATVERSION > 1
 	DEFINE_STRING(brandseriesepisode, "Brand, series and episode"),
 	DEFINE_STRING(icon, "Programme icon"),
+	DEFINE_STRING(rating, "Age rating"),
+	DEFINE_STRING(subcategory, "Programme subcategor(ies)"),
+
+	DEFINE_FIELD(bsebrand, strings.brandseriesepisode, string, "Brand from brand, series and episode"),
+	DEFINE_FIELD(bseseries, strings.brandseriesepisode, string, "Series from brand, series and episode"),
+	DEFINE_FIELD(bseepisode, strings.brandseriesepisode, string, "Episde from brand, series and episode"),
 #endif
 	
 	DEFINE_FIELD(on, start, date, "Day"),
@@ -176,6 +182,11 @@ uint16_t ADVBProg::GetUserDataOffset()
 uint16_t ADVBProg::GetActorsDataOffset()
 {
 	return DVBPROG_OFFSET(strings.actors);
+}
+
+uint16_t ADVBProg::GetSubCategoryDataOffset()
+{
+	return DVBPROG_OFFSET(strings.subcategory);
 }
 
 uint16_t ADVBProg::GetPriDataOffset()
@@ -427,6 +438,7 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	static const AString tsod = "tsod.plus-1.";
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString _str;
+	int p = 0;
 	
 	Delete();
 
@@ -485,17 +497,39 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	if (dvbchannel.Empty()) dvbchannel = ADVBChannelList::Get().LookupDVBChannel(channel);
 	SetString(&data->strings.dvbchannel, dvbchannel);
 	SetString(&data->strings.desc, GetField(str, "desc"));
-	SetString(&data->strings.category, GetField(str, "category"));
+
+	{
+		AString category, subcategory = GetField(str, "subcategory");
+		bool    ignoreothercategories = subcategory.Valid();
+		
+		for (p = 0; (_str = GetField(str, "category", p, &p)).Valid(); p++) {
+			if (_str.ToLower() == "film") {
+				category = _str;
+				break;
+			}
+		}
+		for (p = 0; (_str = GetField(str, "category", p, &p)).Valid(); p++) {
+			if		(category.Empty())		category = _str;
+			else if (ignoreothercategories) break;
+			else if (_str.ToLower() != "film") {
+				subcategory += _str + "\n";
+			}
+		}
+		
+		SetString(&data->strings.category, category);
+	
+#if DVBDATVERSION > 1
+		SetString(&data->strings.subcategory, subcategory);
+#endif
+	}
+
 	SetString(&data->strings.director, GetField(str, "director"));
 
 	if (FieldExists(str, "previouslyshown")) SetFlag(Flag_repeat);
 
 	AString actors = GetField(str, "actors").SearchAndReplace(",", "\n"), actor;
-	int p = 0;
-
-	while ((actor = GetField(str, "actor", p, &p)).Valid()) {
+	for (p = 0; (actor = GetField(str, "actor", p, &p)).Valid(); p++) {
 		actors.printf("%s\n", actor.str());
-		p++;
 	}
 	SetString(&data->strings.actors, actors);
 
@@ -515,6 +549,8 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 		SetString(&data->strings.icon, icon);
 		ADVBIconCache::Get().SetIcon("programme", GetProgrammeKey(), icon);
 	}
+
+	if (FieldExists(str, "rating")) SetString(&data->strings.rating, GetField(str, "rating"));
 #endif
 
 	data->assignedepisode = (uint16_t)GetField(str, "assignedepisode");
@@ -632,6 +668,7 @@ AString ADVBProg::ExportToText() const
 	if ((p = GetString(data->strings.subtitle))[0]) str.printf("subtitle=%s\n", p);
 	if ((p = GetString(data->strings.desc))[0]) str.printf("desc=%s\n", p);
 	if ((p = GetString(data->strings.category))[0]) str.printf("category=%s\n", p);
+	if ((p = GetString(data->strings.subcategory))[0]) str.printf("subcategory=%s\n", p);
 	if ((p = GetString(data->strings.director))[0]) str.printf("director=%s\n", p);
 	if ((p = GetString(data->strings.episodenum))[0]) str.printf("episodenum=%s\n", p);
 	if ((p = GetString(data->strings.user))[0]) str.printf("user=%s\n", p);
@@ -651,6 +688,7 @@ AString ADVBProg::ExportToText() const
 
 #if DVBDATVERSION > 1
 	if ((p = GetString(data->strings.brandseriesepisode))[0]) str.printf("brandseriesepisode=%s\n", p);
+	if ((p = GetString(data->strings.rating))[0])			  str.printf("rating=%s\n", p);
 
 	AString icon = GetString(data->strings.icon);
 	if (icon.Empty()) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
@@ -700,6 +738,18 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	if ((p = GetString(data->strings.subtitle))[0]) str.printf(",\"subtitle\":\"%s\"", JSONFormat(p).str());
 	if ((p = GetString(data->strings.desc))[0]) str.printf(",\"desc\":\"%s\"", JSONFormat(p).str());
 	if ((p = GetString(data->strings.category))[0]) str.printf(",\"category\":\"%s\"", JSONFormat(p).str());
+	if ((p = GetString(data->strings.subcategory))[0]) {
+		str.printf(",\"subcategory\":[");
+
+		AString subcategory = p;
+		uint_t  i, n = subcategory.CountLines();
+		for (i = 0; i < n; i++) {
+			if (i) str.printf(",");
+			str.printf("\"%s\"", JSONFormat(subcategory.Line(i)).str());
+		}
+
+		str.printf("]");
+	}
 	if ((p = GetString(data->strings.director))[0]) str.printf(",\"director\":\"%s\"", JSONFormat(p).str());
 	if ((p = GetString(data->strings.episodenum))[0]) str.printf(",\"episodenum\":\"%s\"", JSONFormat(p).str());
 	if ((p = GetString(data->strings.user))[0]) str.printf(",\"user\":\"%s\"", JSONFormat(p).str());
@@ -753,13 +803,23 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	}
 
 #if DVBDATVERSION > 1
-	if ((p = GetString(data->strings.brandseriesepisode))[0]) str.printf(",\"brandseriesepisode\":\"%s\"", JSONFormat(p).str());
+	AString bse;
+	if ((bse = GetString(data->strings.brandseriesepisode)).Valid()) {
+		str.printf(",\"brandseriesepisode\":{");
+		str.printf("\"full\":\"%s\"", JSONFormat(bse).str());
+		str.printf(",\"brand\":\"%s\"", JSONFormat(bse.Line(0, ".", 0)).str());
+		str.printf(",\"series\":\"%s\"", JSONFormat(bse.Line(1, ".", 0)).str());
+		str.printf(",\"episode\":\"%s\"", JSONFormat(bse.Line(2, ".", 0)).str());
+		str.printf("}");
+	}
 
 	AString icon = GetString(data->strings.icon);
 	if (icon.Empty()) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
 	if (icon.Valid()) str.printf(",\"icon\":\"%s\"", JSONFormat(icon).str());
 
 	if ((icon = ADVBIconCache::Get().GetIcon("channel", GetChannel())).Valid()) str.printf(",\"channelicon\":\"%s\"", JSONFormat(icon).str());
+
+	if ((p = GetString(data->strings.rating))[0]) str.printf(",\"rating\":\"%s\"", JSONFormat(p).str());
 #endif
 
 	str.printf(",\"flags\":{");
@@ -1037,7 +1097,13 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 
 		if ((verbosity > 2) && (p = GetCategory())[0]) {
 			if (str1.Valid()) str1.printf(" ");
-			str1.printf("%s.", p);
+			str1.printf("%s", p);
+
+#if DVBDATVERSION > 1
+			if ((p = GetSubCategory())[0]) str1.printf(" (%s)", p);
+#endif
+
+			str1.printf(".");
 		}
 
 		if ((verbosity > 2) && ep.valid) {
@@ -1341,6 +1407,24 @@ void ADVBProg::SearchAndReplace(const AString& search, const AString& replace)
 	for (i = 0; i < (sizeof(data->strings) / sizeof(strs[0])); i++) {
 		SetString(strs + i, AString(GetString(strs[i])).SearchAndReplace(search, replace));
 	}
+}
+
+const char *ADVBProg::PreProcessString(const char *field, AString& temp, const char *str)
+{
+	if (CompareNoCase(field, "bsebrand") == 0) {
+		temp = AString(str).Line(0, ".", 0);
+		str  = temp.str();
+	}
+	else if (CompareNoCase(field, "bseseries") == 0) {
+		temp = AString(str).Line(1, ".", 0);
+		str  = temp.str();
+	}
+	else if (CompareNoCase(field, "bseepisode") == 0) {
+		temp = AString(str).Line(2, ".", 0);
+		str  = temp.str();
+	}
+	
+	return str;
 }
 
 AString ADVBProg::ReplaceFilenameTerms(const AString& str) const
@@ -2633,4 +2717,3 @@ bool ADVBProg::DeleteEncodedFiles() const
 
 	return success;
 }
-
