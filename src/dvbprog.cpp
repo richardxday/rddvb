@@ -59,7 +59,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 
 	DEFINE_FIELD(bsebrand, strings.brandseriesepisode, string, "Brand from brand, series and episode"),
 	DEFINE_FIELD(bseseries, strings.brandseriesepisode, string, "Series from brand, series and episode"),
-	DEFINE_FIELD(bseepisode, strings.brandseriesepisode, string, "Episde from brand, series and episode"),
+	DEFINE_FIELD(bseepisode, strings.brandseriesepisode, string, "Episode from brand, series and episode"),
 #endif
 	
 	DEFINE_FIELD(on, start, date, "Day"),
