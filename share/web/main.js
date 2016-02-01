@@ -534,6 +534,9 @@ function populateprogs(id)
 						}
 						else if (prog.flags.running) {
 							str += '<span style="font-size:150%;">-- Recording Now --</span><br><br>';
+
+							var now = new Date().getTime();
+							if (now < prog.recstop) str += '<progress value="' + ((now - prog.recstart) / 1000) + '" max="' + ((prog.recstop - prog.recstart) / 1000) + '" />';
 						}
 						else if (prog.flags.failed) {
 							str += '<span style="font-size:150%;">-- Recording Failed --</span><br><br>';
