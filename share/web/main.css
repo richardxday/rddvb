@@ -67,7 +67,7 @@ table.proglist,table.patternlist,table.patternlist th
 table.proglist td
 {
 	border-top:1px solid #aaa;
-	padding:8px;
+	padding:5px;
 	font-size:120%;
 	vertical-align:middle;
 	width:1%;
@@ -75,7 +75,7 @@ table.proglist td
 table.patternlist th,table.patternlist td
 {
 	border-top:1px solid #aaa;
-	padding:6px;
+	padding:4px;
 	font-size:120%;
 	vertical-align:middle;
 	width:1%;
