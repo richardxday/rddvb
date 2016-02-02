@@ -404,6 +404,8 @@ function populateprogs(id)
 		document.getElementById("statusbottom").innerHTML = status;
 
 		if (response.progs.length > 0) {
+			var changed = false;
+			
 			astr += '<table class="proglist">';
 
 			patterns = [];
@@ -418,14 +420,16 @@ function populateprogs(id)
 					if (typeof response.progs[i].rejected  != 'undefined') populatedates(response.progs[i].rejected);
 				}
 
-				var prog      = response.progs[i];
-				var selected  = (i == id);
+				var prog     = response.progs[i];
+				var selected = (i == id);
 
 				if ((typeof prog.html == 'undefined') || (selected != prog.html.selected)) {
-					var prog1     = prog;
-					var str       = '';
-					var classname = '';
-
+					var prog1      = prog;
+					var headerstr  = '';
+					var detailsstr = '';
+					var classname  = '';
+					var trstr      = '';
+					
 					if		(typeof prog.recorded  != 'undefined') prog1 = prog.recorded;
 					else if (typeof prog.scheduled != 'undefined') prog1 = prog.scheduled;
 					else if (typeof prog.rejected  != 'undefined') prog1 = prog.rejected;
@@ -438,20 +442,22 @@ function populateprogs(id)
 					else if (prog.flags.rejected  || (typeof prog.rejected  != 'undefined'))	 classname = ' class="rejected"';
 					else if ((typeof prog.category != 'undefined') && (prog.category == 'Film')) classname = ' class="film"';
 
-					str += '<tr' + classname + '>';
-					str += '<td style="width:20px;cursor:pointer;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
-					str += '<td>';
-					str += find('start', prog.startdate, 'Search for programmes on this day');
-					str += '</td><td>';
-					str += findfilter('stop>"' + (new Date(prog.start)).toISOString() + '" start<"' + (new Date(prog.stop)).toISOString() + '"', prog.starttime + ' - ' + prog.stoptime, 'Search for programmes during these times');
-					str += '</td><td>';
-					if (typeof prog.channelicon != 'undefined') str += '<a href="' + prog.channelicon + '"><img src="' + prog.channelicon + '" ' + iconimgsize + ' /></a>';
-					else										str += '&nbsp;';
-					str += '</td><td>';
-					str += find('channel', prog.channel, 'Seach for programmes on this channel');
+					trstr += '<tr' + classname + ' id="prog' + i + 'header"></tr>';
+					trstr += '<tr' + classname + ' id="prog' + i + 'details"></tr>';
+					
+					headerstr += '<td style="width:20px;cursor:pointer;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
+					headerstr += '<td>';
+					headerstr += find('start', prog.startdate, 'Search for programmes on this day');
+					headerstr += '</td><td>';
+					headerstr += findfilter('stop>"' + (new Date(prog.start)).toISOString() + '" start<"' + (new Date(prog.stop)).toISOString() + '"', prog.starttime + ' - ' + prog.stoptime, 'Search for programmes during these times');
+					headerstr += '</td><td>';
+					if (typeof prog.channelicon != 'undefined') headerstr += '<a href="' + prog.channelicon + '"><img src="' + prog.channelicon + '" ' + iconimgsize + ' /></a>';
+					else										headerstr += '&nbsp;';
+					headerstr += '</td><td>';
+					headerstr += find('channel', prog.channel, 'Seach for programmes on this channel');
 
-					str += '</td><td>';
-					str += '<span style="font-size:90%;">';
+					headerstr += '</td><td>';
+					headerstr += '<span style="font-size:90%;">';
 					var str1 = '';
 					if (typeof prog.episode != 'undefined') {
 						var str2 = '';
@@ -489,74 +495,79 @@ function populateprogs(id)
 						str1 += str2;
 					}
 
-					if (str1 != '') str += str1;
-					else			str += '<br>&nbsp;'
+					if (str1 != '') headerstr += str1;
+					else			headerstr += '<br>&nbsp;'
 					
-					str += '</span>';
+					headerstr += '</span>';
 
-					str += '</td><td>';
+					headerstr += '</td><td>';
 					if (typeof prog1.user != 'undefined') {
-						str += find('user', getusername(prog1.user), 'Seach for programmes assigned to this user');
+						headerstr += find('user', getusername(prog1.user), 'Seach for programmes assigned to this user');
 					}
-					else str += '&nbsp;';
+					else headerstr += '&nbsp;';
 
-					str += '</td><td>';
-					if (typeof prog.icon != 'undefined') str += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" ' + iconimgsize + ' /></a>';
-					else								 str += '&nbsp;';
+					headerstr += '</td><td>';
+					if (typeof prog.icon != 'undefined') headerstr += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" ' + iconimgsize + ' /></a>';
+					else								 headerstr += '&nbsp;';
 
-					str += '</td><td class="title">';
-					str += find('title', prog.title) + imdb(prog.title);
+					var downloadlink = '';
+					if (prog.flags.postprocessing || prog.flags.running) ;
+					else if (typeof prog.file != 'undefined') downloadlink = adddownloadlink(prog);
+					else if ((typeof prog.recorded != 'undefined') &&
+							 (typeof prog.recorded.file != 'undefined')) downloadlink = adddownloadlink(prog.recorded);
+
+					headerstr += '</td><td class="title"';
+					if (downloadlink == '') headerstr += ' colspan=2';
+					headerstr += '>';
+					headerstr += find('title', prog.title) + imdb(prog.title);
 
 					if (typeof prog.subtitle != 'undefined') {
-						str += ' / ' + find('subtitle', prog.subtitle) + imdb(prog.subtitle);
+						headerstr += ' / ' + find('subtitle', prog.subtitle) + imdb(prog.subtitle);
 					}
 
-					str += '{reltime}';
-					str += '</td><td style="font-size:90%;">';
-					if (prog.flags.postprocessing || prog.flags.running) str += '&nbsp;';
-					else if (typeof prog.file != 'undefined') str += adddownloadlink(prog);
-					else if ((typeof prog.recorded != 'undefined') &&
-							 (typeof prog.recorded.file != 'undefined')) str += adddownloadlink(prog.recorded);
-					else str += '&nbsp;';
-					str += '</td><td>';
-					str += '<td style="width:20px;cursor:pointer;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
-					str += '</td></tr>';
+					headerstr += '{reltime}';
+					headerstr += '</td>';
+
+					if (downloadlink != '') headerstr += '<td style="font-size:90%;">' + adddownloadlink(downloadlink) + '</td>';
+
+					headerstr += '<td>';
+					headerstr += '<td style="width:20px;cursor:pointer;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
+					headerstr += '</td></tr>';
 
 					var progvb = selected ? 10 : verbosity;
 					if (progvb > 1) {
-						var str1 = '';
-
-						str += '<tr' + classname + '>';
-						str += '<td class="desc" colspan=12>';
+						detailsstr += '<td class="desc" colspan=12>';
 
 						if (prog.flags.postprocessing) {
-							str += '<span style="font-size:150%;">-- Post Processing Now --</span><br><br>';
+							detailsstr += '<span style="font-size:150%;">-- Post Processing Now --</span><br><br>';
 						}
 						else if (prog.flags.running) {
-							str += '<span style="font-size:150%;">-- Recording Now --</span><br><br>';
+							detailsstr += '<span style="font-size:150%;">-- Recording Now --';
 
 							var now = new Date().getTime();
-							if (now < prog.recstop) str += '<progress value="' + ((now - prog.recstart) / 1000) + '" max="' + ((prog.recstop - prog.recstart) / 1000) + '" />';
+							if (now < prog.recstop) detailsstr += '&nbsp;&nbsp;<progress value="' + ((now - prog.recstart) / 1000) + '" max="' + ((prog.recstop - prog.recstart) / 1000) + '"></progress>';
+
+							detailsstr += '</span><br><br>';
 						}
 						else if (prog.flags.failed) {
-							str += '<span style="font-size:150%;">-- Recording Failed --</span><br><br>';
+							detailsstr += '<span style="font-size:150%;">-- Recording Failed --</span><br><br>';
 						}
 						else if (prog.flags.rejected) {
-							str += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
+							detailsstr += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
 						}
 
 						if ((progvb > 1) && (typeof prog.icon != 'undefined')) {
-							str += '<table class="proglist" style="border:0px"><tr' + classname + '><td style="border:0px">';
-							str += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" ' + iconimgbigsize + ' /></a>';
-							str += '</td><td class="desc" style="width:100%">';
+							detailsstr += '<table class="proglist" style="border:0px"><tr' + classname + '><td style="border:0px">';
+							detailsstr += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" ' + iconimgbigsize + ' /></a>';
+							detailsstr += '</td><td class="desc" style="width:100%">';
 						}
 
 						if ((progvb > 1) && (typeof prog.desc != 'undefined')) {
-							str += prog.desc;
+							detailsstr += prog.desc;
 						}
 
 						if ((progvb > 1) && (typeof prog.icon != 'undefined')) {
-							str += '</td></tr></table>';
+							detailsstr += '</td></tr></table>';
 						}
 						
 						if ((progvb > 2) && (typeof prog.category != 'undefined')) {
@@ -635,8 +646,8 @@ function populateprogs(id)
 						}
 
 						if (str1 != '') {
-							str += '<br><br>';
-							str += str1;
+							detailsstr += '<br><br>';
+							detailsstr += str1;
 						}
 
 						str1 = '';
@@ -848,17 +859,38 @@ function populateprogs(id)
 						}
 						
 						if (str1 != '') {
-							str += '<br><br>';
-							str += str1;
+							detailsstr += '<br><br>';
+							detailsstr += str1;
 						}
 
-						str += '</td></tr>';
+						detailsstr += '</td>';
 					}
 
-					response.progs[i].html = {};
-					response.progs[i].html.selected = selected;
-					response.progs[i].html.str      = str;
+					changed |= (document.getElementById("prog" + i + "header") == null);
+
+					if (typeof response.progs[i].html == 'undefined') response.progs[i].html = {};
+					response.progs[i].html.selected  = selected;
+					response.progs[i].html.headerstr = headerstr;
+					
+					if		(typeof response.progs[i].html.trstr == 'undefined') changed = true;
+					else if (trstr != response.progs[i].html.trstr)				 changed = true;
+					response.progs[i].html.trstr = trstr;
+
+					response.progs[i].html.detailschanged = false;
+					if (document.getElementById("prog" + i + "details") == null) {
+						response.progs[i].html.detailschanged = true;
+					}
+					else if	(typeof response.progs[i].html.detailsstr == 'undefined') {
+						response.progs[i].html.detailschanged = true;
+					}
+					else if (detailsstr != response.progs[i].html.detailsstr) {
+						response.progs[i].html.detailschanged = true;
+					}
+					response.progs[i].html.detailsstr = detailsstr;
 				}
+				else response.progs[i].html.detailschanged = false;
+
+				astr += response.progs[i].html.trstr + "\n";
 
 				var reltimestr = '';
 				if (typeof prog.start != 'undefined') {
@@ -909,17 +941,40 @@ function populateprogs(id)
 					reltimestr = str;
 				}
 
-				astr += response.progs[i].html.str.replace('{reltime}', reltimestr);
+				var headerstr2 = response.progs[i].html.headerstr.replace('{reltime}', reltimestr);
+			
+				response.progs[i].html.headerchanged = false;
+				if (document.getElementById("prog" + i + "header") == null) {
+					response.progs[i].html.headerchanged = true;
+				}
+				else if	(typeof response.progs[i].html.headerstr2 == 'undefined') {
+					response.progs[i].html.headerchanged = true;
+				}
+				else if (headerstr2 != response.progs[i].html.headerstr2) {
+					response.progs[i].html.headerchanged = true;
+				}
+				response.progs[i].html.headerstr2 = headerstr2;
 			}
 			
 			astr += '</table>';
+
+			if (changed) {
+				document.getElementById("list").innerHTML = astr;
+			}
+
+			for (i = 0; i < response.progs.length; i++) {
+				if (response.progs[i].html.headerchanged) {
+					document.getElementById("prog" + i + "header").innerHTML = response.progs[i].html.headerstr2;
+				}
+				if (response.progs[i].html.detailschanged) {
+					document.getElementById("prog" + i + "details").innerHTML = response.progs[i].html.detailsstr;
+				}
+			}
 		}
 	}
 	else {
 		document.getElementById("status").innerHTML = "No programmes";
 	}
-
-	return astr;
 }
 
 function recordprogramme(id)
@@ -1351,7 +1406,7 @@ function populatepatterns(id)
 		document.getElementById("status").innerHTML = "No patterns";
 	}
 
-	return str;
+	document.getElementById("list").innerHTML = str;
 }
 
 function patternprichanged(index)
@@ -1505,7 +1560,7 @@ function populatelogs(id)
 		document.getElementById("status").innerHTML = "No logs";
 	}
 
-	return str;
+	document.getElementById("list").innerHTML = str;
 }
 
 function populate(id)
@@ -1513,16 +1568,14 @@ function populate(id)
 	var str = '';
 
 	if (response != null) {
-		if		(typeof response.patterns != 'undefined') str += populatepatterns(id);
-		else if (typeof response.loglines != 'undefined') str += populatelogs(id);
-		else if (typeof response.progs    != 'undefined') str += populateprogs(id);
+		if		(typeof response.patterns != 'undefined') populatepatterns(id);
+		else if (typeof response.loglines != 'undefined') populatelogs(id);
+		else if (typeof response.progs    != 'undefined') populateprogs(id);
 
 		populateusers();
 	}
 
 	displayfilter(0, -1, '');
-
-	document.getElementById("list").innerHTML = str;
 }
 
 function dvbrequest(filter, postdata)
