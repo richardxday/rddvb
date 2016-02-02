@@ -1002,10 +1002,22 @@ ADVBProg::EPISODE ADVBProg::GetEpisode(const AString& str)
 			episode.episode  = _episode + 1;
 			episode.episodes = _episodes;
 		}
+		else if (sscanf(str, "%u./%u.",
+				   &_series,
+				   &_episodes) == 2) {
+			episode.series   = _series  + 1;
+			episode.episode  = 0;
+			episode.episodes = _episodes;
+		}
 		else if (sscanf(str, ".%u/%u.",
 						&_episode,
 						&_episodes) == 2) {
 			episode.episode  = _episode + 1;
+			episode.episodes = _episodes;
+		}
+		else if (sscanf(str, "./%u.",
+						&_episodes) == 1) {
+			episode.episode  = 0;
 			episode.episodes = _episodes;
 		}
 		else if (sscanf(str, "%u.%u.",
