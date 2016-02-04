@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
-		for (i = 1; i < argc; i++) {
+		for (i = 1; (i < argc) && !HasQuit(); i++) {
 			if (strncmp(argv[i], "-v", 2) == 0) {
 				uint_t inc = (uint_t)AString(argv[i] + 2);
 				verbosity += inc ? inc : 1;
@@ -1107,13 +1107,13 @@ int main(int argc, char *argv[])
 				if (listings.ReadFromFile(config.GetListingsFile())) {
 					uint_t i, n = 0;
 
-					for (i = 0; i < proglist.Count(); i++) {
+					for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
 						if (!proglist[i].GetBrandSeriesEpisode()[0]) {
 							const ADVBProg *prog;
 
 							if (((prog = listings.FindSimilar(proglist[i])) != NULL) && prog->GetBrandSeriesEpisode()[0]) {
 								proglist.GetProgWritable(i).SetBrandSeriesEpisode(prog->GetBrandSeriesEpisode());
-								config.printf("Updating '%s' with brand.series.episode '%s'", proglist[i].GetQuickDescription().str(), prog->GetBrandSeriesEpisode());
+								config.printf("Updating '%s' with brand.series.episode '%s' from '%s'", proglist[i].GetQuickDescription().str(), prog->GetBrandSeriesEpisode(), prog->GetQuickDescription().str());
 								n++;
 							}
 						}
