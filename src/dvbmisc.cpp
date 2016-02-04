@@ -6,15 +6,6 @@
 
 #include "dvbmisc.h"
 
-static bool hasquit = false;
-
-void __hasquit(int sig)
-{
-	(void)sig;
-
-	hasquit = true;
-}
-
 AString JSONFormat(const AString& str)
 {
 	return str.SearchAndReplace("/", "\\/").SearchAndReplace("\"", "\\\"").SearchAndReplace("\n", "\\n");
@@ -44,9 +35,4 @@ AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint
 	}
 
 	return res;
-}
-
-bool HasQuit()
-{
-	return hasquit;
 }

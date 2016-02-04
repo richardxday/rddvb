@@ -14,8 +14,5 @@ typedef struct {
 } REPLACEMENT;
 extern AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint_t n);
 
-extern void __hasquit(int sig);
-extern bool HasQuit();
-
 #endif
 
