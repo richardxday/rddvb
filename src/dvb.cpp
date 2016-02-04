@@ -130,6 +130,9 @@ int main(int argc, char *argv[])
 		printf("\t--generate-sig\t\t\tGenerate signature file for files in current list (assuming source file exists)");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
+#if DVBDATVERSION > 1
+		printf("\t--update-brand-series-episode\t\t\t\tUpdate bse in current list from listings file\n");
+#endif
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -1097,6 +1100,29 @@ int main(int argc, char *argv[])
 					prog.OnRecordSuccess();
 				}
 			}
+#if DVBDATVERSION > 1
+			else if (stricmp(argv[i], "--update-brand-series-episode") == 0) {
+				ADVBProgList listings;
+
+				if (listings.ReadFromFile(config.GetListingsFile())) {
+					uint_t i, n = 0;
+
+					for (i = 0; i < proglist.Count(); i++) {
+						if (!proglist[i].GetBrandSeriesEpisode()[0]) {
+							const ADVBProg *prog;
+
+							if (((prog = listings.FindSimilar(proglist[i])) != NULL) && prog->GetBrandSeriesEpisode()[0]) {
+								proglist.GetProgWritable(i).SetBrandSeriesEpisode(prog->GetBrandSeriesEpisode());
+								config.printf("Updating '%s' with brand.series.episode '%s'", proglist[i].GetQuickDescription().str(), prog->GetBrandSeriesEpisode());
+								n++;
+							}
+						}
+					}
+
+					printf("%u programmes updated\n", n);
+				}
+			}
+#endif
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
 			}
