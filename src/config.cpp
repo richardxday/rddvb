@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
@@ -13,6 +12,8 @@
 #define DEFAULTCONFDIR "/etc/dvb"
 #define DEFAULTDATADIR "/var/dvb"
 #define DEFAULTLOGDIR  "/var/log/dvb"
+
+AQuitHandler quithandler;
 
 ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false),
 						   defaults(20, &AString::DeleteString),
@@ -46,10 +47,6 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		{"encodeargs",   	 "{conf:encodeh264}"},
 	};
 	uint_t i;
-
-	signal(SIGINT, &__hasquit);
-	signal(SIGPIPE, &__hasquit);
-	signal(SIGHUP, &__hasquit);
 
 	for (i = 0; i < NUMBEROF(__defaults); i++) {
 		defaults.Insert(__defaults[i].name, (uptr_t)new AString(__defaults[i].value));
