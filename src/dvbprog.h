@@ -126,6 +126,10 @@ public:
 	bool SetPattern(const char 	  *str)    	   {return SetString(&data->strings.pattern, 	str);}
 	bool SetPrefs(const char   	  *str)    	   {return SetString(&data->strings.prefs,   	str);}
 
+#if DVBDATVERSION > 1
+	bool SetBrandSeriesEpisode(const char *str) {return SetString(&data->strings.brandseriesepisode, str);}
+#endif
+	
 	AString GetSourceFilename() const;
 	AString GetSource2Filename() const;
 	AString GetSignatureFilename(const AString& dstname) const;
