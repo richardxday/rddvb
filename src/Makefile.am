@@ -44,7 +44,7 @@ nodist_pkginclude_HEADERS =
 
 DISTCLEANFILES =
 
-bin_PROGRAMS = dvb dvbweb dvbdecodeprog videosig sigcmp
+bin_PROGRAMS = dvb dvbweb dvbweb2 dvbdecodeprog videosig sigcmp
 
 dvb_LDADD =										\
 	$(RDLIB_LIBS)								\
@@ -71,6 +71,19 @@ dvbweb_SOURCES =								\
 	dvbweb.cpp
 
 EXTRA_dvbweb_DEPENDENCIES = $(lib_LTLIBRARIES)
+
+dvbweb2_LDADD =									\
+	$(RDLIB_LIBS)								\
+	$(RDDVB_LIBS)
+
+dvbweb2_CPPFLAGS =								\
+	$(RDLIB_CFLAGS)								\
+	$(RDDVB_CFLAGS)
+
+dvbweb2_SOURCES =								\
+	dvbweb2.cpp
+
+EXTRA_dvbweb2_DEPENDENCIES = $(lib_LTLIBRARIES)
 
 dvbdecodeprog_LDADD =							\
 	$(RDLIB_LIBS)								\
