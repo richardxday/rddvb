@@ -112,6 +112,8 @@ AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 		{"BBC TWO", "BBC2"},
 		{"BBC THREE", "BBC3"},
 		{"BBC FOUR", "BBC4"},
+		{"BBC R1X", "BBC Radia 1Xtra"},
+		{"BBC Radio 4 Ex", "BBC Radia 4 Extra"},
 		{"CBBC Channel", "CBBC"},
 		{" N West", ""},
 		{" S West", ""},
@@ -123,6 +125,8 @@ AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 		{"5 USA", "5USA"},
 		{"price-drop", "price drop"},
 		{"Al Jazeera Eng", "Al Jazeera English"},
+		{"Box Nation", "BoxNation"},
+		{"Create & Craft", "Create and Craft"},
 	};
 
 	return ReplaceStrings(str, replacements, NUMBEROF(replacements));
