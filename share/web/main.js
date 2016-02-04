@@ -569,7 +569,8 @@ function populateprogs(id)
 						if ((progvb > 1) && (typeof prog.icon != 'undefined')) {
 							detailsstr += '</td></tr></table>';
 						}
-						
+
+						str1 = '';
 						if ((progvb > 2) && (typeof prog.category != 'undefined')) {
 							if (str1 != '') str1 += ' ';
 							str1 += find('category', prog.category);
@@ -625,9 +626,7 @@ function populateprogs(id)
 						else if ((progvb > 2) && (typeof prog.assignedepisode != 'undefined')) {
 							var str2 = '';
 
-							str2 += 'Assigned episode ' + prog.assignedepisode;
-
-							if (str2 != '') str2 += '.';
+							str2 += 'Assigned episode ' + prog.assignedepisode + '.';
 
 							if (str1 != '') str1 += ' ';
 							str1 += str2;
