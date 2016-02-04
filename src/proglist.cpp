@@ -108,6 +108,7 @@ void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
 		{" Scotland", ""},
 		{" Ireland", ""},
 		{" Channel Islands", ""},
+		{" Freeview", ""},
 		{" (freeview)", ""},
 		{" [freeview]", ""},
 		{" (Granada/Border)", ""},
@@ -121,6 +122,8 @@ void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
 		{"Community Channel", "Community"},
 		{"Pick TV", "Pick"},
 		{"Spike TV", "Spike"},
+		{"Kiss 100", "Kiss"},
+		{"Magic 105.4", "Magic"},
 	};
 	AString id   = channel.GetAttribute("id");
 	AString name = channel.GetChildValue("display-name");
