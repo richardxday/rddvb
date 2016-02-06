@@ -601,10 +601,6 @@ ADVBProg& ADVBProg::operator = (const ADVBProg& obj)
 			success = true;
 		}
 	}
-
-	if ((obj.GetStop() != obj.GetStart()) && (GetStop() == GetStart())) {
-		ADVBConfig::Get().printf("Error in copying '%s' to '%s'", obj.GetQuickDescription().str(), GetQuickDescription().str());
-	}
 	
 	if (!success) Delete();
 
