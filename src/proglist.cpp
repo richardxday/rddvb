@@ -1914,15 +1914,14 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgLis
 				uint_t j;
 
 				while (list.Count()) {
-					const ADVBProg *pprog = (const ADVBProg *)list.First();
-					ADVBProg prog = *pprog;
+					ADVBProg *prog = (ADVBProg *)list.First();
 
-					if (!scheduledlist.FindOverlap(prog)) {
+					if (!scheduledlist.FindOverlap(*prog)) {
 						// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
-						config.logit("'%s' does not overlap: can be recorded (round %u, base channel '%s', schedule list %u long))", prog.GetQuickDescription().str(), round, prog.GetBaseChannel(), scheduledlist.Count());
+						config.logit("'%s' does not overlap: can be recorded (round %u, base channel '%s', schedule list %u long))", prog->GetQuickDescription().str(), round, prog->GetBaseChannel(), scheduledlist.Count());
 						
 						// add to scheduling list
-						scheduledlist.AddProg(prog);
+						scheduledlist.AddProg(*prog);
 							
 						// create an alternatives list for this programme
 						ADataList *altlist;
@@ -1930,17 +1929,17 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgLis
 							alternativeslists.Add((uptr_t)altlist);
 
 							// add scheduled programme as first entry
-							altlist->Add((uptr_t)&prog);
+							altlist->Add((uptr_t)prog);
 						}
 						
 						// remove programme from list to check
 						list.Pop();
 
 						// remove all other programmes in list that uses the same base channel
-						AString  channel = prog.GetBaseChannel();
-						bool     plus1   = prog.IsPlus1();
+						AString  channel = prog->GetBaseChannel();
+						bool     plus1   = prog->IsPlus1();
 						uint64_t hour    = 3600 * 1000;
-						uint64_t start   = prog.GetStart() - (plus1 ? hour : 0);
+						uint64_t start   = prog->GetStart() - (plus1 ? hour : 0);
 						uint64_t start1  = start + hour;
 						for (j = 0; j < list.Count();) {
 							const ADVBProg& prog2 = *(const ADVBProg *)list[j];
@@ -1952,7 +1951,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgLis
 							else if ((prog2.GetBaseChannel() == channel) &&
 									 (( prog2.IsPlus1() && (prog2.GetStart() == start1)) ||
 									  (!prog2.IsPlus1() && (prog2.GetStart() == start)))) {
-								config.logit("Removing '%s' because it is +/- 1 hour from '%s'", prog2.GetQuickDescription().str(), prog.GetQuickDescription().str());
+								config.logit("Removing '%s' because it is +/- 1 hour from '%s'", prog2.GetQuickDescription().str(), prog->GetQuickDescription().str());
 								list.RemoveIndex(j);
 							}
 							else j++;
@@ -1961,9 +1960,9 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgLis
 					}
 					else if (list.Count() == 1) {
 						// the last repeat overlaps something so cannot be recorded -> the programme is *rejected*
-						config.logit("No repeats of '%s' can be recorded!", prog.GetQuickDescription().str());
+						config.logit("No repeats of '%s' can be recorded!", prog->GetQuickDescription().str());
 						
-						rejectedlist.AddProg(prog);
+						rejectedlist.AddProg(*prog);
 
 						// remove programme from list to check
 						list.Pop();
