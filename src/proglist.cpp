@@ -1189,19 +1189,14 @@ const ADVBProg *ADVBProgList::FindCompleteRecording(const ADVBProg& prog) const
 
 ADVBProg *ADVBProgList::FindOverlap(const ADVBProg& prog1, const ADVBProg *prog2) const
 {
-	const uint64_t st1 = prog1.GetStart();
-	const uint64_t et1 = prog1.GetStop();
 	uint_t i = 0;
-	int  p;
+	int p;
 
 	if (prog2 && ((p = proglist.Find((uptr_t)prog2)) >= 0)) i = p + 1;
 
 	while ((prog2 = (const ADVBProg *)proglist[i++]) != NULL) {
-		if (prog2 != &prog1) {
-			const uint64_t st2 = prog2->GetStart();
-			const uint64_t et2 = prog2->GetStop();
-
-			if ((st2 < et1) && (et2 > st1)) break;
+		if (CompareNoCase(prog2->GetUUID(), prog1.GetUUID()) != 0) {
+			if (prog2->Overlaps(prog1)) break;
 		}
 	}
 
@@ -1913,15 +1908,16 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgLis
 				uint_t j;
 
 				while (list.Count()) {
-					const ADVBProg& prog = *(const ADVBProg *)list.First();
+					ADVBProg prog = *(const ADVBProg *)list.First();
 
 					if (!scheduledlist.FindOverlap(prog)) {
 						// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
-						config.logit("'%s' does not overlap: can be recorded (round %u, base channel '%s'))", prog.GetQuickDescription().str(), round, prog.GetBaseChannel());
-
+						config.logit("'%s' does not overlap: can be recorded (round %u, base channel '%s', schedule list %u long))", prog.GetQuickDescription().str(), round, prog.GetBaseChannel(), scheduledlist.Count());
+						
 						// add to scheduling list
-						scheduledlist.AddProg(prog);
-
+						int index = scheduledlist.AddProg(prog);
+						config.logit("'%s' added to schedule list as '%s'", prog.GetQuickDescription().str(), scheduledlist[index].GetQuickDescription().str());
+							
 						// create an alternatives list for this programme
 						ADataList *altlist;
 						if ((altlist = new ADataList) != NULL) {
@@ -2176,8 +2172,9 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	PrioritizeProgrammes(scheduledlist, rejectedlist, recstarttime);
 	//ADVBProg::debugsameprogramme = false;
 
-	if (scheduledlist.FindFirstRecordOverlap()) {
-		config.printf("Error: found overlap in schedule list for card %u!", dvbcard);		
+	const ADVBProg *errorprog;
+	if ((errorprog = scheduledlist.FindFirstRecordOverlap()) != NULL) {
+		config.printf("Error: found overlap in schedule list for card %u ('%s')!", dvbcard, errorprog->GetQuickDescription().str());
 	}
 	
 	config.logit("--------------------------------------------------------------------------------");
