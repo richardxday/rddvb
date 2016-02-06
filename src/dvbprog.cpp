@@ -1280,15 +1280,6 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 #endif
 			same = true;
 		}
-#if DVBDATVERSION > 1
-		else if (prog1.GetBrandSeriesEpisode()[0] && prog2.GetBrandSeriesEpisode()[0]) {
-			// brand.series.episode is valid in both -> sameness can be determined
-			same = (CompareCase(prog1.GetBrandSeriesEpisode(), prog2.GetBrandSeriesEpisode()) == 0);
-#if DEBUG_SAMEPROGRAMME
-			if (debugsameprogramme) debug("'%s' / '%s': brand.series.episode '%s' / '%s': %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), prog1.GetBrandSeriesEpisode(), prog2.GetBrandSeriesEpisode(), same ? "same" : "different");
-#endif
-		}
-#endif
 		else if (prog1.IsFilm() && prog2.IsFilm()) {
 			// both programmes are films
 			// -> definitely the same programme
@@ -1303,6 +1294,15 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 			if (debugsameprogramme) debug("'%s' / '%s': episode S%uE%02u / S%uE%02u: %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), (uint_t)ep1.series, (uint_t)ep1.episode, (uint_t)ep2.series, (uint_t)ep2.episode, same ? "same" : "different");
 #endif
 		}
+#if DVBDATVERSION > 1
+		else if (prog1.GetBrandSeriesEpisode()[0] && prog2.GetBrandSeriesEpisode()[0]) {
+			// brand.series.episode is valid in both -> sameness can be determined
+			same = (CompareCase(prog1.GetBrandSeriesEpisode(), prog2.GetBrandSeriesEpisode()) == 0);
+#if DEBUG_SAMEPROGRAMME
+			if (debugsameprogramme) debug("'%s' / '%s': brand.series.episode '%s' / '%s': %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), prog1.GetBrandSeriesEpisode(), prog2.GetBrandSeriesEpisode(), same ? "same" : "different");
+#endif
+		}
+#endif
 		else if (subtitle1[0] && subtitle2[0]) {
 			// sub-title supplied for both -> sameness can be determined
 			same = (CompareNoCase(subtitle1, subtitle2) == 0);
