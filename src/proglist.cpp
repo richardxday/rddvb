@@ -345,9 +345,15 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 							
 							//debug("%s", str.str());
 							
-							if (AddProg(str, true, true) < 0) {
-								config.printf("Failed to add prog!");
-								success = false;
+							if (stop > start) {
+								if (AddProg(str, true, true) < 0) {
+									config.printf("Failed to add prog!");
+									success = false;
+								}
+							}
+							else {
+								ADVBProg prog = str;
+								config.logit("Ignoring zero length programme '%s'", prog.GetQuickDescription().str());
 							}
 						}
 					}
@@ -1908,15 +1914,15 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgLis
 				uint_t j;
 
 				while (list.Count()) {
-					ADVBProg prog = *(const ADVBProg *)list.First();
+					const ADVBProg *pprog = (const ADVBProg *)list.First();
+					ADVBProg prog = *pprog;
 
 					if (!scheduledlist.FindOverlap(prog)) {
 						// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
 						config.logit("'%s' does not overlap: can be recorded (round %u, base channel '%s', schedule list %u long))", prog.GetQuickDescription().str(), round, prog.GetBaseChannel(), scheduledlist.Count());
 						
 						// add to scheduling list
-						int index = scheduledlist.AddProg(prog);
-						config.logit("'%s' added to schedule list as '%s'", prog.GetQuickDescription().str(), scheduledlist[index].GetQuickDescription().str());
+						scheduledlist.AddProg(prog);
 							
 						// create an alternatives list for this programme
 						ADataList *altlist;
@@ -2152,6 +2158,11 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 			config.logit("Adding '%s' to rejected list (DVB card requested %u, currently %u)", prog.GetQuickDescription().str(), (uint_t)prog.GetDVBCard(), dvbcard);
 
 			rejectedlist.AddProg(prog);
+
+			DeleteProg(i);
+		}
+		else if (prog.GetStop() == prog.GetStart()) {
+			config.logit("'%s' is zero-length", prog.GetQuickDescription().str());
 
 			DeleteProg(i);
 		}
