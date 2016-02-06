@@ -602,6 +602,10 @@ ADVBProg& ADVBProg::operator = (const ADVBProg& obj)
 		}
 	}
 
+	if ((obj.GetStop() != obj.GetStart()) && (GetStop() == GetStart())) {
+		ADVBConfig::Get().printf("Error in copying '%s' to '%s'", obj.GetQuickDescription().str(), GetQuickDescription().str());
+	}
+	
 	if (!success) Delete();
 
 	return *this;
@@ -1093,6 +1097,10 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 		if (IsPlus1())  str.printf(" (+1)");
 	}
 
+	if (verbosity > 2) {
+		str.printf(" (DVB channel '%s', channel ID '%s', base channel '%s')", GetDVBChannel(), GetChannelID(), GetBaseChannel());
+	}
+	
 	if (IsRecording()) str.printf(" -*RECORDING*-");
 
 	if (verbosity > 1) {
@@ -1112,7 +1120,17 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 			str1.printf("%s", p);
 
 #if DVBDATVERSION > 1
-			if ((p = GetSubCategory())[0]) str1.printf(" (%s)", p);
+			if ((p = GetSubCategory())[0]) {
+				AString subcategory = p;
+				uint_t i, n = subcategory.CountLines();
+				
+				str1.printf(" (");
+				for (i = 0; i < n; i++) {
+					if (i) str1.printf(", ");
+					str1.printf("%s", subcategory.Line(i).str());
+				}
+				str1.printf(")");
+			}
 #endif
 
 			str1.printf(".");
@@ -1127,6 +1145,13 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 				else			   epstr.printf("Episode %u", ep.episode);
 				if (ep.episodes)   epstr.printf(" of %u", ep.episodes);
 			}
+			
+#if DVBDATVERSION > 1
+			if ((p = GetBrandSeriesEpisode())[0]) {
+				if (epstr.Valid()) epstr.printf(" ");
+				epstr.printf("(%s)", p);
+			}
+#endif
 
 			if (epstr.Valid()) {
 				if (str1.Valid()) str1.printf(" ");

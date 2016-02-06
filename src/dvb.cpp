@@ -1108,9 +1108,9 @@ int main(int argc, char *argv[])
 					uint_t i, n = 0;
 
 					for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
+						const ADVBProg *prog;
+						
 						if (!proglist[i].GetBrandSeriesEpisode()[0]) {
-							const ADVBProg *prog;
-
 							if (((prog = listings.FindSimilar(proglist[i])) != NULL) && prog->GetBrandSeriesEpisode()[0]) {
 								proglist.GetProgWritable(i).SetBrandSeriesEpisode(prog->GetBrandSeriesEpisode());
 								config.printf("Updating '%s' with brand.series.episode '%s' from '%s'", proglist[i].GetQuickDescription().str(), prog->GetBrandSeriesEpisode(), prog->GetQuickDescription().str());
@@ -1121,6 +1121,22 @@ int main(int argc, char *argv[])
 
 					printf("%u programmes updated\n", n);
 				}
+			}
+			else if (stricmp(argv[i], "--strip-brand-series-episode") == 0) {
+				ADateTime start("1-feb-2016,midnight", ADateTime::Time_Absolute);
+				uint_t i, n = 0;
+				
+				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
+					ADVBProg& prog = proglist.GetProgWritable(i);
+
+					if (prog.GetBrandSeriesEpisode()[0] && (prog.GetStopDT() < start)) {
+						prog.SetBrandSeriesEpisode("");
+						config.printf("Stripping brand.series.episode from '%s'", prog.GetQuickDescription().str());
+						n++;
+					}
+				}
+
+				printf("%u programmes updated\n", n);
 			}
 #endif
 			else if (stricmp(argv[i], "--return-count") == 0) {
