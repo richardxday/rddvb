@@ -302,7 +302,9 @@ public:
 
 	void GetEncodedFiles(AList& files) const;
 	bool DeleteEncodedFiles() const;
-	
+
+	bool FixData();
+
 	static bool FilePatternExists(const AString& filename);
 
 	static bool GetFileFormat(const AString& filename, AString& format);

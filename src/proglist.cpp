@@ -884,16 +884,30 @@ int ADVBProgList::AddProg(const ADVBProg& prog, bool sort, bool removeoverlaps, 
 
 int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps, bool reverseorder)
 {
+	const ADVBConfig& config = ADVBConfig::Get();
 	uint_t i;
 	int  index = -1;
-
+	bool done  = false;
+	
 	AddChannel(prog->GetChannelID(), prog->GetChannel());
 
 	if (removeoverlaps && Count()) {
 		for (i = 0; (i < Count()) && !HasQuit();) {
-			const ADVBProg& prog1 = GetProg(i);
+			ADVBProg& prog1 = GetProgWritable(i);
 
-			if (prog->OverlapsOnSameChannel(prog1)) {
+			if (*prog == prog1) {
+				if (prog->GetBrandSeriesEpisode()[0] && prog1.GetBrandSeriesEpisode()[0] &&
+					(CompareCase(prog->GetBrandSeriesEpisode(), prog1.GetBrandSeriesEpisode()) != 0)) {
+					config.logit("'%s' changes brand.series.episode of '%s' from '%s' to '%s'",
+								 prog->GetQuickDescription().str(), prog1.GetQuickDescription().str(), 
+								 prog->GetBrandSeriesEpisode(),     prog1.GetBrandSeriesEpisode());
+				}
+				prog1 = *prog;
+				index = i;
+				i++;
+				done  = true;
+			}
+			else if (prog->OverlapsOnSameChannel(prog1)) {
                 //config.printf("'%s' overlaps with '%s', deleting '%s'", prog1.GetQuickDescription().str(), prog->GetQuickDescription().str(), prog1.GetQuickDescription().str());
 				DeleteProg(i);
 			}
@@ -901,7 +915,8 @@ int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps, 
 		}
 	}
 
-	if (reverseorder) {
+	if		(done) ;
+	else if (reverseorder) {
 		if (sort) {
 			for (i = 0; (i < Count()) && !HasQuit(); i++) {
 				const ADVBProg& prog1 = GetProg(i);
