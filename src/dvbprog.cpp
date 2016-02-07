@@ -573,6 +573,8 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 
 	SearchAndReplace("\xc2\xa3", "£");
 
+	if (Valid()) FixData();
+	
 	if (!Valid()) Delete();
 
 	return *this;
@@ -712,7 +714,6 @@ AString ADVBProg::ExportToText() const
 
 	return str;
 }
-
 
 AString ADVBProg::ExportToJSON(bool includebase64) const
 {
@@ -905,6 +906,66 @@ void ADVBProg::Delete()
 		data->bigendian = (uint8_t)MachineIsBigEndian();
 #endif
 	}
+}
+
+bool ADVBProg::FixData()
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	bool changed = false;
+	
+	if (CompareCase(GetTitle(), "Futurama") == 0) {
+		EPISODE ep = GetEpisode(GetEpisodeNum());
+
+		if (ep.valid) {
+			if		(ep.series == 1) ep.episodes = 20;
+			else if (ep.series == 2) {
+				ep.series--;
+				ep.episode += 9;
+			}
+			else if (ep.series > 2) ep.series--;
+
+			if ((ep.valid  	 != data->episode.valid) ||
+				(ep.series 	 != data->episode.series) ||
+				(ep.episode  != data->episode.episode) ||
+				(ep.episodes != data->episode.episodes)) {
+				AString filename    = GetFilename();
+				AString srcfilename = GetSourceFilename();
+
+				AString desc1 = GetDescription(1);
+				data->episode = ep;
+				AString desc2 = GetDescription(1);
+
+				config.printf("Changed '%s' to '%s'", desc1.str(), desc2.str());
+				
+				if (filename.Valid()) {
+					SetFilename(GenerateFilename());
+
+					AString newfilename    = GetFilename();
+					AString newsrcfilename = GetSourceFilename();
+					if (AStdFile::exists(filename)) {
+						if (rename(filename, newfilename) != 0) {
+							config.printf("Failed to rename '%s' to '%s'", filename.str(), newfilename.str());
+						}
+						else {
+							config.printf("Renamed '%s' to '%s'", filename.str(), newfilename.str());
+						}
+					}
+					if (AStdFile::exists(srcfilename)) {
+						if (rename(srcfilename, newsrcfilename) != 0) {
+							config.printf("Failed to rename '%s' to '%s'", srcfilename.str(), newsrcfilename.str());
+						}
+						else {
+							config.printf("Renamed '%s' to '%s'", srcfilename.str(), newsrcfilename.str());
+						}
+					}
+				}
+				
+				changed = true;
+			}
+		}	
+	}
+
+	return changed;
 }
 
 bool ADVBProg::SetString(const uint16_t *offset, const char *str)

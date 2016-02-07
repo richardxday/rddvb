@@ -115,6 +115,7 @@ int main(int argc, char *argv[])
 		printf("\t--rename-files-test <filename-pattern>\n\t\t\t\t\tLike above but do not commit changes\n");
 		printf("\t--find-recorded-programmes-on-disk\n\t\t\t\t\tSearch for recorded programmes in 'searchdirs' and update any filenames\n");
 		printf("\t--find-series\t\t\tFind series' in programme list\n");
+		printf("\t--fix-data-in-recorded\t\tFix incorrect metadata of certain programmes and rename files as necessary\n");
 		printf("\t--set-recorded-flag\t\tSet recorded flag on all programmes in recorded list\n");
 		printf("\t--set-ignore-flag <patterns>\tSet ignore recording flag on programmes matching pattern\n");
 		printf("\t--clr-ignore-flag <patterns>\tClear ignore recording flag on programmes matching pattern\n");
@@ -127,11 +128,11 @@ int main(int argc, char *argv[])
 		printf("\t--post-process\t\t\tPost process files in current list (this WILL alter the record list data)\n");
 		printf("\t--post-process-if-format\tPost process files in current list if file is the wrong format (this WILL alter the record list data)\n");
 		printf("\t--delete-files\t\t\tDelete encoded files from programmes in current list\n");
-		printf("\t--generate-sig\t\t\tGenerate signature file for files in current list (assuming source file exists)");
+		printf("\t--generate-sig\t\t\tGenerate signature file for files in current list (assuming source file exists)\n");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
 #if DVBDATVERSION > 1
-		printf("\t--update-brand-series-episode\t\t\t\tUpdate bse in current list from listings file\n");
+		printf("\t--update-brand-series-episode\tUpdate bse in current list from listings file\n");
 #endif
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
@@ -779,6 +780,27 @@ int main(int argc, char *argv[])
 
 				printf("Found series for %u programmes\n", series.GetItems());
 				series.Traverse(&__DisplaySeries);
+			}
+			else if (stricmp(argv[i], "--fix-data-in-recorded") == 0) {
+				ADVBLock lock("schedule");
+				ADVBProgList reclist;
+
+				if (reclist.ReadFromFile(config.GetRecordedFile())) {
+					uint_t i, n = 0;
+
+					for (i = 0; i < reclist.Count(); i++) {
+						ADVBProg& prog = reclist.GetProgWritable(i);
+
+						if (prog.FixData()) n++;
+					}
+
+					config.printf("%u programmes changed", n);
+					
+					if (n && !reclist.WriteToFile(config.GetRecordedFile())) {
+						config.printf("Failed to write recorded programme list back!");
+					}
+				}
+				else config.printf("Failed to read recorded programme list");
 			}
 			else if (stricmp(argv[i], "--set-recorded-flag") == 0) {
 				ADVBLock lock("schedule");
