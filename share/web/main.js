@@ -71,6 +71,7 @@ var filters = [
 var searches = null;
 var link     = null;
 var globals  = null;
+var proglistelement = '';
 
 function loadpage()
 {
@@ -415,9 +416,7 @@ function populateprogs(id)
 				if (typeof response.progs[i].starttime == 'undefined') {
 					populatedates(response.progs[i]);
 
-					if (typeof response.progs[i].scheduled != 'undefined') populatedates(response.progs[i].scheduled);
-					if (typeof response.progs[i].recorded  != 'undefined') populatedates(response.progs[i].recorded);
-					if (typeof response.progs[i].rejected  != 'undefined') populatedates(response.progs[i].rejected);
+					if (typeof response.progs[i].recorded != 'undefined') populatedates(response.progs[i].recorded);
 				}
 
 				var prog     = response.progs[i];
@@ -430,17 +429,15 @@ function populateprogs(id)
 					var classname  = '';
 					var trstr      = '';
 					
-					if		(typeof prog.recorded  != 'undefined') prog1 = prog.recorded;
-					else if (typeof prog.scheduled != 'undefined') prog1 = prog.scheduled;
-					else if (typeof prog.rejected  != 'undefined') prog1 = prog.rejected;
+					if (typeof prog.recorded != 'undefined') prog1 = prog.recorded;
 
-					if		(prog.flags.postprocessing)											 classname = ' class="processing"';
-					else if	(prog.flags.running)												 classname = ' class="recording"';
-					else if (prog.flags.failed)													 classname = ' class="failed"';
-					else if (prog.flags.scheduled || (typeof prog.scheduled != 'undefined')) 	 classname = ' class="scheduled"';
-					else if	(prog.flags.recorded  || (typeof prog.recorded  != 'undefined'))   	 classname = ' class="recorded"';
-					else if (prog.flags.rejected  || (typeof prog.rejected  != 'undefined'))	 classname = ' class="rejected"';
-					else if ((typeof prog.category != 'undefined') && (prog.category == 'Film')) classname = ' class="film"';
+					if		(prog1.flags.postprocessing) classname = ' class="processing"';
+					else if	(prog1.flags.running)		 classname = ' class="recording"';
+					else if (prog1.flags.failed)		 classname = ' class="failed"';
+					else if (prog1.flags.scheduled) 	 classname = ' class="scheduled"';
+					else if	(prog1.flags.recorded)    	 classname = ' class="recorded"';
+					else if (prog1.flags.rejected)	 	 classname = ' class="rejected"';
+					else if ((typeof prog1.category != 'undefined') && (prog1.category == 'Film')) classname = ' class="film"';
 
 					trstr += '<tr' + classname + ' id="prog' + i + 'header"></tr>';
 					trstr += '<tr' + classname + ' id="prog' + i + 'details"></tr>';
@@ -957,8 +954,9 @@ function populateprogs(id)
 			
 			astr += '</table>';
 
-			if (changed) {
+			if (changed || (astr != proglistelement)) {
 				document.getElementById("list").innerHTML = astr;
+				proglistelement = astr;
 			}
 
 			for (i = 0; i < response.progs.length; i++) {
@@ -973,6 +971,7 @@ function populateprogs(id)
 	}
 	else {
 		document.getElementById("status").innerHTML = "No programmes";
+		document.getElementById("list").innerHTML = '';
 	}
 }
 

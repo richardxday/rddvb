@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 			DataSource_Patterns,
 			DataSource_Logs,
 		};
-		ADVBProgList 	  recordedlist, scheduledlist, requestedlist, rejectedlist, combinedlist, failureslist, runninglist, processinglist;
+		ADVBProgList 	  recordedlist, scheduledlist, requestedlist, rejectedlist, combinedlist, failureslist, recordinglist, processinglist;
 		ADVBProgList 	  list[2], *proglist = NULL;
 		ADataList	      patternlist;
 		ADVBPatterns::PATTERN filterpattern;
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 		rejectedlist.ReadFromFile(config.GetRejectedFile());
 
 		failureslist.ReadFromFile(config.GetRecordFailuresFile());
-		runninglist.ReadFromFile(config.GetRecordingFile());
+		recordinglist.ReadFromFile(config.GetRecordingFile());
 		processinglist.ReadFromFile(config.GetProcessingFile());
 
 		combinedlist.ReadFromFile(config.GetCombinedFile());
@@ -535,44 +535,27 @@ int main(int argc, char *argv[])
 			switch (datasource) {
 				default:
 				case DataSource_Progs:
-					printf(",\"progs\":[");
+					printf(",\"progs\":[\n");
 
 					for (i = 0; (i < count) && !HasQuit(); i++) {
 						ADVBProg& prog = proglist->GetProgWritable(offset + i);
 						const ADVBProg *prog2;
 
-						if (i > 0) printf(",");
-
-						if (runninglist.FindUUID(prog))    prog.SetRecording();
-						if (processinglist.FindUUID(prog)) prog.SetPostProcessing();
+						if (i > 0) printf(",\n");
+						
+						if		((prog2 = processinglist.FindUUID(prog)) != NULL) prog = *prog2;
+						else if ((prog2 = recordinglist.FindUUID(prog))  != NULL) prog = *prog2;
+						else if	((prog2 = failureslist.FindUUID(prog))   != NULL) prog = *prog2;
+						else if ((prog2 = rejectedlist.FindUUID(prog))   != NULL) prog = *prog2;
+						else if ((prog2 = scheduledlist.FindUUID(prog))  != NULL) prog = *prog2;
+						else if ((prog2 = recordedlist.FindUUID(prog))   != NULL) prog = *prog2;
 
 						printf("{");
 						printf("%s", prog.ExportToJSON(true).str());
 						printpattern(patterns, prog);
 
-						if (((prog2 = scheduledlist.FindUUID(prog)) != NULL) && (*prog2 != prog)) {
-							printf(",\"scheduled\":{");
-							printf("%s", prog2->ExportToJSON().str());
-							printpattern(patterns, *prog2);
-							printf("}");
-						}
-
-						if (((prog2 = recordedlist.FindSimilar(prog)) != NULL) && (*prog2 != prog)) {
+						if (((prog2 = recordedlist.FindSimilar(prog)) != NULL) && (prog2 != &prog)) {
 							printf(",\"recorded\":{");
-							printf("%s", prog2->ExportToJSON().str());
-							printpattern(patterns, *prog2);
-							printf("}");
-						}
-
-						if (((prog2 = rejectedlist.FindUUID(prog)) != NULL) && (*prog2 != prog)) {
-							printf(",\"rejected\":{");
-							printf("%s", prog2->ExportToJSON().str());
-							printpattern(patterns, *prog2);
-							printf("}");
-						}
-
-						if (((prog2 = failureslist.FindUUID(prog)) != NULL) && (*prog2 != prog)) {
-							printf(",\"failed\":{");
 							printf("%s", prog2->ExportToJSON().str());
 							printpattern(patterns, *prog2);
 							printf("}");
@@ -601,16 +584,16 @@ int main(int argc, char *argv[])
 						printf("}");
 					}
 
-					printf("]");
+					printf("]\n");
 					break;
 
 				case DataSource_Patterns:
-					printf(",\"patterns\":[");
+					printf(",\"patterns\":[\n");
 
 					for (i = 0; (i < count) && !HasQuit(); i++) {
 						const ADVBPatterns::PATTERN& pattern = *(const ADVBPatterns::PATTERN *)patternlist[offset + i];
 
-						if (i > 0) printf(",");
+						if (i > 0) printf(",\n");
 
 						printpattern(pattern);
 					}		
@@ -626,7 +609,7 @@ int main(int argc, char *argv[])
 						printf("\"%s\"", JSONFormat(logdata.Line(offset + i, "\n", 0).SearchAndReplace("\t", " ").StripUnprintable()).str());
 					}
 
-					printf("]");
+					printf("]\n");
 					break;
 			}
 
