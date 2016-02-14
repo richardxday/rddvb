@@ -37,8 +37,8 @@ public:
 
 	void SearchAndReplace(const AString& search, const AString& replace);
 
-	int AddProg(const AString& prog, bool sort = true, bool removeoverlaps = false, bool reverseorder = false);
-	int AddProg(const ADVBProg& prog, bool sort = true, bool removeoverlaps = false, bool reverseorder = false);
+	int AddProg(const AString& prog, bool sort = true, bool removeoverlaps = false);
+	int AddProg(const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);
 
 	void AssignEpisodes(bool reverse = false, bool ignorerepeats = false);
 
@@ -116,7 +116,7 @@ public:
 	static void CreateCombinedFile();
 	static void CheckRecordingFile();
 
-	static void AddToList(const AString& filename, const ADVBProg& prog, bool sort = true, bool removeoverlaps = false, bool reverseorder = false);
+	static void AddToList(const AString& filename, const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);
 	static void RemoveFromList(const AString& filename, const ADVBProg& prog);
 	
 protected:
@@ -131,7 +131,7 @@ protected:
 
 	void AddXMLTVChannel(const AStructuredNode& channel);
 	void AddChannel(const AString& id, const AString& name);
-	int  AddProg(const ADVBProg *prog, bool sort = true, bool removeoverlaps = false, bool reverseorder = false);
+	int  AddProg(const ADVBProg *prog, bool sort = true, bool removeoverlaps = false);
 
 	void GetProgrammeValues(AString& str, const AStructuredNode *pNode, const AString& prefix = "") const;
 
@@ -143,7 +143,7 @@ protected:
 	void AdjustRecordTimes();
 	uint_t ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allscheduledlist, ADVBProgList& allrejectedlist, const ADateTime& starttime, uint_t card);
 
-	bool ReadFromBinaryFile(const AString& filename, bool sort = false, bool removeoverlaps = false, bool reverseorder = false);
+	bool ReadFromBinaryFile(const AString& filename, bool sort = false, bool removeoverlaps = false);
 	bool ReadRadioListingsFromHTMLFile(const AString& filename, const AString& channel, const AString& channelid, uint32_t day, bool removeoverlaps);
 
 	static void DeleteChannel(uptr_t item, void *context) {
