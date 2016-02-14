@@ -596,7 +596,7 @@ bool ADVBProgList::ReadRadioListings()
 	return success;
 }
 
-bool ADVBProgList::ReadFromBinaryFile(const AString& filename, bool sort, bool removeoverlaps, bool reverseorder)
+bool ADVBProgList::ReadFromBinaryFile(const AString& filename, bool sort, bool removeoverlaps)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
@@ -613,7 +613,7 @@ bool ADVBProgList::ReadFromBinaryFile(const AString& filename, bool sort, bool r
 
 		while (success && (pos < size)) {
 			if ((prog = fp).Valid()) {
-				if (AddProg(prog, sort, removeoverlaps, reverseorder) < 0) {
+				if (AddProg(prog, sort, removeoverlaps) < 0) {
 					config.printf("Failed to add prog!");
 					success = false;
 				}
@@ -852,14 +852,14 @@ void ADVBProgList::SearchAndReplace(const AString& search, const AString& replac
 	}
 }
 
-int ADVBProgList::AddProg(const AString& prog, bool sort, bool removeoverlaps, bool reverseorder)
+int ADVBProgList::AddProg(const AString& prog, bool sort, bool removeoverlaps)
 {
 	ADVBProg *pprog;
 	int index = -1;
 
 	if ((pprog = new ADVBProg(prog)) != NULL) {
 		if (pprog->Valid()) {
-			index = AddProg(pprog, sort, removeoverlaps, reverseorder);
+			index = AddProg(pprog, sort, removeoverlaps);
 		}
 		else delete pprog;
 	}
@@ -867,14 +867,14 @@ int ADVBProgList::AddProg(const AString& prog, bool sort, bool removeoverlaps, b
 	return index;
 }
 
-int ADVBProgList::AddProg(const ADVBProg& prog, bool sort, bool removeoverlaps, bool reverseorder)
+int ADVBProgList::AddProg(const ADVBProg& prog, bool sort, bool removeoverlaps)
 {
 	ADVBProg *pprog;
 	int index = -1;
 
 	if ((pprog = new ADVBProg(prog)) != NULL) {
 		if (pprog->Valid()) {
-			index = AddProg(pprog, sort, removeoverlaps, reverseorder);
+			index = AddProg(pprog, sort, removeoverlaps);
 		}
 		else delete pprog;
 	}
@@ -882,7 +882,7 @@ int ADVBProgList::AddProg(const ADVBProg& prog, bool sort, bool removeoverlaps, 
 	return index;
 }
 
-int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps, bool reverseorder)
+int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	uint_t i;
@@ -915,22 +915,7 @@ int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps, 
 		}
 	}
 
-	if		(done) ;
-	else if (reverseorder) {
-		if (sort) {
-			for (i = 0; (i < Count()) && !HasQuit(); i++) {
-				const ADVBProg& prog1 = GetProg(i);
-
-				if (*prog > prog1) {
-					index = proglist.Add((uptr_t)prog, i);
-					break;
-				}
-			}
-
-			if (i == Count()) index = proglist.Add((uptr_t)prog);
-		}
-		else index = proglist.Add((uptr_t)prog, 0);
-	}
+	if (done) ;
 	else {
 		if (sort) {
 			for (i = 0; (i < Count()) && !HasQuit(); i++) {
@@ -1681,14 +1666,14 @@ void ADVBProgList::Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), v
 	proglist.Sort(fn, pContext);
 }
 
-void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool sort, bool removeoverlaps, bool reverseorder)
+void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool sort, bool removeoverlaps)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock     lock("schedule");
 	ADVBProgList list;
 
 	if (!list.ReadFromFile(filename)) config.logit("Failed to read file '%s' for adding a programme", filename.str());
-	list.AddProg(prog, sort, removeoverlaps, reverseorder);
+	list.AddProg(prog, sort, removeoverlaps);
 	if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after adding a programme", filename.str());
 }
 
@@ -1744,7 +1729,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		}
 		else {
 			config.printf("%s is a newly rejected programme", prog.GetDescription().str());
-			newrejectedlist.AddProg(prog, false, false, false);
+			newrejectedlist.AddProg(prog, false, false);
 		}
 	}
 
