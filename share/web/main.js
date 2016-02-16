@@ -525,7 +525,7 @@ function populateprogs(id)
 					headerstr += '{reltime}';
 					headerstr += '</td>';
 
-					if (downloadlink != '') headerstr += '<td style="font-size:90%;">' + adddownloadlink(downloadlink) + '</td>';
+					if (downloadlink != '') headerstr += '<td style="font-size:90%;">' + adddownloadlink(prog) + '</td>';
 
 					headerstr += '<td>';
 					headerstr += '<td style="width:20px;cursor:pointer;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
