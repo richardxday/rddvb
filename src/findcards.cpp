@@ -64,7 +64,7 @@ void findcards(void)
 	ofp.close();
 }
 
-sint_t findcard(const AString& pattern)
+sint_t findcard(const AString& pattern, const ADataList *cardlist)
 {
 	AStdFile fp;
 	AString pat = ParseRegex(pattern);
@@ -74,8 +74,10 @@ sint_t findcard(const AString& pattern)
 		AString line;
 				
 		while (line.ReadLn(fp) >= 0) {
-			if (MatchRegex(line.Words(1), pat)) {
-				card = (uint_t)line.Word(0);
+			uint_t testcard = (uint_t)line.Word(0);
+			
+			if ((!cardlist || (cardlist->Find(testcard) < 0)) && MatchRegex(line.Words(1), pat)) {
+				card = testcard;
 				break;
 			}
 		}

@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 		printf("\t--scan-all\t\t\tScan all known frequencies for DVB channels\n");
 		printf("\t--scan-range <start-freq> <end-freq> <step>\n\t\t\t\t\tScan frequencies <freq>MHz for DVB channels\n");
 		printf("\t--log <filename>\t\tLog to additional file <filename>\n");
-		printf("\t--cards\t\t\t\tFind DVB cards\n");
+		printf("\t--find-cards\t\t\tFind DVB cards\n");
 		printf("\t--change-filename <filename1> <filename2>\n\t\t\t\t\tChange filename of recorded progamme with filename <filename1> to <filename2>\n");
 		printf("\t--change-filename-regex <filename1> <filename2>\n\t\t\t\t\tChange filename of recorded progamme with filename <filename1> to <filename2> (where <filename1> can be a regex and <filename2> can be an expansion)\n");
 		printf("\t--change-filename-regex-test <filename1> <filename2>\n\t\t\t\t\tLike above but do not commit changes\n");
@@ -654,8 +654,10 @@ int main(int argc, char *argv[])
 					list.Update((uint32_t)(1.0e6 * f), true);
 				}
 			}
-			else if (strcmp(argv[i], "--cards") == 0) {
+			else if (strcmp(argv[i], "--find-cards") == 0) {
 				findcards();
+				config.GetPhysicalDVBCard();
+				config.printf("Total %u DVB cards found", config.GetMaxDVBCards());
 			}
 			else if (strcmp(argv[i], "--change-filename") == 0) {
 				ADVBLock lock("schedule");
