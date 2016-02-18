@@ -72,7 +72,7 @@ public:
 	
 	uint_t  GetPhysicalDVBCard(uint_t n = 0) const;
 	uint_t  GetMaxDVBCards()				 const {return (uint_t)GetConfigItem("maxcards", "1");}
-	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "30");}
+	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "15");}
 	uint_t  GetDaysToKeep()					 const {return (uint_t)GetConfigItem("daystokeep", "7");}
 	sint_t  GetScoreThreshold()				 const {return (sint_t)GetConfigItem("scorethreshold", "100");}
 	double  GetLowSpaceWarningLimit()		 const {return (double)GetConfigItem("lowdisklimit", "10.0");}
