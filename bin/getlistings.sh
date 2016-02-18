@@ -18,7 +18,7 @@ if [ ! -f "$LISTINGSFILE.gz" ] ; then
   gzip "$LISTINGSFILE"
 fi
 
-dvb --find-recorded-programmes-on-disk --check-recording-file
+dvb --find-recorded-programmes-on-disk --check-recording-file --cards
 dvb --schedule
 
 LISTINGSFILE="archives/listings-sky-`date +%Y-%m-%d`.xmltv"
