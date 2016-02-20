@@ -140,6 +140,9 @@ protected:
 
 	const ADVBProg *FindFirstRecordOverlap() const;
 
+	uint_t FindIndex(uint_t timeindex, uint64_t t) const;
+	uint_t FindIndex(const ADVBProg& prog) const;
+
 	void AdjustRecordTimes();
 	uint_t ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allscheduledlist, ADVBProgList& allrejectedlist, const ADateTime& starttime, uint_t card);
 

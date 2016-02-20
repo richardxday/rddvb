@@ -84,6 +84,16 @@ public:
 	void		SetActualStart(uint64_t dt)    {data->actstart = dt;}
 	void		SetActualStop(uint64_t dt)     {data->actstop  = dt;}
 
+	enum {
+		TimeIndex_Start = 0,
+		TimeIndex_Stop,
+		TimeIndex_RecStart,
+		TimeIndex_RecStop,
+		TimeIndex_ActStart,
+		TimeIndex_ActStop,
+	};
+	uint64_t	GetTimeIndex(uint_t index) const {return data ? ((const uint64_t *)&data->start)[index] : 0;}
+
 	void	    SetFileSize(uint64_t filesize) {data->filesize = filesize;}
 	uint64_t    GetFileSize()          	 const {return data->filesize;}
 	
