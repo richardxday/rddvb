@@ -1810,7 +1810,7 @@ AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
 	AString cmd;
 			
 	cmd.printf("dvbstream -c %u -n %u -f %s -o 2>>\"%s\" >\"%s\"",
-			   GetDVBCard(),
+			   config.GetPhysicalDVBCard(GetDVBCard()),
 			   nsecs,
 			   pids.str(),
 			   config.GetLogFile().str(),
@@ -2016,8 +2016,8 @@ void ADVBProg::Record()
 							reschedule = true;
 						}
 
-						bool success = PostProcess();
-						
+						bool success = PostRecord();
+						if (success) success = PostProcess();
 						if (success) OnRecordSuccess();
 					}
 					else if (!info.FileSize) {
@@ -2141,6 +2141,22 @@ bool ADVBProg::OnRecordFailure() const
 	return success;
 }
 
+AString ADVBProg::GeneratePostRecordCommand() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString user = GetUser();
+	AString postcmd;
+
+	if ((uint_t)config.GetUserConfigItem(user, "postrecord") != 0) {
+		if ((postcmd = config.GetUserConfigItem(user, "postrecordcmd")).Valid()) {
+			postcmd = ReplaceTerms(postcmd);
+			postcmd.printf(" 2>&1 >>\"%s\"", config.GetLogFile().str());
+		}
+	}
+
+	return postcmd;
+}
+
 AString ADVBProg::GeneratePostProcessCommand() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -2202,6 +2218,21 @@ bool ADVBProg::RunCommand(const AString& cmd, bool logoutput) const
 	if (!success) config.printf("Command '%s' failed!", cmd.str());
 
 	remove(logfile);
+	
+	return success;
+}
+
+bool ADVBProg::PostRecord(bool verbose)
+{
+	AString postcmd;
+	bool success = false;
+
+	(void)verbose;
+	
+	if ((postcmd = GeneratePostRecordCommand()).Valid()) {
+		success = RunCommand("nice " + postcmd);
+	}
+	else success = true;
 	
 	return success;
 }
