@@ -882,55 +882,146 @@ int ADVBProgList::AddProg(const ADVBProg& prog, bool sort, bool removeoverlaps)
 	return index;
 }
 
+uint_t ADVBProgList::FindIndex(uint_t timeindex, uint64_t t) const
+{
+	const ADVBProg **progs = (const ADVBProg **)proglist.List();
+	const uint_t n = Count();
+	uint_t index   = 0;
+	bool   forward = true;
+	
+	if (n >= 2) {
+		uint_t log2 = (uint_t)ceil(log((double)n) / log(2.0)) - 1;
+		uint_t inc  = 1 << log2;
+
+		forward = (GetProg(0).GetTimeIndex(timeindex) <= GetProg(n - 1).GetTimeIndex(timeindex));
+		
+		if (forward) {
+			while (inc) {
+				uint_t index2 = index + inc;
+				if ((index2 < n) && (t >= progs[index2]->GetTimeIndex(timeindex))) index = index2;
+				inc >>= 1;
+			}
+		}
+		else {
+			while (inc) {
+				uint_t index2 = index + inc;
+				if ((index2 < n) && (t <= progs[index2]->GetTimeIndex(timeindex))) index = index2;
+				inc >>= 1;
+			}
+		}
+	}
+
+	if (forward) {
+		while ((index < n) && (t >= progs[index]->GetTimeIndex(timeindex))) index++;
+	}
+	else {
+		while ((index < n) && (t <= progs[index]->GetTimeIndex(timeindex))) index++;
+	}
+	
+	return index;
+}
+
+uint_t ADVBProgList::FindIndex(const ADVBProg& prog) const
+{
+	const ADVBProg **progs = (const ADVBProg **)proglist.List();
+	const uint_t n = Count();
+	uint_t index   = 0;
+	bool   forward = true;
+	
+	if (n >= 2) {
+		uint_t log2 = (uint_t)ceil(log((double)n) / log(2.0)) - 1;
+		uint_t inc  = 1 << log2;
+
+		forward = (GetProg(0) <= GetProg(n - 1));
+		
+		if (forward) {
+			while (inc) {
+				uint_t index2 = index + inc;
+				if ((index2 < n) && (prog >= *progs[index2])) index = index2;
+				inc >>= 1;
+			}
+		}
+		else {
+			while (inc) {
+				uint_t index2 = index + inc;
+				if ((index2 < n) && (prog <= *progs[index2])) index = index2;
+				inc >>= 1;
+			}
+		}
+	}
+
+	if (forward) {
+		while ((index < n) && (prog >= *progs[index])) index++;
+	}
+	else {
+		while ((index < n) && (prog <= *progs[index])) index++;
+	}
+	
+	return index;
+}
+
 int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	uint_t i;
 	int  index = -1;
-	bool done  = false;
 	
 	AddChannel(prog->GetChannelID(), prog->GetChannel());
 
+	(void)i;
+	(void)config;
+	
 	if (removeoverlaps && Count()) {
-		for (i = 0; (i < Count()) && !HasQuit();) {
-			ADVBProg& prog1 = GetProgWritable(i);
+		uint_t i1 = FindIndex(ADVBProg::TimeIndex_Stop,  prog->GetTimeIndex(ADVBProg::TimeIndex_Start) - 1);
+		uint_t i2 = FindIndex(ADVBProg::TimeIndex_Start, prog->GetTimeIndex(ADVBProg::TimeIndex_Stop)  + 1);
 
-			if (*prog == prog1) {
-				if (prog->GetBrandSeriesEpisode()[0] && prog1.GetBrandSeriesEpisode()[0] &&
-					(CompareCase(prog->GetBrandSeriesEpisode(), prog1.GetBrandSeriesEpisode()) != 0)) {
-					config.logit("'%s' changes brand.series.episode of '%s' from '%s' to '%s'",
-								 prog->GetQuickDescription().str(), prog1.GetQuickDescription().str(), 
-								 prog->GetBrandSeriesEpisode(),     prog1.GetBrandSeriesEpisode());
-				}
-				prog1 = *prog;
-				index = i;
-				i++;
-				done  = true;
-			}
-			else if (prog->OverlapsOnSameChannel(prog1)) {
+		for (i = i1; (i <= i2) && (i < Count()) && !HasQuit();) {
+			const ADVBProg& prog1 = GetProg(i);
+
+			if (prog->OverlapsOnSameChannel(prog1)) {
                 //config.printf("'%s' overlaps with '%s', deleting '%s'", prog1.GetQuickDescription().str(), prog->GetQuickDescription().str(), prog1.GetQuickDescription().str());
 				DeleteProg(i);
+				i2--;
 			}
 			else i++;
 		}
 	}
 
-	if (done) ;
-	else {
-		if (sort) {
-			for (i = 0; (i < Count()) && !HasQuit(); i++) {
-				const ADVBProg& prog1 = GetProg(i);
-
-				if (*prog < prog1) {
-					index = proglist.Add((uptr_t)prog, i);
-					break;
-				}
+	if (sort) {
+		index = FindIndex(*prog);
+		
+#if 1
+		{
+			bool error = false;
+#if 0
+			config.printf("Inserting %s between %s and %s (index %d/%u)",
+						  prog->GetStartDT().DateToStr().str(),
+						  (index > 0)            ? GetProg(index - 1).GetStartDT().DateToStr().str() : "<start>",
+						  (index < (int)Count()) ? GetProg(index).GetStartDT().DateToStr().str() : "<end>",
+						  index, Count());
+#endif
+			
+			if ((index > 0) && (prog->GetStartDT() < GetProg(index - 1).GetStartDT())) {
+				config.printf("Error: %s < %s", prog->GetStartDT().DateToStr().str(), GetProg(index - 1).GetStartDT().DateToStr().str());
+				error = true;
 			}
-
-			if (i == Count()) index = proglist.Add((uptr_t)prog);
+			if ((index < (int)Count()) && (prog->GetStartDT() > GetProg(index).GetStartDT())) {
+				config.printf("Error: %s > %s", prog->GetStartDT().DateToStr().str(), GetProg(index).GetStartDT().DateToStr().str());
+				error = true;
+			}
+			if (error) {
+				config.printf("Errors found, order:");
+				for (i = 0; i < Count(); i++) {
+					config.printf("%u/%u: %s", i, Count(), GetProg(i).GetStartDT().DateToStr().str());
+				}
+				exit(0);
+			}
 		}
-		else index = proglist.Add((uptr_t)prog);
+#endif
+		
+		index = proglist.Add((uptr_t)prog, index);
 	}
+	else index = proglist.Add((uptr_t)prog);
 
 #if 0
 	if (index >= 0) {
