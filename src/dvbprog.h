@@ -307,6 +307,7 @@ public:
 	void Record();
 	bool OnRecordSuccess() const;
 	bool OnRecordFailure() const;
+	bool PostRecord(bool verbose = false);
 	bool PostProcess(bool verbose = false);
 	bool GenerateSignatureFile(const AString& src, const AString& dst) const;
 
@@ -466,6 +467,7 @@ protected:
 
 	bool    GetRecordPIDS(AString& pids, bool update = true) const;
 	AString GenerateRecordCommand(uint_t nsecs, const AString& pids) const;
+	AString GeneratePostRecordCommand() const;
 	AString GeneratePostProcessCommand() const;
 
 	AString ReplaceTerms(const AString& str) const;
