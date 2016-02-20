@@ -990,16 +990,15 @@ int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps)
 	if (sort) {
 		index = FindIndex(*prog);
 		
-#if 1
+#if 0
 		{
 			bool error = false;
-#if 0
+
 			config.printf("Inserting %s between %s and %s (index %d/%u)",
 						  prog->GetStartDT().DateToStr().str(),
 						  (index > 0)            ? GetProg(index - 1).GetStartDT().DateToStr().str() : "<start>",
 						  (index < (int)Count()) ? GetProg(index).GetStartDT().DateToStr().str() : "<end>",
 						  index, Count());
-#endif
 			
 			if ((index > 0) && (prog->GetStartDT() < GetProg(index - 1).GetStartDT())) {
 				config.printf("Error: %s < %s", prog->GetStartDT().DateToStr().str(), GetProg(index - 1).GetStartDT().DateToStr().str());
@@ -1022,25 +1021,6 @@ int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps)
 		index = proglist.Add((uptr_t)prog, index);
 	}
 	else index = proglist.Add((uptr_t)prog);
-
-#if 0
-	if (index >= 0) {
-		CHANNEL *channel = (CHANNEL *)channelhash.Read(prog->GetChannelID());
-
-		if (channel) {
-			static const uint64_t slotlength   = 5ULL * 60ULL * 1000ULL;
-			static const uint32_t slotsperweek = (uint32_t)((7ULL * 24ULL * 3600ULL * 1000ULL) / slotlength);
-			uint64_t startslot = prog->GetStart() / slotlength;
-			uint32_t nslots    = (uint32_t)(((prog->GetStop() + slotlength - 1) / slotlength) - startslot);
-
-			if (!channel->data) {
-				channel->startslot = startslot - (startslot % slotsperweek);
-				channel->slots     = (uint32_t)(((startslot + nslots + slotsperweek - 1) / slotsperweek) * slotsperweek - channel->startslot);
-				channel->data      = (uint8_t *)::Allocate(channel->data);
-			}
-		}
-	}
-#endif
 
 	return index;
 }
