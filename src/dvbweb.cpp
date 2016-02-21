@@ -34,6 +34,11 @@ void printuserdetails(const AString& user)
 
 	AString dir  = config.GetRecordingsSubDir(user);
 	AString rdir = config.GetRecordingsDir(user);
+
+	int p;
+	if ((p = dir.Pos("/{"))  >= 0) dir  = dir.Left(p);
+	if ((p = rdir.Pos("/{")) >= 0) rdir = rdir.Left(p);
+	
 	printf(",\"folder\":\"%s\"", JSONFormat(dir).str());
 	printf(",\"fullfolder\":\"%s\"", JSONFormat(rdir).str());
 
