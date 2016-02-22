@@ -23,10 +23,10 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		const char *name;
 		const char *value;
 	} __defaults[] = {
-		{"prehandle", "2"},
-		{"posthandle", "3"},
-		{"pri", "0"},
-		{"dir", ""},
+		{"prehandle",  		 "2"},
+		{"posthandle", 		 "3"},
+		{"pri", 	   		 "0"},
+		{"dir",              ""},
 		{"h264crf",      	 "19"},
 		{"maxvideorate", 	 "1200k"},
 		{"aacbitrate", 	 	 "160k"},
@@ -109,7 +109,7 @@ AString ADVBConfig::GetLogDir() const
 
 AString ADVBConfig::GetTempFile(const AString& name, const AString& suffix) const
 {
-	return GetTempDir().CatPath(AString("%s_%08lx%s").Arg(name).Arg(::GetTickCount()).Arg(suffix));
+	return GetTempDir().CatPath(AString("%;_%08x%;").Arg(name).Arg(::GetTickCount()).Arg(suffix));
 }
 
 void ADVBConfig::CheckUpdate() const
@@ -213,7 +213,7 @@ void ADVBConfig::MapDVBCards()
 		AString cardname;
 		sint_t  card = -1;
 
-		cardname = GetConfigItem(AString("card%u").Arg(i), defname);
+		cardname = GetConfigItem(AString("card%;").Arg(i), defname);
 	
 		if ((card = findcard(cardname, &dvbcards)) >= 0) {
 			dvbcards.Add((uint_t)card);

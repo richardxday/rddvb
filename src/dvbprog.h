@@ -139,10 +139,11 @@ public:
 #if DVBDATVERSION > 1
 	bool SetBrandSeriesEpisode(const char *str) {return SetString(&data->strings.brandseriesepisode, str);}
 #endif
-	
+
+	AString GetFilenameStub() const;
+	AString GetTempFilename() const;
 	AString GetSourceFilename() const;
 	AString GetSource2Filename() const;
-	AString GetSignatureFilename(const AString& dstname) const;
 
 	AString GetPrefItem(const AString& name, const AString& defval = "") const;
 
@@ -309,7 +310,6 @@ public:
 	bool OnRecordFailure() const;
 	bool PostRecord(bool verbose = false);
 	bool PostProcess(bool verbose = false);
-	bool GenerateSignatureFile(const AString& src, const AString& dst) const;
 
 	void GetEncodedFiles(AList& files) const;
 	bool DeleteEncodedFiles() const;
@@ -515,8 +515,10 @@ protected:
 	sint_t   		   priority_score;
 	uint_t	 		   overlaps;
 
-	static AHash       fieldhash;
-	static const FIELD fields[];
+	static AHash       	 fieldhash;
+	static const FIELD 	 fields[];
+	static const AString tempfilesuffix;
+	static const AString recordedfilesuffix;
 };
 
 #endif
