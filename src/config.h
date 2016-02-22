@@ -32,8 +32,7 @@ public:
 	AString GetDataDir()			   		 const;
 	AString GetLogDir()			   	  		 const;
 	AString GetRecordingsDir()	   	  		 const {return CatPath(GetDataDir(), GetConfigItem("recdir", "recordings"));}
-	AString GetRecordingsStorageDir(const AString& user) const {return CatPath(GetRecordingsDir(), GetUserConfigItem(user, "storagedir", "Backup"));}
-	AString GetVideoSignatureDir(const AString& user) const {return CatPath(GetRecordingsDir(), GetUserConfigItem(user, "videosigdir", "Signatures"));}
+	AString GetRecordingsStorageDir(const AString& user) const {return CatPath(GetRecordingsDir(), GetUserConfigItem(user, "storagedir", "Archive"));}
 	AString GetTempDir()              		 const {return GetConfigItem("tempdir", GetDataDir().CatPath("temp"));}
 	AString GetTempFile(const AString& name, const AString& suffix = "") const;
 	AString GetQueue()						 const {return GetConfigItem("queue", "d");}
@@ -66,7 +65,7 @@ public:
 
 	AString GetNamedFile(const AString& name) const;
 	
-	AString GetFileSuffix(const AString& user, const AString& def = "mp4") const {return GetUserConfigItem(user, "filesuffix", def);}
+	AString GetConvertedFileSuffix(const AString& user, const AString& def = "mp4") const {return GetUserConfigItem(user, "filesuffix", def);}
 	AString ReplaceTerms(const AString& user, const AString& str) const;
 	AString ReplaceTerms(const AString& user, const AString& subitem, const AString& str) const;
 	

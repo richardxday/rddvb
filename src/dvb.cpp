@@ -128,7 +128,6 @@ int main(int argc, char *argv[])
 		printf("\t--post-process\t\t\tPost process files in current list (this WILL alter the record list data)\n");
 		printf("\t--post-process-if-format\tPost process files in current list if file is the wrong format (this WILL alter the record list data)\n");
 		printf("\t--delete-files\t\t\tDelete encoded files from programmes in current list\n");
-		printf("\t--generate-sig\t\t\tGenerate signature file for files in current list (assuming source file exists)\n");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
 #if DVBDATVERSION > 1
@@ -1096,22 +1095,6 @@ int main(int argc, char *argv[])
 					const ADVBProg& prog = proglist.GetProg(i);
 
 					prog.DeleteEncodedFiles();
-				}
-			}
-			else if (stricmp(argv[i], "--generate-sig") == 0) {
-				uint_t i;
-
-				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
-					const ADVBProg& prog = proglist.GetProg(i);
-					AString filename = prog.GetSourceFilename();
-					
-					if (!AStdFile::exists(filename)) filename = filename.Prefix() + "." + config.GetFileSuffix(prog.GetUser());
-					if (!AStdFile::exists(filename)) filename = prog.GetFilename();
-
-					if (AStdFile::exists(filename)) {
-						config.printf("Generating signature file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
-						prog.GenerateSignatureFile(filename, filename.Prefix());
-					}
 				}
 			}
 			else if (stricmp(argv[i], "--record-success") == 0) {

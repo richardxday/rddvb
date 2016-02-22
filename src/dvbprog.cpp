@@ -123,6 +123,9 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_ASSIGN(dvbcard,    dvbcard,        	uint8_t, "DVB card to record from"),
 };
 
+const AString ADVBProg::tempfilesuffix     = ".tmp";
+const AString ADVBProg::recordedfilesuffix = ".mpg";
+
 ADVBProg::ADVBProg()
 {
 	Init();
@@ -367,7 +370,7 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 
 		case Flag_srcexists:
 			set = (AStdFile::exists(GetSourceFilename()) ||
-				   AStdFile::exists(AString(GetSourceFilename()).Prefix() + "." + ADVBConfig::Get().GetFileSuffix(GetUser())));
+				   AStdFile::exists(GetSource2Filename()));
 			break;
 	}
 
@@ -1536,7 +1539,7 @@ AString ADVBProg::ReplaceFilenameTerms(const AString& str) const
 										.SearchAndReplace("{date}", ValidFilename(date))
 										.SearchAndReplace("{times}", ValidFilename(times))
 										.SearchAndReplace("{user}", ValidFilename(GetUser()))
-										.SearchAndReplace("{suffix}", config.GetFileSuffix(GetUser())));
+										.SearchAndReplace("{suffix}", recordedfilesuffix));
 
 	while (res.Pos("{sep}{sep}") >= 0) {
 		res = res.SearchAndReplace("{sep}{sep}", "{sep}");
@@ -1601,7 +1604,7 @@ void ADVBProg::GenerateRecordData(uint64_t recstarttime)
 		uint_t  n = 1;
 
 		do {
-			filename1 = filename.Prefix() + AString(".%u.").Arg(n++) + filename.Suffix();
+			filename1 = filename.Prefix() + AString(".%;.").Arg(n++) + filename.Suffix();
 		}
 		while (FilePatternExists(filename1));
 
@@ -1814,7 +1817,7 @@ AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
 			   nsecs,
 			   pids.str(),
 			   config.GetLogFile().str(),
-			   GetSourceFilename().str());
+			   GetTempFilename().str());
 	
 	return cmd;
 }
@@ -1973,8 +1976,10 @@ void ADVBProg::Record()
 				uint64_t  dt = (uint64_t)ADateTime().TimeStamp(true);
 				uint64_t  st = GetStop();
 				bool      addtorecorded = true;
-
+				
 				data->actstop = dt;
+
+				rename(GetTempFilename(), GetSourceFilename());
 
 				SetRecordingComplete();
 
@@ -2032,6 +2037,7 @@ void ADVBProg::Record()
 				} 
 			}
 			else {
+				remove(GetTempFilename());
 				config.printf("Unable to start record of '%s'", GetTitleAndSubtitle().str());
 				failed = true;
 			} 
@@ -2065,16 +2071,27 @@ void ADVBProg::Record()
 	}
 }
 
+AString ADVBProg::GetFilenameStub() const
+{
+	return AString(GetFilename()).FilePart().Prefix();
+}
+
+AString ADVBProg::GetTempFilename() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	return config.GetRecordingsStorageDir(GetUser()).CatPath(GetFilenameStub() + tempfilesuffix);
+}
+
 AString ADVBProg::GetSourceFilename() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	return config.GetRecordingsStorageDir(GetUser()).CatPath(AString(GetFilename()).FilePart().Prefix() + ".mpg");
+	return config.GetRecordingsStorageDir(GetUser()).CatPath(GetFilenameStub() + recordedfilesuffix);
 }
 
 AString ADVBProg::GetSource2Filename() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	return config.GetRecordingsStorageDir(GetUser()).CatPath(AString(GetFilename()).FilePart().Prefix() + "." + config.GetFileSuffix(GetUser()));
+	return config.GetRecordingsStorageDir(GetUser()).CatPath(GetFilenameStub() + "." + config.GetConvertedFileSuffix(GetUser()));
 }
 
 AString ADVBProg::ReplaceTerms(const AString& str) const
@@ -2241,10 +2258,11 @@ bool ADVBProg::PostProcess(bool verbose)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString srcfile = GetSourceFilename();
+	AString suffix  = config.GetConvertedFileSuffix(GetUser());
 	bool    success = false;
 
-	if (AString(GetFilename()).Suffix() != config.GetFileSuffix(GetUser())) {
-		SetFilename(AString(GetFilename()).Prefix() + "." + config.GetFileSuffix(GetUser()));
+	if (AString(GetFilename()).Suffix() != suffix) {
+		SetFilename(AString(GetFilename()).Prefix() + "." + suffix);
 	}
 	
 	SetPostProcessing();
@@ -2506,37 +2524,6 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 	return success;
 }
 
-AString ADVBProg::GetSignatureFilename(const AString& dstname) const
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	return config.GetVideoSignatureDir(GetUser()).CatPath(ValidFilename(GetBaseChannel()), dstname.FilePart().Prefix() + ".sig");
-}
-
-bool ADVBProg::GenerateSignatureFile(const AString& src, const AString& dst) const
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	AString sigfile = GetSignatureFilename(dst);
-	bool success = true;
-
-	CreateDirectory(sigfile.PathPart());
-	
-	if ((uint_t)config.GetUserSubItemConfigItem(GetUser(), GetCategory(), "videosig", "0") != 0) {
-		AString cmd;
-		uint_t  s = (uint_t)config.GetConfigItem("videosigsize", "256");
-		uint_t  n = (uint_t)config.GetConfigItem("videosigcount", "8");
-
-		cmd.printf("nice avconv -i \"%s\" -s %ux%u -pix_fmt rgb24 -vcodec rawvideo -f rawvideo pipe: | videosig -s %ux%u -n %u -of \"%s\"",
-				   src.str(),
-				   s, s,
-				   s, s,
-				   n,
-				   sigfile.str());
-		success = RunCommand(cmd);
-	}
-	
-	return success;
-}
-
 bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -2553,8 +2540,8 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 	CreateDirectory(dst.PathPart());
 
 	if (AStdFile::exists(src) &&
-		(!AStdFile::exists(AString("%s.m2v").Arg(basename)) ||
-		 !AStdFile::exists(AString("%s.mp2").Arg(basename)) ||
+		(!AStdFile::exists(AString("%;.m2v").Arg(basename)) ||
+		 !AStdFile::exists(AString("%;.mp2").Arg(basename)) ||
 		 !AStdFile::exists(logfile))) {
 		AString cmd;
 			
@@ -2699,8 +2686,6 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 			AString inputfiles;
 			inputfiles.printf("-i \"%s\"", src2.str());
 			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
-
-			GenerateSignatureFile(src2, dst);
 		}
 		else if (splits.size() == 1) {			
 			config.printf("No need to split file");
@@ -2712,11 +2697,9 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 							  basename.str(),
 							  basename.str());
 			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
-
-			GenerateSignatureFile(basename + ".m2v", dst);
 		}
 		else {
-			AString remuxsrc = basename + "_Remuxed.mpg";
+			AString remuxsrc = basename + "_Remuxed" + recordedfilesuffix;
 			
 			config.printf("Splitting file...");
 			
@@ -2738,7 +2721,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 					AString cmd;
 					AString outfile;
 					
-					outfile.printf("%s-%s-%u.mpg", basename.str(), bestaspect.SearchAndReplace(":", "_").str(), i);
+					outfile.printf("%s-%s-%u%s", basename.str(), bestaspect.SearchAndReplace(":", "_").str(), i, recordedfilesuffix.str());
 
 					if (!AStdFile::exists(outfile)) {
 						cmd.printf("nice %s -fflags +genpts -i \"%s\" -ss %s", proccmd.str(), remuxsrc.str(), GenTime(split.start).str());
@@ -2754,7 +2737,7 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 			}
 
 			AStdFile ofp;
-			AString  concatfile = basename + "_Concat.mpg";
+			AString  concatfile = basename + "_Concat" + recordedfilesuffix;
 			if (ofp.open(concatfile, "wb")) {
 				for (i = 0; i < files.size(); i++) {
 					AStdFile ifp;
@@ -2784,8 +2767,6 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 				AString inputfiles;
 				inputfiles.printf("-i \"%s\"", concatfile.str());
 				success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
-
-				GenerateSignatureFile(concatfile, dst);
 			}
 
 			remove(concatfile);
