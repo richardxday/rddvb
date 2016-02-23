@@ -111,8 +111,6 @@ int main(int argc, char *argv[])
 		printf("\t--change-filename <filename1> <filename2>\n\t\t\t\t\tChange filename of recorded progamme with filename <filename1> to <filename2>\n");
 		printf("\t--change-filename-regex <filename1> <filename2>\n\t\t\t\t\tChange filename of recorded progamme with filename <filename1> to <filename2> (where <filename1> can be a regex and <filename2> can be an expansion)\n");
 		printf("\t--change-filename-regex-test <filename1> <filename2>\n\t\t\t\t\tLike above but do not commit changes\n");
-		printf("\t--rename-files <filename-pattern>\n\t\t\t\t\tRename files in current list and update recorded list, if necessary\n");
-		printf("\t--rename-files-test <filename-pattern>\n\t\t\t\t\tLike above but do not commit changes\n");
 		printf("\t--find-recorded-programmes-on-disk\n\t\t\t\t\tSearch for recorded programmes in 'searchdirs' and update any filenames\n");
 		printf("\t--find-series\t\t\tFind series' in programme list\n");
 		printf("\t--fix-data-in-recorded\t\tFix incorrect metadata of certain programmes and rename files as necessary\n");
@@ -607,7 +605,11 @@ int main(int argc, char *argv[])
 					nsecs = (uint_t)((prog.GetActualStop() - prog.GetActualStart()) / 1000);
 					
 					if (::GetFileInfo(filename, &info)) {
-						config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", filename.str(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024 * (uint64_t)nsecs)));
+						config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s",
+									  filename.str(),
+									  AValue(info.FileSize / (1024 * 1024)).ToString().str(),
+									  AValue(nsecs).ToString().str(),
+									  AValue(info.FileSize / (1024 * (uint64_t)nsecs)).ToString().str());
 
 						prog.SetFileSize(info.FileSize);
 					}
@@ -660,7 +662,7 @@ int main(int argc, char *argv[])
 				config.printf("Total %u DVB cards found", config.GetMaxDVBCards());
 			}
 			else if (strcmp(argv[i], "--change-filename") == 0) {
-				ADVBLock lock("schedule");
+				ADVBLock lock("recordlist");
 				AString  filename1 = argv[++i];
 				AString  filename2 = argv[++i];
 				ADVBProgList reclist;
@@ -692,7 +694,7 @@ int main(int argc, char *argv[])
 			}
 			else if ((strcmp(argv[i], "--change-filename-regex")      == 0) ||
 					 (strcmp(argv[i], "--change-filename-regex-test") == 0)) {
-				ADVBLock     lock("schedule");
+				ADVBLock     lock("recordlist");
 				ADVBProgList reclist;
 				AString 	 errors;
 				AString 	 pattern       = argv[++i];
@@ -736,45 +738,6 @@ int main(int argc, char *argv[])
 				}
 				else config.printf("Failed to read recorded programme list");
 			}
-			else if ((strcmp(argv[i], "--rename-files")      == 0) ||
-					 (strcmp(argv[i], "--rename-files-test") == 0)) {
-				ADVBLock     lock("schedule");
-				ADVBProgList reclist;
-				AString  	 templ  = argv[++i];
-				bool     	 commit = (strcmp(argv[i - 1], "--rename-files") == 0);
-
-				if (reclist.ReadFromFile(config.GetRecordedFile())) {
-					uint_t i;
-					bool changed = false;
-
-					for (i = 0; i < proglist.Count(); i++) {
-						ADVBProg& prog      = proglist.GetProgWritable(i);
-						ADVBProg  *recprog;
-						AString   filename  = prog.GetFilename();
-						AString   filename1 = filename.PathPart().CatPath(prog.GenerateFilename(templ + "{sep}" + filename.Suffix()).FilePart());
-
-						if ((filename1 != filename) && AStdFile::exists(filename) && ((recprog = reclist.FindUUIDWritable(prog)) != NULL)) {
-							if		(!commit) config.printf("*TEST* Rename '%s' to '%s'", filename.str(), filename1.str());
-							else if (rename(filename, filename1) == 0) {
-								recprog->SetFilename(filename1);
-								config.printf("Renamed '%s' to '%s'", filename.str(), filename1.str());
-								changed = true;
-							}
-							else config.printf("Failed to rename '%s' to '%s'", filename.str(), filename1.str());
-						}
-					}
-
-					if (changed) {
-						if (commit) {
-							if (!reclist.WriteToFile(config.GetRecordedFile())) {
-								config.printf("Failed to write recorded programme list back!");
-							}
-						}
-						else config.printf("NOT writing changes back to files");
-					}
-				}
-				else config.printf("Failed to read recorded programme list");
-			}
 			else if (stricmp(argv[i], "--find-series") == 0) {
 				AHash series;
 
@@ -784,7 +747,7 @@ int main(int argc, char *argv[])
 				series.Traverse(&__DisplaySeries);
 			}
 			else if (stricmp(argv[i], "--fix-data-in-recorded") == 0) {
-				ADVBLock lock("schedule");
+				ADVBLock lock("recordlist");
 				ADVBProgList reclist;
 
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
@@ -805,7 +768,7 @@ int main(int argc, char *argv[])
 				else config.printf("Failed to read recorded programme list");
 			}
 			else if (stricmp(argv[i], "--set-recorded-flag") == 0) {
-				ADVBLock lock("schedule");
+				ADVBLock lock("recordlist");
 				ADVBProgList reclist;
 
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
@@ -822,7 +785,7 @@ int main(int argc, char *argv[])
 				else config.printf("Failed to read recorded programme list");
 			}
 			else if (stricmp(argv[i], "--find-recorded-programmes-on-disk") == 0) {
-				ADVBLock lock("schedule");
+				ADVBLock lock("recordlist");
 				ADVBProgList reclist;
 				AString  recdir = config.GetRecordingsDir();
 				AString  dirs   = config.GetConfigItem("searchdirs", "");
@@ -893,7 +856,7 @@ int main(int argc, char *argv[])
 				ADVBProgList::CheckDiskSpace(true);
 			}
 			else if (stricmp(argv[i], "--update-recording-complete") == 0) {
-				ADVBLock lock("schedule");
+				ADVBLock lock("recordlist");
 				ADVBProgList reclist;
 
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
@@ -915,7 +878,7 @@ int main(int argc, char *argv[])
 			}
 			else if ((stricmp(argv[i], "--set-ignore-flag") == 0) ||
 					 (stricmp(argv[i], "--clr-ignore-flag") == 0)) {
-				ADVBLock     lock("schedule");
+				ADVBLock     lock("recordlist");
 				ADVBProgList reclist;
 				bool         ignore = (stricmp(argv[i], "--set-ignore-flag") == 0);
 				AString      patterns = argv[++i], errors;
@@ -958,7 +921,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			else if (stricmp(argv[i], "--force-failures") == 0) {
-				ADVBLock     lock("schedule");
+				ADVBLock     lock("recordlist");
 				ADVBProgList failureslist;
 
 				if (!AStdFile::exists(config.GetRecordFailuresFile()) || failureslist.ReadFromFile(config.GetRecordFailuresFile())) {
@@ -1055,37 +1018,15 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
-			else if (stricmp(argv[i], "--post-process") == 0) {
+			else if (stricmp(argv[i], "--convert") == 0) {
 				uint_t i;
 
 				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
 					ADVBProg& prog = proglist.GetProgWritable(i);
 
-					if (AStdFile::exists(prog.GetSourceFilename()) ||
-						AStdFile::exists(prog.GetSource2Filename()) ||
-						AStdFile::exists(prog.GetFilename())) {
+					if (!prog.IsConverted()) {
 						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
-						prog.PostProcess(true);
-					}
-				}
-			}
-			else if (stricmp(argv[i], "--post-process-if-format") == 0) {
-				uint_t i;
-
-				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
-					ADVBProg& prog = proglist.GetProgWritable(i);
-					AString filename = prog.GetFilename();
-					AString format;
-					
-					if ((!AStdFile::exists(filename) ||
-						 !ADVBProg::GetFileFormat(filename, format) ||
-						 (format.Pos("MPEG Video") >= 0) ||
-						 (format == "MPEG-TS")) &&
-						(AStdFile::exists(prog.GetSourceFilename()) ||
-						 AStdFile::exists(prog.GetSource2Filename()) ||
-						 AStdFile::exists(prog.GetFilename()))) {
-						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
-						prog.PostProcess(true);
+						prog.ConvertVideo(true);
 					}
 				}
 			}

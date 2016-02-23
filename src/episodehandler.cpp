@@ -40,7 +40,7 @@ bool ADVBEpisodeHandler::__WriteString(const char *key, uptr_t value, void *cont
 {
 	AStdData *fp = (AStdData *)context;
 
-	fp->printf("%s=%s\n", key, NUMSTR("", value));
+	fp->printf("%s=%s\n", key, AValue(value).ToString().str());
 
 	return true;
 }
