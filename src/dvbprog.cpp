@@ -1739,12 +1739,13 @@ void ADVBProg::AddToList(ADataList *list)
 	list->Add((uptr_t)this);
 }
 
-void ADVBProg::SetPriorityScore()
+void ADVBProg::SetPriorityScore(uint_t card)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 
 	priority_score = config.GetPriorityScale() * data->pri;
 	if (IsUrgent()) priority_score += config.GetUrgentScale();
+	if (IsDVBCardSpecified() && (card == GetDVBCard())) priority_score += config.GetDVBCardScale();
 	if (list) priority_score += (list->Count() - 1) * config.GetRepeatsScale();
 }
 

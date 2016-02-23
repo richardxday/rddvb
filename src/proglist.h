@@ -84,7 +84,7 @@ public:
 	void Sort(bool reverse = false);
 	void Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), void *pContext = NULL);
 
-	void PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgList& rejectedlist, uint64_t recstarttime);
+	void PrioritizeProgrammes(uint_t card, ADVBProgList& scheduledlist, ADVBProgList& rejectedlist, uint64_t recstarttime);
 	uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));
 
 	void SimpleSchedule();

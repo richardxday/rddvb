@@ -288,7 +288,7 @@ public:
 	void AddToList(ADataList *list);
 	const ADataList *GetList() const {return list;}
 
-	void SetPriorityScore();
+	void SetPriorityScore(uint_t card);
 	int  GetPriorityScore() const {return priority_score;}
 	void CountOverlaps(const ADVBProgList& proglist);
 	uint_t GetOverlaps() const {return overlaps;}

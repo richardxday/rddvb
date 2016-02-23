@@ -79,14 +79,15 @@ public:
 
 	int     GetPriorityScale()               const {return (int)GetConfigItem("priscale",     "2");}
 	int     GetRepeatsScale()                const {return (int)GetConfigItem("repeatsscale", "-1");}
-	int     GetUrgentScale()                 const {return (int)GetConfigItem("urgentscale",  "0");}
+	int     GetUrgentScale()                 const {return (int)GetConfigItem("urgentscale",  "3");}
+	int     GetDVBCardScale()                const {return (int)GetConfigItem("dvbcardscale", "4");}
 
 	AString GetPriorityDVBPIDs()			 const {return GetConfigItem("prioritypids", "");}
 	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");}
 
 	AString GetBaseURL()					 const {return GetConfigItem("baseurl", "http://richardday.duckdns.org");}
 
-	bool    ForceSubs(const AString& user)         const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
+	bool    ForceSubs(const AString& user)   const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
 
 	AString GetEncodeCommand(const AString& user, const AString& category) const {return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodecmd", "avconv"));}
 	AString GetEncodeArgs(const AString& user, const AString& category)    const {return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodeargs"));}
