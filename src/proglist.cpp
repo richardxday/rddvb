@@ -1880,7 +1880,7 @@ int ADVBProgList::SortDataLists(uptr_t item1, uptr_t item2, void *context)
 	return ADVBProg::CompareScore(prog1, prog2);
 }
 
-void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgList& rejectedlist, uint64_t starttime)
+void ADVBProgList::PrioritizeProgrammes(uint_t card, ADVBProgList& scheduledlist, ADVBProgList& rejectedlist, uint64_t starttime)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	// for each programme, attach it to a list of repeats
@@ -1939,7 +1939,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList& scheduledlist, ADVBProgLis
 		for (j = 0; j < list.Count(); j++) {
 			ADVBProg& prog = *(ADVBProg *)list[j];
 
-			prog.SetPriorityScore();
+			prog.SetPriorityScore(card);
 			prog.CountOverlaps(*this);
 		}
 
@@ -2224,13 +2224,6 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 
 			DeleteProg(i);
 		}
-		else if (prog.IsDVBCardSpecified() && (prog.GetDVBCard() != card) && (prog.GetDVBCard() < config.GetMaxDVBCards())) {
-			config.logit("Adding '%s' to rejected list (DVB card requested %u, currently %u)", prog.GetQuickDescription().str(), (uint_t)prog.GetDVBCard(), dvbcard);
-
-			rejectedlist.AddProg(prog);
-
-			DeleteProg(i);
-		}
 		else if (prog.GetStop() == prog.GetStart()) {
 			config.logit("'%s' is zero-length", prog.GetQuickDescription().str());
 
@@ -2250,7 +2243,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	config.logit("--------------------------------------------------------------------------------");
 
 	//ADVBProg::debugsameprogramme = true;
-	PrioritizeProgrammes(scheduledlist, rejectedlist, recstarttime);
+	PrioritizeProgrammes(card, scheduledlist, rejectedlist, recstarttime);
 	//ADVBProg::debugsameprogramme = false;
 
 	const ADVBProg *errorprog;
