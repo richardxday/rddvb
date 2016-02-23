@@ -161,8 +161,9 @@ int main(int argc, char *argv[])
 				if (proglist.ReadFromFile(updatefile)) {
 					config.printf("Read programmes from '%s', total now %u", updatefile.str(), proglist.Count());
 
-					config.printf("Removing old programmes...");
-					proglist.DeleteProgrammesBefore(ADateTime(ADateTime().TimeStamp(true).GetDays() - config.GetDaysToKeep(), 0));
+					ADateTime dt(ADateTime().TimeStamp(true).GetDays() - config.GetDaysToKeep(), 0);
+					config.printf("Removing old programmes (before %s)...", dt.UTCToLocal().DateToStr().str());
+					proglist.DeleteProgrammesBefore(dt);
 
 					config.printf("Updating DVB channels...");
 					proglist.UpdateDVBChannels();

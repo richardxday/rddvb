@@ -97,7 +97,7 @@ public:
 	void	    SetFileSize(uint64_t filesize) {data->filesize = filesize;}
 	uint64_t    GetFileSize()          	 const {return data->filesize;}
 	
-	static AString GetHex(uint64_t t)		   {return AValue(t).ToString("x016");}
+	static AString GetHex(uint64_t t)		   {return AString("$%016x").Arg(t);}
 	static AString GetHex(const ADateTime& dt) {return GetHex((uint64_t)dt);}
 
 	const char *GetChannel()		 	 const {return GetString(data->strings.channel);}
