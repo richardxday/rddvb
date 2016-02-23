@@ -1635,7 +1635,7 @@ bool ADVBProgList::CheckDiskSpace(bool runcmd, bool report)
 uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock	 lock("schedule");
+	ADVBLock	 lock("recordlist");
 	ADVBProgList proglist;
 	AString      filename = config.GetListingsFile();
 	uint_t       res = 0;
@@ -1740,7 +1740,7 @@ void ADVBProgList::Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), v
 void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool sort, bool removeoverlaps)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("schedule");
+	ADVBLock     lock("recordlist");
 	ADVBProgList list;
 
 	if (!list.ReadFromFile(filename)) config.logit("Failed to read file '%s' for adding a programme", filename.str());
@@ -1751,7 +1751,7 @@ void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool
 void ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("schedule");
+	ADVBLock     lock("recordlist");
 	ADVBProgList list;
 
 	if (list.ReadFromFile(filename)) {
@@ -1764,7 +1764,7 @@ void ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
 uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("schedule");
+	ADVBLock     lock("recordlist");
 	ADVBProgList oldrejectedlist;
 	ADVBProgList recordedlist;
 	ADVBProgList scheduledlist;
@@ -2411,7 +2411,7 @@ bool ADVBProgList::WriteToJobList()
 void ADVBProgList::CreateCombinedFile()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("schedule");
+	ADVBLock     lock("recordlist");
 	ADVBProgList list;
 
 	config.printf("Creating combined listings");
@@ -2505,7 +2505,7 @@ void ADVBProgList::EnhanceListings()
 void ADVBProgList::CheckRecordingFile()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("schedule");
+	ADVBLock     lock("recordlist");
 	ADVBProgList list;
 	uint_t i;
 

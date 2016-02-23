@@ -142,8 +142,6 @@ public:
 
 	AString GetFilenameStub() const;
 	AString GetTempFilename() const;
-	AString GetSourceFilename() const;
-	AString GetSource2Filename() const;
 
 	AString GetPrefItem(const AString& name, const AString& defval = "") const;
 
@@ -194,7 +192,6 @@ public:
 
 		_Flag_extra_start = 32,
 		Flag_exists = _Flag_extra_start,
-		Flag_srcexists,
 	};
 	void     SetFlags(uint32_t flags)	{data->flags = flags;}
 	uint32_t GetFlags()		   	  const {return data->flags;}
@@ -277,8 +274,7 @@ public:
 	AString GetQuickDescription() const;
 
 	AString GetRecordingSubDir() const;
-	AString GenerateFilename(const AString& templ) const;
-	AString GenerateFilename() const;
+	AString GenerateFilename(bool converted = false) const;
 	void    GenerateRecordData(uint64_t recstarttime);
 
 	bool WriteToJobQueue();
@@ -304,12 +300,17 @@ public:
 	AString Base64Encode() const {return ::Base64Encode((const uint8_t *)data, sizeof(*data) + data->strings.end);}
 
 	AString GetLinkToFile() const;
+	bool    UpdateFileSize(uint_t nsecs);
 
 	void Record();
 	bool OnRecordSuccess() const;
 	bool OnRecordFailure() const;
-	bool PostRecord(bool verbose = false);
-	bool PostProcess(bool verbose = false);
+	bool PostRecord();
+	bool PostProcess();
+	bool UpdateRecordedList();
+	
+	bool IsConverted() const {return (AString(GetFilename()).Suffix() != recordedfilesuffix);}
+	bool ConvertVideo(bool verbose = false, bool cleanup = true);
 
 	void GetEncodedFiles(AList& files) const;
 	bool DeleteEncodedFiles() const;
@@ -471,7 +472,7 @@ protected:
 	AString GeneratePostProcessCommand() const;
 
 	AString ReplaceTerms(const AString& str) const;
-	AString ReplaceFilenameTerms(const AString& str) const;
+	AString ReplaceFilenameTerms(const AString& str, bool converted) const;
 
 	AString GetLogFile() const;
 	bool    RunCommand(const AString& cmd, bool logoutput = false) const;
@@ -489,7 +490,6 @@ protected:
 
 	void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect);
 	bool EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose) const;
-	bool ConvertVideoFile(bool verbose, bool cleanup = true);
 
 	static const DVBPROG *nullprog;
 

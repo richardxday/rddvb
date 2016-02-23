@@ -94,7 +94,6 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(recording,  		 Flag_recording,  	 	   "Programme recording"),
 	DEFINE_FLAG(postprocessing,		 Flag_postprocessing,	   "Programme recording being processing"),
 	DEFINE_FLAG(exists,				 Flag_exists,    	 	   "Programme exists"),
-	DEFINE_FLAG(srcexists,			 Flag_srcexists,    	   "Programme source file exists"),
 	DEFINE_FLAG(notify,				 Flag_notify,    	 	   "Notify by when programme has recorded"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
@@ -366,11 +365,6 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 	switch (flag) {
 		case Flag_exists:
 			set = AStdFile::exists(GetFilename());
-			break;
-
-		case Flag_srcexists:
-			set = (AStdFile::exists(GetSourceFilename()) ||
-				   AStdFile::exists(GetSource2Filename()));
 			break;
 	}
 
@@ -688,7 +682,7 @@ AString ADVBProg::ExportToText() const
 	if (data->episode.episode) str.printf("episode=%u\n", (uint_t)data->episode.episode);
 	if (data->episode.episodes) str.printf("episodes=%u\n", (uint_t)data->episode.episodes);
 
-	if (data->filesize) str.printf("filesize=%s\n", NUMSTR("", data->filesize));
+	if (data->filesize) str.printf("filesize=%s\n", AValue(data->filesize).ToString().str());
 	str.printf("flags=$%08x\n", data->flags);
 
 #if DVBDATVERSION > 1
@@ -931,8 +925,7 @@ bool ADVBProg::FixData()
 				(ep.series 	 != data->episode.series) ||
 				(ep.episode  != data->episode.episode) ||
 				(ep.episodes != data->episode.episodes)) {
-				AString filename    = GetFilename();
-				AString srcfilename = GetSourceFilename();
+				AString filename = GetFilename();
 
 				AString desc1 = GetDescription(1);
 				data->episode = ep;
@@ -943,22 +936,13 @@ bool ADVBProg::FixData()
 				if (filename.Valid()) {
 					SetFilename(GenerateFilename());
 
-					AString newfilename    = GetFilename();
-					AString newsrcfilename = GetSourceFilename();
+					AString newfilename = GetFilename();
 					if (AStdFile::exists(filename)) {
 						if (rename(filename, newfilename) != 0) {
 							config.printf("Failed to rename '%s' to '%s'", filename.str(), newfilename.str());
 						}
 						else {
 							config.printf("Renamed '%s' to '%s'", filename.str(), newfilename.str());
-						}
-					}
-					if (AStdFile::exists(srcfilename)) {
-						if (rename(srcfilename, newsrcfilename) != 0) {
-							config.printf("Failed to rename '%s' to '%s'", srcfilename.str(), newsrcfilename.str());
-						}
-						else {
-							config.printf("Renamed '%s' to '%s'", srcfilename.str(), newsrcfilename.str());
 						}
 					}
 				}
@@ -1530,7 +1514,7 @@ const char *ADVBProg::PreProcessString(const char *field, AString& temp, const c
 	return str;
 }
 
-AString ADVBProg::ReplaceFilenameTerms(const AString& str) const
+AString ADVBProg::ReplaceFilenameTerms(const AString& str, bool converted) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString date  = GetStartDT().UTCToLocal().DateFormat("%Y-%M-%D");
@@ -1545,7 +1529,8 @@ AString ADVBProg::ReplaceFilenameTerms(const AString& str) const
 										.SearchAndReplace("{date}", ValidFilename(date))
 										.SearchAndReplace("{times}", ValidFilename(times))
 										.SearchAndReplace("{user}", ValidFilename(GetUser()))
-										.SearchAndReplace("{suffix}", recordedfilesuffix));
+										.SearchAndReplace("{userdir}", ValidFilename(GetUser(), true))
+										.SearchAndReplace("{suffix}", converted ? config.GetConvertedFileSuffix(GetUser()) : recordedfilesuffix));
 
 	while (res.Pos("{sep}{sep}") >= 0) {
 		res = res.SearchAndReplace("{sep}{sep}", "{sep}");
@@ -1560,19 +1545,15 @@ AString ADVBProg::GetRecordingSubDir() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString subdir = GetDir();
-	return ReplaceFilenameTerms(subdir.Valid() ? subdir : config.GetRecordingsSubDir(GetUser(), GetCategory()));
+	return CatPath(config.GetRecordingsDir(), subdir.Valid() ? subdir : config.GetRecordingsSubDir(GetUser(), GetCategory()));
 }
 
-AString ADVBProg::GenerateFilename(const AString& templ) const
+AString ADVBProg::GenerateFilename(bool converted) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	return CatPath(config.GetRecordingsDir(), GetRecordingSubDir()).CatPath(ReplaceFilenameTerms(templ));
-}
-
-AString ADVBProg::GenerateFilename() const
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	return GenerateFilename(config.GetFilenameTemplate(GetUser(), GetCategory()));
+	AString templ = config.GetFilenameTemplate(GetUser(), GetCategory());
+	AString dir   = converted ? CatPath(config.GetRecordingsDir(), GetRecordingSubDir()) : config.GetRecordingsStorageDir(GetUser());
+	return ReplaceFilenameTerms(dir.CatPath(templ), converted);
 }
 
 static bool __fileexists(const FILE_INFO *file, void *Context)
@@ -1603,7 +1584,6 @@ void ADVBProg::GenerateRecordData(uint64_t recstarttime)
 	}
 
 	filename = GenerateFilename();
-	SetString(&data->strings.filename, filename.str());
 
 	if (FilePatternExists(filename)) {
 		AString filename1;
@@ -1615,9 +1595,9 @@ void ADVBProg::GenerateRecordData(uint64_t recstarttime)
 		while (FilePatternExists(filename1));
 
 		filename = filename1;
-
-		SetString(&data->strings.filename, filename.str());
 	}
+
+	SetString(&data->strings.filename, filename.str());
 }
 
 bool ADVBProg::WriteToJobQueue()
@@ -1829,6 +1809,48 @@ AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
 	return cmd;
 }
 
+bool ADVBProg::UpdateFileSize(uint_t nsecs)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	FILE_INFO info;
+	AString   filename = GetFilename();
+	bool      exists   = true;
+				
+	if (::GetFileInfo(filename, &info)) {
+		config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s",
+					  GetFilename(),
+					  AValue(info.FileSize / (1024 * 1024)).ToString().str(),
+					  AValue(nsecs).ToString().str(),
+					  AValue(info.FileSize / (1024 * (uint64_t)nsecs)).ToString().str());
+
+		SetFileSize(info.FileSize);
+		exists = true;
+	}
+	else SetFileSize(0);
+	
+	return exists;
+}
+
+bool ADVBProg::UpdateRecordedList()
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	ADVBLock     lock("recordlist");
+	ADVBProgList reclist;
+	bool         nochange = false;
+	
+	if (reclist.ReadFromFile(config.GetRecordedFile())) {
+		ADVBProg *prog;
+
+		if ((prog = reclist.FindUUIDWritable(*this)) != NULL) {
+			if (Base64Encode() != prog->Base64Encode()) prog->Modify(*this);
+			else nochange = true;
+		}
+		else reclist.AddProg(*this);
+	}
+
+	return (nochange || reclist.WriteToFile(config.GetRecordedFile()));
+}
+
 void ADVBProg::Record()
 {
 	if (Valid()) {
@@ -1861,7 +1883,7 @@ void ADVBProg::Record()
 		}
 
 		if (!GetJobID()) {
-			ADVBLock     lock("schedule");
+			ADVBLock     lock("recordlist");
 			ADVBProgList list;
 			const ADVBProg *prog;
 
@@ -1916,12 +1938,12 @@ void ADVBProg::Record()
 		}
 
 		if (record) {
-			AString filename = GetSourceFilename();
+			AString filename = GetFilename();
 			AString cmd;
 			int     res;
 
+			CreateDirectory(AString(GetTempFilename()).PathPart());
 			CreateDirectory(filename.PathPart());
-			CreateDirectory(AString(GetFilename()).PathPart());
 
 			if (fake) {
 				config.printf("**Fake** recording '%s' for %u seconds (%u minutes) to '%s'",
@@ -1978,68 +2000,73 @@ void ADVBProg::Record()
 			}
 
 			if (res == 0) {
-				AString   str;
-				FILE_INFO info;
-				uint64_t  dt = (uint64_t)ADateTime().TimeStamp(true);
-				uint64_t  st = GetStop();
-				bool      addtorecorded = true;
+				AString  str;
+				uint64_t dt = (uint64_t)ADateTime().TimeStamp(true);
+				uint64_t st = GetStop();
+				bool     addtorecorded = true;
 				
 				data->actstop = dt;
 
-				rename(GetTempFilename(), GetSourceFilename());
+				if (rename(GetTempFilename(), GetFilename()) == 0) {
+					SetRecordingComplete();
 
-				SetRecordingComplete();
-
-				if (dt < (st - 15000)) {
-					config.printf("Warning: '%s' stopped %ss before programme end!", GetTitleAndSubtitle().str(), NUMSTR("", (st - dt) / 1000));
-					reschedule = true;
-					addtorecorded = fake;
-				}
-
-				if (!IsRecordingComplete()) {
-					config.printf("Warning: '%s' is incomplete! (%ss missing from the start, %ss missing from the end)", GetTitleAndSubtitle().str(),
-								  NUMSTR("", MAX((sint64_t)(data->actstart - MIN(data->start, data->recstart)), 0) / 1000),
-								  NUMSTR("", MAX((sint64_t)(data->recstop  - data->actstop), 0) / 1000));
-
-					// force reschedule
-					failed = true;
-				}
-
-				if (::GetFileInfo(filename, &info)) {
-					config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", filename.str(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024 * (uint64_t)nsecs)));
-
-					SetFileSize(info.FileSize);
-
-					if (addtorecorded && (info.FileSize > 0)) {
-						config.printf("Adding '%s' to list of recorded programmes", GetTitleAndSubtitle().str());
-
-						ClearScheduled();
-						SetRecorded();
-
-						{
-							FlagsSaver saver(this);
-							ClearRunning();
-							ADVBProgList::AddToList(config.GetRecordedFile(), *this);
-						}
-						
-						if (IsOnceOnly() && IsRecordingComplete()) {
-							ADVBPatterns::DeletePattern(user, GetPattern());
-
-							reschedule = true;
-						}
-
-						bool success = PostRecord();
-						if (success) success = PostProcess();
-						if (success) OnRecordSuccess();
+					if (dt < (st - 15000)) {
+						config.printf("Warning: '%s' stopped %ss before programme end!", GetTitleAndSubtitle().str(), AValue((st - dt) / 1000).ToString().str());
+						reschedule = true;
+						addtorecorded = fake;
 					}
-					else if (!info.FileSize) {
-						config.printf("Record of '%s' ('%s') is zero length", GetTitleAndSubtitle().str(), filename.str());
-						remove(filename);
+
+					if (!IsRecordingComplete()) {
+						config.printf("Warning: '%s' is incomplete! (%ss missing from the start, %ss missing from the end)",
+									  GetTitleAndSubtitle().str(),
+									  AValue(MAX((sint64_t)(data->actstart - MIN(data->start, data->recstart)), 0) / 1000).ToString().str(),
+									  AValue(MAX((sint64_t)(data->recstop  - data->actstop), 0) / 1000).ToString().str());
+
+						// force reschedule
 						failed = true;
 					}
+
+					if (UpdateFileSize(nsecs)) {
+						if (GetFileSize() > 0) {
+							if (addtorecorded) {
+								config.printf("Adding '%s' to list of recorded programmes", GetTitleAndSubtitle().str());
+							
+								ClearScheduled();
+								SetRecorded();
+							
+								{
+									FlagsSaver saver(this);
+									ClearRunning();
+									UpdateRecordedList();
+								}
+							}
+					
+							if (IsOnceOnly() && IsRecordingComplete()) {
+								ADVBPatterns::DeletePattern(user, GetPattern());
+							
+								reschedule = true;
+							}
+						
+							bool success = PostRecord();
+							if (success) success = ConvertVideo();
+							if (success) success = PostProcess();
+							if (success && addtorecorded) success = UpdateRecordedList();
+							if (success) OnRecordSuccess();
+						}
+						else {
+							config.printf("Record of '%s' ('%s') is zero length", GetTitleAndSubtitle().str(), filename.str());
+							remove(filename);
+							failed = true;
+						}
+					}
+					else {
+						config.printf("Record of '%s' ('%s') doesn't exist", GetTitleAndSubtitle().str(), filename.str());
+						failed = true;
+					} 
 				}
 				else {
-					config.printf("Record of '%s' ('%s') doesn't exist", GetTitleAndSubtitle().str(), filename.str());
+					remove(GetTempFilename());
+					config.printf("Unable to rename '%s' to '%s'", GetTempFilename().str(), GetFilename());
 					failed = true;
 				} 
 			}
@@ -2078,27 +2105,9 @@ void ADVBProg::Record()
 	}
 }
 
-AString ADVBProg::GetFilenameStub() const
-{
-	return AString(GetFilename()).FilePart().Prefix();
-}
-
 AString ADVBProg::GetTempFilename() const
 {
-	const ADVBConfig& config = ADVBConfig::Get();
-	return config.GetRecordingsStorageDir(GetUser()).CatPath(GetFilenameStub() + tempfilesuffix);
-}
-
-AString ADVBProg::GetSourceFilename() const
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	return config.GetRecordingsStorageDir(GetUser()).CatPath(GetFilenameStub() + recordedfilesuffix);
-}
-
-AString ADVBProg::GetSource2Filename() const
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	return config.GetRecordingsStorageDir(GetUser()).CatPath(GetFilenameStub() + "." + config.GetConvertedFileSuffix(GetUser()));
+	return AString(GetFilename()).Prefix() + tempfilesuffix;
 }
 
 AString ADVBProg::ReplaceTerms(const AString& str) const
@@ -2116,7 +2125,6 @@ AString ADVBProg::ReplaceTerms(const AString& str) const
 			.SearchAndReplace("{date}", date)
 			.SearchAndReplace("{times}", times)
 			.SearchAndReplace("{user}", GetUser())
-			.SearchAndReplace("{srcfile}", GetSourceFilename())
 			.SearchAndReplace("{filename}", GetFilename())
 			.SearchAndReplace("{logfile}", GetLogFile())
 			.SearchAndReplace("{link}", GetLinkToFile()));
@@ -2246,12 +2254,10 @@ bool ADVBProg::RunCommand(const AString& cmd, bool logoutput) const
 	return success;
 }
 
-bool ADVBProg::PostRecord(bool verbose)
+bool ADVBProg::PostRecord()
 {
 	AString postcmd;
 	bool success = false;
-
-	(void)verbose;
 	
 	if ((postcmd = GeneratePostRecordCommand()).Valid()) {
 		success = RunCommand("nice " + postcmd);
@@ -2261,61 +2267,28 @@ bool ADVBProg::PostRecord(bool verbose)
 	return success;
 }
 
-bool ADVBProg::PostProcess(bool verbose)
+bool ADVBProg::PostProcess()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString srcfile = GetSourceFilename();
-	AString suffix  = config.GetConvertedFileSuffix(GetUser());
+	AString postcmd;
+	bool    postprocessed = false;
 	bool    success = false;
+	
+	if ((postcmd = GeneratePostProcessCommand()).Valid()) {
+		config.printf("Running post process command '%s'", postcmd.str());
 
-	if (AString(GetFilename()).Suffix() != suffix) {
-		SetFilename(AString(GetFilename()).Prefix() + "." + suffix);
+		SetPostProcessing();
+		ADVBProgList::AddToList(config.GetProcessingFile(), *this);
+		
+		success = postprocessed = RunCommand("nice " + postcmd);
+
+		SetPostProcessed();
+		UpdateFileSize((uint_t)(GetActualLength() / 1000));
+
+		ADVBProgList::RemoveFromList(config.GetProcessingFile(), *this);
+		ClearPostProcessing();
 	}
-	
-	SetPostProcessing();
-	ADVBProgList::AddToList(config.GetProcessingFile(), *this);
-
-	if (ConvertVideoFile(verbose)) {
-		AString postcmd;
-		bool postprocessed = false;
-	
-		if ((postcmd = GeneratePostProcessCommand()).Valid()) {
-			config.printf("Running post process command '%s'", postcmd.str());
-
-			success = postprocessed = RunCommand("nice " + postcmd);
-		}
-		else success = true;
-	
-		if (success) {
-			ADVBLock     lock("schedule");
-			ADVBProgList recordedlist;
-			AString  	 filename = config.GetRecordedFile();
-			ADVBProg 	 *prog;
-
-			recordedlist.ReadFromFile(filename);
-			if ((prog = recordedlist.FindUUIDWritable(*this)) != NULL) {
-				FILE_INFO info;
-				
-				if (::GetFileInfo(prog->GetFilename(), &info)) {
-					uint_t nsecs = (uint_t)(prog->GetActualLength() / 1000);
-					
-					config.printf("File '%s' exists and is %sMB, %u seconds = %skB/s", prog->GetFilename(), NUMSTR("", info.FileSize / (1024 * 1024)), nsecs, NUMSTR("", info.FileSize / (1024 * (uint64_t)nsecs)));
-
-					prog->SetFileSize(info.FileSize);
-					if (postprocessed) prog->SetPostProcessed();
-					else			   prog->ClearPostProcessed();
-					recordedlist.WriteToFile(filename);
-				}
-				else {
-					config.printf("File '%s' DOESN'T exists!", prog->GetFilename());
-					success = false;
-				}
-			}
-		}
-	}
-
-	ADVBProgList::RemoveFromList(config.GetProcessingFile(), *this);
-	ClearPostProcessing();
+	else success = true;
 
 	return success;
 }
@@ -2531,19 +2504,20 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 	return success;
 }
 
-bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
+bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AStdFile fp;
-	AString  src      = GetSourceFilename();
-	AString  dst      = GetFilename();
-	AString  basename = src.Prefix();
-	AString  src2     = GetSource2Filename();
-	AString  logfile  = basename + "_log.txt";
-	AString  proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
-	AString  args     = config.GetEncodeArgs(GetUser(), GetCategory());
-	bool     success  = true;
+	AString src  = GetFilename();
+	AString dst  = GenerateFilename(true);
+	bool success = true;
 
+	if (!config.ConvertVideos() || IsConverted() || (src == dst)) return success;
+
+	AString basename = src.Prefix();
+	AString logfile  = basename + "_log.txt";
+	AString proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
+	AString args     = config.GetEncodeArgs(GetUser(), GetCategory());
+	
 	CreateDirectory(dst.PathPart());
 
 	if (AStdFile::exists(src) &&
@@ -2565,6 +2539,8 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 	AList   delfiles;
 	
 	if (success && AStdFile::exists(src)) {
+		AStdFile fp;
+		
 		if (fp.open(logfile)) {
 			static const AString formatmarker = "new format in next leading sequenceheader detected";
 			static const AString videomarker  = "video basics";
@@ -2630,71 +2606,9 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 			success = false;
 		}
 	}
-	else if (!AStdFile::exists(src2)) {
-		AString format;
-		
-		if (AStdFile::exists(dst)) {
-			if (GetFileFormat(dst, format)) {
-				if ((format.Pos("MPEG Video") >= 0) ||
-					(format == "MPEG-TS")) {
-					config.printf("Copying '%s' to '%s'", dst.str(), src2.str());
-					success = CopyFile(dst, src2);
-				}
-				else {
-					config.printf("Cannot use '%s' as source because its format is '%s'", dst.str(), format.str());
-					success = false;
-				}
-			}
-			else {
-				config.printf("Failed to get format of '%s'", dst.str());
-				success = false;
-			}
-		}
-		else {
-			config.printf("No source file (either '%s' or '%s') found!", src.str(), src2.str());
-			success = false;
-		}
-	}
 
 	if (success) {
-		if (!splits.size() && AStdFile::exists(src2)) {
-			config.printf("Using existing file '%s'", src2.str());
-
-			bestaspect = config.GetConfigItem("aspect:" + ValidFilename(GetTitle()));
-			if (bestaspect.Valid()) config.printf("Using aspect '%s' from conf file", bestaspect.str());
-			
-			if (bestaspect.Empty()) {
-				AString cmd;
-				cmd.printf("%s -i \"%s\" 2>&1 | grep -o -E \"DAR [0-9]+:[0-9]+\" >\"%s\"", proccmd.str(), src2.str(), logfile.str());
-				(void)(system(cmd) == 0);
-				
-				AStdFile fp;
-				if (fp.open(logfile)) {
-					AString line;
-					
-					while (line.ReadLn(fp) >= 0) {
-						if (line.Pos("DAR ") == 0) {
-							bestaspect = line.Mid(4);
-							break;
-						}
-					}
-					
-					fp.close();
-				}
-				
-				remove(logfile);
-			}
-			
-			if (bestaspect.Empty()) {
-				bestaspect = "16:9";
-				config.printf("Unknown aspect, defaulting to %s", bestaspect.str());
-			}
-			
-			AString inputfiles;
-			inputfiles.printf("-i \"%s\"", src2.str());
-			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
-		}
-		else if (splits.size() == 1) {			
+		if (splits.size() == 1) {
 			config.printf("No need to split file");
 
 			ConvertSubtitles(src, dst, splits, bestaspect);
@@ -2785,6 +2699,12 @@ bool ADVBProg::ConvertVideoFile(bool verbose, bool cleanup)
 		}
 	}
 
+	if (success) {
+		SetFilename(dst);
+
+		UpdateFileSize((uint_t)(GetActualLength() / 1000));
+	}
+	
 	if (success && cleanup) {
 		CollectFiles(basename.PathPart(), basename.FilePart() + ".sup.*", RECURSE_ALL_SUBDIRS, delfiles);
 		CollectFiles(basename.PathPart(), basename.FilePart() + "-*.m2v", RECURSE_ALL_SUBDIRS, delfiles);
