@@ -1130,13 +1130,16 @@ AString ADVBProg::GetEpisodeString(const EPISODE& ep)
 
 AString ADVBProg::GetDescription(uint_t verbosity) const
 {
+	ADateTime start = GetStartDT().UTCToLocal();
+	ADateTime stop  = GetStopDT().UTCToLocal();
 	EPISODE ep;
 	AString str;
 	const char *p;
 
-	str.printf("%s - %s : %s : %s",
-			   GetStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m").str(),
-			   GetStopDT().UTCToLocal().DateFormat("%h:%m").str(),
+	str.printf("%s - %s%s : %s : %s",
+			   start.DateFormat("%d %D-%N-%Y %h:%m").str(),
+			   stop.DateFormat("%h:%m").str(),
+			   (stop.GetDays() != start.GetDays()) ? AString(" (%)").Arg(stop.DateFormat("%D-%N-%Y")).str() : "",
 			   GetChannel(),
 			   GetTitle());
 
@@ -1313,9 +1316,12 @@ AString ADVBProg::GetQuickDescription() const
 
 	if (IsRepeat()) str.printf(" (R)");
 
-	str.printf(" (%s - %s on %s)",
-			   GetStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m").str(),
-			   GetStopDT().UTCToLocal().DateFormat("%h:%m").str(),
+	ADateTime start = GetStartDT().UTCToLocal();
+	ADateTime stop  = GetStopDT().UTCToLocal();
+	str.printf(" (%s - %s%s on %s)",
+			   start.DateFormat("%d %D-%N-%Y %h:%m").str(),
+			   stop.DateFormat("%h:%m").str(),
+			   (stop.GetDays() != start.GetDays()) ? AString(" (%)").Arg(stop.DateFormat("%D-%N-%Y")).str() : "",
 			   GetChannel());
 
 	return str;
