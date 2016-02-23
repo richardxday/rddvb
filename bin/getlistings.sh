@@ -20,11 +20,3 @@ fi
 
 dvb --find-recorded-programmes-on-disk --check-recording-file --cards
 dvb --schedule
-
-LISTINGSFILE="archives/listings-sky-`date +%Y-%m-%d`.xmltv"
-if [ ! -f "$LISTINGSFILE.gz" ] ; then
-  tv_grab_uk_rt --config-file ~/.xmltv/tv_grab_uk_rt-sky.conf >"$LISTINGSFILE"
-  dvb --read "$LISTINGSFILE" --update-dvb-channels --write "skylistings.dat"
-  checksky.sh
-  gzip "$LISTINGSFILE"
-fi
