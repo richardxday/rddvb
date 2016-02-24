@@ -192,6 +192,7 @@ public:
 
 		_Flag_extra_start = 32,
 		Flag_exists = _Flag_extra_start,
+		Flag_converted,
 	};
 	void     SetFlags(uint32_t flags)	{data->flags = flags;}
 	uint32_t GetFlags()		   	  const {return data->flags;}
