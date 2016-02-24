@@ -52,6 +52,26 @@ int main(int argc, char *argv[])
 	int  i;
 	int  res = 0;
 
+#if 0
+	{
+		ADVBLock lock("recordlist");
+		ADVBProgList reclist;
+		if (reclist.ReadFromFile(config.GetRecordedFile())) {
+			uint_t i;
+			for (i = 0; i < reclist.Count(); i++) {
+				ADVBProg& prog = reclist.GetProgWritable(i);
+				AString   filename = prog.GetFilename();
+				AString   filename2;
+				
+				if ((filename2 = filename.SearchAndReplace("..", ".")) != filename) {
+					prog.SetFilename(filename2);
+				}
+			}
+			reclist.WriteToFile(config.GetRecordedFile());
+		}
+	}
+#endif
+	
 	(void)prog;
 	
 	if ((argc == 1) || ((argc > 1) && ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)))) {
@@ -123,8 +143,7 @@ int main(int argc, char *argv[])
 		printf("\t--force-failures\t\tAdd current list to recording failures (setting failed flag)\n");
 		printf("\t--show-encoding-args\t\tShow encoding arguments for programmes in current list\n");
 		printf("\t--show-file-format\t\tShow file format of encoded programme\n");
-		printf("\t--post-process\t\t\tPost process files in current list (this WILL alter the record list data)\n");
-		printf("\t--post-process-if-format\tPost process files in current list if file is the wrong format (this WILL alter the record list data)\n");
+		printf("\t--convert\t\t\tConvert files in current list (this WILL alter the record list data)\n");
 		printf("\t--delete-files\t\t\tDelete encoded files from programmes in current list\n");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
@@ -1026,7 +1045,12 @@ int main(int argc, char *argv[])
 
 					if (!prog.IsConverted()) {
 						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
+
+						AString oldfilename = prog.GetFilename();
+						
 						prog.ConvertVideo(true);
+
+						if (oldfilename != AString(prog.GetFilename())) prog.UpdateRecordedList();
 					}
 				}
 			}

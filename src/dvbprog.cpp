@@ -95,6 +95,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(postprocessing,		 Flag_postprocessing,	   "Programme recording being processing"),
 	DEFINE_FLAG(exists,				 Flag_exists,    	 	   "Programme exists"),
 	DEFINE_FLAG(notify,				 Flag_notify,    	 	   "Notify by when programme has recorded"),
+	DEFINE_FLAG(converted,			 Flag_converted,    	   "Programme has been converted"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
 	DEFINE_FIELD(series,   	  episode.series,   uint8_t,  "Series"),
@@ -122,8 +123,8 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_ASSIGN(dvbcard,    dvbcard,        	uint8_t, "DVB card to record from"),
 };
 
-const AString ADVBProg::tempfilesuffix     = ".tmp";
-const AString ADVBProg::recordedfilesuffix = ".mpg";
+const AString ADVBProg::tempfilesuffix     = "tmp";
+const AString ADVBProg::recordedfilesuffix = "mpg";
 
 ADVBProg::ADVBProg()
 {
@@ -365,6 +366,10 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 	switch (flag) {
 		case Flag_exists:
 			set = AStdFile::exists(GetFilename());
+			break;
+
+		case Flag_converted:
+			set = IsConverted();
 			break;
 	}
 
@@ -850,7 +855,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 		str.printf(",\"dvbcard\":%u", (uint_t)data->dvbcard);
 
 		const AString filename = GetString(data->strings.filename);
-		if (data->actstart && data->actstop && filename[0]) {
+		if (data->actstart && data->actstop && filename[0] && IsConverted()) {
 			str.printf(",\"exists\":%u", (uint_t)AStdFile::exists(filename));
 
 			AString relpath;
@@ -1552,7 +1557,7 @@ AString ADVBProg::GenerateFilename(bool converted) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString templ = config.GetFilenameTemplate(GetUser(), GetCategory());
-	AString dir   = converted ? CatPath(config.GetRecordingsDir(), GetRecordingSubDir()) : config.GetRecordingsStorageDir(GetUser());
+	AString dir   = converted ? GetRecordingSubDir() : config.GetRecordingsStorageDir(GetUser());
 	return ReplaceFilenameTerms(dir.CatPath(templ), converted);
 }
 
@@ -2050,7 +2055,11 @@ void ADVBProg::Record()
 							bool success = PostRecord();
 							if (success) success = ConvertVideo();
 							if (success) success = PostProcess();
-							if (success && addtorecorded) success = UpdateRecordedList();
+							if (success && addtorecorded) {
+								FlagsSaver saver(this);
+								ClearRunning();
+								success = UpdateRecordedList();
+							}
 							if (success) OnRecordSuccess();
 						}
 						else {
@@ -2107,7 +2116,7 @@ void ADVBProg::Record()
 
 AString ADVBProg::GetTempFilename() const
 {
-	return AString(GetFilename()).Prefix() + tempfilesuffix;
+	return AString(GetFilename()).Prefix() + "." + tempfilesuffix;
 }
 
 AString ADVBProg::ReplaceTerms(const AString& str) const
@@ -2513,10 +2522,19 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 
 	if (!config.ConvertVideos() || IsConverted() || (src == dst)) return success;
 
+	if (AStdFile::exists(dst)) {
+		config.printf("Warning: destination '%s' exists, assuming conversion is complete", dst.str());
+		SetFilename(dst);
+		return true;
+	}
+
+	config.printf("Source '%s' exists, destination '%s' does not exists", src.str(), dst.str());
+
 	AString basename = src.Prefix();
 	AString logfile  = basename + "_log.txt";
 	AString proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
 	AString args     = config.GetEncodeArgs(GetUser(), GetCategory());
+	ADateTime now;
 	
 	CreateDirectory(dst.PathPart());
 
@@ -2620,7 +2638,7 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
 		}
 		else {
-			AString remuxsrc = basename + "_Remuxed" + recordedfilesuffix;
+			AString remuxsrc = basename + "_Remuxed." + recordedfilesuffix;
 			
 			config.printf("Splitting file...");
 			
@@ -2642,7 +2660,7 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 					AString cmd;
 					AString outfile;
 					
-					outfile.printf("%s-%s-%u%s", basename.str(), bestaspect.SearchAndReplace(":", "_").str(), i, recordedfilesuffix.str());
+					outfile.printf("%s-%s-%u.%s", basename.str(), bestaspect.SearchAndReplace(":", "_").str(), i, recordedfilesuffix.str());
 
 					if (!AStdFile::exists(outfile)) {
 						cmd.printf("nice %s -fflags +genpts -i \"%s\" -ss %s", proccmd.str(), remuxsrc.str(), GenTime(split.start).str());
@@ -2658,7 +2676,7 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 			}
 
 			AStdFile ofp;
-			AString  concatfile = basename + "_Concat" + recordedfilesuffix;
+			AString  concatfile = basename + "_Concat." + recordedfilesuffix;
 			if (ofp.open(concatfile, "wb")) {
 				for (i = 0; i < files.size(); i++) {
 					AStdFile ifp;
@@ -2718,6 +2736,14 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 		remove(basename + ".m2v");
 		remove(basename + ".mp2");
 		remove(logfile);
+	}
+
+	if (success) {
+		uint64_t taken = ADateTime() - now;
+		config.printf("Converting '%s' took %ss%s",
+					  GetQuickDescription().str(),
+					  AValue((taken + 999) / 1000).ToString().str(),
+					  taken ? AString(" (%0.3;x real-time)").Arg((double)GetLength() / (double)taken).str() : "");
 	}
 	
 	return success;
