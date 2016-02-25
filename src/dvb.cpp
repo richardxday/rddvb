@@ -810,10 +810,10 @@ int main(int argc, char *argv[])
 				AString  dirs   = config.GetConfigItem("searchdirs", "");
 
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
-					uint_t i, j, n = dirs.CountLines(",");
+					uint_t j, k, n = dirs.CountLines(",");
 					uint_t found = 0;
 					
-					for (j = 0; j < reclist.Count(); j++) {
+					for (j = 0; (j < reclist.Count()) && !HasQuit(); j++) {
 						ADVBProg& prog = reclist.GetProgWritable(j);
 						FILE_INFO info;
 												
@@ -826,31 +826,31 @@ int main(int argc, char *argv[])
 						}
 					}
 
-					for (i = 0; i < n; i++) {
-						AString path = recdir.CatPath(dirs.Line(i, ","));
+					for (j = 0; (j < n) && !HasQuit(); j++) {
+						AString path = recdir.CatPath(dirs.Line(j, ","));
 						AList   dirs;
 
 						dirs.Add(new AString(path));
 						CollectFiles(path, "*", RECURSE_ALL_SUBDIRS, dirs, FILE_FLAG_IS_DIR, FILE_FLAG_IS_DIR);
 
 						const AString *dir = AString::Cast(dirs.First());
-						while (dir) {
+						while (dir && !HasQuit()) {
 							if (dir->FilePart() != "subs") {
 								config.printf("Searching '%s'...", dir->str());
 
-								for (j = 0; j < reclist.Count(); j++) {
-									ADVBProg& prog = reclist.GetProgWritable(j);
+								for (k = 0; (k < reclist.Count()) && !HasQuit(); k++) {
+									ADVBProg& prog = reclist.GetProgWritable(k);
 
 									if (!AStdFile::exists(prog.GetFilename()) || config.GetRelativePath(prog.GetFilename()).Empty()) {
-										AString filename1 = dir->CatPath(prog.GenerateFilename(true).FilePart());
-										AString filename2 = dir->CatPath(prog.GenerateFilename(false).FilePart());
+										AString filename1 = dir->CatPath(AString(prog.GetFilename()).FilePart());
+										AString filename2 = filename1.Prefix() + "." + config.GetConvertedFileSuffix(prog.GetUser());
 										
-										if (AStdFile::exists(filename1)) {
-											prog.SetFilename(filename1);
+										if (AStdFile::exists(filename2)) {
+											prog.SetFilename(filename2);
 											found++;
 										}
-										else if (AStdFile::exists(filename2)) {
-											prog.SetFilename(filename2);
+										else if (AStdFile::exists(filename1)) {
+											prog.SetFilename(filename1);
 											found++;
 										}
 									}
@@ -863,7 +863,7 @@ int main(int argc, char *argv[])
 
 					config.printf("Found %u previously orphaned programmes", found);
 
-					if (found) {
+					if (found && !HasQuit()) {
 						if (!reclist.WriteToFile(config.GetRecordedFile())) {
 							config.printf("Failed to write recorded programme list back!");
 						}
