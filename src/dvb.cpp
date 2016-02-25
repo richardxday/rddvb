@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
 		printf("\t--force-failures\t\tAdd current list to recording failures (setting failed flag)\n");
 		printf("\t--show-encoding-args\t\tShow encoding arguments for programmes in current list\n");
 		printf("\t--show-file-format\t\tShow file format of encoded programme\n");
-		printf("\t--convert\t\t\tConvert files in current list (this WILL alter the record list data)\n");
+		printf("\t--use-converted-filename\tChange filename to that of converted file, without actually without\n");
 		printf("\t--delete-files\t\t\tDelete encoded files from programmes in current list\n");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
@@ -1049,6 +1049,23 @@ int main(int argc, char *argv[])
 						AString oldfilename = prog.GetFilename();
 						
 						prog.ConvertVideo(true);
+
+						if (oldfilename != AString(prog.GetFilename())) prog.UpdateRecordedList();
+					}
+				}
+			}
+			else if (stricmp(argv[i], "--use-converted-filename") == 0) {
+				uint_t i;
+
+				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
+					ADVBProg& prog = proglist.GetProgWritable(i);
+
+					if (!prog.IsConverted()) {
+						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
+
+						AString oldfilename = prog.GetFilename();
+
+						prog.SetFilename(prog.GenerateFilename(true));
 
 						if (oldfilename != AString(prog.GetFilename())) prog.UpdateRecordedList();
 					}
