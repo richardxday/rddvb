@@ -818,7 +818,7 @@ int main(int argc, char *argv[])
 						FILE_INFO info;
 												
 						if (!AStdFile::exists(prog.GetFilename())) {
-							AString filename1 = prog.GenerateFilename();
+							AString filename1 = prog.GenerateFilename(prog.IsConverted());
 							if (AStdFile::exists(filename1)) {
 								prog.SetFilename(filename1);
 								found++;
@@ -842,8 +842,8 @@ int main(int argc, char *argv[])
 									ADVBProg& prog = reclist.GetProgWritable(j);
 
 									if (!AStdFile::exists(prog.GetFilename()) || config.GetRelativePath(prog.GetFilename()).Empty()) {
-										AString filename1 = dir->CatPath(AString(prog.GetFilename()).FilePart());
-										AString filename2 = filename1.Prefix() + ".mp4";
+										AString filename1 = dir->CatPath(prog.GenerateFilename(true).FilePart());
+										AString filename2 = dir->CatPath(prog.GenerateFilename(false).FilePart());
 										
 										if (AStdFile::exists(filename1)) {
 											prog.SetFilename(filename1);
