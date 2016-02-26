@@ -723,15 +723,15 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	AString str;
 	const char *p;
 
-	str.printf("\"start\":%lu", JSONTime(data->start));
-	str.printf(",\"stop\":%lu", JSONTime(data->stop));
+	str.printf("\"start\":%s", JSONTime(data->start).str());
+	str.printf(",\"stop\":%s", JSONTime(data->stop).str());
 	if (data->recstart || data->recstop) {
-		str.printf(",\"recstart\":%lu", JSONTime(data->recstart));
-		str.printf(",\"recstop\":%lu", JSONTime(data->recstop));
+		str.printf(",\"recstart\":%s", JSONTime(data->recstart).str());
+		str.printf(",\"recstop\":%s", JSONTime(data->recstop).str());
 	}
 	if (data->actstart || data->actstop) {
-		str.printf(",\"actstart\":%lu", JSONTime(data->actstart));
-		str.printf(",\"actstop\":%lu", JSONTime(data->actstop));
+		str.printf(",\"actstart\":%s", JSONTime(data->actstart).str());
+		str.printf(",\"actstop\":%s", JSONTime(data->actstop).str());
 	}
 	str.printf(",\"channel\":\"%s\"", JSONFormat(GetString(data->strings.channel)).str());
 	str.printf(",\"basechannel\":\"%s\"", JSONFormat(GetString(data->strings.basechannel)).str());
@@ -826,7 +826,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 #endif
 
 	str.printf(",\"flags\":{");
-	str.printf("\"bitmap\":%lu", (ulong_t)data->flags);
+	str.printf("\"bitmap\":%s", AValue(data->flags).ToString().str());
 	{
 		uint_t i;
 		AHash hash(20);

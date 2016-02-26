@@ -1155,7 +1155,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 						memcpy(&val2, ptr, sizeof(val2));
 
 						val = SUBZ(val2, val1);
-						//debug("Span: comparing %lu with %lu\n", (ulong_t)val, (ulong_t)term.value.u64);
+						//debug("Span: comparing %s with %s\n", AValue(val).ToString().str(), AValue(term.value.u64).ToString().str());
 						res = COMPARE_ITEMS(val, term.value.u64);
 						break;
 					}
@@ -1167,7 +1167,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 						val2 = (uint64_t)ADateTime().TimeStamp(true);
 
 						val = SUBZ(val2, val1);
-						//debug("Age: comparing %lu with %lu\n", (ulong_t)val, (ulong_t)term.value.u64);
+						//debug("Age: comparing %s with %s\n", AValue(val).ToString().str(), AValue(term.value.u64).ToString().str());
 						res = COMPARE_ITEMS(val, term.value.u64);
 						break;
 					}

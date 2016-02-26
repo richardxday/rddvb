@@ -11,11 +11,11 @@ AString JSONFormat(const AString& str)
 	return str.SearchAndReplace("/", "\\/").SearchAndReplace("\"", "\\\"").SearchAndReplace("\n", "\\n");
 }
 
-ulong_t JSONTime(uint64_t dt)
+AString JSONTime(uint64_t dt)
 {
 	// calculate number of milliseconds between midnight 1-jan-1970 to midnight 1-jan-1980 (1972 and 1976 were leap years)
 	static const uint64_t offset = ADateTime::DaysSince1970 * 24ULL * 3600ULL * 1000ULL;
-	return (ulong_t)(dt + offset);
+	return AValue(dt + offset).ToString();
 }
 
 AString CatPath(const AString& dir1, const AString& dir2)
