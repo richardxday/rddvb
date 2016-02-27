@@ -2518,10 +2518,14 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString src  = GetFilename();
 	AString dst  = GenerateFilename(true);
-	bool success = true;
 
-	if (!config.ConvertVideos() || IsConverted() || (src == dst)) return success;
+	if (!config.ConvertVideos() || IsConverted() || (src == dst)) return true;
 
+	if (!AStdFile::exists(src)) {
+		config.printf("Error: source '%s' does not exists", src.str());
+		return false;
+	}
+	
 	if (AStdFile::exists(dst)) {
 		config.printf("Warning: destination '%s' exists, assuming conversion is complete", dst.str());
 		SetFilename(dst);
@@ -2535,6 +2539,7 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 	AString proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
 	AString args     = config.GetEncodeArgs(GetUser(), GetCategory());
 	ADateTime now;
+	bool    success = true;
 	
 	CreateDirectory(dst.PathPart());
 
