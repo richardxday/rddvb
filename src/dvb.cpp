@@ -57,9 +57,9 @@ int main(int argc, char *argv[])
 		ADVBLock lock("recordlist");
 		ADVBProgList reclist;
 		if (reclist.ReadFromFile(config.GetRecordedFile())) {
-			uint_t i;
-			for (i = 0; i < reclist.Count(); i++) {
-				ADVBProg& prog = reclist.GetProgWritable(i);
+			uint_t j;
+			for (j = 0; j < reclist.Count(); j++) {
+				ADVBProg& prog = reclist.GetProgWritable(j);
 				AString   filename = prog.GetFilename();
 				AString   filename2;
 				
@@ -84,9 +84,9 @@ int main(int argc, char *argv[])
 		printf("\t--update <file>\t\t\tUpdate main listings with file <file> (-u)\n");
 		printf("\t--load\t\t\t\tRead listings from default file (-l)\n");
 		printf("\t--read <file>\t\t\tRead listings from file <file> (-r)\n");
-		printf("\t--read-radio-listings\t\tDownload BBC radio listings\n");
 		printf("\t--jobs\t\t\t\tRead programmes from scheduled jobs\n");
 		printf("\t--write <file>\t\t\tWrite listings to file <file> (-w)\n");
+		printf("\t--merge-into-recorded <file>\tMerge <file> into recorded programmes list\n");
 		printf("\t--sort\t\t\t\tSort list in chronological order\n");
 		printf("\t--sort-rev\t\t\tSort list in reverse-chronological order\n");
 		printf("\t--writetxt <file>\t\tWrite listings to file <file> in text format\n");
@@ -222,10 +222,6 @@ int main(int argc, char *argv[])
 					printf("Failed to read programme list from '%s'\n", filename.str());
 				}
 			}
-			else if (strcmp(argv[i], "--read-radio-listings") == 0) {
-				proglist.ReadRadioListings();
-				printf("Read radio listings, total now %u\n", proglist.Count());
-			}
 			else if (strcmp(argv[i], "--jobs") == 0) {
 				printf("Reading programmes from job queue...\n");
 				if (proglist.ReadFromJobList()) {
@@ -289,8 +285,8 @@ int main(int argc, char *argv[])
 				if (errors.Valid()) {
 					printf("Errors:\n");
 
-					uint_t i, n = errors.CountLines();
-					for (i = 0; i < n; i++) printf("%s\n", errors.Line(i).str());
+					uint_t j, n = errors.CountLines();
+					for (j = 0; j < n; j++) printf("%s\n", errors.Line(j).str());
 				}
 
 				printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
@@ -570,6 +566,41 @@ int main(int argc, char *argv[])
 					printf("Failed to write programme list to '%s'\n", filename.str());
 				}
 			}
+			else if (strcmp(argv[i], "--merge-into-recorded") == 0) {
+				ADVBProgList newlist;
+				AString filename = argv[++i];
+
+				if (newlist.ReadFromFile(filename)) {
+					ADVBLock     lock("recordlist");
+					ADVBProgList reclist;
+
+					if (reclist.ReadFromFile(config.GetRecordedFile())) {
+						uint_t j, added = 0;
+
+						reclist.CreateHash();
+						for (j = 0; j < newlist.Count(); j++) {
+							const ADVBProg& prog = newlist.GetProg(j);
+
+							if (!reclist.FindUUID(prog)) {
+								config.printf("Adding '%s' to recorded programmes", prog.GetQuickDescription().str());
+								reclist.AddProg(prog);
+								proglist.AddProg(prog);
+								added++;
+							}
+						}
+
+						if (added) {
+							if (!reclist.WriteToFile(config.GetRecordedFile())) {
+								config.printf("Failed to write recorded programme list back!");
+							}
+						}
+
+						config.printf("Added %u programmes from '%s'", added, filename.str());
+					}
+					else config.printf("Failed to read recorded programmes from '%s'", config.GetRecordedFile().str());
+				}
+				else config.printf("Failed to read programmes from '%s'", filename.str());
+			}
 			else if ((strcmp(argv[i], "--sort") == 0) || (strcmp(argv[i], "--sort-rev") == 0)) {
 				bool reverse = (strcmp(argv[i], "--sort-rev") == 0);
 				proglist.Sort(reverse);
@@ -709,6 +740,7 @@ int main(int argc, char *argv[])
 						}
 						else config.printf("Failed to find programme with filename '%s'", filename1.str());
 					}
+					else config.printf("Failed to find recorded programmes from '%s'", config.GetRecordedFile().str());
 				}
 			}
 			else if ((strcmp(argv[i], "--change-filename-regex")      == 0) ||

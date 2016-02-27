@@ -27,7 +27,6 @@ public:
 	bool ReadFromFile(const AString& filename);
 	bool ReadFromXMLTVFile(const AString& filename);
 	bool ReadFromTextFile(const AString& filename);
-	bool ReadRadioListings();
 	bool ReadFromJobList(bool runningonly = false);
 	
 	void UpdateDVBChannels();
@@ -147,7 +146,6 @@ protected:
 	uint_t ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allscheduledlist, ADVBProgList& allrejectedlist, const ADateTime& starttime, uint_t card);
 
 	bool ReadFromBinaryFile(const AString& filename, bool sort = false, bool removeoverlaps = false);
-	bool ReadRadioListingsFromHTMLFile(const AString& filename, const AString& channel, const AString& channelid, uint32_t day, bool removeoverlaps);
 
 	static void DeleteChannel(uptr_t item, void *context) {
 		CHANNEL *channel = (CHANNEL *)item;
