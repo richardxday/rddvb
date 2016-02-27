@@ -54,10 +54,6 @@ var filters = [
 		title:"Clear Filter",
 		filter:{titlefilter:"",expanded:-1,fetch:true},
 	},
-	{
-		title:"Sky",
-		filter:{from:"Sky",titlefilter:"",timefilter:"start>now",expanded:-1,fetch:true},
-	},
 	{text:"<br>DVB Logs:<br>"},
 	{
 		title:"Today",
