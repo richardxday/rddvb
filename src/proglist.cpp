@@ -1948,6 +1948,9 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	uint_t   dvbcard      = config.GetPhysicalDVBCard(card);
 	uint_t   i;
 
+	// rotate DVB cards every day
+	if (config.RotateDVBCards() && config.GetMaxDVBCards()) dvbcard = (dvbcard + (ADateTime().GetDays() % config.GetMaxDVBCards())) % config.GetMaxDVBCards();
+	
 	// allow at least 30s before first schedule point
 	recstarttime += 30000ULL;
 
