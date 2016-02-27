@@ -2726,6 +2726,13 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 		SetFilename(dst);
 
 		UpdateFileSize((uint_t)(GetActualLength() / 1000));
+
+		AString adst = config.GetRecordingsArchiveDir(GetUser()).CatPath(src.FilePart());
+		config.logit("Moving '%s' to archive directory as '%s'", src.str(), adst.str());
+		if (CopyFile(src, adst)) {
+			remove(src);
+		}
+		else success = false;
 	}
 	
 	if (success && cleanup) {

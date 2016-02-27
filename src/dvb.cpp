@@ -1038,21 +1038,26 @@ int main(int argc, char *argv[])
 				}
 			}
 			else if (stricmp(argv[i], "--convert") == 0) {
-				uint_t i;
+				uint_t i, converted = 0;
 
 				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
 					ADVBProg& prog = proglist.GetProgWritable(i);
 
 					if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
-						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
+						config.printf("Converting file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
 
 						AString oldfilename = prog.GetFilename();
 						
 						prog.ConvertVideo(true);
 
-						if (oldfilename != AString(prog.GetFilename())) prog.UpdateRecordedList();
+						if (oldfilename != AString(prog.GetFilename())) {
+							prog.UpdateRecordedList();
+							converted++;
+						}
 					}
 				}
+
+				printf("Converted %u programmes\n", converted);
 			}
 			else if (stricmp(argv[i], "--use-converted-filename") == 0) {
 				uint_t i;
