@@ -1043,7 +1043,7 @@ int main(int argc, char *argv[])
 				for (i = 0; (i < proglist.Count()) && !HasQuit(); i++) {
 					ADVBProg& prog = proglist.GetProgWritable(i);
 
-					if (!prog.IsConverted()) {
+					if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
 						config.printf("Post processing file %u/%u - '%s':", i + 1, proglist.Count(), prog.GetQuickDescription().str());
 
 						AString oldfilename = prog.GetFilename();
