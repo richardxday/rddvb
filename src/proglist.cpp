@@ -684,8 +684,8 @@ bool ADVBProgList::ReadFromJobQueue(int queue, bool runningonly)
 	AString cmd1, cmd2, cmd;
 	bool success = false;
 
-	cmd2.printf("atq -q = >%s", listname.str());
-	if (!runningonly) cmd1.printf("atq -q %c >>%s", queue, listname.str());
+	cmd1.printf("atq -q = >%s", listname.str());
+	if (!runningonly) cmd2.printf("atq -q %c >>%s", queue, listname.str());
 
 	if ((system(cmd1) == 0) && (system(cmd2) == 0)) {
 		AStdFile fp;
