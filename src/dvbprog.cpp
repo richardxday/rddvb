@@ -2378,6 +2378,19 @@ bool ADVBProg::CopyFile(const AString& src, const AString& dst, bool binary)
 	return success;
 }
 
+bool ADVBProg::MoveFile(const AString& src, const AString& dst, bool binary)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	bool success = false;
+
+	if (CopyFile(src, dst, binary)) {
+		if (remove(src) == 0) success = true;
+		else config.logit("Failed to remove '%s' after copy", src.str());
+	}
+
+	return success;
+}
+
 void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -2504,8 +2517,7 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 
 			if (i) append.printf("-%u", i);
 			
-			success &= CopyFile(tempdst, outputfile.Prefix() + append + "." + outputfile.Suffix(), true);
-			remove(tempdst);
+			success &= MoveFile(tempdst, outputfile.Prefix() + append + "." + outputfile.Suffix(), true);
 		}
 		else success = false;
 	}
@@ -2731,10 +2743,7 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 		config.logit("Moving '%s' to archive directory as '%s'", src.str(), adst.str());
 
 		CreateDirectory(adst.PathPart());
-		if (CopyFile(src, adst)) {
-			remove(src);
-		}
-		else success = false;
+		success = MoveFile(src, adst);
 	}
 	
 	if (success && cleanup) {
