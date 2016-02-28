@@ -860,6 +860,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 
 			AString relpath;
 			if (AStdFile::exists(filename) && (relpath = config.GetRelativePath(filename)).Valid()) {
+				str.printf(",\"baseurl\":\"%s\"", JSONFormat(config.GetBaseURL()).str());
 				str.printf(",\"file\":\"%s\"", JSONFormat(relpath).str());
 				str.printf(",\"subfiles\":[");
 				
