@@ -371,14 +371,14 @@ function adddownloadlink(prog)
 {
 	var str = '';
 	
-	str += '<a href="' + prog.file + '" download title="Download ' + prog.title + ' to computer">Download</a>';
-	str += ' or <a href="video.php?prog=' + encodeURIComponent(prog.base64) + '" title="Watch ' + prog.title + ' in browser" target=_blank>Watch</a>';
+	str += '<a href="' + prog.baseurl + prog.file + '" download title="Download ' + prog.title + ' to computer">Download</a>';
+	str += ' or <a href="' + prog.baseurl + 'video.php?prog=' + encodeURIComponent(prog.base64) + '" title="Watch ' + prog.title + ' in browser" target=_blank>Watch</a>';
 	if ((typeof prog.subfiles != 'undefined') && (prog.subfiles.length > 0)) {
 		var i;
 
 		str += '<br>(Sub files:';
 		for (i = 0; i < prog.subfiles.length; i++) {
-			str += '&nbsp;<a href="' + prog.subfiles[i] + '" download title="Download ' + prog.title + ' sub file ' + (i + 1) + ' to computer">' + (i + 1) + '</a>';
+			str += '&nbsp;<a href="' + prog.baseurl + prog.subfiles[i] + '" download title="Download ' + prog.title + ' sub file ' + (i + 1) + ' to computer">' + (i + 1) + '</a>';
 		}
 		str += ')';
 	}
