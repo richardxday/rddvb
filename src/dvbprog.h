@@ -483,6 +483,7 @@ protected:
 	static AString GetParentheses(const AString& line, int p = 0);
 	static bool CopyFile(AStdData& fp1, AStdData& fp2);
 	static bool CopyFile(const AString& src, const AString& dst, bool binary = true);
+	static bool MoveFile(const AString& src, const AString& dst, bool binary = true);
 
 	typedef struct {
 		AString  aspect;
