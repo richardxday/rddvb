@@ -86,7 +86,8 @@ int main(int argc, char *argv[])
 		printf("\t--read <file>\t\t\tRead listings from file <file> (-r)\n");
 		printf("\t--jobs\t\t\t\tRead programmes from scheduled jobs\n");
 		printf("\t--write <file>\t\t\tWrite listings to file <file> (-w)\n");
-		printf("\t--merge-into-recorded <file>\tMerge <file> into recorded programmes list\n");
+		printf("\t--update-recorded-with-new-recordings <file> Update recorded programme list with programmes from <file> that do not exist\n");
+		printf("\t--update-recorded-with-converted <file> Update recorded programme list with programmes from <file> that have been converted\n");
 		printf("\t--sort\t\t\t\tSort list in chronological order\n");
 		printf("\t--sort-rev\t\t\tSort list in reverse-chronological order\n");
 		printf("\t--writetxt <file>\t\tWrite listings to file <file> in text format\n");
@@ -566,7 +567,7 @@ int main(int argc, char *argv[])
 					printf("Failed to write programme list to '%s'\n", filename.str());
 				}
 			}
-			else if (strcmp(argv[i], "--merge-into-recorded") == 0) {
+			else if (strcmp(argv[i], "--update-recorded-with-new-recordings") == 0) {
 				ADVBProgList newlist;
 				AString filename = argv[++i];
 
@@ -596,6 +597,44 @@ int main(int argc, char *argv[])
 						}
 
 						config.printf("Added %u programmes from '%s'", added, filename.str());
+					}
+					else config.printf("Failed to read recorded programmes from '%s'", config.GetRecordedFile().str());
+				}
+				else config.printf("Failed to read programmes from '%s'", filename.str());
+			}
+			else if (strcmp(argv[i], "--update-recorded-with-converted") == 0) {
+				ADVBProgList newlist;
+				AString filename = argv[++i];
+
+				if (newlist.ReadFromFile(filename)) {
+					ADVBLock     lock("recordlist");
+					ADVBProgList reclist;
+
+					if (reclist.ReadFromFile(config.GetRecordedFile())) {
+						uint_t j, updated = 0;
+
+						reclist.CreateHash();
+						for (j = 0; j < newlist.Count(); j++) {
+							const ADVBProg& newprog = newlist.GetProg(j);
+							ADVBProg *prog;
+
+							if (((prog = reclist.FindUUIDWritable(newprog)) != NULL) &&
+								!prog->IsConverted() &&
+								newprog.IsConverted()) {
+								config.printf("Updating '%s' in recorded programmes", prog->GetQuickDescription().str());
+								prog->SetFilename(newprog.GetFilename());
+								prog->SetFileSize(newprog.GetFileSize());
+								updated++;
+							}
+						}
+
+						if (updated) {
+							if (!reclist.WriteToFile(config.GetRecordedFile())) {
+								config.printf("Failed to write recorded programme list back!");
+							}
+						}
+
+						config.printf("Updated %u programmes from '%s'", updated, filename.str());
 					}
 					else config.printf("Failed to read recorded programmes from '%s'", config.GetRecordedFile().str());
 				}
