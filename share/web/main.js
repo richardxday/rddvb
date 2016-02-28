@@ -372,7 +372,7 @@ function adddownloadlink(prog)
 	var str = '';
 	
 	str += '<a href="' + prog.baseurl + prog.file + '" download title="Download ' + prog.title + ' to computer">Download</a>';
-	str += ' or <a href="' + prog.baseurl + 'video.php?prog=' + encodeURIComponent(prog.base64) + '" title="Watch ' + prog.title + ' in browser" target=_blank>Watch</a>';
+	str += ' or <a href="' + prog.baseurl + '/dvb/video.php?prog=' + encodeURIComponent(prog.base64) + '" title="Watch ' + prog.title + ' in browser" target=_blank>Watch</a>';
 	if ((typeof prog.subfiles != 'undefined') && (prog.subfiles.length > 0)) {
 		var i;
 
