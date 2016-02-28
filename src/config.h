@@ -88,7 +88,7 @@ public:
 	AString GetPriorityDVBPIDs()			 const {return GetConfigItem("prioritypids", "");}
 	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");}
 
-	AString GetBaseURL()					 const {return GetConfigItem("baseurl", "http://richardday.duckdns.org/");}
+	AString GetBaseURL()					 const {return GetConfigItem("baseurl", "http://richardday.duckdns.org");}
 	
 	bool    ForceSubs(const AString& user)   const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
 
