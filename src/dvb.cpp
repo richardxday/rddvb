@@ -88,6 +88,7 @@ int main(int argc, char *argv[])
 		printf("\t--write <file>\t\t\tWrite listings to file <file> (-w)\n");
 		printf("\t--update-recorded-with-new-recordings <file> Update recorded programme list with programmes from <file> that do not exist\n");
 		printf("\t--update-recorded-with-converted <file> Update recorded programme list with programmes from <file> that have been converted\n");
+		printf("\t--update-exists\t\tUpdate flag indicating whether file exists on media server (this machine)\n");
 		printf("\t--sort\t\t\t\tSort list in chronological order\n");
 		printf("\t--sort-rev\t\t\tSort list in reverse-chronological order\n");
 		printf("\t--writetxt <file>\t\tWrite listings to file <file> in text format\n");
@@ -621,8 +622,8 @@ int main(int argc, char *argv[])
 								!prog->IsConverted() &&
 								newprog.IsConverted()) {
 								config.printf("Updating '%s' in recorded programmes", prog->GetQuickDescription().str());
-								prog->SetFilename(newprog.GetFilename());
-								prog->SetFileSize(newprog.GetFileSize());
+								prog->Modify(newprog);
+								prog->UpdateExistsOnMediaServer();
 								updated++;
 							}
 						}
@@ -638,6 +639,33 @@ int main(int argc, char *argv[])
 					else config.printf("Failed to read recorded programmes from '%s'", config.GetRecordedFile().str());
 				}
 				else config.printf("Failed to read programmes from '%s'", filename.str());
+			}
+			else if ((strcmp(argv[i], "--update-exists") == 0) || (strcmp(argv[i], "--update-exists-all") == 0)) {
+				ADVBLock     lock("recordlist");
+				ADVBProgList reclist;
+				bool		 full = (strcmp(argv[i], "--update-exists-all") == 0);
+				
+				if (reclist.ReadFromFile(config.GetRecordedFile())) {
+					uint_t j, updated = 0;
+
+					for (j = 0; j < reclist.Count(); j++) {
+						ADVBProg& prog = reclist.GetProgWritable(j);
+						bool oldstate = prog.ExistsOnMediaServer();
+						
+						if (prog.IsConverted() && (full || oldstate)) {
+							prog.UpdateExistsOnMediaServer();
+							updated += (prog.ExistsOnMediaServer() != oldstate);
+						}
+					}
+
+					config.printf("%u programmes changed", updated);
+					
+					if (updated) {
+						if (!reclist.WriteToFile(config.GetRecordedFile())) {
+							config.printf("Failed to write recorded programme list back!");
+						}
+					}
+				}
 			}
 			else if ((strcmp(argv[i], "--sort") == 0) || (strcmp(argv[i], "--sort-rev") == 0)) {
 				bool reverse = (strcmp(argv[i], "--sort-rev") == 0);

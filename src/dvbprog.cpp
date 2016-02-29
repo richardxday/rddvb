@@ -95,6 +95,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(exists,				 Flag_exists,    	 	   "Programme exists"),
 	DEFINE_FLAG(notify,				 Flag_notify,    	 	   "Notify by when programme has recorded"),
 	DEFINE_FLAG(converted,			 Flag_converted,    	   "Programme has been converted"),
+	DEFINE_FLAG(existsonmediaserver, Flag_existsonmediaserver, "Programme exists on media server"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
 	DEFINE_FIELD(series,   	  episode.series,   uint8_t,  "Series"),
@@ -854,34 +855,44 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 		str.printf(",\"dvbcard\":%u", (uint_t)data->dvbcard);
 
 		const AString filename = GetString(data->strings.filename);
-		if (data->actstart && data->actstop && filename[0] && IsConverted()) {
-			AString relpath;
-			bool exists = AStdFile::exists(filename);
+		AString relpath;
+		if (data->actstart && data->actstop && filename[0] && IsConverted() && (relpath = config.GetRelativePath(filename)).Valid()) {
+			AList subfiles;
+			bool  exists;
+				
+			if (config.IsMediaServer()) {
+				exists = AStdFile::exists(filename);
+					
+				if (exists) CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, subfiles);
+			}
+			else exists = ExistsOnMediaServer();
 			
 			str.printf(",\"exists\":%u", (uint_t)exists);
-			if (exists && (relpath = config.GetRelativePath(filename)).Valid()) {
-				str.printf(",\"baseurl\":\"%s\"", JSONFormat(config.GetBaseURL()).str());
+			if (exists) {
+				str.printf(",\"mediaserverurl\":\"%s\"", JSONFormat(config.GetMediaServerURL()).str());
 				str.printf(",\"file\":\"%s\"", JSONFormat(relpath).str());
-				str.printf(",\"subfiles\":[");
-				
-				AList list;
-				CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, list);
-				const AString *subfile = AString::Cast(list.First());
+
+				const AString *subfile = AString::Cast(subfiles.First());
 				bool first = true;
 				while (subfile) {
 					if ((*subfile != filename) && (relpath = config.GetRelativePath(*subfile)).Valid()) {
-						if (first) first = false;
+						if (first) {
+							str.printf(",\"subfiles\":[");
+							first = false;
+						}
 						else str.printf(",");
+
 						str.printf("\"%s\"", JSONFormat(relpath).str());
 					}
+					
 					subfile = subfile->Next();
 				}
 
-				str.printf("]");
+				if (!first) str.printf("]");
 			}
 		}
 	}
-
+	
 	if (includebase64) {
 		str.printf(",\"base64\":\"%s\"", Base64Encode().str());
 	}
@@ -896,7 +907,7 @@ void ADVBProg::Delete()
 		data = (DVBPROG *)calloc(1, maxsize);
 	}
 	else memset(data, 0, maxsize);
-
+	
 	if (data) {
 		uint16_t *strings = &data->strings.channel;
 		uint_t i;
@@ -1120,6 +1131,7 @@ AString ADVBProg::GetEpisodeString(const EPISODE& ep)
 
 AString ADVBProg::GetDescription(uint_t verbosity) const
 {
+	const ADVBConfig& config = ADVBConfig::Get();
 	ADateTime start = GetStartDT().UTCToLocal();
 	ADateTime stop  = GetStopDT().UTCToLocal();
 	EPISODE ep;
@@ -1260,6 +1272,12 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 			str1.printf("%s as '%s'.", data->actstart ? "Recorded" : (data->recstart ? "To be recorded" : "Would be recorded"), GetFilename());
 
 			if (IsPostProcessing()) str1.printf(" Current being post-processed.");
+
+			bool exists = config.IsMediaServer() ? AStdFile::exists(GetFilename()) : ExistsOnMediaServer();
+			str1.printf(" File %sexists",  exists ? "" : "does *not* ");
+			if (!config.IsMediaServer() && exists) str1.printf(" (on media server)");
+			if (exists) str1.printf(" and is %sMB in size", AValue(GetFileSize() / (1024 * 1024)).ToString().str());
+			str1.printf(".");
 		}
 
 		if (str1.Valid()) str.printf("\n%s\n", str1.str());
@@ -2144,7 +2162,7 @@ AString ADVBProg::GetLinkToFile() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString relpath = config.GetRelativePath(GetFilename());
-	return relpath.Valid() ? config.GetBaseURL().CatPath(relpath) : "";
+	return relpath.Valid() ? config.GetMediaServerURL().CatPath(relpath) : "";
 }
 
 bool ADVBProg::OnRecordSuccess() const
