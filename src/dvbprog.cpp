@@ -87,7 +87,6 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(recorded,  		   	 Flag_recorded,  	 	   "Programme recorded"),
 	DEFINE_FLAG(scheduled, 		   	 Flag_scheduled, 	 	   "Programme scheduled"),
 	DEFINE_FLAG(dvbcardspecified, 	 Flag_dvbcardspecified,    "Programme to be recorded on specified DVB card"),
-	DEFINE_FLAG(radioprogramme,    	 Flag_radioprogramme,      "Programme is a Radio programme"),
 	DEFINE_FLAG(incompleterecording, Flag_incompleterecording, "Programme recorded is incomplete"),
 	DEFINE_FLAG(ignorerecording,     Flag_ignorerecording,     "Programme recorded should be ignored when scheduling"),
 	DEFINE_FLAG(failed,				 Flag_recordingfailed,     "Programme recording failed"),
@@ -856,10 +855,11 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 
 		const AString filename = GetString(data->strings.filename);
 		if (data->actstart && data->actstop && filename[0] && IsConverted()) {
-			str.printf(",\"exists\":%u", (uint_t)AStdFile::exists(filename));
-
 			AString relpath;
-			if (AStdFile::exists(filename) && (relpath = config.GetRelativePath(filename)).Valid()) {
+			bool exists = AStdFile::exists(filename);
+			
+			str.printf(",\"exists\":%u", (uint_t)exists);
+			if (exists && (relpath = config.GetRelativePath(filename)).Valid()) {
 				str.printf(",\"baseurl\":\"%s\"", JSONFormat(config.GetBaseURL()).str());
 				str.printf(",\"file\":\"%s\"", JSONFormat(relpath).str());
 				str.printf(",\"subfiles\":[");
@@ -2159,7 +2159,7 @@ bool ADVBProg::OnRecordSuccess() const
 		success = RunCommand("nice " + cmd);
 	}
 
-	if (NotifySet() && (cmd = config.GetUserConfigItem(user, "notifycmd")).Valid()) {
+	if (IsNotifySet() && (cmd = config.GetUserConfigItem(user, "notifycmd")).Valid()) {
 		cmd = ReplaceTerms(cmd);
 		
 		success = RunCommand("nice " + cmd);

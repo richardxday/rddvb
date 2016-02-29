@@ -122,7 +122,6 @@ int main(int argc, char *argv[])
 		printf("\t--schedule-list\t\t\tSchedule current list of programmes (-S)\n");
 		printf("\t--record <prog>\t\t\tRecord programme <prog> (Base64 encoded)\n");
 		printf("\t--add-recorded <prog>\t\tAdd recorded programme <prog> to recorded list (Base64 encoded)\n");
-		printf("\t--record-list\t\t\tSet the current list to record, ensuring they don't clash with the current set of jobs\n");
 		printf("\t--pids <channel>\t\tFind PIDs (all streams) associated with channel <channel>\n");
 		printf("\t--scan <freq>[,<freq>...]\tScan frequencies <freq>MHz for DVB channels\n");
 		printf("\t--scan-all\t\t\tScan all known frequencies for DVB channels\n");
@@ -707,9 +706,6 @@ int main(int argc, char *argv[])
 					ADVBProgList::AddToList(config.GetRecordedFile(), prog, true, true);
 				}
 				else config.printf("Failed to decode programme '%s'\n", progstr.str());
-			}
-			else if (strcmp(argv[i], "--record-list") == 0) {
-				proglist.SimpleSchedule();
 			}
 			else if (strcmp(argv[i], "--pids") == 0) {
 				ADVBChannelList& list = ADVBChannelList::Get();

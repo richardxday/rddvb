@@ -86,8 +86,6 @@ public:
 	void PrioritizeProgrammes(uint_t card, ADVBProgList& scheduledlist, ADVBProgList& rejectedlist, uint64_t recstarttime);
 	uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));
 
-	void SimpleSchedule();
-
 	typedef struct {
 		AString   title;
 		ADataList list;

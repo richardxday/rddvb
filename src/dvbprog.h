@@ -170,22 +170,20 @@ public:
 		Flag_allowrepeats,
 		Flag_urgent,
 		Flag_fakerecording,
-		Flag_manualrecording,
-		Flag_running,
 		Flag_markonly,
+		Flag_running,
+		Flag_recording,
 		Flag_postprocess,
 		Flag_postprocessed,
 		Flag_onceonly,
 		Flag_rejected,
 		Flag_recorded,
 		Flag_scheduled,
-		Flag_radioprogramme,
+		Flag_postprocessing,
 		Flag_dvbcardspecified,
 		Flag_incompleterecording,
 		Flag_ignorerecording,
 		Flag_recordingfailed,
-		Flag_recording,
-		Flag_postprocessing,
 		Flag_notify,
 		
 		Flag_count,
@@ -206,19 +204,21 @@ public:
 	bool   AllowRepeats()      	  const {return GetFlag(Flag_allowrepeats);}
 	bool   IsUrgent()		   	  const {return GetFlag(Flag_urgent);}
 	bool   IsFakeRecording()   	  const {return GetFlag(Flag_fakerecording);}
-	bool   IsManualRecording() 	  const {return GetFlag(Flag_manualrecording);}
-	void   SetManualRecording()	        {SetFlag(Flag_manualrecording);}
+	bool   IsMarkOnly()			  const {return GetFlag(Flag_markonly);}
+	void   SetMarkOnly()				{SetFlag(Flag_markonly);}
 	bool   IsRunning() 		   	  const {return GetFlag(Flag_running);}
 	void   SetRunning()		   	  		{SetFlag(Flag_running);}
 	void   ClearRunning()		   	  	{ClrFlag(Flag_running);}
-	bool   IsMarkOnly()			  const {return GetFlag(Flag_markonly);}
-	void   SetMarkOnly()				{SetFlag(Flag_markonly);}
+	bool   IsRecording() 		  const {return GetFlag(Flag_recording);}
+	void   SetRecording()	   	  		{SetFlag(Flag_recording);}
+	void   ClearRecording()		   	  	{ClrFlag(Flag_recording);}
 	bool   RunPostProcess()       const {return GetFlag(Flag_postprocess);}
 	bool   IsPostProcessed()	  const {return GetFlag(Flag_postprocessed);}
 	void   SetPostProcessed()			{SetFlag(Flag_postprocessed);}
 	void   ClearPostProcessed()			{ClrFlag(Flag_postprocessed);}
 	bool   IsOnceOnly()			  const {return GetFlag(Flag_onceonly);}
 	void   SetOnceOnly()				{SetFlag(Flag_onceonly);}
+
 	bool   IsRejected()			  const {return GetFlag(Flag_rejected);}
 	void   SetRejected()				{SetFlag(Flag_rejected); data->recstart = data->recstop = 0;}
 	bool   IsRecorded()			  const {return GetFlag(Flag_recorded);}
@@ -227,8 +227,9 @@ public:
 	bool   IsScheduled()		  const {return GetFlag(Flag_scheduled);}
 	void   SetScheduled()				{SetFlag(Flag_scheduled);}
 	void   ClearScheduled()				{ClrFlag(Flag_scheduled);}
-	bool   IsRadioProgramme()	  const {return GetFlag(Flag_radioprogramme);}
-	void   SetRadioProgramme()			{SetFlag(Flag_radioprogramme);}
+	bool   IsPostProcessing()	  const {return GetFlag(Flag_postprocessing);}
+	void   SetPostProcessing()			{SetFlag(Flag_postprocessing);}
+	void   ClearPostProcessing()		{ClrFlag(Flag_postprocessing);}
 	bool   IsDVBCardSpecified()	  const {return GetFlag(Flag_dvbcardspecified);}
 	void   SetDVBCardSpecified()        {SetFlag(Flag_dvbcardspecified);}
 	bool   IsRecordingComplete()  const {return !GetFlag(Flag_incompleterecording);}
@@ -238,13 +239,7 @@ public:
 	bool   HasRecordingFailed()   const {return GetFlag(Flag_recordingfailed);}
 	void   SetRecordingFailed()         {SetFlag(Flag_recordingfailed);}
 	void   ClearRecordingFailed()       {ClrFlag(Flag_recordingfailed);}
-	bool   IsRecording() 		  const {return GetFlag(Flag_recording);}
-	void   SetRecording()	   	  		{SetFlag(Flag_recording);}
-	void   ClearRecording()		   	  	{ClrFlag(Flag_recording);}
-	bool   IsPostProcessing()	  const {return GetFlag(Flag_postprocessing);}
-	void   SetPostProcessing()			{SetFlag(Flag_postprocessing);}
-	void   ClearPostProcessing()		{ClrFlag(Flag_postprocessing);}
-	bool   NotifySet()	  		  const {return GetFlag(Flag_notify);}
+	bool   IsNotifySet()		  const {return GetFlag(Flag_notify);}
 	void   SetNotify()	  		  		{SetFlag(Flag_notify);}
 
 	sint_t GetPri()   	       	  const {return data->pri;}
