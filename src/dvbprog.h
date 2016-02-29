@@ -185,6 +185,7 @@ public:
 		Flag_ignorerecording,
 		Flag_recordingfailed,
 		Flag_notify,
+		Flag_existsonmediaserver,
 		
 		Flag_count,
 
@@ -241,7 +242,10 @@ public:
 	void   ClearRecordingFailed()       {ClrFlag(Flag_recordingfailed);}
 	bool   IsNotifySet()		  const {return GetFlag(Flag_notify);}
 	void   SetNotify()	  		  		{SetFlag(Flag_notify);}
-
+	bool   ExistsOnMediaServer()  const {return GetFlag(Flag_existsonmediaserver);}
+	void   SetExistsOnMediaServer()		{SetFlag(Flag_existsonmediaserver);}
+	void   UpdateExistsOnMediaServer()	{SetFlag(Flag_existsonmediaserver, (IsConverted() && AStdFile::exists(GetFilename())));}
+	
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}
 

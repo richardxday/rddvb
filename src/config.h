@@ -88,7 +88,8 @@ public:
 	AString GetPriorityDVBPIDs()			 const {return GetConfigItem("prioritypids", "");}
 	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");}
 
-	AString GetBaseURL()					 const {return GetConfigItem("baseurl", "http://richardday.duckdns.org");}
+	AString GetMediaServerURL()				 const {return GetConfigItem("mediaserverurl", "");}
+	bool    IsMediaServer()					 const {return ((uint_t)GetConfigItem("ismediaserver", "1") != 0);}
 	
 	bool    ForceSubs(const AString& user)   const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
 
