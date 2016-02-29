@@ -641,31 +641,34 @@ int main(int argc, char *argv[])
 				else config.printf("Failed to read programmes from '%s'", filename.str());
 			}
 			else if ((strcmp(argv[i], "--update-exists") == 0) || (strcmp(argv[i], "--update-exists-all") == 0)) {
-				ADVBLock     lock("recordlist");
-				ADVBProgList reclist;
-				bool		 full = (strcmp(argv[i], "--update-exists-all") == 0);
+				if (config.IsMediaServer()) {
+					ADVBLock     lock("recordlist");
+					ADVBProgList reclist;
+					bool		 full = (strcmp(argv[i], "--update-exists-all") == 0);
 				
-				if (reclist.ReadFromFile(config.GetRecordedFile())) {
-					uint_t j, updated = 0;
+					if (reclist.ReadFromFile(config.GetRecordedFile())) {
+						uint_t j, updated = 0;
 
-					for (j = 0; j < reclist.Count(); j++) {
-						ADVBProg& prog = reclist.GetProgWritable(j);
-						bool oldstate = prog.ExistsOnMediaServer();
+						for (j = 0; j < reclist.Count(); j++) {
+							ADVBProg& prog = reclist.GetProgWritable(j);
+							bool oldstate = prog.ExistsOnMediaServer();
 						
-						if (prog.IsConverted() && (full || oldstate)) {
-							prog.UpdateExistsOnMediaServer();
-							updated += (prog.ExistsOnMediaServer() != oldstate);
+							if (prog.IsConverted() && (full || oldstate)) {
+								prog.UpdateExistsOnMediaServer();
+								updated += (prog.ExistsOnMediaServer() != oldstate);
+							}
 						}
-					}
 
-					config.printf("%u programmes changed", updated);
+						config.printf("%u programmes changed", updated);
 					
-					if (updated) {
-						if (!reclist.WriteToFile(config.GetRecordedFile())) {
-							config.printf("Failed to write recorded programme list back!");
+						if (updated) {
+							if (!reclist.WriteToFile(config.GetRecordedFile())) {
+								config.printf("Failed to write recorded programme list back!");
+							}
 						}
 					}
 				}
+				else fprintf(stderr, "Cannot update 'exists-on-media-server' on non-media-server machine!\n");
 			}
 			else if ((strcmp(argv[i], "--sort") == 0) || (strcmp(argv[i], "--sort-rev") == 0)) {
 				bool reverse = (strcmp(argv[i], "--sort-rev") == 0);
