@@ -18,5 +18,5 @@ if [ ! -f "$LISTINGSFILE.gz" ] ; then
   gzip "$LISTINGSFILE"
 fi
 
-dvb --find-recorded-programmes-on-disk --check-recording-file --cards
+dvb --find-recorded-programmes-on-disk --check-recording-file --find-cards
 dvb --schedule
