@@ -78,7 +78,7 @@ public:
 	sint_t  GetScoreThreshold()				 const {return (sint_t)GetConfigItem("scorethreshold", "100");}
 	double  GetLowSpaceWarningLimit()		 const {return (double)GetConfigItem("lowdisklimit", "10.0");}
 	bool    CommitScheduling()				 const {return ((uint_t)GetConfigItem("commitscheduling", "0") != 0);}
-	bool    ConvertVideos()					 const {return ((uint_t)GetConfigItem("convertvideos", AString("%").Arg(IsMediaServer())) != 0);}
+	bool    ConvertVideos()					 const {return ((uint_t)GetConfigItem("convertvideos", "1"));}
 
 	int     GetPriorityScale()               const {return (int)GetConfigItem("priscale",     "2");}
 	int     GetRepeatsScale()                const {return (int)GetConfigItem("repeatsscale", "-1");}
@@ -88,8 +88,7 @@ public:
 	AString GetPriorityDVBPIDs()			 const {return GetConfigItem("prioritypids", "");}
 	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");}
 
-	AString GetMediaServerURL()				 const {return GetConfigItem("mediaserverurl", "");}
-	bool    IsMediaServer()					 const {return ((uint_t)GetConfigItem("ismediaserver", "1") != 0);}
+	AString GetServerURL()					 const {return GetConfigItem("serverurl", "");}
 	
 	bool    ForceSubs(const AString& user)   const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
 
@@ -99,6 +98,8 @@ public:
 	AString GetEncodeLogLevel(const AString& user, bool verbose) const {return verbose ? GetUserConfigItem(user, "processloglevel:verbose", "warning") : GetUserConfigItem(user, "processloglevel:normal", "error");}
 
 	AString GetRelativePath(const AString& filename) const;
+
+	AString GetRemoteHost()                 const {return GetConfigItem("dvbhost", "");}
 	
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 	void printf(const char *fmt, ...) const PRINTF_FORMAT_METHOD;

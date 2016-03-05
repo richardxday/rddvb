@@ -496,42 +496,46 @@ bool ADVBProgList::ReadFromJobQueue(int queue, bool runningonly)
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString listname   = config.GetTempFile("atlist", ".txt");
 	AString scriptname = config.GetTempFile("atjob",  ".txt");
-	AString cmd1, cmd2, cmd;
+	AString cmd1, cmd2;
 	bool success = false;
+	
+	remove(listname);
 
 	cmd1.printf("atq -q = >%s", listname.str());
 	if (!runningonly) cmd2.printf("atq -q %c >>%s", queue, listname.str());
 
-	if ((system(cmd1) == 0) && (system(cmd2) == 0)) {
+	if ((system(cmd1) == 0) && (runningonly || (system(cmd2) == 0))) {
 		AStdFile fp;
 
 		if (fp.open(listname)) {
-			AString line;
+			AString line, cmd;
 
 			success = true;
 			while (line.ReadLn(fp) >= 0) {
 				uint_t jobid = (uint_t)line.Word(0);
 
-				cmd.Delete();
-				cmd.printf("at -c %u >%s", jobid, scriptname.str());
-				if (system(cmd) == 0) {
-					ADVBProg prog;
+				if (jobid) {
+					cmd.Delete();
+					cmd.printf("at -c %u >%s", jobid, scriptname.str());
+					if (system(cmd) == 0) {
+						ADVBProg prog;
 
-					if (prog.ReadFromJob(scriptname)) {
-						if (queue == '=') prog.SetRunning();
+						if (prog.ReadFromJob(scriptname)) {
+							if (queue == '=') prog.SetRunning();
 
-						if (AddProg(prog) < 0) {
-							config.logit("Failed to decode and add programme from job %u", jobid);
-							success = false;
+							if (AddProg(prog) < 0) {
+								config.logit("Failed to decode and add programme from job %u", jobid);
+								success = false;
+							}
+							else {
+								config.logit("Failed to decode job base64 programme for %u", jobid);
+								success = false;
+							}
 						}
-					}
-					else {
-						config.logit("Failed to decode job base64 programme for %u", jobid);
-						success = false;
+						else config.logit("Failed to read job %u", jobid);
 					}
 				}
-				else config.logit("Failed to read job %u", jobid);
-
+				
 				if (HasQuit()) break;
 			}
 
@@ -549,15 +553,7 @@ bool ADVBProgList::ReadFromJobQueue(int queue, bool runningonly)
 bool ADVBProgList::ReadFromJobList(bool runningonly)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	int  queues[] = {'=', config.GetQueue().FirstChar()};
-	uint_t i;
-	bool success = true;
-
-	for (i = 0; i < NUMBEROF(queues); i++) {
-		success &= ReadFromJobQueue(queues[i], runningonly);
-	}
-
-	return success;
+	return ReadFromJobQueue(config.GetQueue().FirstChar(), runningonly);
 }
 
 bool ADVBProgList::CheckFile(const AString& filename, const AString& targetfilename, const FILE_INFO& fileinfo)
@@ -2097,50 +2093,56 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 bool ADVBProgList::WriteToJobList()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBProgList scheduledlist, runninglist;
-	AString filename = config.GetScheduledFile();
+	const AString filename = config.GetScheduledFile();
 	bool success = false;
+	
+	if (config.GetRemoteHost().Valid()) {
+		success = SendFileRunCommand(filename, "dvb --write-scheduled-jobs");
+	}
+	else {
+		ADVBProgList scheduledlist, runninglist;
 
-	runninglist.ReadFromJobQueue('=');
+		runninglist.ReadFromJobQueue('=');
 
-	UnscheduleAllProgrammes();
+		UnscheduleAllProgrammes();
 
-	if (scheduledlist.ReadFromFile(filename)) {
-		uint_t i, nsucceeded = 0, nfailed = 0;
+		if (scheduledlist.ReadFromFile(filename)) {
+			uint_t i, nsucceeded = 0, nfailed = 0;
 
-		config.logit("--------------------------------------------------------------------------------");
-		config.printf("Writing %u programmes to job list (%u job(s) running)", scheduledlist.Count(), runninglist.Count());
+			config.logit("--------------------------------------------------------------------------------");
+			config.printf("Writing %u programmes to job list (%u job(s) running)", scheduledlist.Count(), runninglist.Count());
 
-		success = true;
-		for (i = 0; i < scheduledlist.Count(); i++) {
-			const ADVBProg *rprog;
-			ADVBProg& prog = scheduledlist.GetProgWritable(i);
+			success = true;
+			for (i = 0; i < scheduledlist.Count(); i++) {
+				const ADVBProg *rprog;
+				ADVBProg& prog = scheduledlist.GetProgWritable(i);
 
-			if ((rprog = runninglist.FindUUID(prog)) != NULL) {
-				prog.SetJobID(rprog->GetJobID());
+				if ((rprog = runninglist.FindUUID(prog)) != NULL) {
+					prog.SetJobID(rprog->GetJobID());
 
-				config.logit("Recording of '%s' already running (job %u)!", prog.GetDescription().str(), prog.GetJobID());
+					config.logit("Recording of '%s' already running (job %u)!", prog.GetDescription().str(), prog.GetJobID());
+				}
+				else if (prog.WriteToJobQueue()) {
+					config.logit("Scheduled '%s' okay, job %u", prog.GetDescription().str(), prog.GetJobID());
+
+					nsucceeded++;
+				}
+				else {
+					nfailed++;
+					success = false;
+				}
 			}
-			else if (prog.WriteToJobQueue()) {
-				config.logit("Scheduled '%s' okay, job %u", prog.GetDescription().str(), prog.GetJobID());
 
-				nsucceeded++;
+			config.logit("--------------------------------------------------------------------------------");
+
+			config.printf("Scheduled %u programmes successfully (%u failed), writing to '%s'", nsucceeded, nfailed, filename.str());
+
+			if (!scheduledlist.WriteToFile(filename, false)) {
+				config.logit("Failed to write updated schedule list '%s'", filename.str());
 			}
-			else {
-				nfailed++;
-				success = false;
-			}
-		}
-
-		config.logit("--------------------------------------------------------------------------------");
-
-		config.printf("Scheduled %u programmes successfully (%u failed), writing to '%s'", nsucceeded, nfailed, filename.str());
-
-		if (!scheduledlist.WriteToFile(filename, false)) {
-			config.logit("Failed to write updated schedule list '%s'", filename.str());
 		}
 	}
-
+	
 	return success;
 }
 
