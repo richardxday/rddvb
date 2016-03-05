@@ -95,7 +95,6 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(exists,				 Flag_exists,    	 	   "Programme exists"),
 	DEFINE_FLAG(notify,				 Flag_notify,    	 	   "Notify by when programme has recorded"),
 	DEFINE_FLAG(converted,			 Flag_converted,    	   "Programme has been converted"),
-	DEFINE_FLAG(existsonmediaserver, Flag_existsonmediaserver, "Programme exists on media server"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
 	DEFINE_FIELD(series,   	  episode.series,   uint8_t,  "Series"),
@@ -857,19 +856,14 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 		const AString filename = GetString(data->strings.filename);
 		AString relpath;
 		if (data->actstart && data->actstop && filename[0] && IsConverted() && (relpath = config.GetRelativePath(filename)).Valid()) {
-			AList subfiles;
-			bool  exists;
-				
-			if (config.IsMediaServer()) {
-				exists = AStdFile::exists(filename);
-					
-				if (exists) CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, subfiles);
-			}
-			else exists = ExistsOnMediaServer();
-			
+			bool exists = AStdFile::exists(filename);
+								
 			str.printf(",\"exists\":%u", (uint_t)exists);
 			if (exists) {
-				str.printf(",\"mediaserverurl\":\"%s\"", JSONFormat(config.GetMediaServerURL()).str());
+				AList subfiles;
+				
+				CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, subfiles);
+
 				str.printf(",\"file\":\"%s\"", JSONFormat(relpath).str());
 
 				const AString *subfile = AString::Cast(subfiles.First());
@@ -1131,7 +1125,6 @@ AString ADVBProg::GetEpisodeString(const EPISODE& ep)
 
 AString ADVBProg::GetDescription(uint_t verbosity) const
 {
-	const ADVBConfig& config = ADVBConfig::Get();
 	ADateTime start = GetStartDT().UTCToLocal();
 	ADateTime stop  = GetStopDT().UTCToLocal();
 	EPISODE ep;
@@ -1273,9 +1266,8 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 
 			if (IsPostProcessing()) str1.printf(" Current being post-processed.");
 
-			bool exists = config.IsMediaServer() ? AStdFile::exists(GetFilename()) : ExistsOnMediaServer();
+			bool exists = AStdFile::exists(GetFilename());
 			str1.printf(" File %sexists",  exists ? "" : "does *not* ");
-			if (!config.IsMediaServer() && exists) str1.printf(" (on media server)");
 			if (exists) str1.printf(" and is %sMB in size", AValue(GetFileSize() / (1024 * 1024)).ToString().str());
 			str1.printf(".");
 		}
@@ -2162,7 +2154,7 @@ AString ADVBProg::GetLinkToFile() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString relpath = config.GetRelativePath(GetFilename());
-	return relpath.Valid() ? config.GetMediaServerURL().CatPath(relpath) : "";
+	return relpath.Valid() ? config.GetServerURL().CatPath(relpath) : "";
 }
 
 bool ADVBProg::OnRecordSuccess() const

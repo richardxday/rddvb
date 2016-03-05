@@ -4,6 +4,7 @@
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
 
+#include "config.h"
 #include "dvbmisc.h"
 
 AString JSONFormat(const AString& str)
@@ -35,4 +36,44 @@ AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint
 	}
 
 	return res;
+}
+
+bool SendFile(const AString& filename)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString cmd;
+
+	cmd.printf("scp -C \"%s\" %s:\"%s\"", filename.str(), config.GetRemoteHost().str(), filename.str());
+
+	return (system(cmd) == 0);
+}
+
+bool GetFile(const AString& filename)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString cmd;
+
+	cmd.printf("scp -C %s:\"%s\" \"%s\"", config.GetRemoteHost().str(), filename.str(), filename.str());
+
+	return (system(cmd) == 0);
+}
+
+bool RunRemoteCommand(const AString& cmd)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString cmd1;
+
+	cmd1.printf("ssh %s \"%s\"", config.GetRemoteHost().str(), cmd.Escapify().str());
+
+	return (system(cmd1) == 0);
+}
+
+bool SendFileRunCommand(const AString& filename, const AString& cmd)
+{
+	return (SendFile(filename) && RunRemoteCommand(cmd));
+}
+
+bool RunCommandGetFile(const AString& cmd, const AString& filename)
+{
+	return (RunRemoteCommand(cmd) && GetFile(filename));
 }
