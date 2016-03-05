@@ -39,27 +39,27 @@ void findcards(void)
 
 			remove(file);
 
-			if (system(cmd) == 0) {
-				if (fp.open(file)) {
-					AString line;
+			int res = system(cmd);
+			(void)res;
+			if (fp.open(file)) {
+				AString line;
 
-					while (line.ReadLn(fp) >= 0) {
-						int p;
+				while (line.ReadLn(fp) >= 0) {
+					int p;
 					
-						//debug("Find card %u: %s\n", i, line.str());
+					//debug("Find card %u: %s\n", i, line.str());
 
-						if ((p = line.PosNoCase(str)) >= 0) {
-							p += str.len();
-							line = line.Mid(p).RemoveWhiteSpace().DeQuotify().RemoveWhiteSpace();
+					if ((p = line.PosNoCase(str)) >= 0) {
+						p += str.len();
+						line = line.Mid(p).RemoveWhiteSpace().DeQuotify().RemoveWhiteSpace();
 
-							config.printf("%u: %s", i, line.str());
-							ofp.printf("%u %s\n", i, line.str());
-							break;
-						}
+						config.printf("%u: %s", i, line.str());
+						ofp.printf("%u %s\n", i, line.str());
+						break;
 					}
-			
-					fp.close();
 				}
+			
+				fp.close();
 			}
 		}
 
