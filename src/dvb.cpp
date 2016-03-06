@@ -79,9 +79,10 @@ int main(int argc, char *argv[])
 		printf("\t--update <file>\t\t\tUpdate main listings with file <file> (-u)\n");
 		printf("\t--load\t\t\t\tRead listings from default file (-l)\n");
 		printf("\t--read <file>\t\t\tRead listings from file <file> (-r)\n");
+		printf("\t--merge <file>\t\t\tMerge listings from file <file>, modifying any programmes that exist already\n");
+		printf("\t--merge-recorded <file>\t\tMerge listings from file <file> into recorded programmes, modifying any programmes that exist already\n");
 		printf("\t--jobs\t\t\t\tRead programmes from scheduled jobs\n");
 		printf("\t--write <file>\t\t\tWrite listings to file <file> (-w)\n");
-		printf("\t--update-exists\t\t\tUpdate flag indicating whether file exists on media server (this machine)\n");
 		printf("\t--sort\t\t\t\tSort list in chronological order\n");
 		printf("\t--sort-rev\t\t\tSort list in reverse-chronological order\n");
 		printf("\t--writetxt <file>\t\tWrite listings to file <file> in text format\n");
@@ -101,7 +102,7 @@ int main(int argc, char *argv[])
 		printf("\t--find <patterns>\t\tFind programmes matching <patterns> (-f)\n");
 		printf("\t--find-with-file <pattern-file>\tFind programmes matching patterns in patterns file <pattern-file> (-F)\n");
 		printf("\t--find-repeats\t\t\tFor each programme in current list, list repeats (-R)\n");
-		printf("\t--find-similar <file>\tFor each programme in current list, find first similar programme in <file>\n");
+		printf("\t--find-similar <file>\t\tFor each programme in current list, find first similar programme in <file>\n");
 		printf("\t--delete-all\t\t\tDelete all programmes\n");
 		printf("\t--delete <patterns>\t\tDelete programmes matching <patterns>\n");
 		printf("\t--delete-with-file <pattern-file> Delete programmes matching patterns in patterns file <pattern-file>\n");
@@ -202,9 +203,7 @@ int main(int argc, char *argv[])
 				if (proglist.ReadFromFile(filename)) {
 					printf("Read programmes from '%s', total now %u\n", filename.str(), proglist.Count());
 				}
-				else {
-					printf("Failed to read programme list from '%s'\n", filename.str());
-				}
+				else printf("Failed to read programme list from '%s'\n", filename.str());
 			}
 			else if ((strcmp(argv[i], "--read") == 0) || (strcmp(argv[i], "-r") == 0)) {
 				AString filename = config.GetNamedFile(argv[++i]);
@@ -213,9 +212,35 @@ int main(int argc, char *argv[])
 				if (proglist.ReadFromFile(filename)) {
 					printf("Read programmes from '%s', total now %u\n", filename.str(), proglist.Count());
 				}
-				else {
-					printf("Failed to read programme list from '%s'\n", filename.str());
+				else printf("Failed to read programme list from '%s'\n", filename.str());
+			}
+			else if (strcmp(argv[i], "--merge") == 0) {
+				AString      filename = argv[++i];
+				ADVBProgList list;
+
+				if (list.ReadFromFile(filename)) {
+					proglist.Merge(list);
+					printf("Merged programmes from '%s', total now %u\n", filename.str(), proglist.Count());
 				}
+				else printf("Failed to read programme list from '%s'\n", filename.str());
+			}
+			else if (strcmp(argv[i], "--merge-recorded") == 0) {
+				ADVBLock lock("recordlist");
+				AString  filename = argv[++i];
+				ADVBProgList reclist, list;
+
+				if (reclist.ReadFromFile(config.GetRecordedFile())) {
+					if (list.ReadFromFile(filename)) {
+						reclist.Merge(list);
+						
+						if (reclist.WriteToFile(config.GetRecordedFile())) {
+							config.printf("Merged programmes from '%s' into recorded list, total now %u\n", filename.str(), reclist.Count());
+						}
+						else config.printf("Failed to write recorded programme list back!");
+					}
+					else config.printf("Failed to read programme list from '%s'\n", filename.str());
+				}
+				else config.printf("Failed to find recorded programmes from '%s'", config.GetRecordedFile().str());
 			}
 			else if (strcmp(argv[i], "--jobs") == 0) {
 				printf("Reading programmes from job queue...\n");

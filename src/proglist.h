@@ -22,6 +22,9 @@ public:
 
 	ADVBProgList& operator = (const ADVBProgList& list);
 
+	void Merge(const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);
+	void Merge(const ADVBProgList& list, bool sort = true, bool removeoverlaps = false);
+
 	const ADVBProg& operator [](uint_t n) const {return GetProg(n);}
 
 	bool ReadFromFile(const AString& filename);
