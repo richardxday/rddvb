@@ -18,7 +18,7 @@ void findcards(void)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	
-	if (config.GetRemoteHost().Valid()) {
+	if (config.GetRecordingHost().Valid()) {
 		RunCommandGetFile("dvb --find-cards", config.GetDVBCardsFile());
 	}
 	else {
