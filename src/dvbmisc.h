@@ -14,11 +14,12 @@ typedef struct {
 } REPLACEMENT;
 extern AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint_t n);
 
-extern bool SendFile(const AString& filename);
-extern bool GetFile(const AString& filename);
+extern bool SendFileToRecordingHost(const AString& filename);
+extern bool GetFileFromRecordingHost(const AString& filename);
+extern bool GetFileFromRecordingHost(const AString& filename, const AString& localfilename);
 extern bool RunRemoteCommand(const AString& cmd);
-extern bool SendFileRunCommand(const AString& filename, const AString& cmd);
-extern bool RunCommandGetFile(const AString& cmd, const AString& filename);
+extern bool SendFileRunRemoteCommand(const AString& filename, const AString& cmd);
+extern bool RunRemoteCommandGetFile(const AString& cmd, const AString& filename);
 
 #endif
 

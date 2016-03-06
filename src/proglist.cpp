@@ -68,20 +68,60 @@ ADVBProgList& ADVBProgList::operator = (const ADVBProgList& list)
 	return *this;
 }
 	
-uint_t ADVBProgList::Merge(const ADVBProgList& list, bool sort, bool removeoverlaps)
+void ADVBProgList::Modify(const ADVBProgList& list, uint_t& added, uint_t& modified, uint_t mode, bool sort)
 {
-	uint_t i, n = 0;
+	uint_t i;
 
 	if (!proghash.Valid()) CreateHash();
+
+	added = modified = 0;
 	
 	for (i = 0; (i < list.Count()) && !HasQuit(); i++) {
-		if (!FindUUID(list[i])) {
-			AddProg(list[i], sort, removeoverlaps);
-			n++;
-		}
+		uint_t res = ModifyProg(list[i], mode, sort);
+		if (res & Prog_Add)    added++;
+		if (res & Prog_Modify) modified++;
 	}
+}
 
-	return n;
+bool ADVBProgList::ModifyFromRecordingHost(const AString& filename, uint_t mode, bool sort)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString host;
+	bool    success = false;
+	
+	if ((host = config.GetRecordingHost()).Valid()) {
+		AString dstfilename = config.GetTempFile("proglist", ".dat");
+
+		if (GetFileFromRecordingHost(filename, dstfilename)) {
+			ADVBLock     lock("recordlist");
+			ADVBProgList locallist, list;
+						
+			if (locallist.ReadFromFile(filename)) {
+				if (list.ReadFromFile(dstfilename)) {
+					uint_t added, modified;
+
+					locallist.Modify(list, added, modified, mode, sort);
+
+					if (added) {
+						if (locallist.WriteToFile(filename)) {
+							config.printf("Modified programmes in '%s' from recording host, total now %u (%u added)", filename.str(), locallist.Count(), added);
+							success = true;
+						}
+						else config.printf("Failed to write programme list back!");
+					}
+					else config.printf("No programmes added");
+				}
+				else config.printf("Failed to read programme list from '%s'", dstfilename.str());
+			}
+			else config.printf("Failed to read programmes list from '%s'", filename.str());
+		}
+		else config.printf("Failed to get '%s' from recording host", filename.str());
+
+		remove(dstfilename);
+	}
+	else config.printf("No remote host configured!");
+
+	return success;
 }
 
 int ADVBProgList::SortProgs(uptr_t item1, uptr_t item2, void *pContext)
@@ -705,18 +745,22 @@ int ADVBProgList::AddProg(const ADVBProg& prog, bool sort, bool removeoverlaps)
 	return index;
 }
 
-int ADVBProgList::OverwriteOrAddProg(const ADVBProg& prog, bool sort)
+uint_t ADVBProgList::ModifyProg(const ADVBProg& prog, uint_t mode, bool sort)
 {
 	ADVBProg *pprog;
-	int index = -1;
+	uint_t res = 0;
 	
 	if ((pprog = FindUUIDWritable(prog)) != NULL) {
-		index = proglist.Find((uptr_t)pprog);
-		pprog->Modify(prog);
+		if (mode & Prog_Modify) {
+			pprog->Modify(prog);
+			res = Prog_Modify;
+		}
 	}
-	else index = AddProg(prog, sort, false);
+	else if ((mode & Prog_Add) && (AddProg(prog, sort, false) >= 0)) {
+		res = Prog_Add;
+	}
 
-	return index;
+	return res;
 }
 
 uint_t ADVBProgList::FindIndex(uint_t timeindex, uint64_t t) const
@@ -2123,7 +2167,8 @@ bool ADVBProgList::WriteToJobList()
 	bool success = false;
 	
 	if (config.GetRecordingHost().Valid()) {
-		success = SendFileRunCommand(filename, "dvb --write-scheduled-jobs");
+		success = (SendFileRunRemoteCommand(filename, "dvb --write-scheduled-jobs") &&
+				   ModifyFromRecordingHost(config.GetScheduledFile(), ADVBProgList::Prog_ModifyAndAdd));
 	}
 	else {
 		ADVBProgList scheduledlist, runninglist;
