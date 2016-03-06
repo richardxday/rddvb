@@ -613,7 +613,7 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 		}
 	}
 	
-	if (success && updatedependantfiles && (filename != config.GetCombinedFile())) {
+	if (success && updatedependantfiles && config.EnableCombined() && (filename != config.GetCombinedFile())) {
 		FILE_INFO fileinfo;
 
 		if (!::GetFileInfo(config.GetCombinedFile(),			&fileinfo) ||
