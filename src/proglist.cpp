@@ -68,6 +68,27 @@ ADVBProgList& ADVBProgList::operator = (const ADVBProgList& list)
 	return *this;
 }
 
+void ADVBProgList::Merge(const ADVBProg& prog, bool sort, bool removeoverlaps)
+{
+	ADVBProg *pprog;
+
+	if ((pprog = FindUUIDWritable(prog)) != NULL) {
+		pprog->Modify(prog);
+	}
+	else AddProg(prog, sort, removeoverlaps);
+}
+	
+void ADVBProgList::Merge(const ADVBProgList& list, bool sort, bool removeoverlaps)
+{
+	uint_t i;
+
+	if (!proghash.Valid()) CreateHash();
+	
+	for (i = 0; (i < list.Count()) && !HasQuit(); i++) {
+		Merge(list[i], sort, removeoverlaps);
+	}
+}
+
 int ADVBProgList::SortProgs(uptr_t item1, uptr_t item2, void *pContext)
 {
 	return ADVBProg::Compare((const ADVBProg *)item1, (const ADVBProg *)item2, (const bool *)pContext);
