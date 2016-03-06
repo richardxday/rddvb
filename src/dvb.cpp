@@ -236,13 +236,13 @@ int main(int argc, char *argv[])
 
 						if (n) {
 							if (reclist.WriteToFile(config.GetRecordedFile())) {
-								config.printf("Merged programmes from '%s' into recorded list, total now %u (%u added)\n", filename.str(), reclist.Count(), n);
+								config.printf("Merged programmes from '%s' into recorded list, total now %u (%u added)", filename.str(), reclist.Count(), n);
 							}
 							else config.printf("Failed to write recorded programme list back!");
 						}
 						else config.printf("No programmes added");
 					}
-					else config.printf("Failed to read programme list from '%s'\n", filename.str());
+					else config.printf("Failed to read programme list from '%s'", filename.str());
 				}
 				else config.printf("Failed to read recorded programmes from '%s'", config.GetRecordedFile().str());
 			}
@@ -264,13 +264,13 @@ int main(int argc, char *argv[])
 
 								if (n) {
 									if (reclist.WriteToFile(config.GetRecordedFile())) {
-										config.printf("Merged programmes from '%s' into recorded list, total now %u (%u added)\n", filename.str(), reclist.Count(), n);
+										config.printf("Merged programmes from '%s' into recorded list, total now %u (%u added)", filename.str(), reclist.Count(), n);
 									}
 									else config.printf("Failed to write recorded programme list back!");
 								}
 								else config.printf("No programmes added");
 							}
-							else config.printf("Failed to read programme list from '%s'\n", filename.str());
+							else config.printf("Failed to read programme list from '%s'", filename.str());
 						}
 						else config.printf("Failed to read recorded programmes from '%s'", config.GetRecordedFile().str());
 					}
