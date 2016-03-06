@@ -2539,11 +2539,14 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString src  = GetFilename();
-	AString dst  = GenerateFilename(true);
+	AString src  	   = GetFilename();
+	AString dst  	   = GenerateFilename(true);
+	AString archivedst = ReplaceFilenameTerms(config.GetRecordingsArchiveDir(GetUser()), false).CatPath(src.FilePart());
 
-	if (!config.ConvertVideos() || IsConverted() || (src == dst)) return true;
+	CreateDirectory(archivedst.PathPart());
 
+	if (IsConverted() || (src == dst)) return true;
+	
 	if (!AStdFile::exists(src)) {
 		config.printf("Error: source '%s' does not exists", src.str());
 		return false;
@@ -2553,6 +2556,12 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 		config.printf("Warning: destination '%s' exists, assuming conversion is complete", dst.str());
 		SetFilename(dst);
 		return true;
+	}
+
+	if (!config.ConvertVideos()) {
+		config.printf("Converting videos disabled on this host, copying '%s' to archive as '%s'", src.str(), archivedst.str());
+
+		return CopyFile(src, archivedst);
 	}
 
 	config.printf("Source '%s' exists, destination '%s' does not exists", src.str(), dst.str());
@@ -2750,11 +2759,8 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 
 		UpdateFileSize((uint_t)(GetActualLength() / 1000));
 
-		AString adst = ReplaceFilenameTerms(config.GetRecordingsArchiveDir(GetUser()), false).CatPath(src.FilePart());
-		config.logit("Moving '%s' to archive directory as '%s'", src.str(), adst.str());
-
-		CreateDirectory(adst.PathPart());
-		success = MoveFile(src, adst);
+		config.logit("Moving '%s' to archive directory as '%s'", src.str(), archivedst.str());
+		success = MoveFile(src, archivedst);
 	}
 	
 	if (success && cleanup) {
