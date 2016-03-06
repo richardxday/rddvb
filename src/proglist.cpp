@@ -543,10 +543,6 @@ bool ADVBProgList::ReadFromJobQueue(int queue, bool runningonly)
 								config.logit("Failed to decode and add programme from job %u", jobid);
 								success = false;
 							}
-							else {
-								config.logit("Failed to decode job base64 programme for %u", jobid);
-								success = false;
-							}
 						}
 						else config.logit("Failed to read job %u", jobid);
 					}
