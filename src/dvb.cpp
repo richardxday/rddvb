@@ -1189,7 +1189,8 @@ int main(int argc, char *argv[])
 				if (ADVBProgList::ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
 					AString cmd;
 
-					cmd.printf("nice rsync --progress --remove-source-files %s:%s/'*.mpg' %s",
+					cmd.printf("nice rsync --progress --remove-source-files %s %s:%s/'*.mpg' %s",
+							   config.GetRsyncArgs().str(),
 							   config.GetRecordingHost().str(),
 							   config.GetRecordingsStorageDir().str(),
 							   config.GetRecordingsStorageDir().str());
