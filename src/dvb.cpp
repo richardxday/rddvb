@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
 					AString filename = config.GetTempFile("recorded", ".dat");
 					AString cmd;
 
-					cmd.printf("scp -C %s:\"%s\" \"%s\"", host.str(), config.GetRecordedFile().str(), filename.str());
+					cmd.printf("scp -C %s %s:\"%s\" \"%s\"", config.GetRecordingHostArgs().str(), host.str(), config.GetRecordedFile().str(), filename.str());
 					if (system(cmd) == 0) {
 						ADVBLock lock("recordlist");
 						ADVBProgList reclist, list;

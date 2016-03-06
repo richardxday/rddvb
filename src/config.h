@@ -103,6 +103,7 @@ public:
 	AString GetRelativePath(const AString& filename) const;
 
 	AString GetRecordingHost()               const {return GetConfigItem("recordinghost", "");}
+	AString GetRecordingHostArgs()           const {return GetConfigItem("recordinghostargs", "");}
 	
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 	void printf(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
