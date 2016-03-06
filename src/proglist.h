@@ -29,8 +29,15 @@ public:
 	bool ReadFromTextFile(const AString& filename);
 	bool ReadFromJobList(bool runningonly = false);
 
-	uint_t Merge(const ADVBProgList& list, bool sort = true, bool removeoverlaps = false);
-
+	enum {
+		Prog_Modify 	  = 1,
+		Prog_Add    	  = 2,
+		Prog_ModifyAndAdd = 3,
+	};
+	
+	void Modify(const ADVBProgList& list, uint_t& added, uint_t& modified, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
+	static bool ModifyFromRecordingHost(const AString& filename, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
+	
 	void UpdateDVBChannels();
 
 	bool WriteToFile(const AString& filename, bool updatedependantfiles = true) const;
@@ -40,7 +47,7 @@ public:
 
 	int AddProg(const AString& prog, bool sort = true, bool removeoverlaps = false);
 	int AddProg(const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);
-	int OverwriteOrAddProg(const ADVBProg& prog, bool sort = true);
+	uint_t ModifyProg(const ADVBProg& prog, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
 	
 	void AssignEpisodes(bool reverse = false, bool ignorerepeats = false);
 

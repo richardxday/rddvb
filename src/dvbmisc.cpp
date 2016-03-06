@@ -38,24 +38,35 @@ AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint
 	return res;
 }
 
-bool SendFile(const AString& filename)
+bool SendFileToRecordingHost(const AString& filename)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
 
 	cmd.printf("scp -C %s \"%s\" %s:\"%s\"", config.GetRecordingHostArgs().str(), filename.str(), config.GetRecordingHost().str(), filename.str());
 
-	return (system(cmd) == 0);
+	bool success = (system(cmd) == 0);
+	if (!success) config.logit("Command '%s' failed", cmd.str());
+
+	return success;
 }
 
-bool GetFile(const AString& filename)
+bool GetFileFromRecordingHost(const AString& filename)
+{
+	return GetFileFromRecordingHost(filename, filename);
+}
+
+bool GetFileFromRecordingHost(const AString& filename, const AString& localfilename)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
 
-	cmd.printf("scp -C %s %s:\"%s\" \"%s\"", config.GetRecordingHostArgs().str(), config.GetRecordingHost().str(), filename.str(), filename.str());
+	cmd.printf("scp -C %s %s:\"%s\" \"%s\"", config.GetRecordingHostArgs().str(), config.GetRecordingHost().str(), filename.str(), localfilename.str());
 
-	return (system(cmd) == 0);
+	bool success = (system(cmd) == 0);
+	if (!success) config.logit("Command '%s' failed", cmd.str());
+
+	return success;
 }
 
 bool RunRemoteCommand(const AString& cmd)
@@ -65,15 +76,18 @@ bool RunRemoteCommand(const AString& cmd)
 
 	cmd1.printf("ssh -C %s %s \"%s\"", config.GetRecordingHostArgs().str(), config.GetRecordingHost().str(), cmd.Escapify().str());
 
-	return (system(cmd1) == 0);
+	bool success = (system(cmd1) == 0);
+	if (!success) config.logit("Command '%s' failed", cmd1.str());
+
+	return success;
 }
 
-bool SendFileRunCommand(const AString& filename, const AString& cmd)
+bool SendFileRunRemoteCommand(const AString& filename, const AString& cmd)
 {
-	return (SendFile(filename) && RunRemoteCommand(cmd));
+	return (SendFileToRecordingHost(filename) && RunRemoteCommand(cmd));
 }
 
-bool RunCommandGetFile(const AString& cmd, const AString& filename)
+bool RunRemoteCommandGetFile(const AString& cmd, const AString& filename)
 {
-	return (RunRemoteCommand(cmd) && GetFile(filename));
+	return (RunRemoteCommand(cmd) && GetFileFromRecordingHost(filename));
 }
