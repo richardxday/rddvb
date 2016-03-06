@@ -1186,6 +1186,7 @@ int main(int argc, char *argv[])
 			}
 #endif
 			else if (stricmp(argv[i], "--pull-recordings") == 0) {
+				ADVBLock lock("pullrecordings");
 				bool success = false;
 				
 				if (ADVBProgList::ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
