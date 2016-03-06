@@ -43,7 +43,7 @@ bool SendFileToRecordingHost(const AString& filename)
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
 
-	cmd.printf("scp -C %s \"%s\" %s:\"%s\"", config.GetRecordingHostArgs().str(), filename.str(), config.GetRecordingHost().str(), filename.str());
+	cmd.printf("scp -C %s \"%s\" %s:\"%s\"", config.GetSCPArgs().str(), filename.str(), config.GetRecordingHost().str(), filename.str());
 
 	bool success = (system(cmd) == 0);
 	if (!success) config.logit("Command '%s' failed", cmd.str());
@@ -61,7 +61,7 @@ bool GetFileFromRecordingHost(const AString& filename, const AString& localfilen
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
 
-	cmd.printf("scp -C %s %s:\"%s\" \"%s\"", config.GetRecordingHostArgs().str(), config.GetRecordingHost().str(), filename.str(), localfilename.str());
+	cmd.printf("scp -C %s %s:\"%s\" \"%s\"", config.GetSCPArgs().str(), config.GetRecordingHost().str(), filename.str(), localfilename.str());
 
 	bool success = (system(cmd) == 0);
 	if (!success) config.logit("Command '%s' failed", cmd.str());
@@ -74,7 +74,7 @@ bool RunRemoteCommand(const AString& cmd)
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd1;
 
-	cmd1.printf("ssh -C %s %s \"%s\"", config.GetRecordingHostArgs().str(), config.GetRecordingHost().str(), cmd.Escapify().str());
+	cmd1.printf("ssh -C %s %s \"%s\"", config.GetSSHArgs().str(), config.GetRecordingHost().str(), cmd.Escapify().str());
 
 	bool success = (system(cmd1) == 0);
 	if (!success) config.logit("Command '%s' failed", cmd1.str());
