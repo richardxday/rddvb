@@ -1186,6 +1186,8 @@ int main(int argc, char *argv[])
 			}
 #endif
 			else if (stricmp(argv[i], "--pull-recordings") == 0) {
+				bool success = false;
+				
 				if (ADVBProgList::ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
 					AString cmd;
 
@@ -1195,29 +1197,32 @@ int main(int argc, char *argv[])
 							   config.GetRecordingsStorageDir().str(),
 							   config.GetRecordingsStorageDir().str());
 
-					if (system(cmd) == 0) {
-						ADVBProgList reclist;
+					if (system(cmd) != 0) config.printf("Failed to copy all recorded programmes from recording host");
+					
+					ADVBProgList reclist;
+					if (reclist.ReadFromFile(config.GetRecordedFile())) {
+						uint_t i, converted = 0;
 
-						if (reclist.ReadFromFile(config.GetRecordedFile())) {
-							uint_t i, converted = 0;
-
-							for (i = 0; i < reclist.Count(); i++) {
-								ADVBProg& prog = reclist.GetProgWritable(i);
+						success = true;
+						for (i = 0; i < reclist.Count(); i++) {
+							ADVBProg& prog = reclist.GetProgWritable(i);
 								
-								if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
-									config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
+							if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
+								config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
 						
-									prog.ConvertVideo(true);
-
-									converted++;
-								}
+								success &= prog.ConvertVideo(true);
+									
+								converted++;
 							}
-
-							config.printf("%u programmes converted", converted);
 						}
+
+						config.printf("%u programmes converted", converted);
 					}
+					else config.printf("Failed to read recorded programmes");
 				}
 				else config.printf("Unable to retreive recordings from recording host");
+
+				if (!success) res = -1;
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
