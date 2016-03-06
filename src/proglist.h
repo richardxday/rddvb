@@ -22,16 +22,15 @@ public:
 
 	ADVBProgList& operator = (const ADVBProgList& list);
 
-	void Merge(const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);
-	void Merge(const ADVBProgList& list, bool sort = true, bool removeoverlaps = false);
-
 	const ADVBProg& operator [](uint_t n) const {return GetProg(n);}
 
 	bool ReadFromFile(const AString& filename);
 	bool ReadFromXMLTVFile(const AString& filename);
 	bool ReadFromTextFile(const AString& filename);
 	bool ReadFromJobList(bool runningonly = false);
-	
+
+	uint_t Merge(const ADVBProgList& list, bool sort = true, bool removeoverlaps = false);
+
 	void UpdateDVBChannels();
 
 	bool WriteToFile(const AString& filename, bool updatedependantfiles = true) const;
@@ -41,7 +40,8 @@ public:
 
 	int AddProg(const AString& prog, bool sort = true, bool removeoverlaps = false);
 	int AddProg(const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);
-
+	int OverwriteOrAddProg(const ADVBProg& prog, bool sort = true);
+	
 	void AssignEpisodes(bool reverse = false, bool ignorerepeats = false);
 
 	void DeleteProgrammesBefore(const ADateTime& dt);

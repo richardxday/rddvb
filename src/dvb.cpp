@@ -79,8 +79,9 @@ int main(int argc, char *argv[])
 		printf("\t--update <file>\t\t\tUpdate main listings with file <file> (-u)\n");
 		printf("\t--load\t\t\t\tRead listings from default file (-l)\n");
 		printf("\t--read <file>\t\t\tRead listings from file <file> (-r)\n");
-		printf("\t--merge <file>\t\t\tMerge listings from file <file>, modifying any programmes that exist already\n");
-		printf("\t--merge-recorded <file>\t\tMerge listings from file <file> into recorded programmes, modifying any programmes that exist already\n");
+		printf("\t--merge <file>\t\t\tMerge listings from file <file>, adding any programmes that dot not exist\n");
+		printf("\t--merge-recorded <file>\t\tMerge listings from file <file> into recorded programmes, adding any programmes that dot not exist\n");
+		printf("\t--merge-recorded-from-recording-host\tMerge recorded programmes from recording host into recorded programmes, adding any programmes that dot not exist\n");
 		printf("\t--jobs\t\t\t\tRead programmes from scheduled jobs\n");
 		printf("\t--write <file>\t\t\tWrite listings to file <file> (-w)\n");
 		printf("\t--sort\t\t\t\tSort list in chronological order\n");
@@ -219,8 +220,8 @@ int main(int argc, char *argv[])
 				ADVBProgList list;
 
 				if (list.ReadFromFile(filename)) {
-					proglist.Merge(list);
-					printf("Merged programmes from '%s', total now %u\n", filename.str(), proglist.Count());
+					uint_t n = proglist.Merge(list);
+					printf("Merged programmes from '%s', total now %u (%u added)\n", filename.str(), proglist.Count(), n);
 				}
 				else printf("Failed to read programme list from '%s'\n", filename.str());
 			}
@@ -231,16 +232,53 @@ int main(int argc, char *argv[])
 
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
 					if (list.ReadFromFile(filename)) {
-						reclist.Merge(list);
-						
-						if (reclist.WriteToFile(config.GetRecordedFile())) {
-							config.printf("Merged programmes from '%s' into recorded list, total now %u\n", filename.str(), reclist.Count());
+						uint_t n = reclist.Merge(list);
+
+						if (n) {
+							if (reclist.WriteToFile(config.GetRecordedFile())) {
+								config.printf("Merged programmes from '%s' into recorded list, total now %u (%u added)\n", filename.str(), reclist.Count(), n);
+							}
+							else config.printf("Failed to write recorded programme list back!");
 						}
-						else config.printf("Failed to write recorded programme list back!");
+						else config.printf("No programmes added");
 					}
 					else config.printf("Failed to read programme list from '%s'\n", filename.str());
 				}
-				else config.printf("Failed to find recorded programmes from '%s'", config.GetRecordedFile().str());
+				else config.printf("Failed to read recorded programmes from '%s'", config.GetRecordedFile().str());
+			}
+			else if (strcmp(argv[i], "--merge-recorded-from-recording-host") == 0) {
+				AString host;
+				
+				if ((host = config.GetRecordingHost()).Valid()) {
+					AString filename = config.GetTempFile("recorded", ".dat");
+					AString cmd;
+
+					cmd.printf("scp -C %s:\"%s\" \"%s\"", host.str(), config.GetRecordedFile().str(), filename.str());
+					if (system(cmd) == 0) {
+						ADVBLock lock("recordlist");
+						ADVBProgList reclist, list;
+						
+						if (reclist.ReadFromFile(config.GetRecordedFile())) {
+							if (list.ReadFromFile(filename)) {
+								uint_t n = reclist.Merge(list);
+
+								if (n) {
+									if (reclist.WriteToFile(config.GetRecordedFile())) {
+										config.printf("Merged programmes from '%s' into recorded list, total now %u (%u added)\n", filename.str(), reclist.Count(), n);
+									}
+									else config.printf("Failed to write recorded programme list back!");
+								}
+								else config.printf("No programmes added");
+							}
+							else config.printf("Failed to read programme list from '%s'\n", filename.str());
+						}
+						else config.printf("Failed to read recorded programmes from '%s'", config.GetRecordedFile().str());
+					}
+					else config.printf("Command '%s' failed!", cmd.str());
+
+					remove(filename);
+				}
+				else config.printf("No remote host configured!");
 			}
 			else if (strcmp(argv[i], "--jobs") == 0) {
 				printf("Reading programmes from job queue...\n");
@@ -725,7 +763,7 @@ int main(int argc, char *argv[])
 						}
 						else config.printf("Failed to find programme with filename '%s'", filename1.str());
 					}
-					else config.printf("Failed to find recorded programmes from '%s'", config.GetRecordedFile().str());
+					else config.printf("Failed to read recorded programmes from '%s'", config.GetRecordedFile().str());
 				}
 			}
 			else if ((strcmp(argv[i], "--change-filename-regex")      == 0) ||

@@ -102,7 +102,7 @@ public:
 
 	AString GetRelativePath(const AString& filename) const;
 
-	AString GetRemoteHost()                 const {return GetConfigItem("dvbhost", "");}
+	AString GetRecordingHost()               const {return GetConfigItem("recordinghost", "");}
 	
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 	void printf(const char *fmt, ...) const PRINTF_FORMAT_METHOD;

@@ -67,26 +67,21 @@ ADVBProgList& ADVBProgList::operator = (const ADVBProgList& list)
 
 	return *this;
 }
-
-void ADVBProgList::Merge(const ADVBProg& prog, bool sort, bool removeoverlaps)
-{
-	ADVBProg *pprog;
-
-	if ((pprog = FindUUIDWritable(prog)) != NULL) {
-		pprog->Modify(prog);
-	}
-	else AddProg(prog, sort, removeoverlaps);
-}
 	
-void ADVBProgList::Merge(const ADVBProgList& list, bool sort, bool removeoverlaps)
+uint_t ADVBProgList::Merge(const ADVBProgList& list, bool sort, bool removeoverlaps)
 {
-	uint_t i;
+	uint_t i, n = 0;
 
 	if (!proghash.Valid()) CreateHash();
 	
 	for (i = 0; (i < list.Count()) && !HasQuit(); i++) {
-		Merge(list[i], sort, removeoverlaps);
+		if (!FindUUID(list[i])) {
+			AddProg(list[i], sort, removeoverlaps);
+			n++;
+		}
 	}
+
+	return n;
 }
 
 int ADVBProgList::SortProgs(uptr_t item1, uptr_t item2, void *pContext)
@@ -710,6 +705,20 @@ int ADVBProgList::AddProg(const ADVBProg& prog, bool sort, bool removeoverlaps)
 		}
 		else delete pprog;
 	}
+
+	return index;
+}
+
+int ADVBProgList::OverwriteOrAddProg(const ADVBProg& prog, bool sort)
+{
+	ADVBProg *pprog;
+	int index = -1;
+	
+	if ((pprog = FindUUIDWritable(prog)) != NULL) {
+		index = proglist.Find((uptr_t)pprog);
+		pprog->Modify(prog);
+	}
+	else index = AddProg(prog, sort, false);
 
 	return index;
 }
@@ -2117,7 +2126,7 @@ bool ADVBProgList::WriteToJobList()
 	const AString filename = config.GetScheduledFile();
 	bool success = false;
 	
-	if (config.GetRemoteHost().Valid()) {
+	if (config.GetRecordingHost().Valid()) {
 		success = SendFileRunCommand(filename, "dvb --write-scheduled-jobs");
 	}
 	else {
