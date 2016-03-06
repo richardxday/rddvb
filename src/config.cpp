@@ -55,6 +55,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 	CreateDirectory(GetConfigDir());
 	CreateDirectory(GetDataDir());
 	CreateDirectory(GetLogDir());
+	CreateDirectory(GetRecordingsStorageDir());
 	CreateDirectory(GetRecordingsDir());
 	CreateDirectory(GetTempDir());
 	
@@ -67,7 +68,6 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		const AString *user = AString::Cast(users.First());
 		while (user) {
 			if (((dir = GetRecordingsDir(*user)).Valid())        && (dir.Pos("{") < 0)) CreateDirectory(dir);
-			if (((dir = GetRecordingsStorageDir(*user)).Valid()) && (dir.Pos("{") < 0)) CreateDirectory(dir);
 			if (((dir = GetRecordingsArchiveDir(*user)).Valid()) && (dir.Pos("{") < 0)) CreateDirectory(dir);
 
 			user = user->Next();

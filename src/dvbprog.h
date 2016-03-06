@@ -169,7 +169,7 @@ public:
 		Flag_usedesc,
 		Flag_allowrepeats,
 		Flag_urgent,
-		Flag_fakerecording,
+		Flag_unused,
 		Flag_markonly,
 		Flag_running,
 		Flag_recording,
@@ -203,7 +203,6 @@ public:
 	bool   UseDescription()    	  const {return GetFlag(Flag_usedesc);}
 	bool   AllowRepeats()      	  const {return GetFlag(Flag_allowrepeats);}
 	bool   IsUrgent()		   	  const {return GetFlag(Flag_urgent);}
-	bool   IsFakeRecording()   	  const {return GetFlag(Flag_fakerecording);}
 	bool   IsMarkOnly()			  const {return GetFlag(Flag_markonly);}
 	void   SetMarkOnly()				{SetFlag(Flag_markonly);}
 	bool   IsRunning() 		   	  const {return GetFlag(Flag_running);}

@@ -8,6 +8,7 @@
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
+#include <rdlib/Thread.h>
 
 #include "config.h"
 #include "dvblock.h"
@@ -81,7 +82,8 @@ int main(int argc, char *argv[])
 		printf("\t--read <file>\t\t\tRead listings from file <file> (-r)\n");
 		printf("\t--merge <file>\t\t\tMerge listings from file <file>, adding any programmes that dot not exist\n");
 		printf("\t--modify-recorded <file>\t\tMerge listings from file <file> into recorded programmes, adding any programmes that dot not exist\n");
-		printf("\t--modify-recorded-from-recording-host\tMerge recorded programmes from recording host into recorded programmes, adding any programmes that dot not exist\n");
+		printf("\t--modify-recorded-from-recording-host\tAdd recorded programmes from recording host into recorded programmes, adding any programmes that dot not exist\n");
+		printf("\t--modify-scheduled-from-recording-host\tModfy scheduled programmes from recording host into scheduled programmes\n");
 		printf("\t--jobs\t\t\t\tRead programmes from scheduled jobs\n");
 		printf("\t--write <file>\t\t\tWrite listings to file <file> (-w)\n");
 		printf("\t--sort\t\t\t\tSort list in chronological order\n");
@@ -147,6 +149,7 @@ int main(int argc, char *argv[])
 #if DVBDATVERSION > 1
 		printf("\t--update-brand-series-episode\tUpdate bse in current list from listings file\n");
 #endif
+		printf("\t--pull-recordings\t\t\t\tPull and convert any recordings from recording host\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -1080,15 +1083,10 @@ int main(int argc, char *argv[])
 
 					if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
 						config.printf("Converting file %u/%u - '%s':", j + 1, proglist.Count(), prog.GetQuickDescription().str());
-
-						AString oldfilename = prog.GetFilename();
 						
 						prog.ConvertVideo(true);
 
-						if (oldfilename != AString(prog.GetFilename())) {
-							prog.UpdateRecordedList();
-							converted++;
-						}
+						converted++;
 					}
 				}
 
@@ -1187,6 +1185,39 @@ int main(int argc, char *argv[])
 				}
 			}
 #endif
+			else if (stricmp(argv[i], "--pull-recordings") == 0) {
+				if (ADVBProgList::ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
+					AString cmd;
+
+					cmd.printf("nice rsync --progress --remove-source-files %s:%s/'*.mpg' %s",
+							   config.GetRecordingHost().str(),
+							   config.GetRecordingsStorageDir().str(),
+							   config.GetRecordingsStorageDir().str());
+
+					if (system(cmd) == 0) {
+						ADVBProgList reclist;
+
+						if (reclist.ReadFromFile(config.GetRecordedFile())) {
+							uint_t i, converted = 0;
+
+							for (i = 0; i < reclist.Count(); i++) {
+								ADVBProg& prog = reclist.GetProgWritable(i);
+								
+								if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
+									config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
+						
+									prog.ConvertVideo(true);
+
+									converted++;
+								}
+							}
+
+							config.printf("%u programmes converted", converted);
+						}
+					}
+				}
+				else config.printf("Unable to retreive recordings from recording host");
+			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
 			}

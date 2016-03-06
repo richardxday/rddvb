@@ -105,7 +105,6 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 
 	DEFINE_FLAG_ASSIGN(usedesc,		  Flag_usedesc,       "Use description"),
 	DEFINE_FLAG_ASSIGN(allowrepeats,  Flag_allowrepeats,  "Allow repeats to be recorded"),
-	DEFINE_FLAG_ASSIGN(fakerecording, Flag_fakerecording, "Do not record, just pretend to"),
 	DEFINE_FLAG_ASSIGN(urgent,		  Flag_urgent,   	  "Record as soon as possible"),
 	DEFINE_FLAG_ASSIGN(markonly,	  Flag_markonly, 	  "Do not record, just mark as recorded"),
 	DEFINE_FLAG_ASSIGN(postprocess,	  Flag_postprocess,   "Post process programme"),
@@ -1568,7 +1567,7 @@ AString ADVBProg::GenerateFilename(bool converted) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString templ = config.GetFilenameTemplate(GetUser(), GetCategory());
-	AString dir   = converted ? GetRecordingSubDir() : config.GetRecordingsStorageDir(GetUser());
+	AString dir   = converted ? GetRecordingSubDir() : config.GetRecordingsStorageDir();
 	return ReplaceFilenameTerms(dir.CatPath(templ), converted);
 }
 
@@ -1881,14 +1880,11 @@ void ADVBProg::Record()
 		config.printf("Starting record of '%s' as '%s'", GetQuickDescription().str(), GetFilename());
 
 		AString pids;
-		AString user = GetUser();
-		bool    fake = (IsFakeRecording() ||
-						(user.Valid() && ((uint_t)config.GetUserConfigItem(user, "fakerecordings") != 0)) ||
-						((uint_t)config.GetConfigItem("fakerecordings") != 0));
+		AString user       = GetUser();
 		bool	reschedule = false;
 		bool	failed     = false;
 		
-		if (record && !fake) {
+		if (record) {
 			GetRecordPIDS(pids);
 						
 			if (pids.CountWords() < 2) {
@@ -1961,65 +1957,35 @@ void ADVBProg::Record()
 			CreateDirectory(AString(GetTempFilename()).PathPart());
 			CreateDirectory(filename.PathPart());
 
-			if (fake) {
-				config.printf("**Fake** recording '%s' for %u seconds (%u minutes) to '%s'",
-							  GetTitleAndSubtitle().str(),
-							  nsecs, ((nsecs + 59) / 60),
-							  filename.str());
-			}
-			else {
-				config.printf("Recording '%s' for %u seconds (%u minutes) to '%s' using freq %uHz PIDs %s",
-							  GetTitleAndSubtitle().str(),
-							  nsecs, ((nsecs + 59) / 60),
-							  filename.str(),
-							  (uint_t)pids.Word(0),
-							  pids.Words(1).str());
-			}
+			config.printf("Recording '%s' for %u seconds (%u minutes) to '%s' using freq %uHz PIDs %s",
+						  GetTitleAndSubtitle().str(),
+						  nsecs, ((nsecs + 59) / 60),
+						  filename.str(),
+						  (uint_t)pids.Word(0),
+						  pids.Words(1).str());
 
 			cmd = GenerateRecordCommand(nsecs, pids);
 
 			data->actstart = ADateTime().TimeStamp(true);
 
-			if (fake) {
-				// create text file with necessary filename to hold information
-				AStdFile fp;
+			config.printf("Running '%s'", cmd.str());
 
-				config.printf("Faking recording of '%s' using '%s'", GetTitleAndSubtitle().str(), filename.str());
+			SetRecording();
+			ADVBProgList::AddToList(config.GetRecordingFile(), *this);
 
-				if (fp.open(filename, "w")) {
-					fp.printf("Date: %s\n", ADateTime().DateFormat("%h:%m:%s.%S %D/%M/%Y").str());
-					fp.printf("Command: %s\n", cmd.str());
-					fp.printf("Filename: %s\n", filename.str());
-					fp.close();
+			config.printf("--------------------------------------------------------------------------------");
+			config.writetorecordlog("start %s", Base64Encode().str());
+			res = system(cmd);
+			config.writetorecordlog("stop %s", Base64Encode().str());
+			config.printf("--------------------------------------------------------------------------------");
 
-					res = 0;
-				}
-				else {
-					config.printf("Unable to create '%s' (fake recording of '%s')", filename.str(), GetTitleAndSubtitle().str());
-					res = -1;
-				}
-			}
-			else {
-				config.printf("Running '%s'", cmd.str());
-
-				SetRecording();
-				ADVBProgList::AddToList(config.GetRecordingFile(), *this);
-
-				config.printf("--------------------------------------------------------------------------------");
-				config.writetorecordlog("start %s", Base64Encode().str());
-				res = system(cmd);
-				config.writetorecordlog("stop %s", Base64Encode().str());
-				config.printf("--------------------------------------------------------------------------------");
-
-				ADVBProgList::RemoveFromList(config.GetRecordingFile(), *this);
-				ClearRecording();
-			}
+			ADVBProgList::RemoveFromList(config.GetRecordingFile(), *this);
+			ClearRecording();
 
 			if (res == 0) {
 				AString  str;
 				uint64_t dt = (uint64_t)ADateTime().TimeStamp(true);
 				uint64_t st = GetStop();
-				bool     addtorecorded = true;
 				
 				data->actstop = dt;
 
@@ -2027,12 +1993,14 @@ void ADVBProg::Record()
 					SetRecordingComplete();
 
 					if (dt < (st - 15000)) {
-						config.printf("Warning: '%s' stopped %ss before programme end!", GetTitleAndSubtitle().str(), AValue((st - dt) / 1000).ToString().str());
-						reschedule = true;
-						addtorecorded = fake;
-					}
+						config.printf("Warning: '%s' stopped %ss before programme end!",
+									  GetTitleAndSubtitle().str(),
+									  AValue((st - dt) / 1000).ToString().str());
 
-					if (!IsRecordingComplete()) {
+						// force reschedule
+						failed = true;
+					}
+					else if (!IsRecordingComplete()) {
 						config.printf("Warning: '%s' is incomplete! (%ss missing from the start, %ss missing from the end)",
 									  GetTitleAndSubtitle().str(),
 									  AValue(MAX((sint64_t)(data->actstart - MIN(data->start, data->recstart)), 0) / 1000).ToString().str(),
@@ -2041,20 +2009,17 @@ void ADVBProg::Record()
 						// force reschedule
 						failed = true;
 					}
-
-					if (UpdateFileSize(nsecs)) {
+					else if (UpdateFileSize(nsecs)) {
 						if (GetFileSize() > 0) {
-							if (addtorecorded) {
-								config.printf("Adding '%s' to list of recorded programmes", GetTitleAndSubtitle().str());
+							config.printf("Adding '%s' to list of recorded programmes", GetTitleAndSubtitle().str());
 							
-								ClearScheduled();
-								SetRecorded();
+							ClearScheduled();
+							SetRecorded();
 							
-								{
-									FlagsSaver saver(this);
-									ClearRunning();
-									UpdateRecordedList();
-								}
+							{
+								FlagsSaver saver(this);
+								ClearRunning();
+								UpdateRecordedList();
 							}
 					
 							if (IsOnceOnly() && IsRecordingComplete()) {
@@ -2064,13 +2029,8 @@ void ADVBProg::Record()
 							}
 						
 							bool success = PostRecord();
-							if (success) success = ConvertVideo();
 							if (success) success = PostProcess();
-							if (success && addtorecorded) {
-								FlagsSaver saver(this);
-								ClearRunning();
-								success = UpdateRecordedList();
-							}
+							if (success) success = ConvertVideo();
 							if (success) OnRecordSuccess();
 						}
 						else {
@@ -2508,7 +2468,7 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString proccmd = config.GetEncodeCommand(GetUser(), GetCategory());
 	AString args    = config.GetEncodeArgs(GetUser(), GetCategory());
-	AString tempdst = config.GetRecordingsStorageDir(GetUser()).CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
+	AString tempdst = config.GetRecordingsStorageDir().CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
 	uint_t  i, n = args.CountLines(";");
 	bool    success = true;
 
@@ -2759,8 +2719,14 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 
 		UpdateFileSize((uint_t)(GetActualLength() / 1000));
 
+		{
+			FlagsSaver saver(this);
+			ClearRunning();
+			success = UpdateRecordedList();
+		}
+		
 		config.logit("Moving '%s' to archive directory as '%s'", src.str(), archivedst.str());
-		success = MoveFile(src, archivedst);
+		success &= MoveFile(src, archivedst);
 	}
 	
 	if (success && cleanup) {
