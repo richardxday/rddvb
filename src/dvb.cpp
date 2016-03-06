@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 #if DVBDATVERSION > 1
 		printf("\t--update-brand-series-episode\tUpdate bse in current list from listings file\n");
 #endif
-		printf("\t--pull-recordings\t\t\t\tPull and convert any recordings from recording host\n");
+		printf("\t--pull-recordings\t\tPull and convert any recordings from recording host\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
