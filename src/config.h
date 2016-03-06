@@ -78,7 +78,10 @@ public:
 	sint_t  GetScoreThreshold()				 const {return (sint_t)GetConfigItem("scorethreshold", "100");}
 	double  GetLowSpaceWarningLimit()		 const {return (double)GetConfigItem("lowdisklimit", "10.0");}
 	bool    CommitScheduling()				 const {return ((uint_t)GetConfigItem("commitscheduling", "0") != 0);}
-	bool    ConvertVideos()					 const {return ((uint_t)GetConfigItem("convertvideos", "1"));}
+
+	bool    IsRecordingSlave()				 const {return ((uint_t)GetConfigItem("convertvideos", "0"));}
+	bool    ConvertVideos()					 const {return ((uint_t)GetConfigItem("convertvideos", AString("%").Arg(!IsRecordingSlave())));}
+	bool    EnableCombined()				 const {return ((uint_t)GetConfigItem("enablecombined", AString("%").Arg(!IsRecordingSlave())));}
 
 	int     GetPriorityScale()               const {return (int)GetConfigItem("priscale",     "2");}
 	int     GetRepeatsScale()                const {return (int)GetConfigItem("repeatsscale", "-1");}
