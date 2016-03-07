@@ -150,6 +150,7 @@ int main(int argc, char *argv[])
 		printf("\t--update-brand-series-episode\tUpdate bse in current list from listings file\n");
 #endif
 		printf("\t--pull-recordings\t\tPull and convert any recordings from recording host\n");
+		printf("\t--pull-recording-list\t\tPull list of programmes being recorded\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -1224,6 +1225,24 @@ int main(int argc, char *argv[])
 				else config.printf("Unable to retreive recordings from recording host");
 
 				if (!success) res = -1;
+			}
+			else if (stricmp(argv[i], "--pull-recording-list") == 0) {
+				ADVBLock      lock("pullrecordings");
+				const AString filename = config.GetRecordingFile();
+				FILE_INFO     info1, info2;
+				bool          info1valid;
+				
+				info1valid = ::GetFileInfo(filename, &info1);
+				
+				if (GetFileFromRecordingHost(config.GetRecordingFile())) {
+					if (!info1valid || (::GetFileInfo(filename, &info2) && (info2.WriteTime != info1.WriteTime))) {
+						ADVBProgList::CreateCombinedFile();
+					}
+				}
+				else {
+					config.printf("Failed to get programmes being recorded");
+					res = -1;
+				}
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
