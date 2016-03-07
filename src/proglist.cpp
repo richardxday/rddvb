@@ -1426,7 +1426,6 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 	AString  filename;
 	double   lowlimit = config.GetLowSpaceWarningLimit();
 	uint_t   i, userlen = 0;
-	bool     first = true;
 	bool     okay  = true;
 	
 	if (report) printf(",\"diskspace\":[");
@@ -1441,6 +1440,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 	AString fmt;
 	fmt.printf("%%-%us %%6.1lfG %%s", userlen);
 
+	AList reportlist;
 	const AString recdir = config.GetRecordingsDir();
 	for (i = 0; i < Count(); i++) {
 		const ADVBProg& prog = GetProg(i);
@@ -1465,15 +1465,18 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 				double  gb = (double)fiData.f_bavail * (double)fiData.f_bsize / (1024.0 * 1024.0 * 1024.0);
 
 				if (report) {
-					if (first) first = false;
-					else	   printf(",");
+					AString *reportstr = new AString;
 
-					printf("{\"user\":\"%s\"", JSONFormat(user).str());
-					printf(",\"folder\":\"%s\"", JSONFormat(dir).str());
-					printf(",\"fullfolder\":\"%s\"", JSONFormat(rdir).str());
-					printf(",\"freespace\":\"%0.1lfG\"", gb);
-					printf(",\"level\":%u", (uint_t)(gb / lowlimit));
-					printf("}");
+					if (reportstr) {
+						reportstr->printf("{\"user\":\"%s\"", JSONFormat(user).str());
+						reportstr->printf(",\"folder\":\"%s\"", JSONFormat(dir).str());
+						reportstr->printf(",\"fullfolder\":\"%s\"", JSONFormat(rdir).str());
+						reportstr->printf(",\"freespace\":\"%0.1lfG\"", gb);
+						reportstr->printf(",\"level\":%u", (uint_t)(gb / lowlimit));
+						reportstr->printf("}");
+
+						reportlist.Add(reportstr, &AString::AlphaCompareNoCase);
+					}
 				}
 
 				str.printf(fmt, prog.GetUser(), gb, dir.str());
@@ -1488,7 +1491,20 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 
 				//config.printf("%s", str.str());
 			}
-			//else config.printf("Directory '%s' doesn't exist!", rdir.str());
+		}
+	}
+
+	{
+		const AString *str = AString::Cast(reportlist.First());
+		bool  first = true;
+		
+		while (str) {
+			if (first) first = false;
+			else	   printf(",");
+
+			printf("%s", str->str());
+
+			str = str->Next();
 		}
 	}
 
