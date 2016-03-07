@@ -2237,79 +2237,41 @@ void ADVBProgList::CreateCombinedFile()
 	else config.logit("Failed to read listings plus recorded file for generating combined file");
 }
 
-void ADVBProgList::ModifyProgs(const ADVBProg& prog, bool similar)
-{
-	ADVBProg *prog2 = NULL;
-
-	if (similar) {
-		while ((prog2 = FindSimilarWritable(prog, prog2)) != NULL) {
-			prog2->Modify(prog);
-		}
-
-		if (FindUUIDWritable(prog) == NULL) AddProg(prog);
-	}
-	else if ((prog2 = FindUUIDWritable(prog)) != NULL) {
-		prog2->Modify(prog);
-	}
-	else AddProg(prog);
-}
-
-void ADVBProgList::ModifyProgs(const ADVBProgList& list, bool similar)
-{
-	uint_t i;
-
-	for (i = 0; i < list.Count(); i++) {
-		ModifyProgs(list[i], similar);
-	}
-}
-
-void ADVBProgList::ModifyFile(const AString& filename, const ADVBProg& prog, bool similar)
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBProgList list;
-
-	if (list.ReadFromBinaryFile(filename)) {
-		list.CreateHash();
-		list.ModifyProgs(prog, similar);
-		if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after modification by a programme", filename.str());
-	}
-	else config.logit("Failed to read file '%s' for modification by a programme", filename.str());
-}
-
 void ADVBProgList::EnhanceListings()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProgList list;
-
+	uint_t added, modified;
+	
 	CreateHash();
 	
 	list.DeleteAll();
 	if (list.ReadFromBinaryFile(config.GetScheduledFile())) {
-		ModifyProgs(list);
+		Modify(list, added, modified, Prog_Add);
 	}
 	else config.logit("Failed to read scheduled programme list for enhancing listings");
 
 	list.DeleteAll();
 	if (list.ReadFromBinaryFile(config.GetRecordingFile())) {
-		ModifyProgs(list);
+		Modify(list, added, modified, Prog_ModifyAndAdd);
 	}
 	else config.logit("Failed to read running programme list for enhancing listings");
 
 	list.DeleteAll();
 	if (list.ReadFromBinaryFile(config.GetProcessingFile())) {
-		ModifyProgs(list);
+		Modify(list, added, modified, Prog_ModifyAndAdd);
 	}
 	else config.logit("Failed to read processing programme list for enhancing listings");
 
 	list.DeleteAll();
 	if (list.ReadFromBinaryFile(config.GetRecordFailuresFile())) {
-		ModifyProgs(list);
+		Modify(list, added, modified, Prog_ModifyAndAdd);
 	}
 	else config.logit("Failed to read record failures list for enhancing listings");
 
 	list.DeleteAll();
 	if (list.ReadFromBinaryFile(config.GetRejectedFile())) {
-		ModifyProgs(list);
+		Modify(list, added, modified, Prog_ModifyAndAdd);
 	}
 	else config.logit("Failed to read rejected programme list for enhancing listings");
 }

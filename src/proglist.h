@@ -84,10 +84,6 @@ public:
 	ADVBProg       *FindSimilarWritable(const ADVBProg& prog, ADVBProg *startprog = NULL);
 	const ADVBProg *FindCompleteRecording(const ADVBProg& prog) const;
 
-	void ModifyProgs(const ADVBProg&     prog, bool similar = false);
-	void ModifyProgs(const ADVBProgList& list, bool similar = false);
-	static void ModifyFile(const AString& filename, const ADVBProg& prog, bool similar = false);
-
 	uint_t FindSimilarProgrammes(ADVBProgList& dest, const ADVBProg& prog, uint_t index = 0) const;
 
 	void Sort(bool reverse = false);
