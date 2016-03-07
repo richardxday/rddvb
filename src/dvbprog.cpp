@@ -1482,7 +1482,7 @@ AString ADVBProg::GetPrefItem(const AString& name, const AString& defval) const
 	return res;
 }
 
-AString ADVBProg::ValidFilename(const AString& str, bool dir) const
+AString ADVBProg::ValidFilename(const AString& str, bool dir)
 {
 	AString res;
 	sint_t i;

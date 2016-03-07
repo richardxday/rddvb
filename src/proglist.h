@@ -76,6 +76,7 @@ public:
 	static void ReadPatterns(ADataList& patternlist, AString& errors, bool sort = true);
 
 	static bool CheckDiskSpace(bool runcmd = false, bool report = false);
+	bool CheckDiskSpaceList(bool runcmd = false, bool report = false) const;
 
 	void FindProgrammes(ADVBProgList& dest, const ADataList& patternlist, uint_t maxmatches = MAX_UNSIGNED(uint_t)) const;
 	void FindProgrammes(ADVBProgList& dest, const AString& patterns, AString& errors, const AString& sep = "\n", uint_t maxmatches = MAX_UNSIGNED(uint_t)) const;
