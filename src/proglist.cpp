@@ -104,13 +104,13 @@ bool ADVBProgList::ModifyFromRecordingHost(const AString& filename, uint_t mode,
 
 					if (added || modified) {
 						if (locallist.WriteToFile(filename)) {
-							config.printf("Modified programmes in '%s' from recording host, total now %u (%u added)", filename.str(), locallist.Count(), added);
+							if (added || modified) config.printf("Modified programmes in '%s' from recording host, total now %u (%u added, %u modified)", filename.str(), locallist.Count(), added, modified);
 							success = true;
 						}
 						else config.printf("Failed to write programme list back!");
 					}
 					else {
-						config.printf("No programmes added");
+						//config.printf("No programmes added");
 						success = true;
 					}
 				}

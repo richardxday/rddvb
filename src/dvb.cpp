@@ -1217,7 +1217,7 @@ int main(int argc, char *argv[])
 							}
 						}
 
-						config.printf("%u programmes converted", converted);
+						if (converted) config.printf("%u programmes converted", converted);
 					}
 					else config.printf("Failed to read recorded programmes");
 				}
