@@ -1529,15 +1529,21 @@ const char *ADVBProg::PreProcessString(const char *field, AString& temp, const c
 	return str;
 }
 
+AString ADVBProg::ReplaceDirectoryTerms(const AString& str) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	return config.ReplaceTerms(GetUser(),
+							   str.SearchAndReplace("{titledir}", ValidFilename(GetTitle(), true)));
+}
+
 AString ADVBProg::ReplaceFilenameTerms(const AString& str, bool converted) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString date  = GetStartDT().UTCToLocal().DateFormat("%Y-%M-%D");
 	AString times = GetStartDT().UTCToLocal().DateFormat("%h%m") + "-" + GetStopDT().UTCToLocal().DateFormat("%h%m");
 	AString res   = config.ReplaceTerms(GetUser(),
-										str
+										ReplaceDirectoryTerms(str)
 										.SearchAndReplace("{title}", ValidFilename(GetTitle()))
-										.SearchAndReplace("{titledir}", ValidFilename(GetTitle(), true))
 										.SearchAndReplace("{subtitle}", ValidFilename(GetSubtitle()))
 										.SearchAndReplace("{episode}", ValidFilename(GetEpisodeString()))
 										.SearchAndReplace("{channel}", ValidFilename(GetChannel()))
@@ -1569,6 +1575,11 @@ AString ADVBProg::GenerateFilename(bool converted) const
 	AString templ = config.GetFilenameTemplate(GetUser(), GetCategory());
 	AString dir   = converted ? GetRecordingSubDir() : config.GetRecordingsStorageDir();
 	return ReplaceFilenameTerms(dir.CatPath(templ), converted);
+}
+
+AString ADVBProg::GetConvertedDestinationDirectory() const
+{
+	return ReplaceDirectoryTerms(GetRecordingSubDir());
 }
 
 static bool __fileexists(const FILE_INFO *file, void *Context)

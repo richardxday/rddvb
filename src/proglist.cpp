@@ -1445,7 +1445,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 	for (i = 0; i < Count(); i++) {
 		const ADVBProg& prog = GetProg(i);
 		const AString user = prog.GetUser();
-		const AString rdir = AString(prog.GetDir()).SearchAndReplace("{titledir}", ADVBProg::ValidFilename(prog.GetTitle(), true));
+		const AString rdir = prog.GetConvertedDestinationDirectory();
 		AString dir;
 		
 		if (rdir.StartsWith(recdir)) dir = rdir.Mid(recdir.len() + 1);

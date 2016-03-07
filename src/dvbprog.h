@@ -312,8 +312,8 @@ public:
 
 	bool FixData();
 
-	static AString ValidFilename(const AString& str, bool dir = false);
-
+	AString GetConvertedDestinationDirectory() const;
+	
 	static bool FilePatternExists(const AString& filename);
 
 	static bool GetFileFormat(const AString& filename, AString& format);
@@ -443,6 +443,8 @@ protected:
 	static uint16_t GetPriDataOffset();
 	static uint16_t GetScoreDataOffset();
 
+	static AString ValidFilename(const AString& str, bool dir = false);
+
 	static void SwapBytes(DVBPROG *prog);
 
 	uint64_t GetDate(const AString& str, const AString& fieldname) const;
@@ -469,6 +471,7 @@ protected:
 
 	AString ReplaceTerms(const AString& str) const;
 	AString ReplaceFilenameTerms(const AString& str, bool converted) const;
+	AString ReplaceDirectoryTerms(const AString& str) const;
 
 	AString GetLogFile() const;
 	bool    RunCommand(const AString& cmd, bool logoutput = false) const;
