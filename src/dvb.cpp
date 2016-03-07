@@ -1227,7 +1227,6 @@ int main(int argc, char *argv[])
 				if (!success) res = -1;
 			}
 			else if (stricmp(argv[i], "--pull-recording-list") == 0) {
-				ADVBLock      lock("pullrecordings");
 				const AString filename = config.GetRecordingFile();
 				FILE_INFO     info1, info2;
 				bool          info1valid;
