@@ -14,6 +14,7 @@ typedef struct {
 } REPLACEMENT;
 extern AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint_t n);
 
+extern bool RunAndLogCommand(const AString& cmd);
 extern bool SendFileToRecordingHost(const AString& filename);
 extern bool GetFileFromRecordingHost(const AString& filename);
 extern bool GetFileFromRecordingHost(const AString& filename, const AString& localfilename);
