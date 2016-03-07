@@ -1192,13 +1192,13 @@ int main(int argc, char *argv[])
 				if (ADVBProgList::ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
 					AString cmd;
 
-					cmd.printf("nice rsync --progress --remove-source-files %s %s:%s/'*.mpg' %s",
+					cmd.printf("nice rsync -p --remove-source-files --ignore-missing-args %s %s:%s/'*.mpg' %s",
 							   config.GetRsyncArgs().str(),
 							   config.GetRecordingHost().str(),
 							   config.GetRecordingsStorageDir().str(),
 							   config.GetRecordingsStorageDir().str());
 
-					if (system(cmd) != 0) config.printf("Failed to copy all recorded programmes from recording host");
+					if (system(cmd) != 0) config.printf("Warning: Failed to copy all recorded programmes from recording host");
 					
 					ADVBProgList reclist;
 					if (reclist.ReadFromFile(config.GetRecordedFile())) {
