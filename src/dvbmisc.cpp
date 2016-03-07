@@ -38,6 +38,20 @@ AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint
 	return res;
 }
 
+bool RunAndLogCommand(const AString& cmd)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString cmd1 = cmd;
+
+	if (config.IsWebResponse()) cmd1.printf(" >>\"%s\" 2>&1", config.GetLogFile(ADateTime().GetDays()).str());
+	else						cmd1.printf(" 2>&1 | tee -a \"%s\"", config.GetLogFile(ADateTime().GetDays()).str());
+	
+	bool success = (system(cmd1) == 0);
+	if (!success) config.logit("Command '%s' failed", cmd.str());
+
+	return success;
+}
+
 bool SendFileToRecordingHost(const AString& filename)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -45,10 +59,7 @@ bool SendFileToRecordingHost(const AString& filename)
 
 	cmd.printf("scp -C %s \"%s\" %s:\"%s\"", config.GetSCPArgs().str(), filename.str(), config.GetRecordingHost().str(), filename.str());
 
-	bool success = (system(cmd) == 0);
-	if (!success) config.logit("Command '%s' failed", cmd.str());
-
-	return success;
+	return RunAndLogCommand(cmd);
 }
 
 bool GetFileFromRecordingHost(const AString& filename)
@@ -63,10 +74,7 @@ bool GetFileFromRecordingHost(const AString& filename, const AString& localfilen
 
 	cmd.printf("scp -C %s %s:\"%s\" \"%s\"", config.GetSCPArgs().str(), config.GetRecordingHost().str(), filename.str(), localfilename.str());
 
-	bool success = (system(cmd) == 0);
-	if (!success) config.logit("Command '%s' failed", cmd.str());
-
-	return success;
+	return RunAndLogCommand(cmd);
 }
 
 bool RunRemoteCommand(const AString& cmd)
@@ -76,10 +84,7 @@ bool RunRemoteCommand(const AString& cmd)
 
 	cmd1.printf("ssh -C %s %s \"%s\"", config.GetSSHArgs().str(), config.GetRecordingHost().str(), cmd.Escapify().str());
 
-	bool success = (system(cmd1) == 0);
-	if (!success) config.logit("Command '%s' failed", cmd1.str());
-
-	return success;
+	return RunAndLogCommand(cmd);
 }
 
 bool SendFileRunRemoteCommand(const AString& filename, const AString& cmd)

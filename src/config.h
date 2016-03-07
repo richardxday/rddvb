@@ -15,7 +15,8 @@ public:
 	static ADVBConfig& GetWriteable(bool webresponse = false);
 
 	void WebResponse() {webresponse = true;}
-
+	bool IsWebResponse() const {return webresponse;}
+		
 	AString GetConfigItem(const AString& name) const;
 	AString GetConfigItem(const AString& name, const AString& defval) const;
 	AString GetUserConfigItem(const AString& user, const AString& name) const {return GetConfigItem(user + ":" + name, GetConfigItem(name));}
