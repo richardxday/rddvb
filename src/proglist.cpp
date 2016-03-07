@@ -759,9 +759,7 @@ uint_t ADVBProgList::ModifyProg(const ADVBProg& prog, uint_t mode, bool sort)
 			res = Prog_Modify;
 		}
 	}
-	else if ((mode & Prog_Add) && (AddProg(prog, sort, false) >= 0)) {
-		res = Prog_Add;
-	}
+	else if ((mode & Prog_Add) && (AddProg(prog, sort, false) >= 0)) res = Prog_Add;
 
 	return res;
 }
@@ -905,6 +903,8 @@ int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps)
 		index = proglist.Add((uptr_t)prog, index);
 	}
 	else index = proglist.Add((uptr_t)prog);
+
+	if ((index >= 0) && proghash.Valid()) proghash.Insert(prog->GetUUID(), (uptr_t)prog);
 
 	return index;
 }
