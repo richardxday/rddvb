@@ -1412,16 +1412,22 @@ bool ADVBProgList::CheckDiskSpace(bool runcmd, bool report)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProgList proglist;
-	AStdFile  	 fp;
-	AHash     	 hash(30);
-	AString   	 filename;
-	double    	 lowlimit = config.GetLowSpaceWarningLimit();
-	uint_t    	 i, userlen = 0;
-	bool      	 first = true;
-	bool      	 okay  = true;
 
 	proglist.ReadFromFile(config.GetScheduledFile());
-	proglist.Sort(&SortProgsByUserThenDir);
+
+	return proglist.CheckDiskSpaceList(runcmd, report);
+}
+
+bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AStdFile fp;
+	AHash    hash(30);
+	AString  filename;
+	double   lowlimit = config.GetLowSpaceWarningLimit();
+	uint_t   i, userlen = 0;
+	bool     first = true;
+	bool     okay  = true;
 	
 	if (report) printf(",\"diskspace\":[");
 
@@ -1435,13 +1441,13 @@ bool ADVBProgList::CheckDiskSpace(bool runcmd, bool report)
 	AString fmt;
 	fmt.printf("%%-%us %%6.1lfG %%s", userlen);
 
-	AString recdir = config.GetRecordingsDir();
-	for (i = 0; i < proglist.Count(); i++) {
-		const ADVBProg& prog = proglist[i];
-		AString user, dir, rdir;
-
-		user = prog.GetUser();
-		rdir = AString(prog.GetFilename()).PathPart();
+	const AString recdir = config.GetRecordingsDir();
+	for (i = 0; i < Count(); i++) {
+		const ADVBProg& prog = GetProg(i);
+		const AString user = prog.GetUser();
+		const AString rdir = AString(prog.GetDir()).SearchAndReplace("{titledir}", ADVBProg::ValidFilename(prog.GetTitle(), true));
+		AString dir;
+		
 		if (rdir.StartsWith(recdir)) dir = rdir.Mid(recdir.len() + 1);
 		else						 dir = rdir;
 

@@ -312,6 +312,8 @@ public:
 
 	bool FixData();
 
+	static AString ValidFilename(const AString& str, bool dir = false);
+
 	static bool FilePatternExists(const AString& filename);
 
 	static bool GetFileFormat(const AString& filename, AString& format);
@@ -444,7 +446,6 @@ protected:
 	static void SwapBytes(DVBPROG *prog);
 
 	uint64_t GetDate(const AString& str, const AString& fieldname) const;
-	AString ValidFilename(const AString& str, bool dir = false) const;
 
 	const char *GetString(uint16_t offset)   const {return data->strdata + offset;}
 	bool StringValid(const uint16_t *offset) const {return (offset[1] > offset[0]);}
