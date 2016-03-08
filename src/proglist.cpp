@@ -1549,10 +1549,7 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 	if (!commit) config.logit("** Not committing scheduling **");
 
 	if (config.GetRecordingHost().Valid()) {
-		{
-			ADVBLock lock("pullrecordings");
-			ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add);
-		}
+		ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add);
 		GetRecordingListFromRecordingSlave();
 	}
 	
