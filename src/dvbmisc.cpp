@@ -84,7 +84,7 @@ bool RunRemoteCommand(const AString& cmd)
 
 	cmd1.printf("ssh -C %s %s \"%s\"", config.GetSSHArgs().str(), config.GetRecordingHost().str(), cmd.Escapify().str());
 
-	return RunAndLogCommand(cmd);
+	return RunAndLogCommand(cmd1);
 }
 
 bool SendFileRunRemoteCommand(const AString& filename, const AString& cmd)
