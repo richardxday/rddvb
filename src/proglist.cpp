@@ -1516,8 +1516,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 			if (cmd.Valid()) {
 				cmd = cmd.SearchAndReplace("{logfile}", filename);
 
-				int res = system(cmd);
-				if (res != 0) config.logit("Command '%s' failed!", cmd.str());
+				RunAndLogCommand(cmd);
 			}
 		}
 		else {
@@ -1525,8 +1524,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 			if (cmd.Valid()) {
 				cmd = cmd.SearchAndReplace("{logfile}", filename);
 
-				int res = system(cmd);
-				if (res != 0) config.logit("Command '%s' failed!", cmd.str());
+				RunAndLogCommand(cmd);
 			}
 		}
 
@@ -1755,9 +1753,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 
 				cmd = cmd.SearchAndReplace("{logfile}", filename);
 
-				if (system(cmd) != 0) {
-					config.printf("Command '%s' failed", cmd.str());
-				}
+				RunAndLogCommand(cmd);
 			}
 
 			remove(filename);
@@ -2188,6 +2184,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 bool ADVBProgList::WriteToJobList()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
+	ADateTime dt;
 	const AString filename = config.GetScheduledFile();
 	bool success = false;
 	
@@ -2235,7 +2232,23 @@ bool ADVBProgList::WriteToJobList()
 
 			if (!scheduledlist.WriteToFile(filename, false)) {
 				config.logit("Failed to write updated schedule list '%s'", filename.str());
+				success = false;
 			}
+		}
+	}
+
+	if (!success) {
+		AString cmd;
+
+		if ((cmd = config.GetConfigItem("schedulefailurecmd")).Valid()) {
+			AString logfile = config.GetTempFile("schedulefailure", ".txt");
+
+			config.ExtractLogData(dt, ADateTime(), logfile);
+			
+			cmd = cmd.SearchAndReplace("{logfile}", logfile);
+			RunAndLogCommand(cmd);
+
+			remove(logfile);
 		}
 	}
 	
