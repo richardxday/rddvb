@@ -1548,6 +1548,14 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 
 	if (!commit) config.logit("** Not committing scheduling **");
 
+	if (config.GetRecordingHost().Valid()) {
+		{
+			ADVBLock lock("pullrecordings");
+			ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add);
+		}
+		GetRecordingListFromRecordingSlave();
+	}
+	
 	config.logit("Loading listings from '%s'", filename.str());
 
 	if (proglist.ReadFromFile(filename)) {
@@ -2255,21 +2263,23 @@ bool ADVBProgList::WriteToJobList()
 	return success;
 }
 
-void ADVBProgList::CreateCombinedFile()
+bool ADVBProgList::CreateCombinedFile()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock     lock("recordlist");
 	ADVBProgList list;
-
+	bool		 success = false;
+	
 	config.printf("Creating combined listings");
 
 	if (list.ReadFromBinaryFile(config.GetRecordedFile())) {
 		list.EnhanceListings();
-		if (!list.WriteToFile(config.GetCombinedFile())) {
-			config.logit("Failed to write combined listings file");
-		}
+		if (list.WriteToFile(config.GetCombinedFile())) success = true;
+		else config.logit("Failed to write combined listings file");
 	}
-	else config.logit("Failed to read listings plus recorded file for generating combined file");
+	else config.logit("Failed to read recorded programmes list for generating combined file");
+
+	return success;
 }
 
 void ADVBProgList::EnhanceListings()
@@ -2341,6 +2351,25 @@ void ADVBProgList::CheckRecordingFile()
 		}
 	}
 	else config.logit("Failed to read running programme list for checking");
+}
+
+bool ADVBProgList::GetRecordingListFromRecordingSlave()
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	const AString filename = config.GetRecordingFile();
+	ADVBLock      lock("recordlist");
+	FILE_INFO     info1, info2;
+	bool          info1valid = ::GetFileInfo(filename, &info1);
+	bool          success = false;
+				
+	if (GetFileFromRecordingHost(config.GetRecordingFile())) {
+		if (!info1valid || (::GetFileInfo(filename, &info2) && (info2.WriteTime != info1.WriteTime))) {
+			success = ADVBProgList::CreateCombinedFile();
+		}
+	}
+	else config.printf("Failed to get programmes being recorded");
+
+	return success;
 }
 
 void ADVBProgList::FindSeries(AHash& hash) const
