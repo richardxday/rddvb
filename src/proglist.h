@@ -117,9 +117,10 @@ public:
 	static bool WriteToJobList();
 
 	static bool CheckFile(const AString& filename, const AString& targetfilename, const FILE_INFO& fileinfo);
-	static void CreateCombinedFile();
+	static bool CreateCombinedFile();
 	static void CheckRecordingFile();
-
+	static bool GetRecordingListFromRecordingSlave();
+	
 	static void AddToList(const AString& filename, const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);
 	static void RemoveFromList(const AString& filename, const ADVBProg& prog);
 	

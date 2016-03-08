@@ -1227,21 +1227,7 @@ int main(int argc, char *argv[])
 				if (!success) res = -1;
 			}
 			else if (stricmp(argv[i], "--pull-recording-list") == 0) {
-				const AString filename = config.GetRecordingFile();
-				FILE_INFO     info1, info2;
-				bool          info1valid;
-				
-				info1valid = ::GetFileInfo(filename, &info1);
-				
-				if (GetFileFromRecordingHost(config.GetRecordingFile())) {
-					if (!info1valid || (::GetFileInfo(filename, &info2) && (info2.WriteTime != info1.WriteTime))) {
-						ADVBProgList::CreateCombinedFile();
-					}
-				}
-				else {
-					config.printf("Failed to get programmes being recorded");
-					res = -1;
-				}
+				if (!ADVBProgList::GetRecordingListFromRecordingSlave()) res = -1;
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
