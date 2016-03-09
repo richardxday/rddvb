@@ -1199,7 +1199,7 @@ int main(int argc, char *argv[])
 							   config.GetRecordingsStorageDir().str(),
 							   config.GetRecordingsStorageDir().str());
 
-					if (RunAndLogCommand(cmd) != 0) config.printf("Warning: Failed to copy all recorded programmes from recording host");
+					if (!RunAndLogCommand(cmd)) config.printf("Warning: Failed to copy all recorded programmes from recording host");
 					
 					ADVBProgList reclist;
 					if (reclist.ReadFromFile(config.GetRecordedFile())) {
