@@ -2178,7 +2178,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 		ADVBProg& prog = scheduledlist.GetProgWritable(i);
 
 		prog.SetScheduled();
-		prog.SetDVBCard(card);
+		prog.SetDVBCard(dvbcard);
 
 		allscheduledlist.AddProg(prog, false);
 	}
