@@ -149,8 +149,8 @@ int main(int argc, char *argv[])
 #if DVBDATVERSION > 1
 		printf("\t--update-brand-series-episode\tUpdate bse in current list from listings file\n");
 #endif
-		printf("\t--pull-recordings\t\tPull and convert any recordings from recording host\n");
-		printf("\t--pull-recording-list\t\tPull list of programmes being recorded\n");
+		printf("\t--get-and-convert-recorded\tPull and convert any recordings from recording host\n");
+		printf("\t--update-recordings-list\tPull list of programmes being recorded\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -1186,10 +1186,10 @@ int main(int argc, char *argv[])
 				}
 			}
 #endif
-			else if (stricmp(argv[i], "--pull-recordings") == 0) {
+			else if (stricmp(argv[i], "--get-and-convert-recorded") == 0) {
 				if (!ADVBProgList::GetAndConvertRecordings()) res = -1;
 			}
-			else if (stricmp(argv[i], "--pull-recording-list") == 0) {
+			else if (stricmp(argv[i], "--update-recordings-list") == 0) {
 				if (!ADVBProgList::GetRecordingListFromRecordingSlave()) res = -1;
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {

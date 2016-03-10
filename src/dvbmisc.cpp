@@ -3,6 +3,7 @@
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
+#include <rdlib/StdSocket.h>
 
 #include "config.h"
 #include "dvbmisc.h"
@@ -95,4 +96,27 @@ bool SendFileRunRemoteCommand(const AString& filename, const AString& cmd)
 bool RunRemoteCommandGetFile(const AString& cmd, const AString& filename)
 {
 	return (RunRemoteCommand(cmd) && GetFileFromRecordingHost(filename));
+}
+
+bool TriggerServerCommand(const AString& cmd)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString host = config.GetServerHost();
+	bool success = false;
+	
+	if (host.Valid()) {
+		static ASocketServer server;
+		static AStdSocket    socket(server);
+
+		if (!socket.isopen()) {
+			if (socket.open("0.0.0.0", 0, ASocketServer::Type_Datagram)) {
+				socket.setdatagramdestination(host, config.GetServerPort());
+			}
+			else config.printf("Failed to open UDP socket for server command triggers");
+		}
+
+		success = (socket.printf("%s\n", cmd.str()) > 0);
+	}
+
+	return success;
 }
