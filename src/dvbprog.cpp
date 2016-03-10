@@ -1984,6 +1984,8 @@ void ADVBProg::Record()
 			SetRecording();
 			ADVBProgList::AddToList(config.GetRecordingFile(), *this);
 
+			TriggerServerCommand(config.GetServerUpdateRecordingsCommand());
+								 
 			config.printf("--------------------------------------------------------------------------------");
 			config.writetorecordlog("start %s", Base64Encode().str());
 			res = system(cmd);
@@ -1992,6 +1994,8 @@ void ADVBProg::Record()
 
 			ADVBProgList::RemoveFromList(config.GetRecordingFile(), *this);
 			ClearRecording();
+
+			TriggerServerCommand(config.GetServerUpdateRecordingsCommand());
 
 			if (res == 0) {
 				AString  str;
@@ -2145,6 +2149,8 @@ bool ADVBProg::OnRecordSuccess() const
 		
 		success = RunCommand("nice " + cmd);
 	}
+
+	TriggerServerCommand(config.GetServerGetAndConvertCommand());
 
 	return success;
 }

@@ -107,6 +107,11 @@ public:
 	AString GetSSHArgs()					 const {return GetConfigItem("sshargs", "");}
 	AString GetSCPArgs()					 const {return GetConfigItem("scpargs", GetSSHArgs());}
 	AString GetRsyncArgs()					 const {return GetConfigItem("rsyncargs", "");}
+
+	AString GetServerHost()                  const {return GetConfigItem("serverhost", "");}
+	uint_t  GetServerPort()                  const {return GetConfigItem("serverport", "1722");}
+	AString GetServerGetAndConvertCommand()  const {return GetConfigItem("servergetandconvertcommand", "dvbgetandconvertrecorded");}
+	AString GetServerUpdateRecordingsCommand() const {return GetConfigItem("serverupdaterecordingscommand", "dvbupdaterecordings");}
 	
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 	void printf(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
