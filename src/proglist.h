@@ -119,6 +119,8 @@ public:
 	static bool CheckFile(const AString& filename, const AString& targetfilename, const FILE_INFO& fileinfo);
 	static bool CreateCombinedFile();
 	static void CheckRecordingFile();
+
+	static bool GetAndConvertRecordings();
 	static bool GetRecordingListFromRecordingSlave();
 	
 	static void AddToList(const AString& filename, const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);

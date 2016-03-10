@@ -2350,21 +2350,74 @@ void ADVBProgList::CheckRecordingFile()
 	else config.logit("Failed to read running programme list for checking");
 }
 
+bool ADVBProgList::GetAndConvertRecordings()
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	ADVBLock lock("pullrecordings");
+	bool success = false;
+				
+	if (ADVBProgList::ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
+		AString cmd;
+
+		cmd.printf("nice rsync -v --partial --remove-source-files --ignore-missing-args %s %s:%s/'*.mpg' %s",
+				   config.GetRsyncArgs().str(),
+				   config.GetRecordingHost().str(),
+				   config.GetRecordingsStorageDir().str(),
+				   config.GetRecordingsStorageDir().str());
+
+		if (!RunAndLogCommand(cmd)) config.printf("Warning: Failed to copy all recorded programmes from recording host");
+					
+		ADVBProgList reclist;
+		if (reclist.ReadFromFile(config.GetRecordedFile())) {
+			uint_t i, converted = 0;
+
+			success = true;
+			for (i = 0; i < reclist.Count(); i++) {
+				ADVBProg& prog = reclist.GetProgWritable(i);
+								
+				if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
+					config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
+						
+					success &= prog.ConvertVideo(true);
+									
+					converted++;
+				}
+			}
+
+			if (converted) config.printf("%u programmes converted", converted);
+		}
+		else config.printf("Failed to read recorded programmes");
+	}
+	else config.printf("Unable to retreive recordings from recording host");
+
+	return success;
+}
+
 bool ADVBProgList::GetRecordingListFromRecordingSlave()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	const AString filename = config.GetRecordingFile();
-	ADVBLock      lock("recordlist");
-	FILE_INFO     info1, info2;
-	bool          info1valid = ::GetFileInfo(filename, &info1);
-	bool          success = false;
-				
-	if (GetFileFromRecordingHost(config.GetRecordingFile())) {
-		if (!info1valid || (::GetFileInfo(filename, &info2) && (info2.WriteTime != info1.WriteTime))) {
-			success = ADVBProgList::CreateCombinedFile();
-		}
+	ADVBLock  lock("recordlist");
+	ADateTime combinedwritetime = ADateTime::MinDateTime;
+	FILE_INFO info;
+	bool      success = true, update = false;
+
+	if (::GetFileInfo(config.GetCombinedFile(), &info)) combinedwritetime = info.WriteTime;
+
+	if (!ModifyFromRecordingHost(config.GetRecordFailuresFile(), Prog_Add)) {
+		config.printf("Failed to get and modify failures list");
+		success = false;
 	}
-	else config.printf("Failed to get programmes being recorded");
+	
+	if (::GetFileInfo(config.GetRecordFailuresFile(), &info)) update |= (info.WriteTime > combinedwritetime);
+	
+	if (!GetFileFromRecordingHost(config.GetRecordingFile())) {
+		config.printf("Failed to get recording list");
+		success = false;
+	}
+	
+	if (::GetFileInfo(config.GetRecordingFile(), &info)) update |= (info.WriteTime > combinedwritetime);
+
+	if (update) success &= ADVBProgList::CreateCombinedFile();
 
 	return success;
 }
