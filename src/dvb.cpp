@@ -1187,44 +1187,7 @@ int main(int argc, char *argv[])
 			}
 #endif
 			else if (stricmp(argv[i], "--pull-recordings") == 0) {
-				ADVBLock lock("pullrecordings");
-				bool success = false;
-				
-				if (ADVBProgList::ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
-					AString cmd;
-
-					cmd.printf("nice rsync -v --partial --remove-source-files --ignore-missing-args %s %s:%s/'*.mpg' %s",
-							   config.GetRsyncArgs().str(),
-							   config.GetRecordingHost().str(),
-							   config.GetRecordingsStorageDir().str(),
-							   config.GetRecordingsStorageDir().str());
-
-					if (!RunAndLogCommand(cmd)) config.printf("Warning: Failed to copy all recorded programmes from recording host");
-					
-					ADVBProgList reclist;
-					if (reclist.ReadFromFile(config.GetRecordedFile())) {
-						uint_t i, converted = 0;
-
-						success = true;
-						for (i = 0; i < reclist.Count(); i++) {
-							ADVBProg& prog = reclist.GetProgWritable(i);
-								
-							if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
-								config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
-						
-								success &= prog.ConvertVideo(true);
-									
-								converted++;
-							}
-						}
-
-						if (converted) config.printf("%u programmes converted", converted);
-					}
-					else config.printf("Failed to read recorded programmes");
-				}
-				else config.printf("Unable to retreive recordings from recording host");
-
-				if (!success) res = -1;
+				if (!ADVBProgList::GetAndConvertRecordings()) res = -1;
 			}
 			else if (stricmp(argv[i], "--pull-recording-list") == 0) {
 				if (!ADVBProgList::GetRecordingListFromRecordingSlave()) res = -1;
