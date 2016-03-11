@@ -96,8 +96,9 @@ public:
 	
 	bool    ForceSubs(const AString& user)   const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
 
-	AString GetEncodeCommand(const AString& user, const AString& category) const {return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodecmd", "avconv"));}
-	AString GetEncodeArgs(const AString& user, const AString& category)    const {return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodeargs"));}
+	AString GetEncodeCommand(const AString& user, const AString& category) 		 const {return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodecmd", "avconv"));}
+	AString GetEncodeArgs(const AString& user, const AString& category)    		 const {return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodeargs"));}
+	AString GetEncodeAudioOnlyArgs(const AString& user, const AString& category) const {return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodeaudioonlyargs"));}
 
 	AString GetEncodeLogLevel(const AString& user, bool verbose) const {return verbose ? GetUserConfigItem(user, "processloglevel:verbose", "warning") : GetUserConfigItem(user, "processloglevel:normal", "error");}
 
