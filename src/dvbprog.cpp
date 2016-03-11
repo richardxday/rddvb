@@ -2547,14 +2547,16 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 	AString logfile  = basename + "_log.txt";
 	AString proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
 	AString args     = config.GetEncodeArgs(GetUser(), GetCategory());
+	AString m2vfile  = basename + ".m2v";
+	AString mp2file  = basename + ".mp2";
 	ADateTime now;
 	bool    success = true;
 	
 	CreateDirectory(dst.PathPart());
 
 	if (AStdFile::exists(src) &&
-		(!AStdFile::exists(AString("%;.m2v").Arg(basename)) ||
-		 !AStdFile::exists(AString("%;.mp2").Arg(basename)) ||
+		(!AStdFile::exists(m2vfile) ||
+		 !AStdFile::exists(mp2file) ||
 		 !AStdFile::exists(logfile))) {
 		AString cmd;
 			
@@ -2570,7 +2572,9 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 	AString bestaspect;
 	AList   delfiles;
 	
-	if (success && AStdFile::exists(src)) {
+	if (success &&
+		AStdFile::exists(m2vfile) &&
+		AStdFile::exists(mp2file)) {
 		AStdFile fp;
 		
 		if (fp.open(logfile)) {
@@ -2640,15 +2644,34 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 	}
 
 	if (success) {
-		if (splits.size() == 1) {
+		if (!AStdFile::exists(m2vfile) && AStdFile::exists(mp2file)) {
+			config.printf("No video: audio only");
+
+			dst = dst.Prefix() + ".mp3";
+			AString tempdst = config.GetRecordingsStorageDir().CatPath(dst.FilePart().Prefix() + "_temp." + dst.Suffix());
+
+			AString cmd;
+			cmd.printf("nice %s -i \"%s\" -v %s %s -y \"%s\"",
+					   config.GetEncodeCommand(GetUser(), GetCategory()).str(),
+					   mp2file.str(),
+					   config.GetEncodeLogLevel(GetUser(), verbose).str(),
+					   config.GetEncodeAudioOnlyArgs(GetUser(), GetCategory()).str(),
+					   tempdst.str());
+			
+			if (RunCommand(cmd, !verbose)) {
+				success &= MoveFile(tempdst, dst, true);
+			}
+			else success = false;
+		}
+		else if (splits.size() == 1) {
 			config.printf("No need to split file");
 
 			ConvertSubtitles(src, dst, splits, bestaspect);
 
 			AString inputfiles;
-			inputfiles.printf("-i \"%s.m2v\" -i \"%s.mp2\"", 
-							  basename.str(),
-							  basename.str());
+			inputfiles.printf("-i \"%s\" -i \"%s\"", 
+							  m2vfile.str(),
+							  mp2file.str());
 			success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
 		}
 		else {
