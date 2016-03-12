@@ -539,22 +539,29 @@ int main(int argc, char *argv[])
 
 			switch (datasource) {
 				default:
-				case DataSource_Progs:
+				case DataSource_Progs: {
+					AString from;
+					
 					printf(",\"progs\":[\n");
+
+					Value(vars, from, "from");
+					from = from.ToLower();
 
 					for (i = 0; (i < count) && !HasQuit(); i++) {
 						ADVBProg& prog = proglist->GetProgWritable(offset + i);
 						const ADVBProg *prog2;
 
 						if (i > 0) printf(",\n");
-						
-						if		((prog2 = processinglist.FindUUID(prog)) != NULL) prog = *prog2;
-						else if ((prog2 = recordinglist.FindUUID(prog))  != NULL) prog = *prog2;
-						else if	((prog2 = failureslist.FindUUID(prog))   != NULL) prog = *prog2;
-						else if ((prog2 = rejectedlist.FindUUID(prog))   != NULL) prog = *prog2;
-						else if ((prog2 = scheduledlist.FindUUID(prog))  != NULL) prog = *prog2;
-						else if ((prog2 = recordedlist.FindUUID(prog))   != NULL) prog = *prog2;
 
+						if (from == "listings") {
+							if		((prog2 = processinglist.FindUUID(prog)) != NULL) prog.Modify(*prog2);
+							else if ((prog2 = recordinglist.FindUUID(prog))  != NULL) prog.Modify(*prog2);
+							else if	((prog2 = failureslist.FindUUID(prog))   != NULL) prog.Modify(*prog2);
+							else if ((prog2 = rejectedlist.FindUUID(prog))   != NULL) prog.Modify(*prog2);
+							else if ((prog2 = scheduledlist.FindUUID(prog))  != NULL) prog.Modify(*prog2);
+							else if ((prog2 = recordedlist.FindUUID(prog))   != NULL) prog.Modify(*prog2);
+						}
+						
 						printf("{");
 						printf("%s", prog.ExportToJSON(true).str());
 						printpattern(patterns, prog);
@@ -591,7 +598,8 @@ int main(int argc, char *argv[])
 
 					printf("]\n");
 					break;
-
+				}
+					
 				case DataSource_Patterns:
 					printf(",\"patterns\":[\n");
 
