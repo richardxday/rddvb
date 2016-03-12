@@ -2543,6 +2543,9 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 
 	config.printf("Source '%s' exists, destination '%s' does not exists", src.str(), dst.str());
 
+	SetPostProcessing();
+	ADVBProgList::AddToList(config.GetProcessingFile(), *this);
+
 	AString basename = src.Prefix();
 	AString logfile  = basename + "_log.txt";
 	AString proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
@@ -2761,6 +2764,7 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 
 		{
 			FlagsSaver saver(this);
+			ClearPostProcessing();
 			ClearRunning();
 			success = UpdateRecordedList();
 		}
@@ -2783,6 +2787,9 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 		remove(basename + ".mp2");
 		remove(logfile);
 	}
+
+	ADVBProgList::RemoveFromList(config.GetProcessingFile(), *this);
+	ClearPostProcessing();
 
 	if (success) {
 		uint64_t taken = ADateTime() - now;
