@@ -142,7 +142,8 @@ int main(int argc, char *argv[])
 		printf("\t--force-failures\t\tAdd current list to recording failures (setting failed flag)\n");
 		printf("\t--show-encoding-args\t\tShow encoding arguments for programmes in current list\n");
 		printf("\t--show-file-format\t\tShow file format of encoded programme\n");
-		printf("\t--use-converted-filename\tChange filename to that of converted file, without actually without\n");
+		printf("\t--use-converted-filename\tChange filename to that of converted file, without actually converting file\n");
+		printf("\t--regenerate-file\t\tChange filename of current list of programmes (dependant on converted state), renaming files (in original directory OR current directory)\n");
 		printf("\t--delete-files\t\t\tDelete encoded files from programmes in current list\n");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
@@ -1105,6 +1106,34 @@ int main(int argc, char *argv[])
 						prog.SetFilename(prog.GenerateFilename(true));
 
 						if (oldfilename != AString(prog.GetFilename())) prog.UpdateRecordedList();
+					}
+				}
+			}
+			else if (stricmp(argv[i], "--regenerate-filename") == 0) {
+				uint_t j;
+
+				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
+					ADVBProg& prog = proglist.GetProgWritable(j);
+					AString oldfilename = prog.GetFilename();
+					AString newfilename = oldfilename.PathPart().CatPath(prog.GenerateFilename(prog.IsConverted()).FilePart());
+
+					if (newfilename != oldfilename) {
+						prog.SetFilename(newfilename);
+
+						if (AStdFile::exists(oldfilename)) {
+							if (rename(oldfilename, newfilename) == 0) {
+								printf("Renamed '%s' to '%s'\n", oldfilename.str(), newfilename.str());
+							}
+							else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename.str(), newfilename.str());
+						}
+						else if (AStdFile::exists(oldfilename.FilePart())) {
+							AString oldfilename1 = oldfilename.FilePart();
+							AString newfilename1 = newfilename.FilePart();
+							if (rename(oldfilename1, newfilename1) == 0) {
+								printf("Renamed '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
+							}
+							else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
+						}
 					}
 				}
 			}
