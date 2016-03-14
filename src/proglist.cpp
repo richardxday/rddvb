@@ -95,7 +95,7 @@ bool ADVBProgList::ModifyFromRecordingHost(const AString& filename, uint_t mode,
 		AString dstfilename = config.GetTempFile("proglist", ".dat");
 
 		if (GetFileFromRecordingHost(filename, dstfilename)) {
-			ADVBLock     lock("recordlist");
+			ADVBLock     lock("dvbfiles");
 			ADVBProgList list;
 						
 			if (ReadFromFile(filename)) {
@@ -1541,7 +1541,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock	 lock("recordlist");
+	ADVBLock	 lock("dvbfiles");
 	ADVBProgList proglist;
 	AString      filename = config.GetListingsFile();
 	uint_t       res = 0;
@@ -1652,7 +1652,7 @@ void ADVBProgList::Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), v
 void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool sort, bool removeoverlaps)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("recordlist");
+	ADVBLock     lock("dvbfiles");
 	ADVBProgList list;
 
 	if (!list.ReadFromFile(filename)) config.logit("Failed to read file '%s' for adding a programme", filename.str());
@@ -1663,7 +1663,7 @@ void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool
 void ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("recordlist");
+	ADVBLock     lock("dvbfiles");
 	ADVBProgList list;
 
 	if (list.ReadFromFile(filename)) {
@@ -1676,7 +1676,7 @@ void ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
 uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("recordlist");
+	ADVBLock     lock("dvbfiles");
 	ADVBProgList oldrejectedlist;
 	ADVBProgList recordedlist;
 	ADVBProgList scheduledlist;
@@ -2201,49 +2201,50 @@ bool ADVBProgList::WriteToJobList()
 		uint_t tries;
 
 		for (tries = 0; (tries < 3) && !success; tries++) {
+			ADVBProgList unscheduledlist;
+			uint_t i;
+
 			if (tries) config.printf("Scheduling try %u/3:", tries + 1);
 			
 			success = (SendFileRunRemoteCommand(filename, "dvb --write-scheduled-jobs") &&
 					   scheduledlist.ModifyFromRecordingHost(config.GetScheduledFile(), ADVBProgList::Prog_ModifyAndAdd));
 
-			if (success) {
-				ADVBProgList unscheduledlist;
-				uint_t i;
+			if (!success) config.printf("Remote scheduling failed!");
 
-				for (i = 0; i < scheduledlist.Count(); i++) {
-					if (!scheduledlist[i].GetJobID()) unscheduledlist.AddProg(scheduledlist[i]);
+			for (i = 0; i < scheduledlist.Count(); i++) {
+				if (!scheduledlist[i].GetJobID()) unscheduledlist.AddProg(scheduledlist[i]);
+			}
+
+			if (unscheduledlist.Count()) {
+				AStdFile fp;
+				AString  filename = config.GetTempFile("unscheduled", ".txt");
+				AString  cmd;
+				
+				config.printf("--------------------------------------------------------------------------------");
+				config.printf("%u programmes unscheduled:", unscheduledlist.Count());
+				for (i = 0; i < unscheduledlist.Count(); i++) {
+					config.printf("%s", unscheduledlist[i].GetQuickDescription().str());
 				}
+				config.printf("--------------------------------------------------------------------------------");
 
-				if (unscheduledlist.Count()) {
-					AStdFile fp;
-					AString  filename = config.GetTempFile("unscheduled", ".txt");
-					AString  cmd;
+				success = false;
 				
-					config.printf("--------------------------------------------------------------------------------");
-					config.printf("%u programmes unscheduled:", unscheduledlist.Count());
-					for (i = 0; i < unscheduledlist.Count(); i++) {
-						config.printf("%s", unscheduledlist[i].GetQuickDescription().str());
-					}
-					config.printf("--------------------------------------------------------------------------------");
-
-					success = false;
-				
-					if ((cmd = config.GetConfigItem("schedulefailurecmd", "")).Valid()) {
-						if (fp.open(filename, "w")) {
-							fp.printf("The following programmes have NOT been scheduled:\n");
-							for (i = 0; i < unscheduledlist.Count(); i++) {
-								fp.printf("%s", unscheduledlist[i].GetDescription(10).str());
-							}
-							fp.close();
-
-							cmd = cmd.SearchAndReplace("{logfile}", filename);
-							RunAndLogCommand(cmd);
+				if ((cmd = config.GetConfigItem("schedulefailurecmd", "")).Valid()) {
+					if (fp.open(filename, "w")) {
+						fp.printf("The following programmes have NOT been scheduled:\n");
+						for (i = 0; i < unscheduledlist.Count(); i++) {
+							fp.printf("%s", unscheduledlist[i].GetDescription(10).str());
 						}
-						else config.printf("Failed to open text file for logging unscheduled!");
+						fp.close();
+
+						cmd = cmd.SearchAndReplace("{logfile}", filename);
+						RunAndLogCommand(cmd);
+
+						remove(filename);
 					}
+					else config.printf("Failed to open text file for logging unscheduled!");
 				}
 			}
-			else config.printf("Remote scheduling failed!");
 		}
 	}
 	else {
@@ -2312,7 +2313,7 @@ bool ADVBProgList::WriteToJobList()
 bool ADVBProgList::CreateCombinedFile()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("recordlist");
+	ADVBLock     lock("dvbfiles");
 	ADVBProgList list;
 	bool		 success = false;
 	
@@ -2370,7 +2371,7 @@ void ADVBProgList::EnhanceListings()
 void ADVBProgList::CheckRecordingFile()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("recordlist");
+	ADVBLock     lock("dvbfiles");
 	ADVBProgList list;
 	uint_t i;
 
@@ -2441,7 +2442,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 bool ADVBProgList::GetRecordingListFromRecordingSlave()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("recordlist");
+	ADVBLock     lock("dvbfiles");
 	ADVBProgList failurelist;
 	ADateTime 	 combinedwritetime = ADateTime::MinDateTime;
 	FILE_INFO 	 info;
@@ -2464,6 +2465,92 @@ bool ADVBProgList::GetRecordingListFromRecordingSlave()
 	if (::GetFileInfo(config.GetRecordingFile(), &info)) update |= (info.WriteTime > combinedwritetime);
 
 	if (update) success &= ADVBProgList::CreateCombinedFile();
+
+	return success;
+}
+
+bool ADVBProgList::CheckRecordingNow()
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	ADVBLock     lock("dvbfiles");
+	ADVBProgList scheduledlist, recordinglist;
+	bool         success = false;
+	
+	if (recordinglist.ReadFromFile(config.GetRecordingFile())) {
+		recordinglist.CreateHash();
+					
+		if (scheduledlist.ReadFromFile(config.GetScheduledFile())) {
+			ADVBProgList   shouldberecordinglist, shouldntberecordinglist;
+			const uint64_t now = (uint64_t)ADateTime(), slack = (uint64_t)2 * (uint64_t)60000;
+			uint_t i;
+
+			lock.ReleaseLock();
+			
+			success = true;
+			
+			for (i = 0; i < scheduledlist.Count(); i++) {
+				const ADVBProg& prog = scheduledlist[i];
+				
+				if ((now >= (prog.GetRecordStart() + slack)) && (now < (prog.GetRecordStop() + slack))) {
+					if (!recordinglist.FindUUID(prog)) shouldberecordinglist.AddProg(prog);
+				}
+				else if ((now < prog.GetRecordStart()) || (now > (prog.GetRecordStop() + slack))) {
+					if (recordinglist.FindUUID(prog)) shouldntberecordinglist.AddProg(prog);
+				}
+			}
+
+			if (shouldberecordinglist.Count() || shouldntberecordinglist.Count()) {
+				AString report;
+
+				if (shouldberecordinglist.Count()) {
+					report.printf("--------------------------------------------------------------------------------\n");
+					report.printf("%u programmes should be recording:\n", shouldberecordinglist.Count());
+
+					for (i = 0; i < shouldberecordinglist.Count(); i++) {
+						const ADVBProg& prog = shouldberecordinglist[i];
+						
+						report.printf("%s\n", prog.GetQuickDescription().str());
+					}
+					report.printf("--------------------------------------------------------------------------------\n");
+
+					if (shouldntberecordinglist.Count()) report.printf("\n");
+				}
+
+				if (shouldntberecordinglist.Count()) {
+					report.printf("--------------------------------------------------------------------------------\n");
+					report.printf("%u programmes shouldn't be recording:\n", shouldntberecordinglist.Count());
+
+					for (i = 0; i < shouldntberecordinglist.Count(); i++) {
+						const ADVBProg& prog = shouldntberecordinglist[i];
+					
+						report.printf("%s\n", prog.GetQuickDescription().str());
+					}
+					report.printf("--------------------------------------------------------------------------------\n");
+				}
+				
+				config.printf("%s", report.str());
+
+				AString cmd;
+				if ((cmd = config.GetConfigItem("recordingcheckcmd", "")).Valid()) {
+					AStdFile fp;
+					AString  filename = config.GetTempFile("recordingcheck", ".txt");
+					
+					if (fp.open(filename, "w")) {
+						fp.printf("%s", report.str());
+						fp.close();
+
+						cmd = cmd.SearchAndReplace("{logfile}", filename);
+						RunAndLogCommand(cmd);
+
+						remove(filename);
+					}
+					else config.printf("Failed to open text file for logging recording errors!");
+				}
+			}
+		}
+		else config.printf("Failed to read scheduled list");
+	}
+	else config.printf("Failed to read recording list");
 
 	return success;
 }

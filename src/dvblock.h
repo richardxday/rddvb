@@ -9,6 +9,9 @@ public:
 	ADVBLock(const AString& iname = "default");
 	~ADVBLock();
 
+	bool GetLock(uint_t n = 1);
+	void ReleaseLock(uint_t n = 1);
+
 protected:
 	typedef struct {
 		AString filename;
@@ -17,9 +20,6 @@ protected:
 	} LOCK;
 
 	static AString GetFilename(const LOCK *lock);
-
-	bool GetLock(uint_t n = 1);
-	void ReleaseLock(uint_t n = 1);
 
 	static void __DeleteLock(uptr_t item, void *context);
 
