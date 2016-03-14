@@ -36,7 +36,7 @@ public:
 	};
 	
 	void Modify(const ADVBProgList& list, uint_t& added, uint_t& modified, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
-	static bool ModifyFromRecordingHost(const AString& filename, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
+	bool ModifyFromRecordingHost(const AString& filename, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
 	
 	void UpdateDVBChannels();
 

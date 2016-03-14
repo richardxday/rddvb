@@ -88,23 +88,25 @@ bool ADVBProgList::ModifyFromRecordingHost(const AString& filename, uint_t mode,
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString host;
 	bool    success = false;
+
+	DeleteAll();
 	
 	if ((host = config.GetRecordingHost()).Valid()) {
 		AString dstfilename = config.GetTempFile("proglist", ".dat");
 
 		if (GetFileFromRecordingHost(filename, dstfilename)) {
 			ADVBLock     lock("recordlist");
-			ADVBProgList locallist, list;
+			ADVBProgList list;
 						
-			if (locallist.ReadFromFile(filename)) {
+			if (ReadFromFile(filename)) {
 				if (list.ReadFromFile(dstfilename)) {
 					uint_t added, modified;
 
-					locallist.Modify(list, added, modified, mode, sort);
+					Modify(list, added, modified, mode, sort);
 
 					if (added || modified) {
-						if (locallist.WriteToFile(filename)) {
-							if (added || modified) config.printf("Modified programmes in '%s' from recording host, total now %u (%u added, %u modified)", filename.str(), locallist.Count(), added, modified);
+						if (WriteToFile(filename)) {
+							if (added || modified) config.printf("Modified programmes in '%s' from recording host, total now %u (%u added, %u modified)", filename.str(), Count(), added, modified);
 							success = true;
 						}
 						else config.printf("Failed to write programme list back!");
@@ -1549,7 +1551,8 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 	if (!commit) config.logit("** Not committing scheduling **");
 
 	if (config.GetRecordingHost().Valid()) {
-		ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add);
+		ADVBProgList list;
+		list.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add);
 		GetRecordingListFromRecordingSlave();
 	}
 	
@@ -2194,8 +2197,54 @@ bool ADVBProgList::WriteToJobList()
 	bool success = false;
 	
 	if (config.GetRecordingHost().Valid()) {
-		success = (SendFileRunRemoteCommand(filename, "dvb --write-scheduled-jobs") &&
-				   ModifyFromRecordingHost(config.GetScheduledFile(), ADVBProgList::Prog_ModifyAndAdd));
+		ADVBProgList scheduledlist;
+		uint_t tries;
+
+		for (tries = 0; (tries < 3) && !success; tries++) {
+			if (tries) config.printf("Scheduling try %u/3:", tries + 1);
+			
+			success = (SendFileRunRemoteCommand(filename, "dvb --write-scheduled-jobs") &&
+					   scheduledlist.ModifyFromRecordingHost(config.GetScheduledFile(), ADVBProgList::Prog_ModifyAndAdd));
+
+			if (success) {
+				ADVBProgList unscheduledlist;
+				uint_t i;
+
+				for (i = 0; i < scheduledlist.Count(); i++) {
+					if (!scheduledlist[i].GetJobID()) unscheduledlist.AddProg(scheduledlist[i]);
+				}
+
+				if (unscheduledlist.Count()) {
+					AStdFile fp;
+					AString  filename = config.GetTempFile("unscheduled", ".txt");
+					AString  cmd;
+				
+					config.printf("--------------------------------------------------------------------------------");
+					config.printf("%u programmes unscheduled:", unscheduledlist.Count());
+					for (i = 0; i < unscheduledlist.Count(); i++) {
+						config.printf("%s", unscheduledlist[i].GetQuickDescription().str());
+					}
+					config.printf("--------------------------------------------------------------------------------");
+
+					success = false;
+				
+					if ((cmd = config.GetConfigItem("schedulefailurecmd", "")).Valid()) {
+						if (fp.open(filename, "w")) {
+							fp.printf("The following programmes have NOT been scheduled:\n");
+							for (i = 0; i < unscheduledlist.Count(); i++) {
+								fp.printf("%s", unscheduledlist[i].GetDescription(10).str());
+							}
+							fp.close();
+
+							cmd = cmd.SearchAndReplace("{logfile}", filename);
+							RunAndLogCommand(cmd);
+						}
+						else config.printf("Failed to open text file for logging unscheduled!");
+					}
+				}
+			}
+			else config.printf("Remote scheduling failed!");
+		}
 	}
 	else {
 		ADVBProgList scheduledlist, runninglist;
@@ -2354,10 +2403,12 @@ bool ADVBProgList::GetAndConvertRecordings()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock lock("pullrecordings");
+	ADVBProgList reclist;
 	bool success = false;
 				
-	if (ADVBProgList::ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
+	if (reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
 		AString cmd;
+		uint_t i, converted = 0;
 
 		cmd.printf("nice rsync -v --partial --remove-source-files --ignore-missing-args %s %s:%s/'*.mpg' %s",
 				   config.GetRsyncArgs().str(),
@@ -2367,26 +2418,20 @@ bool ADVBProgList::GetAndConvertRecordings()
 
 		if (!RunAndLogCommand(cmd)) config.printf("Warning: Failed to copy all recorded programmes from recording host");
 					
-		ADVBProgList reclist;
-		if (reclist.ReadFromFile(config.GetRecordedFile())) {
-			uint_t i, converted = 0;
-
-			success = true;
-			for (i = 0; i < reclist.Count(); i++) {
-				ADVBProg& prog = reclist.GetProgWritable(i);
+		success = true;
+		for (i = 0; i < reclist.Count(); i++) {
+			ADVBProg& prog = reclist.GetProgWritable(i);
 								
-				if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
-					config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
+			if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
+				config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
 						
-					success &= prog.ConvertVideo(true);
+				success &= prog.ConvertVideo(true);
 									
-					converted++;
-				}
+				converted++;
 			}
-
-			if (converted) config.printf("%u programmes converted", converted);
 		}
-		else config.printf("Failed to read recorded programmes");
+
+		if (converted) config.printf("%u programmes converted", converted);
 	}
 	else config.printf("Unable to retreive recordings from recording host");
 
@@ -2396,14 +2441,15 @@ bool ADVBProgList::GetAndConvertRecordings()
 bool ADVBProgList::GetRecordingListFromRecordingSlave()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock  lock("recordlist");
-	ADateTime combinedwritetime = ADateTime::MinDateTime;
-	FILE_INFO info;
-	bool      success = true, update = false;
+	ADVBLock     lock("recordlist");
+	ADVBProgList failurelist;
+	ADateTime 	 combinedwritetime = ADateTime::MinDateTime;
+	FILE_INFO 	 info;
+	bool      	 success = true, update = false;
 
 	if (::GetFileInfo(config.GetCombinedFile(), &info)) combinedwritetime = info.WriteTime;
 
-	if (!ModifyFromRecordingHost(config.GetRecordFailuresFile(), Prog_Add)) {
+	if (!failurelist.ModifyFromRecordingHost(config.GetRecordFailuresFile(), Prog_Add)) {
 		config.printf("Failed to get and modify failures list");
 		success = false;
 	}

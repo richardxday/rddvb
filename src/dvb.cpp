@@ -257,10 +257,12 @@ int main(int argc, char *argv[])
 				else config.printf("Failed to read recorded programmes from '%s'", config.GetRecordedFile().str());
 			}
 			else if (strcmp(argv[i], "--modify-recorded-from-recording-host") == 0) {
-				if (!ADVBProgList::ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) res = -1;
+				ADVBProgList list;
+				if (!list.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) res = -1;
 			}
 			else if (strcmp(argv[i], "--modify-scheduled-from-recording-host") == 0) {
-				if (!ADVBProgList::ModifyFromRecordingHost(config.GetScheduledFile(), ADVBProgList::Prog_ModifyAndAdd)) res = -1;
+				ADVBProgList list;
+				if (!list.ModifyFromRecordingHost(config.GetScheduledFile(), ADVBProgList::Prog_ModifyAndAdd)) res = -1;
 			}
 			else if (strcmp(argv[i], "--jobs") == 0) {
 				printf("Reading programmes from job queue...\n");
