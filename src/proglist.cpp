@@ -2407,7 +2407,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 	ADVBProgList reclist;
 	bool success = false;
 
-	config.printf("Getting and convertin recordings from record host '%s'", config.GetRecordingHost().str());
+	config.printf("Getting and converting recordings from record host '%s'", config.GetRecordingHost().str());
 	
 	if (reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
 		AString cmd;
