@@ -110,7 +110,11 @@ bool TriggerServerCommand(const AString& cmd)
 
 		if (!socket.isopen()) {
 			if (socket.open("0.0.0.0", 0, ASocketServer::Type_Datagram)) {
-				socket.setdatagramdestination(host, config.GetServerPort());
+				uint_t port = config.GetServerPort();
+				
+				if (!socket.setdatagramdestination(host, port)) {
+					config.printf("Failed to set %s:%u as UDP destination for server command triggers", host.str(), port);
+				}
 			}
 			else config.printf("Failed to open UDP socket for server command triggers");
 		}
