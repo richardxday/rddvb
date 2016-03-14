@@ -2407,6 +2407,8 @@ bool ADVBProgList::GetAndConvertRecordings()
 	ADVBProgList reclist;
 	bool success = false;
 
+	config.printf("Getting and convertin recordings from record host '%s'", config.GetRecordingHost().str());
+	
 	if (reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
 		AString cmd;
 		uint_t i, converted = 0;
@@ -2449,6 +2451,8 @@ bool ADVBProgList::GetRecordingListFromRecordingSlave()
 	ADateTime 	 combinedwritetime = ADateTime::MinDateTime;
 	FILE_INFO 	 info;
 	bool      	 success = true, update = false;
+
+	config.printf("Updating recording list from record host '%s'", config.GetRecordingHost().str());
 
 	if (::GetFileInfo(config.GetCombinedFile(), &info)) combinedwritetime = info.WriteTime;
 
