@@ -2406,11 +2406,13 @@ bool ADVBProgList::GetAndConvertRecordings()
 	ADVBLock lock("pullrecordings");
 	ADVBProgList reclist;
 	bool success = false;
-				
+
 	if (reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
 		AString cmd;
 		uint_t i, converted = 0;
 
+		GetRecordingListFromRecordingSlave();
+	
 		cmd.printf("nice rsync -v --partial --remove-source-files --ignore-missing-args %s %s:%s/'*.mpg' %s",
 				   config.GetRsyncArgs().str(),
 				   config.GetRecordingHost().str(),
