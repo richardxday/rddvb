@@ -1860,7 +1860,7 @@ bool ADVBProg::UpdateFileSize(uint_t nsecs)
 bool ADVBProg::UpdateRecordedList()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("recordlist");
+	ADVBLock     lock("dvbfiles");
 	ADVBProgList reclist;
 	bool         nochange = false;
 	
@@ -1906,7 +1906,7 @@ void ADVBProg::Record()
 		}
 
 		if (!GetJobID()) {
-			ADVBLock     lock("recordlist");
+			ADVBLock     lock("dvbfiles");
 			ADVBProgList list;
 			const ADVBProg *prog;
 

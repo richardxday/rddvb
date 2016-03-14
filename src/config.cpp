@@ -266,7 +266,12 @@ void ADVBConfig::vlogit(const char *fmt, va_list ap, bool show) const
 	str.vprintf(fmt, ap);
 	
 	if (fp.open(filename, "a")) {
-		fp.printf("%s: %s\n", dt.DateFormat("%Y-%M-%D %h:%m:%s.%S").str(), str.str());
+		uint_t i, n = str.CountLines("\n", 0);
+
+		for (i = 0; i < n; i++) {
+			fp.printf("%s: %s\n", dt.DateFormat("%Y-%M-%D %h:%m:%s.%S").str(), str.Line(i, "\n", 0).str());
+		}
+
 		fp.close();
 	}
 

@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
 #if 0
 	{
-		ADVBLock lock("recordlist");
+		ADVBLock lock("dvbfiles");
 		ADVBProgList reclist;
 		if (reclist.ReadFromFile(config.GetRecordedFile())) {
 			uint_t j;
@@ -125,7 +125,6 @@ int main(int argc, char *argv[])
 		printf("\t--scan <freq>[,<freq>...]\tScan frequencies <freq>MHz for DVB channels\n");
 		printf("\t--scan-all\t\t\tScan all known frequencies for DVB channels\n");
 		printf("\t--scan-range <start-freq> <end-freq> <step>\n\t\t\t\t\tScan frequencies <freq>MHz for DVB channels\n");
-		printf("\t--log <filename>\t\tLog to additional file <filename>\n");
 		printf("\t--find-cards\t\t\tFind DVB cards\n");
 		printf("\t--change-filename <filename1> <filename2>\n\t\t\t\t\tChange filename of recorded progamme with filename <filename1> to <filename2>\n");
 		printf("\t--change-filename-regex <filename1> <filename2>\n\t\t\t\t\tChange filename of recorded progamme with filename <filename1> to <filename2> (where <filename1> can be a regex and <filename2> can be an expansion)\n");
@@ -152,6 +151,7 @@ int main(int argc, char *argv[])
 #endif
 		printf("\t--get-and-convert-recorded\tPull and convert any recordings from recording host\n");
 		printf("\t--update-recordings-list\tPull list of programmes being recorded\n");
+		printf("\t--check-recording-now\tCheck to see if programmes that should be being recording are recording\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -234,8 +234,8 @@ int main(int argc, char *argv[])
 				else printf("Failed to read programme list from '%s'\n", filename.str());
 			}
 			else if (strcmp(argv[i], "--modify-recorded") == 0) {
-				ADVBLock lock("recordlist");
-				AString  filename = argv[++i];
+				ADVBLock 	 lock("dvbfiles");
+				AString  	 filename = argv[++i];
 				ADVBProgList reclist, list;
 
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
@@ -722,9 +722,9 @@ int main(int argc, char *argv[])
 				config.printf("Total %u DVB cards found", config.GetMaxDVBCards());
 			}
 			else if (strcmp(argv[i], "--change-filename") == 0) {
-				ADVBLock lock("recordlist");
-				AString  filename1 = argv[++i];
-				AString  filename2 = argv[++i];
+				ADVBLock 	 lock("dvbfiles");
+				AString  	 filename1 = argv[++i];
+				AString  	 filename2 = argv[++i];
 				ADVBProgList reclist;
 
 				if (filename2 != filename1) {
@@ -755,7 +755,7 @@ int main(int argc, char *argv[])
 			}
 			else if ((strcmp(argv[i], "--change-filename-regex")      == 0) ||
 					 (strcmp(argv[i], "--change-filename-regex-test") == 0)) {
-				ADVBLock     lock("recordlist");
+				ADVBLock     lock("dvbfiles");
 				ADVBProgList reclist;
 				AString 	 errors;
 				AString 	 pattern       = argv[++i];
@@ -808,7 +808,7 @@ int main(int argc, char *argv[])
 				series.Traverse(&__DisplaySeries);
 			}
 			else if (stricmp(argv[i], "--fix-data-in-recorded") == 0) {
-				ADVBLock lock("recordlist");
+				ADVBLock     lock("dvbfiles");
 				ADVBProgList reclist;
 
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
@@ -829,7 +829,7 @@ int main(int argc, char *argv[])
 				else config.printf("Failed to read recorded programme list");
 			}
 			else if (stricmp(argv[i], "--set-recorded-flag") == 0) {
-				ADVBLock lock("recordlist");
+				ADVBLock     lock("dvbfiles");
 				ADVBProgList reclist;
 
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
@@ -846,10 +846,10 @@ int main(int argc, char *argv[])
 				else config.printf("Failed to read recorded programme list");
 			}
 			else if (stricmp(argv[i], "--find-recorded-programmes-on-disk") == 0) {
-				ADVBLock lock("recordlist");
+				ADVBLock     lock("dvbfiles");
 				ADVBProgList reclist;
-				AString  recdir = config.GetRecordingsDir();
-				AString  dirs   = config.GetConfigItem("searchdirs", "");
+				AString  	 recdir = config.GetRecordingsDir();
+				AString  	 dirs   = config.GetConfigItem("searchdirs", "");
 
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
 					uint_t j, k, n = dirs.CountLines(",");
@@ -917,7 +917,7 @@ int main(int argc, char *argv[])
 				ADVBProgList::CheckDiskSpace(true);
 			}
 			else if (stricmp(argv[i], "--update-recording-complete") == 0) {
-				ADVBLock lock("recordlist");
+				ADVBLock     lock("dvbfiles");
 				ADVBProgList reclist;
 
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
@@ -939,7 +939,7 @@ int main(int argc, char *argv[])
 			}
 			else if ((stricmp(argv[i], "--set-ignore-flag") == 0) ||
 					 (stricmp(argv[i], "--clr-ignore-flag") == 0)) {
-				ADVBLock     lock("recordlist");
+				ADVBLock     lock("dvbfiles");
 				ADVBProgList reclist;
 				bool         ignore = (stricmp(argv[i], "--set-ignore-flag") == 0);
 				AString      patterns = argv[++i], errors;
@@ -982,7 +982,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			else if (stricmp(argv[i], "--force-failures") == 0) {
-				ADVBLock     lock("recordlist");
+				ADVBLock     lock("dvbfiles");
 				ADVBProgList failureslist;
 
 				if (!AStdFile::exists(config.GetRecordFailuresFile()) || failureslist.ReadFromFile(config.GetRecordFailuresFile())) {
@@ -1223,6 +1223,9 @@ int main(int argc, char *argv[])
 			}
 			else if (stricmp(argv[i], "--update-recordings-list") == 0) {
 				if (!ADVBProgList::GetRecordingListFromRecordingSlave()) res = -1;
+			}
+			else if (stricmp(argv[i], "--check-recording-now") == 0) {
+				ADVBProgList::CheckRecordingNow();
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();

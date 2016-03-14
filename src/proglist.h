@@ -122,6 +122,7 @@ public:
 
 	static bool GetAndConvertRecordings();
 	static bool GetRecordingListFromRecordingSlave();
+	static bool CheckRecordingNow();
 	
 	static void AddToList(const AString& filename, const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);
 	static void RemoveFromList(const AString& filename, const ADVBProg& prog);
