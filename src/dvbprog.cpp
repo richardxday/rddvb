@@ -1843,11 +1843,14 @@ bool ADVBProg::UpdateFileSize(uint_t nsecs)
 	bool      exists   = true;
 				
 	if (::GetFileInfo(filename, &info)) {
-		config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s",
+		uint64_t oldfilesize = GetFileSize();
+		
+		config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s%s",
 					  GetFilename(),
 					  AValue(info.FileSize / (1024 * 1024)).ToString().str(),
 					  AValue(nsecs).ToString().str(),
-					  AValue(info.FileSize / (1024 * (uint64_t)nsecs)).ToString().str());
+					  AValue(info.FileSize / (1024 * (uint64_t)nsecs)).ToString().str(),
+					  oldfilesize ? AString(", file size ratio = %0.3;").Arg((double)info.FileSize / (double)oldfilesize).str() : "");
 
 		SetFileSize(info.FileSize);
 		exists = true;
@@ -2546,14 +2549,14 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 	SetPostProcessing();
 	ADVBProgList::AddToList(config.GetProcessingFile(), *this);
 
-	AString basename = src.Prefix();
-	AString logfile  = basename + "_log.txt";
-	AString proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
-	AString args     = config.GetEncodeArgs(GetUser(), GetCategory());
-	AString m2vfile  = basename + ".m2v";
-	AString mp2file  = basename + ".mp2";
 	ADateTime now;
-	bool    success = true;
+	AString   basename = src.Prefix();
+	AString   logfile  = basename + "_log.txt";
+	AString   proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
+	AString   args     = config.GetEncodeArgs(GetUser(), GetCategory());
+	AString   m2vfile  = basename + ".m2v";
+	AString   mp2file  = basename + ".mp2";
+	bool      success = true;
 	
 	CreateDirectory(dst.PathPart());
 
