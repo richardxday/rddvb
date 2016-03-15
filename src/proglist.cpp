@@ -1691,6 +1691,47 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	recordedlist.ReadFromFile(config.GetRecordedFile());
 	reccount = recordedlist.Count();
 
+	config.logit("--------------------------------------------------------------------------------");
+	config.printf("Found: %u programmes:", Count());
+	config.logit("--------------------------------------------------------------------------------");
+	for (i = 0; i < Count(); i++) {
+		config.logit("%s", GetProg(i).GetDescription(1).str());
+	}
+	
+	// first, remove programmes that do not have a valid DVB channel
+	// then, remove any that have already finished
+	// then, remove any that have already been recorded
+	for (i = 0; i < Count();) {
+		const ADVBProg *otherprog;
+		ADVBProg& prog = GetProgWritable(i);
+
+		if (!prog.GetDVBChannel()[0]) {
+			config.logit("'%s' does not have a DVB channel", prog.GetDescription().str());
+
+			DeleteProg(i);
+		}
+		else if (!prog.AllowRepeats() && ((otherprog = recordedlist.FindCompleteRecording(prog)) != NULL)) {
+			config.logit("'%s' has already been recorded ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
+
+			DeleteProg(i);
+		}
+		else if (prog.IsMarkOnly()) {
+			config.logit("Adding '%s' to recorded list (Mark Only)", prog.GetQuickDescription().str());
+
+			recordedlist.AddProg(prog, false);
+
+			DeleteProg(i);
+		}
+		else if (prog.GetStop() == prog.GetStart()) {
+			config.logit("'%s' is zero-length", prog.GetQuickDescription().str());
+
+			DeleteProg(i);
+		}
+		else i++;
+	}
+
+	config.logit("Removed recorded and finished programmes");
+
 	n = ScheduleEx(recordedlist, scheduledlist, rejectedlist, starttime, 0);
 
 	scheduledlist.Sort();
@@ -1883,6 +1924,8 @@ void ADVBProgList::PrioritizeProgrammes(uint_t card, ADVBProgList& scheduledlist
 		prog.ClearList();
 	}
 
+	const bool lastcard        = ((card + 1) == config.GetMaxDVBCards());
+	const bool allowcontiguous = (((uint_t)config.GetConfigItem("allowcontiguous", "0") != 0) || (lastcard && ((uint_t)config.GetConfigItem("allowcontiguous:lastcard", "1") != 0)));
 	bool   done = false;
 	uint_t round;
 	for (round = 0; !done; round++) {
@@ -1895,11 +1938,16 @@ void ADVBProgList::PrioritizeProgrammes(uint_t card, ADVBProgList& scheduledlist
 				uint_t j;
 
 				while (list.Count()) {
-					ADVBProg *prog = (ADVBProg *)list.First();
-
-					if (!scheduledlist.FindOverlap(*prog)) {
+					ADVBProg *prog  = (ADVBProg *)list.First();
+					bool overlap    = allowcontiguous ? (scheduledlist.FindOverlap(*prog) != NULL) : (scheduledlist.FindRecordOverlap(*prog) != NULL);
+					
+					if (!overlap) {
 						// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
-						config.logit("'%s' does not overlap: can be recorded (round %u, base channel '%s', schedule list %u long))", prog->GetQuickDescription().str(), round, prog->GetBaseChannel(), scheduledlist.Count());
+						config.logit("'%s' does not overlap: can be recorded (round %u, base channel '%s', contiguous recordings %s)",
+									 prog->GetQuickDescription().str(),
+									 round,
+									 prog->GetBaseChannel(),
+									 allowcontiguous ? "allowed" : "not allowed");
 						
 						// add to scheduling list
 						scheduledlist.AddProg(*prog);
@@ -2067,56 +2115,36 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 		return Count();
 	}
 
-	config.logit("--------------------------------------------------------------------------------");
-	config.printf("Card %u (hardware card: %u): Found: %u programmes:", card, dvbcard, Count());
-	config.logit("--------------------------------------------------------------------------------");
-	for (i = 0; i < Count(); i++) {
-		config.logit("%s", GetProg(i).GetDescription(1).str());
-	}
-	config.logit("--------------------------------------------------------------------------------");
-
 	// read running job(s)
 	if (runninglist.ReadFromFile(config.GetRecordingFile())) {
-		config.logit("Found %u running programmes:", runninglist.Count());
-		for (i = 0; i < runninglist.Count(); i++) {
-			const ADVBProg& prog = runninglist[i];
+		if (runninglist.Count()) {
+			config.logit("--------------------------------------------------------------------------------");
+			config.logit("Found %u running programmes:", runninglist.Count());
+			for (i = 0; i < runninglist.Count(); i++) {
+				const ADVBProg& prog = runninglist[i];
 
-			if (prog.GetDVBCard() == card) {
-				recstarttime = MAX(recstarttime, prog.GetRecordStop() + 10000);
-				config.logit("Adjusting earliest record start time to %s", ADateTime(recstarttime).DateToStr().str());
-			}
+				if (prog.GetDVBCard() == card) {
+					recstarttime = MAX(recstarttime, prog.GetRecordStop() + 10000);
+					config.logit("Adjusting earliest record start time to %s", ADateTime(recstarttime).DateToStr().str());
+				}
 			
-			config.logit("%c %s", (prog.GetDVBCard() == card) ? '*' : ' ', prog.GetDescription(1).str());
+				config.logit("%c %s", (prog.GetDVBCard() == card) ? '*' : ' ', prog.GetDescription(1).str());
+			}
+			config.logit("--------------------------------------------------------------------------------");
 		}
-		config.logit("--------------------------------------------------------------------------------");
 	}
 
 	// round up to the next minute
 	recstarttime += 60000ULL - (recstarttime % 60000ULL);
 	
+	// remove any programmes that overlap with any running job(s)
 	uint64_t lateststart  = SUBZ((uint64_t)recstarttime, (uint64_t)config.GetLatestStart() * 60000ULL);		// set latest start of programmes to be scheduled
-
-	// first, remove programmes that do not have a valid DVB channel
-	// then, remove any that have already finished
-	// then, remove any that overlap with any running job(s)
-	// then, remove any that have already been recorded
-	// finally, REJECT any programmes that must not be recorded on this DVB card
 	for (i = 0; i < Count();) {
 		const ADVBProg *otherprog;
 		ADVBProg& prog = GetProgWritable(i);
 
-		if (!prog.GetDVBChannel()[0]) {
-			config.logit("'%s' does not have a DVB channel", prog.GetDescription().str());
-
-			DeleteProg(i);
-		}
-		else if (prog.GetStart() < lateststart) {
+		if (prog.GetStart() < lateststart) {
 			config.logit("'%s' started too long ago (%u mins)", prog.GetQuickDescription().str(), (uint_t)(((uint64_t)starttime - (uint64_t)prog.GetStart()) / 60000ULL));
-
-			DeleteProg(i);
-		}
-		else if ((otherprog = runninglist.FindRecordOverlap(prog)) != NULL) {
-			config.logit("'%s' overlaps running job ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
 
 			DeleteProg(i);
 		}
@@ -2125,27 +2153,8 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 
 			DeleteProg(i);
 		}
-		else if (!prog.AllowRepeats() && ((otherprog = recordedlist.FindCompleteRecording(prog)) != NULL)) {
-			config.logit("'%s' has already been recorded ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
-
-			DeleteProg(i);
-		}
-		else if (prog.IsMarkOnly()) {
-			config.logit("Adding '%s' to recorded list (Mark Only)", prog.GetQuickDescription().str());
-
-			recordedlist.AddProg(prog, false);
-
-			DeleteProg(i);
-		}
-		else if (prog.GetStop() == prog.GetStart()) {
-			config.logit("'%s' is zero-length", prog.GetQuickDescription().str());
-
-			DeleteProg(i);
-		}
 		else i++;
 	}
-
-	config.logit("Removed recorded and finished programmes");
 
 	config.logit("--------------------------------------------------------------------------------");
 	config.printf("Card %u (hardware card: %u): Requested: %u programmes:", card, dvbcard, Count());
