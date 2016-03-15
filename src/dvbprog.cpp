@@ -2374,7 +2374,8 @@ bool ADVBProg::MoveFile(const AString& src, const AString& dst, bool binary)
 	const ADVBConfig& config = ADVBConfig::Get();
 	bool success = false;
 
-	if (CopyFile(src, dst, binary)) {
+	if		(rename(src, dst) == 0) success = true;
+	else if (CopyFile(src, dst, binary)) {
 		if (remove(src) == 0) success = true;
 		else config.logit("Failed to remove '%s' after copy", src.str());
 	}
