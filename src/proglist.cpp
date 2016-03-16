@@ -1924,8 +1924,6 @@ void ADVBProgList::PrioritizeProgrammes(uint_t card, ADVBProgList& scheduledlist
 		prog.ClearList();
 	}
 
-	const bool lastcard        = ((card + 1) == config.GetMaxDVBCards());
-	const bool allowcontiguous = (((uint_t)config.GetConfigItem("allowcontiguous", "0") != 0) || (lastcard && ((uint_t)config.GetConfigItem("allowcontiguous:lastcard", "1") != 0)));
 	bool   done = false;
 	uint_t round;
 	for (round = 0; !done; round++) {
@@ -1939,15 +1937,13 @@ void ADVBProgList::PrioritizeProgrammes(uint_t card, ADVBProgList& scheduledlist
 
 				while (list.Count()) {
 					ADVBProg *prog  = (ADVBProg *)list.First();
-					bool overlap    = allowcontiguous ? (scheduledlist.FindOverlap(*prog) != NULL) : (scheduledlist.FindRecordOverlap(*prog) != NULL);
 					
-					if (!overlap) {
+					if (!scheduledlist.FindOverlap(*prog)) {
 						// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
-						config.logit("'%s' does not overlap: can be recorded (round %u, base channel '%s', contiguous recordings %s)",
+						config.logit("'%s' does not overlap: can be recorded (round %u, base channel '%s')",
 									 prog->GetQuickDescription().str(),
 									 round,
-									 prog->GetBaseChannel(),
-									 allowcontiguous ? "allowed" : "not allowed");
+									 prog->GetBaseChannel());
 						
 						// add to scheduling list
 						scheduledlist.AddProg(*prog);
