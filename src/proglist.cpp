@@ -2502,7 +2502,7 @@ bool ADVBProgList::CheckRecordingNow()
 			for (i = 0; i < scheduledlist.Count(); i++) {
 				const ADVBProg& prog = scheduledlist[i];
 				
-				if ((now >= (prog.GetRecordStart() + slack)) && (now < (prog.GetRecordStop() + slack))) {
+				if ((now >= (prog.GetRecordStart() + slack)) && (now < prog.GetRecordStop())) {
 					if (!recordinglist.FindUUID(prog)) shouldberecordinglist.AddProg(prog);
 				}
 				else if ((now < prog.GetRecordStart()) || (now > (prog.GetRecordStop() + slack))) {
