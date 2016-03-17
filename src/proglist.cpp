@@ -1681,6 +1681,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	ADVBProgList recordedlist;
 	ADVBProgList scheduledlist;
 	ADVBProgList rejectedlist;
+	ADVBProgList runninglist;
 	ADVBProgList newrejectedlist;
 	uint_t i, n, reccount;
 
@@ -1691,11 +1692,20 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	recordedlist.ReadFromFile(config.GetRecordedFile());
 	reccount = recordedlist.Count();
 
+	// read running job(s)
+	runninglist.ReadFromFile(config.GetRecordingFile());
+	runninglist.CreateHash();
+	
 	config.logit("--------------------------------------------------------------------------------");
 	config.printf("Found: %u programmes:", Count());
 	config.logit("--------------------------------------------------------------------------------");
 	for (i = 0; i < Count(); i++) {
-		config.logit("%s", GetProg(i).GetDescription(1).str());
+		const ADVBProg& prog = GetProg(i);
+		const ADVBProg *rprog;
+		
+		config.logit("%s%s",
+					 prog.GetDescription(1).str(),
+					 ((rprog = runninglist.FindUUID(prog)) != NULL) ? AString(" (recording on DVB card %s)").Arg(rprog->GetDVBCard()).str() : "");
 	}
 	
 	// first, remove programmes that do not have a valid DVB channel
@@ -1727,12 +1737,17 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 
 			DeleteProg(i);
 		}
+		else if (!prog.AllowRepeats() && ((otherprog = runninglist.FindSimilar(prog)) != NULL)) {
+			config.logit("'%s' is being recorded now ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
+
+			DeleteProg(i);
+		}
 		else i++;
 	}
 
 	config.logit("Removed recorded and finished programmes");
 
-	n = ScheduleEx(recordedlist, scheduledlist, rejectedlist, starttime, 0);
+	n = ScheduleEx(recordedlist, runninglist, scheduledlist, rejectedlist, starttime, 0);
 
 	scheduledlist.Sort();
 	rejectedlist.Sort();
@@ -2076,12 +2091,11 @@ void ADVBProgList::PrioritizeProgrammes(uint_t card, ADVBProgList& scheduledlist
 	scheduledlist.AdjustRecordTimes();
 }
 
-uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allscheduledlist, ADVBProgList& allrejectedlist, const ADateTime& starttime, uint_t card)
+uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, const ADVBProgList& runninglist, ADVBProgList& allscheduledlist, ADVBProgList& allrejectedlist, const ADateTime& starttime, uint_t card)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProgList scheduledlist;
 	ADVBProgList rejectedlist;
-	ADVBProgList runninglist;
 	AString  filename;
 	uint64_t recstarttime = (uint64_t)starttime;
 	uint_t   dvbcard      = config.GetPhysicalDVBCard(card);
@@ -2111,23 +2125,15 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 		return Count();
 	}
 
-	// read running job(s)
-	if (runninglist.ReadFromFile(config.GetRecordingFile())) {
-		if (runninglist.Count()) {
-			config.logit("--------------------------------------------------------------------------------");
-			config.logit("Found %u running programmes:", runninglist.Count());
-			for (i = 0; i < runninglist.Count(); i++) {
-				const ADVBProg& prog = runninglist[i];
-				bool  thiscard = (prog.GetDVBCard() == dvbcard);
+	if (runninglist.Count()) {
+		for (i = 0; i < runninglist.Count(); i++) {
+			const ADVBProg& prog = runninglist[i];
+			bool  thiscard = (prog.GetDVBCard() == dvbcard);
 				
-				if (thiscard) {
-					recstarttime = MAX(recstarttime, prog.GetRecordStop() + 10000);
-					config.logit("Adjusting earliest record start time to %s", ADateTime(recstarttime).DateToStr().str());
-				}
-			
-				config.logit("%c %s", thiscard ? '*' : ' ', prog.GetDescription(1).str());
+			if (thiscard) {
+				recstarttime = MAX(recstarttime, prog.GetRecordStop() + 10000);
+				config.logit("Adjusting earliest record start time to %s", ADateTime(recstarttime).DateToStr().str());
 			}
-			config.logit("--------------------------------------------------------------------------------");
 		}
 	}
 
@@ -2138,15 +2144,9 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	// remove any programmes that overlap with any running job(s)
 	uint64_t lateststart  = SUBZ((uint64_t)recstarttime, (uint64_t)config.GetLatestStart() * 60000ULL);		// set latest start of programmes to be scheduled
 	for (i = 0; i < Count();) {
-		const ADVBProg *otherprog;
 		ADVBProg& prog = GetProgWritable(i);
 
-		if (!prog.AllowRepeats() && ((otherprog = runninglist.FindSimilar(prog)) != NULL)) {
-			config.logit("'%s' is being recorded now ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
-
-			DeleteProg(i);
-		}
-		else if (prog.GetStart() < lateststart) {
+		if (prog.GetStart() < lateststart) {
 			config.logit("'%s' started too long ago (%s mins)", prog.GetQuickDescription().str(), AValue(((uint64_t)starttime - prog.GetStart()) / (uint64_t)60000).ToString().str());
 
 			if (prog.GetStop() > recstarttime) {
@@ -2181,7 +2181,7 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	config.logit("--------------------------------------------------------------------------------");
 	for (i = 0; i < scheduledlist.Count(); i++) {
 		const ADVBProg& prog = scheduledlist[i];
-
+		
 		config.logit("%s (%s - %s)",
 					 prog.GetDescription(1).str(),
 					 prog.GetRecordStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m:%s").str(),
@@ -2191,14 +2191,23 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 
 	for (i = 0; i < scheduledlist.Count(); i++) {
 		ADVBProg& prog = scheduledlist.GetProgWritable(i);
+		const ADVBProg *rprog;
 
 		prog.SetScheduled();
 		prog.SetDVBCard(dvbcard);
 
 		allscheduledlist.AddProg(prog, false);
+
+		while ((rprog = rejectedlist.FindSimilar(prog)) != NULL) {
+			config.logit("Removing '%s' from rejected list because it is going to be recorded ('%s')",
+						 rprog->GetQuickDescription().str(),
+						 prog.GetQuickDescription().str());
+
+			rejectedlist.DeleteProg(*rprog);
+		}
 	}
 
-	return rejectedlist.ScheduleEx(recordedlist, allscheduledlist, allrejectedlist, starttime, card + 1);
+	return rejectedlist.ScheduleEx(recordedlist, runninglist, allscheduledlist, allrejectedlist, starttime, card + 1);
 }
 
 bool ADVBProgList::WriteToJobList()

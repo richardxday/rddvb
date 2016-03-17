@@ -152,7 +152,7 @@ protected:
 	uint_t FindIndex(const ADVBProg& prog) const;
 
 	void AdjustRecordTimes();
-	uint_t ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allscheduledlist, ADVBProgList& allrejectedlist, const ADateTime& starttime, uint_t card);
+	uint_t ScheduleEx(ADVBProgList& recordedlist, const ADVBProgList& runninglist, ADVBProgList& allscheduledlist, ADVBProgList& allrejectedlist, const ADateTime& starttime, uint_t card);
 
 	bool ReadFromBinaryFile(const AString& filename, bool sort = false, bool removeoverlaps = false);
 
