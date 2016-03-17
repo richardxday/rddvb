@@ -2118,13 +2118,14 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 			config.logit("Found %u running programmes:", runninglist.Count());
 			for (i = 0; i < runninglist.Count(); i++) {
 				const ADVBProg& prog = runninglist[i];
-
-				if (prog.GetDVBCard() == card) {
+				bool  thiscard = (prog.GetDVBCard() == dvbcard);
+				
+				if (thiscard) {
 					recstarttime = MAX(recstarttime, prog.GetRecordStop() + 10000);
 					config.logit("Adjusting earliest record start time to %s", ADateTime(recstarttime).DateToStr().str());
 				}
 			
-				config.logit("%c %s", (prog.GetDVBCard() == card) ? '*' : ' ', prog.GetDescription(1).str());
+				config.logit("%c %s", thiscard ? '*' : ' ', prog.GetDescription(1).str());
 			}
 			config.logit("--------------------------------------------------------------------------------");
 		}
@@ -2133,20 +2134,26 @@ uint_t ADVBProgList::ScheduleEx(ADVBProgList& recordedlist, ADVBProgList& allsch
 	// round up to the next minute
 	recstarttime += 60000ULL - (recstarttime % 60000ULL);
 	
+	// remove any programmes that being recorded now
 	// remove any programmes that overlap with any running job(s)
 	uint64_t lateststart  = SUBZ((uint64_t)recstarttime, (uint64_t)config.GetLatestStart() * 60000ULL);		// set latest start of programmes to be scheduled
 	for (i = 0; i < Count();) {
 		const ADVBProg *otherprog;
 		ADVBProg& prog = GetProgWritable(i);
 
-		if (prog.GetStart() < lateststart) {
-			config.logit("'%s' started too long ago (%u mins)", prog.GetQuickDescription().str(), (uint_t)(((uint64_t)starttime - (uint64_t)prog.GetStart()) / 60000ULL));
+		if (!prog.AllowRepeats() && ((otherprog = runninglist.FindSimilar(prog)) != NULL)) {
+			config.logit("'%s' is being recorded now ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
 
 			DeleteProg(i);
 		}
-		else if (!prog.AllowRepeats() && ((otherprog = runninglist.FindSimilar(prog)) != NULL)) {
-			config.logit("'%s' is being recorded now ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
+		else if (prog.GetStart() < lateststart) {
+			config.logit("'%s' started too long ago (%s mins)", prog.GetQuickDescription().str(), AValue(((uint64_t)starttime - prog.GetStart()) / (uint64_t)60000).ToString().str());
 
+			if (prog.GetStop() > recstarttime) {
+				// add to rejected list so that the next DVB card is tried
+				rejectedlist.AddProg(prog);
+			}
+			
 			DeleteProg(i);
 		}
 		else i++;
