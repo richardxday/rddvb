@@ -367,6 +367,11 @@ function populatedates(prog)
 	prog.actstartdate = getdatestring(prog.actstart);
 }
 
+function gettimesearchstring(datems)
+{
+	return (new Date(datems)).toISOString() + ',utctolocal';
+}
+
 function adddownloadlink(prog)
 {
 	var str = '';
@@ -442,7 +447,7 @@ function populateprogs(id)
 					headerstr += '<td>';
 					headerstr += find('start', prog.startdate, 'Search for programmes on this day');
 					headerstr += '</td><td>';
-					headerstr += findfilter('stop>"' + (new Date(prog.start)).toISOString() + '" start<"' + (new Date(prog.stop)).toISOString() + '"', prog.starttime + ' - ' + prog.stoptime, 'Search for programmes during these times');
+					headerstr += findfilter('stop>"' + gettimesearchstring(prog.start) + '" start<"' + gettimesearchstring(prog.stop) + '"', prog.starttime + ' - ' + prog.stoptime, 'Search for programmes during these times');
 					headerstr += '</td><td>';
 					if (typeof prog.channelicon != 'undefined') headerstr += '<a href="' + prog.channelicon + '"><img src="' + prog.channelicon + '" ' + iconimgsize + ' /></a>';
 					else										headerstr += '&nbsp;';
@@ -816,25 +821,25 @@ function populateprogs(id)
 						}
 						str1 += '<tr><td>Clashes</td><td>';
 						str1 += findfromfilter('Listings',
-											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + (new Date(prog.start)).toISOString() + '" ' + 'start<"' + (new Date(prog.stop)).toISOString() + '"',
+											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + gettimesearchstring(prog.start) + '" ' + 'start<"' + gettimesearchstring(prog.stop) + '"',
 											   '',
 											   'Listings',
 											   'Search for clashes in listings with this programme');
 						str1 += '</td><td>';
 						str1 += findfromfilter('Combined',
-											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + (new Date(prog.start)).toISOString() + '" ' + 'start<"' + (new Date(prog.stop)).toISOString() + '"',
+											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + gettimesearchstring(prog.start) + '" ' + 'start<"' + gettimesearchstring(prog.stop) + '"',
 											   '',
 											   'Combined',
 											   'Search for clashes in scheduled/recorded programmes with this programme');
 						str1 += '</td><td>';
 						str1 += findfromfilter('Requested',
-											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + (new Date(prog.start)).toISOString() + '" ' + 'start<"' + (new Date(prog.stop)).toISOString() + '"',
+											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + gettimesearchstring(prog.start) + '" ' + 'start<"' + gettimesearchstring(prog.stop) + '"',
 											   '',
 											   'Requested',
 											   'Search for clashes in requested programmes with this programme');
 						str1 += '</td><td>';
 						str1 += findfromfilter('Recorded',
-											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + (new Date(prog.start)).toISOString() + '" ' + 'start<"' + (new Date(prog.stop)).toISOString() + '"',
+											   'uuid!="' + prog.uuid + '" ' + 'stop>"' + gettimesearchstring(prog.start) + '" ' + 'start<"' + gettimesearchstring(prog.stop) + '"',
 											   '',
 											   'Recorded',
 											   'Search for clashes in recorded programmes with this programme');
