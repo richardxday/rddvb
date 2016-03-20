@@ -1810,7 +1810,7 @@ int ADVBProg::CompareScore(const ADVBProg& prog1, const ADVBProg& prog2)
 	return res;
 }
 
-bool ADVBProg::GetRecordPIDS(AString& pids, bool update) const
+bool ADVBProg::GetRecordPIDs(AString& pids, bool update) const
 {
 	ADVBChannelList& channellist = ADVBChannelList::Get();
 	AString dvbchannel = GetDVBChannel();
@@ -1899,7 +1899,10 @@ void ADVBProg::Record()
 		bool	failed     = false;
 		
 		if (record) {
-			GetRecordPIDS(pids);
+			uint64_t now = (uint64_t)ADateTime().TimeStamp(true);
+
+			// only update pids if there is at least 30s before programme starts
+			GetRecordPIDs(pids, (SUBZ(GetStart(), now) >= 30000));
 						
 			if (pids.CountWords() < 2) {
 				config.printf("No pids for '%s'", GetQuickDescription().str());

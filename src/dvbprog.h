@@ -464,7 +464,7 @@ protected:
 	static void StaticInit();
 	void Init();
 
-	bool    GetRecordPIDS(AString& pids, bool update = true) const;
+	bool    GetRecordPIDs(AString& pids, bool update = true) const;
 	AString GenerateRecordCommand(uint_t nsecs, const AString& pids) const;
 	AString GeneratePostRecordCommand() const;
 	AString GeneratePostProcessCommand() const;
