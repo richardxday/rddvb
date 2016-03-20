@@ -1817,7 +1817,7 @@ bool ADVBProg::GetRecordPIDs(AString& pids, bool update) const
 
 	if (dvbchannel.Empty()) dvbchannel = GetChannel();
 	
-	return channellist.GetPIDList(dvbchannel, pids, update);
+	return channellist.GetPIDList(GetDVBCard(), dvbchannel, pids, update);
 }
 
 AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const

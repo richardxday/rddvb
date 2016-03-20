@@ -158,7 +158,7 @@ ADVBChannelList::CHANNEL *ADVBChannelList::GetChannel(const AString& name, bool 
 	return chan;
 }
 
-bool ADVBChannelList::Update(uint32_t freq, bool verbose)
+bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
@@ -170,7 +170,7 @@ bool ADVBChannelList::Update(uint32_t freq, bool verbose)
 
 	sifilename = config.GetTempFile("pids", ".txt");
 
-	cmd.printf("timeout 10s dvbtune -c %u -f %u -i >%s 2>>%s", config.GetPhysicalDVBCard(0), (uint_t)freq, sifilename.str(), config.GetLogFile(ADateTime().GetDays()).str());
+	cmd.printf("timeout 10s dvbtune -c %u -f %u -i >%s 2>>%s", card, (uint_t)freq, sifilename.str(), config.GetLogFile(ADateTime().GetDays()).str());
 
 	if (system(cmd) == 0) {
 		if (fp.open(sifilename)) {
@@ -249,13 +249,13 @@ bool ADVBChannelList::Update(uint32_t freq, bool verbose)
 	return success;
 }
 
-bool ADVBChannelList::Update(const AString& channel, bool verbose)
+bool ADVBChannelList::Update(uint_t card, const AString& channel, bool verbose)
 {
 	const CHANNEL *chan;
 	bool success = false;
 	
 	if ((chan = GetChannel(channel)) != NULL) {
-		success = Update(chan->freq, verbose);
+		success = Update(card, chan->freq, verbose);
 	}
 
 	return success;
@@ -267,7 +267,7 @@ int ADVBChannelList::__CompareItems(uptr_t a, uptr_t b, void *context)
 	return COMPARE_ITEMS(a, b);
 }
 
-void ADVBChannelList::UpdateAll(bool verbose)
+void ADVBChannelList::UpdateAll(uint_t card, bool verbose)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADataList freqlist;
@@ -320,18 +320,18 @@ void ADVBChannelList::UpdateAll(bool verbose)
 	
 	uint_t i;
 	for (i = 0; i < freqlist.Count(); i++) {
-		Update(freqlist[i], verbose);
+		Update(card, freqlist[i], verbose);
 	}
 }
 
-bool ADVBChannelList::GetPIDList(const AString& channel, AString& pids, bool update)
+bool ADVBChannelList::GetPIDList(uint_t card, const AString& channel, AString& pids, bool update)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	const CHANNEL *chan;
 	AString str;
 	bool    success = true;
 	
-	if (update) success &= Update(channel);
+	if (update) success &= Update(card, channel);
 
 	if ((chan = GetChannel(channel)) != NULL) {
 		pids.printf("%u", chan->freq);
