@@ -1899,11 +1899,17 @@ void ADVBProg::Record()
 		bool	failed     = false;
 		
 		if (record) {
-			uint64_t now = (uint64_t)ADateTime().TimeStamp(true);
-
+			uint64_t now    = (uint64_t)ADateTime().TimeStamp(true);
 			// only update pids if there is at least 30s before programme starts
-			GetRecordPIDs(pids, (SUBZ(GetStart(), now) >= 30000));
-						
+			bool     update = (SUBZ(GetStart(), now) >= 30000);
+			
+			GetRecordPIDs(pids, update);
+
+			if (!update && (pids.CountWords() < 2)) {
+				config.printf("No pids for '%s' without update", GetQuickDescription().str());
+				GetRecordPIDs(pids, true);
+			}
+			
 			if (pids.CountWords() < 2) {
 				config.printf("No pids for '%s'", GetQuickDescription().str());
 				failed = true;
