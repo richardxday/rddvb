@@ -10,12 +10,12 @@ class ADVBChannelList {
 public:
 	static ADVBChannelList& Get();
 
-	bool Update(uint32_t freq, bool verbose = false);
-	bool Update(const AString& channel, bool verbose = false);
+	bool Update(uint_t card, uint32_t freq, bool verbose = false);
+	bool Update(uint_t card, const AString& channel, bool verbose = false);
 
-	void UpdateAll(bool verbose = false);
+	void UpdateAll(uint_t card, bool verbose = false);
 
-	bool GetPIDList(const AString& channel, AString& pids, bool update = false);
+	bool GetPIDList(uint_t card, const AString& channel, AString& pids, bool update = false);
 
 	AString LookupDVBChannel(const AString& channel) const;
 
