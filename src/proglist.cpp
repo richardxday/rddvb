@@ -1554,6 +1554,7 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 		ADVBProgList list;
 		list.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add);
 		GetRecordingListFromRecordingSlave();
+		GetFileFromRecordingHost(config.GetDVBChannelsFile());
 	}
 	
 	config.logit("Loading listings from '%s'", filename.str());
