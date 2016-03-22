@@ -122,7 +122,8 @@ int main(int argc, char *argv[])
 		printf("\t--schedule-list\t\t\tSchedule current list of programmes (-S)\n");
 		printf("\t--record <prog>\t\t\tRecord programme <prog> (Base64 encoded)\n");
 		printf("\t--add-recorded <prog>\t\tAdd recorded programme <prog> to recorded list (Base64 encoded)\n");
-		printf("\t--card <card>\t\t\tUse this virtual card for subsequent scanning and PID operations (default 0)\n");
+		printf("\t--card <card>\t\t\tSet VIRTUAL card for subsequent scanning and PID operations (default 0)\n");
+		printf("\t--dvbcard <card>\t\tSet PHYSICAL card for subsequent scanning and PID operations (default 0)\n");
 		printf("\t--pids <channel>\t\tFind PIDs (all streams) associated with channel <channel>\n");
 		printf("\t--scan <freq>[,<freq>...]\tScan frequencies <freq>MHz for DVB channels\n");
 		printf("\t--scan-all\t\t\tScan all known frequencies for DVB channels\n");
@@ -153,7 +154,7 @@ int main(int argc, char *argv[])
 #endif
 		printf("\t--get-and-convert-recorded\tPull and convert any recordings from recording host\n");
 		printf("\t--update-recordings-list\tPull list of programmes being recorded\n");
-		printf("\t--check-recording-now\tCheck to see if programmes that should be being recording are recording\n");
+		printf("\t--check-recording-now\t\tCheck to see if programmes that should be being recording are recording\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -687,52 +688,54 @@ int main(int argc, char *argv[])
 			else if (strcmp(argv[i], "--card") == 0) {
 				const uint_t newcard = (uint_t)AString(argv[++i]);
 
-				(void)config.GetPhysicalDVBCard(0);
+				config.GetPhysicalDVBCard();
 				if (config.GetMaxDVBCards()) {
 					if (newcard < config.GetMaxDVBCards()) {
-						dvbcard = newcard;
-						printf("Switched to using virtual card %u which is phsical card %u\n", dvbcard, config.GetPhysicalDVBCard(dvbcard));
+						dvbcard = config.GetPhysicalDVBCard(newcard);
+						printf("Switched to using virtual card %u which is phsical card %u\n", newcard, dvbcard);
 					}
 					else fprintf(stderr, "Illegal virtual DVB card specified, must be 0..%u\n", config.GetMaxDVBCards() - 1);
 				}
 				else fprintf(stderr, "No virtual DVB cards available!\n");
 			}
+			else if (strcmp(argv[i], "--dvbcard") == 0) {
+				dvbcard = (uint_t)AString(argv[++i]);
+
+				config.GetPhysicalDVBCard();
+				printf("Switched to using physical card %u\n", dvbcard);
+			}
 			else if (strcmp(argv[i], "--pids") == 0) {
 				ADVBChannelList& list = ADVBChannelList::Get();
 				const AString channel = argv[++i];
-				const uint_t  card    = config.GetPhysicalDVBCard(dvbcard);
 				AString pids;
 
-				list.GetPIDList(card, channel, pids, true);
+				list.GetPIDList(dvbcard, channel, pids, true);
 
 				printf("pids for '%s': %s\n", channel.str(), pids.str());
 			}
 			else if (strcmp(argv[i], "--scan") == 0) {
 				ADVBChannelList& list = ADVBChannelList::Get();
 				const AString freqs = argv[++i];
-				const uint_t  card  = config.GetPhysicalDVBCard(dvbcard);
 				uint_t j, n = freqs.CountColumns();
 				
 				for (j = 0; j < n; j++) {
-					list.Update(card, (uint32_t)(1.0e6 * (double)freqs.Column(j)), true);
+					list.Update(dvbcard, (uint32_t)(1.0e6 * (double)freqs.Column(j)), true);
 				}
 			}
 			else if (strcmp(argv[i], "--scan-all") == 0) {
 				ADVBChannelList& list = ADVBChannelList::Get();
-				const uint_t card = config.GetPhysicalDVBCard(dvbcard);
 
-				list.UpdateAll(card, true);
+				list.UpdateAll(dvbcard, true);
 			}
 			else if (strcmp(argv[i], "--scan-range") == 0) {
 				ADVBChannelList& list = ADVBChannelList::Get();
 				const double f1   = (double)AString(argv[++i]);
 				const double f2   = (double)AString(argv[++i]);
 				const double step = (double)AString(argv[++i]);
-				const uint_t card = config.GetPhysicalDVBCard(dvbcard);
 				double f;
 
 				for (f = f1; f <= f2; f += step) {
-					list.Update(card, (uint32_t)(1.0e6 * f), true);
+					list.Update(dvbcard, (uint32_t)(1.0e6 * f), true);
 				}
 			}
 			else if (strcmp(argv[i], "--find-cards") == 0) {

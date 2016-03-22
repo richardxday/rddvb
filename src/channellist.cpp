@@ -170,7 +170,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 
 	sifilename = config.GetTempFile("pids", ".txt");
 
-	cmd.printf("timeout 10s dvbtune -c %u -f %u -i >%s 2>>%s", card, (uint_t)freq, sifilename.str(), config.GetLogFile(ADateTime().GetDays()).str());
+	cmd.printf("timeout 20s dvbtune -c %u -f %u -i >%s 2>>%s", card, (uint_t)freq, sifilename.str(), config.GetLogFile(ADateTime().GetDays()).str());
 
 	if (system(cmd) == 0) {
 		if (fp.open(sifilename)) {
@@ -270,57 +270,14 @@ int ADVBChannelList::__CompareItems(uptr_t a, uptr_t b, void *context)
 void ADVBChannelList::UpdateAll(uint_t card, bool verbose)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADataList freqlist;
-	AStdFile  fp;
+	AString range = config.GetDVBFrequencyRange();
+	double  f1    = (double)range.Column(0);
+	double  f2    = (double)range.Column(1);
+	double  step  = (double)range.Column(2);
+	double  f;
 
-	// ensure frequencies do not appear in the list more than once!
-	freqlist.EnableDuplication(false);
-
-	// use explicit scan frequencies file for *useful* frequencies
-	if (fp.open(config.GetFreqScanFile())) {
-		AString   line;
-
-		while (line.ReadLn(fp) >= 0) {
-			// any duplicates will be ignored
-			freqlist.Add((uptr_t)line);
-		}
-
-		fp.close();
-	}
-
-	// use old channels.conf to scan the *useful* frequencies
-	if (fp.open(config.GetChannelsConfFile())) {
-		AString   line;
-
-		while (line.ReadLn(fp) >= 0) {
-			AString freq;
-
-			if (line.GetFieldNumber(":", 1, freq) >= 0) {
-				// any duplicates will be ignored
-				freqlist.Add((uptr_t)freq);
-			}
-		}
-
-		fp.close();
-	}
-
-	// use new channels.dat to scan the *useful* frequencies
-	if (fp.open(config.GetDVBChannelsFile())) {
-		AString line;
-
-		while (line.ReadLn(fp) >= 0) {
-			// any duplicates will be ignored
-			freqlist.Add((uptr_t)line.Column(1));
-		}
-
-		fp.close();
-	}
-
-	freqlist.Sort(&__CompareItems);
-	
-	uint_t i;
-	for (i = 0; i < freqlist.Count(); i++) {
-		Update(card, freqlist[i], verbose);
+	for (f = f1; f <= f2; f += step) {
+		Update(card, (uint32_t)(f * 1.0e6), verbose);
 	}
 }
 
