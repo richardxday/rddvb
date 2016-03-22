@@ -1650,7 +1650,8 @@ bool ADVBProg::WriteToJobQueue()
 
 		fp.printf("DVBPROG=\"%s\"\n", Base64Encode().str());
 		fp.printf("\n");
-		fp.printf("dvb --record $DVBPROG\n");
+		fp.printf("dvb --record $DVBPROG");
+		fp.printf("\n");
 
 		AString str;
 		str.printf("------------------------------------------------------------------------------------------------------------------------\n");

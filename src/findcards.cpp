@@ -23,19 +23,20 @@ void findcards(void)
 	}
 	else {
 		static const AString str = "using dvb card";
+		const uint32_t freq = (uint32_t)((double)config.GetDVBFrequencyRange().Column(0) * 1.0e6);
 		AString file;
-		AStdFile ofp;
+		AString oldcards, newcards;
 		uint_t i;
 
 		file = config.GetTempFile("cards", ".txt");
 
-		ofp.open(config.GetDVBCardsFile(), "w");
+		oldcards.ReadFromFile(config.GetDVBCardsFile());
 
 		for (i = 0; i < MaxCards; i++) {
 			AString cmd;
 			AStdFile fp;
 
-			cmd.printf("dvbtune -c %u -f 1 2>%s", i, file.str());
+			cmd.printf("dvbtune -c %u -f %s 2>%s", i, AValue(freq).ToString().str(), file.str());
 
 			remove(file);
 
@@ -54,7 +55,7 @@ void findcards(void)
 						line = line.Mid(p).RemoveWhiteSpace().DeQuotify().RemoveWhiteSpace();
 
 						config.printf("%u: %s", i, line.str());
-						ofp.printf("%u %s\n", i, line.str());
+						newcards.printf("%u %s\n", i, line.str());
 						break;
 					}
 				}
@@ -65,7 +66,30 @@ void findcards(void)
 
 		remove(file);
 
-		ofp.close();
+		if (newcards != oldcards) {
+			newcards.WriteToFile(config.GetDVBCardsFile());
+
+			AString cmd;
+			if ((cmd = config.GetConfigItem("dvbcardschangedcmd")).Valid()) {
+				AStdFile fp;
+				
+				file = config.GetTempFile("cards", ".txt");
+
+				if (fp.open(file, "w")) {
+					fp.printf("DVB card list changed from:\n%s\nto:\n%s",
+							  oldcards.str(),
+							  newcards.str());
+					fp.close();
+				}
+
+				cmd = cmd.SearchAndReplace("{logfile}", file);
+				if (system(cmd) != 0) {
+					config.logit("Command '%s' failed!", cmd.str());
+				}
+
+				remove(file);
+			}
+		}
 	}
 }
 

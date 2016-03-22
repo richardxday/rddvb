@@ -42,7 +42,6 @@ public:
 	AString GetRecordingsDir(const AString& user, const AString& category = "")    const {return CatPath(GetRecordingsDir(), GetRecordingsSubDir(user, category));}
 	AString GetFilenameTemplate(const AString& user, const AString category)       const {return GetUserSubItemConfigItem(user, category, "filename", "{title}{sep}{episode}{sep}{date}{sep}{times}{sep}{subtitle}{sep}{suffix}");}
 	AString GetListingsFile()		   		 const {return CatPath(GetDataDir(), GetConfigItem("listingsfile", "dvblistings.dat"));}
-	AString GetFreqScanFile()				 const {return CatPath(GetConfigDir(), GetConfigItem("freqscanfile", "scanfreqs.conf"));}
 	AString GetChannelsConfFile()	   		 const {return CatPath(GetConfigDir(), GetConfigItem("channelsconffile", "channels.conf"));}
 	AString GetDVBChannelsFile()	   		 const {return CatPath(GetConfigDir(), GetConfigItem("dvbchannelsfile", "channels.dat"));}
 	AString GetPatternsFile()		   		 const {return CatPath(GetConfigDir(), GetConfigItem("patternsfile", "patterns.txt"));}
@@ -74,6 +73,8 @@ public:
 	uint_t  GetPhysicalDVBCard(uint_t n = 0, bool forcemapping = false) const;
 	uint_t  GetMaxDVBCards()				 const {return dvbcards.Count();}
 	bool    RotateDVBCards()				 const {return ((uint_t)GetConfigItem("rotatedvbcards", "0") != 0);}
+	AString GetDVBFrequencyRange()           const {return GetConfigItem("dvbfreqrange", "474,530,8");}
+	
 	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "15");}
 	uint_t  GetDaysToKeep()					 const {return (uint_t)GetConfigItem("daystokeep", "7");}
 	sint_t  GetScoreThreshold()				 const {return (sint_t)GetConfigItem("scorethreshold", "100");}
