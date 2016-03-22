@@ -14,7 +14,7 @@ ADVBChannelList::ADVBChannelList() : hash(40),
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
 
-	if (fp.open(config.GetDVBChannelsFile()) || fp.open(config.GetChannelsConfFile())) {
+	if (fp.open(config.GetDVBChannelsFile()) /*|| fp.open(config.GetChannelsConfFile())*/) {
 		AString line;
 
 		while (line.ReadLn(fp) >= 0) {
