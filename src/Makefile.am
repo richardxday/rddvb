@@ -87,11 +87,11 @@ EXTRA_dvbdecodeprog_DEPENDENCIES = $(lib_LTLIBRARIES)
 
 dvbfemon_LDADD =								\
 	$(RDLIB_LIBS)								\
-	$(RDDVBFEMON_LIBS)
+	$(RDDVB_LIBS)
 
 dvbfemon_CPPFLAGS =								\
 	$(RDLIB_CFLAGS)								\
-	$(RDDVBFEMON_CFLAGS)
+	$(RDDVB_CFLAGS)
 
 dvbfemon_SOURCES =								\
 	dvbfemon.cpp
