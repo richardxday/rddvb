@@ -8,7 +8,6 @@
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
-#include <rdlib/Thread.h>
 
 #include "config.h"
 #include "dvblock.h"

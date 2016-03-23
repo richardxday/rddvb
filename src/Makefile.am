@@ -44,7 +44,7 @@ nodist_pkginclude_HEADERS =
 
 DISTCLEANFILES =
 
-bin_PROGRAMS = dvb dvbweb dvbdecodeprog
+bin_PROGRAMS = dvb dvbweb dvbdecodeprog dvbfemon
 
 dvb_LDADD =										\
 	$(RDLIB_LIBS)								\
@@ -84,3 +84,16 @@ dvbdecodeprog_SOURCES =							\
 	dvbdecodeprog.cpp
 
 EXTRA_dvbdecodeprog_DEPENDENCIES = $(lib_LTLIBRARIES)
+
+dvbfemon_LDADD =								\
+	$(RDLIB_LIBS)								\
+	$(RDDVBFEMON_LIBS)
+
+dvbfemon_CPPFLAGS =								\
+	$(RDLIB_CFLAGS)								\
+	$(RDDVBFEMON_CFLAGS)
+
+dvbfemon_SOURCES =								\
+	dvbfemon.cpp
+
+EXTRA_dvbfemon_DEPENDENCIES = $(lib_LTLIBRARIES)
