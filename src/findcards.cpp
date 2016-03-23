@@ -28,6 +28,10 @@ void findcards(void)
 		AString oldcards, newcards;
 		uint_t i;
 
+		if (system("killall dvbfemon") != 0) {
+			config.logit("Failed to kill running dvbfemon processes");
+		}
+		
 		file = config.GetTempFile("cards", ".txt");
 
 		oldcards.ReadFromFile(config.GetDVBCardsFile());
@@ -56,6 +60,12 @@ void findcards(void)
 
 						config.printf("%u: %s", i, line.str());
 						newcards.printf("%u %s\n", i, line.str());
+
+						AString cmd;
+						cmd.printf("femon -a %u 2>/dev/null | dvbfemon --card %u &", i, i);
+						if (system(cmd) != 0) {
+							config.logit("Command '%s' failed", cmd.str());
+						}
 						break;
 					}
 				}
