@@ -59,6 +59,8 @@ public:
 	AString GetLogFile(uint32_t day)         const {return CatPath(GetLogDir(), "dvblog-" + ADateTime(day, 0UL).DateFormat("%Y-%M-%D") + ".txt");}
 	AString GetRecordLogBase()				 const {return "dvbrecordlog-";}
 	AString GetRecordLog(uint32_t day) 		 const {return CatPath(GetLogDir(), GetRecordLogBase() + ADateTime(day, 0UL).DateFormat("%Y-%M") + ".txt");}
+	AString GetDVBSignalLogBase()			 const {return "dvbsignal-";}
+	AString GetDVBSignalLog(uint32_t day) 	 const {return CatPath(GetLogDir(), GetDVBSignalLogBase() + ADateTime(day, 0UL).DateFormat("%Y-%M") + ".txt");}
 	AString GetEpisodesFile()				 const {return CatPath(GetDataDir(), GetConfigItem("episodesfile", "episodes.txt"));}
 	AString GetSearchesFile()				 const {return CatPath(GetConfigDir(), GetConfigItem("searchesfile", "searches.txt"));}
 	AString GetIconCacheFilename()           const {return CatPath(GetDataDir(), GetConfigItem("iconcache", "iconcache.txt"));}
