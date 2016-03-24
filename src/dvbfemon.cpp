@@ -34,7 +34,7 @@ STATS readstats(ASettingsHandler& statsstorage, const AString& name)
 
 void updatestats(STATS& stats, uint_t value, bool justlocked)
 {
-	if (justlocked) {
+	if (!stats.count || justlocked) {
 		stats.min = stats.max = value;
 		stats.sum = value;
 		stats.count = 1;
