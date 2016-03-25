@@ -2220,12 +2220,13 @@ bool ADVBProgList::WriteToJobList()
 	
 	if (config.GetRecordingHost().Valid()) {
 		ADVBProgList scheduledlist;
+		ADVBProgList unscheduledlist;
 		uint_t tries;
+		uint_t i;
 
 		for (tries = 0; (tries < 3) && !success; tries++) {
-			ADVBProgList unscheduledlist;
-			uint_t i;
-
+			unscheduledlist.DeleteAll();
+			
 			if (tries) config.printf("Scheduling try %u/3:", tries + 1);
 			
 			success = (SendFileRunRemoteCommand(filename, "dvb --write-scheduled-jobs") &&
@@ -2237,35 +2238,37 @@ bool ADVBProgList::WriteToJobList()
 				if (!scheduledlist[i].GetJobID()) unscheduledlist.AddProg(scheduledlist[i]);
 			}
 
-			if (unscheduledlist.Count()) {
-				AStdFile fp;
-				AString  filename = config.GetTempFile("unscheduled", ".txt");
-				AString  cmd;
+			if (success && !scheduledlist.Count()) break;
+		}
+		
+		if (unscheduledlist.Count()) {
+			AStdFile fp;
+			AString  filename = config.GetTempFile("unscheduled", ".txt");
+			AString  cmd;
 				
-				config.printf("--------------------------------------------------------------------------------");
-				config.printf("%u programmes unscheduled:", unscheduledlist.Count());
-				for (i = 0; i < unscheduledlist.Count(); i++) {
-					config.printf("%s", unscheduledlist[i].GetQuickDescription().str());
-				}
-				config.printf("--------------------------------------------------------------------------------");
+			config.printf("--------------------------------------------------------------------------------");
+			config.printf("%u programmes unscheduled:", unscheduledlist.Count());
+			for (i = 0; i < unscheduledlist.Count(); i++) {
+				config.printf("%s", unscheduledlist[i].GetQuickDescription().str());
+			}
+			config.printf("--------------------------------------------------------------------------------");
 
-				success = false;
+			success = false;
 				
-				if ((cmd = config.GetConfigItem("schedulefailurecmd", "")).Valid()) {
-					if (fp.open(filename, "w")) {
-						fp.printf("The following programmes have NOT been scheduled:\n");
-						for (i = 0; i < unscheduledlist.Count(); i++) {
-							fp.printf("%s", unscheduledlist[i].GetDescription(10).str());
-						}
-						fp.close();
-
-						cmd = cmd.SearchAndReplace("{logfile}", filename);
-						RunAndLogCommand(cmd);
-
-						remove(filename);
+			if ((cmd = config.GetConfigItem("schedulefailurecmd", "")).Valid()) {
+				if (fp.open(filename, "w")) {
+					fp.printf("The following programmes have NOT been scheduled:\n");
+					for (i = 0; i < unscheduledlist.Count(); i++) {
+						fp.printf("%s", unscheduledlist[i].GetDescription(10).str());
 					}
-					else config.printf("Failed to open text file for logging unscheduled!");
+					fp.close();
+
+					cmd = cmd.SearchAndReplace("{logfile}", filename);
+					RunAndLogCommand(cmd);
+
+					remove(filename);
 				}
+				else config.printf("Failed to open text file for logging unscheduled!");
 			}
 		}
 	}
