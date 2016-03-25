@@ -2259,7 +2259,7 @@ bool ADVBProgList::WriteToJobList()
 				if (fp.open(filename, "w")) {
 					fp.printf("The following programmes have NOT been scheduled:\n");
 					for (i = 0; i < unscheduledlist.Count(); i++) {
-						fp.printf("%s", unscheduledlist[i].GetDescription(10).str());
+						fp.printf("%s\n", unscheduledlist[i].GetDescription(10).str());
 					}
 					fp.close();
 
