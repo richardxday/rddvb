@@ -25,7 +25,7 @@ ADVBChannelList::ADVBChannelList() : hash(40),
 				(line.GetFieldNumber(":", 1, _freq) >= 0) &&
 				(line.GetFieldNumber(":", 10, _pid1) >= 0) &&
 				(line.GetFieldNumber(":", 11, _pid2) >= 0)) {
-				if ((chan = GetChannel(name, true)) != NULL) {
+				if ((chan = GetChannelByName(name, true)) != NULL) {
 					chan->freq = (uint32_t)_freq;
 					chan->pidlist.DeleteList();
 					
@@ -40,7 +40,7 @@ ADVBChannelList::ADVBChannelList() : hash(40),
 				}
 			}
 			else if ((name = line.Column(0)).Valid() && (_freq = line.Column(1)).Valid()) {
-				if ((chan = GetChannel(name, true)) != NULL) {
+				if ((chan = GetChannelByName(name, true)) != NULL) {
 					chan->freq = (uint32_t)_freq;
 					chan->pidlist.DeleteList();
 
@@ -132,12 +132,12 @@ AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 	return ReplaceStrings(str, replacements, NUMBEROF(replacements));
 }
 
-const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannel(const AString& name) const
+const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name) const
 {
 	return (const CHANNEL *)hash.Read(name);
 }
 
-ADVBChannelList::CHANNEL *ADVBChannelList::GetChannel(const AString& name, bool create)
+ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name, bool create)
 {
 	CHANNEL *chan = (CHANNEL *)hash.Read(name);
 
@@ -192,7 +192,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 					service += line + "\n";
 							
 					if (line == "</service>") {
-						CHANNEL *chan = GetChannel(servname, true);
+						CHANNEL *chan = GetChannelByName(servname, true);
 
 						if (chan) {
 							AHash     pidhash(10);
@@ -254,7 +254,7 @@ bool ADVBChannelList::Update(uint_t card, const AString& channel, bool verbose)
 	const CHANNEL *chan;
 	bool success = false;
 	
-	if ((chan = GetChannel(channel)) != NULL) {
+	if ((chan = GetChannelByName(channel)) != NULL) {
 		success = Update(card, chan->freq, verbose);
 	}
 
@@ -290,7 +290,7 @@ bool ADVBChannelList::GetPIDList(uint_t card, const AString& channel, AString& p
 	
 	if (update) success &= Update(card, channel);
 
-	if ((chan = GetChannel(channel)) != NULL) {
+	if ((chan = GetChannelByName(channel)) != NULL) {
 		pids.printf("%u", chan->freq);
 
 		if ((str = config.GetPriorityDVBPIDs()).Valid()) {
@@ -323,7 +323,7 @@ AString ADVBChannelList::LookupDVBChannel(const AString& channel) const
 	const CHANNEL *chan;
 	AString channel1;
 
-	if ((chan = GetChannel(channel)) != NULL) {
+	if ((chan = GetChannelByName(channel)) != NULL) {
 		channel1 = chan->name;
 	}
 

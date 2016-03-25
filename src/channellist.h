@@ -19,6 +19,16 @@ public:
 
 	AString LookupDVBChannel(const AString& channel) const;
 
+	uint_t GetChannelCount() const {return list.Count();}
+
+	typedef struct {
+		AString   name;
+		AString   convertedname;
+		uint32_t  freq;
+		ADataList pidlist;
+	} CHANNEL;
+	const CHANNEL *GetChannel(uint_t n) const {return (const CHANNEL *)list[n];}
+	
 private:
 	ADVBChannelList();
 	~ADVBChannelList();
@@ -26,20 +36,14 @@ private:
 	static AString ConvertDVBChannel(const AString& str);
 
 protected:
-	typedef struct {
-		AString   name;
-		AString   convertedname;
-		uint32_t  freq;
-		ADataList pidlist;
-	} CHANNEL;
 
 	static void __DeleteChannel(uptr_t item, void *context) {
 		UNUSED(context);
 		delete (CHANNEL *)item;
 	}
 
-	const CHANNEL *GetChannel(const AString& name) const;
-	CHANNEL *GetChannel(const AString& name, bool create = false);
+	const CHANNEL *GetChannelByName(const AString& name) const;
+	CHANNEL *GetChannelByName(const AString& name, bool create = false);
 
 	static int __CompareItems(uptr_t a, uptr_t b, void *context);
 
