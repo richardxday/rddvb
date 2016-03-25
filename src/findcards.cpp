@@ -9,6 +9,7 @@
 
 #include "config.h"
 #include "proglist.h"
+#include "channellist.h"
 
 enum {
 	MaxCards = 4,
@@ -23,7 +24,8 @@ void findcards(void)
 	}
 	else {
 		static const AString str = "using dvb card";
-		const uint32_t freq = (uint32_t)((double)config.GetDVBFrequencyRange().Column(0) * 1.0e6);
+		const ADVBChannelList::CHANNEL *channel = ADVBChannelList::Get().GetChannel(0);
+		const uint32_t freq = channel ? channel->freq : (uint32_t)((double)config.GetDVBFrequencyRange().Column(0) * 1.0e6);
 		AString file;
 		AString oldcards, newcards;
 		uint_t i;
@@ -37,10 +39,13 @@ void findcards(void)
 		oldcards.ReadFromFile(config.GetDVBCardsFile());
 
 		for (i = 0; i < MaxCards; i++) {
-			AString cmd;
 			AStdFile fp;
+			AString  cmd;
+			AString  cardname;
+			bool     locked = false;
 
-			cmd.printf("dvbtune -c %u -f %s 2>%s", i, AValue(freq).ToString().str(), file.str());
+			//config.printf("Trying %sHz on card %u...", AValue(freq).ToString().str(), i);
+			cmd.printf("timeout 10s dvbtune -c %u -f %s 2>%s", i, AValue(freq).ToString().str(), file.str());
 
 			remove(file);
 
@@ -51,26 +56,36 @@ void findcards(void)
 
 				while (line.ReadLn(fp) >= 0) {
 					int p;
-					
+
 					//debug("Find card %u: %s\n", i, line.str());
 
 					if ((p = line.PosNoCase(str)) >= 0) {
 						p += str.len();
-						line = line.Mid(p).RemoveWhiteSpace().DeQuotify().RemoveWhiteSpace();
-
-						config.printf("%u: %s", i, line.str());
-						newcards.printf("%u %s\n", i, line.str());
-
-						AString cmd;
-						cmd.printf("femon -a %u 2>/dev/null | dvbfemon --card %u &", i, i);
-						if (system(cmd) != 0) {
-							config.logit("Command '%s' failed", cmd.str());
-						}
-						break;
+						cardname = line.Mid(p).RemoveWhiteSpace().DeQuotify().RemoveWhiteSpace();
 					}
+					else if ((line.PosNoCase("fe_has_signal") >= 0) &&
+							 (line.PosNoCase("fe_has_lock")   >= 0) &&
+							 (line.PosNoCase("fe_has_sync")   >= 0)) {
+						locked = true;
+					}
+
+					if (cardname.Valid() && locked) break;
 				}
 			
 				fp.close();
+
+				if (cardname.Valid() && locked) {
+					config.printf("%u: %s", i, cardname.str());
+					newcards.printf("%u %s\n", i, cardname.str());
+
+					AString cmd;
+					cmd.printf("femon -a %u 2>/dev/null | dvbfemon --card %u &", i, i);
+					if (system(cmd) != 0) {
+						config.logit("Command '%s' failed", cmd.str());
+					}
+				}
+				else if (cardname.Valid()) config.printf("%u: %s **NO SIGNAL**", i, cardname.str());
+				else if (locked)		   config.printf("%u: **NO CARDNAME**", i);
 			}
 		}
 
