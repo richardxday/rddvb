@@ -2075,7 +2075,7 @@ void ADVBProgList::PrioritizeProgrammes(uint_t card, ADVBProgList& scheduledlist
 	for (i = 0; i < rejectedlist.Count();) {
 		const ADVBProg& prog = rejectedlist.GetProg(i);
 			
-		if (!scheduledlist.FindRecordOverlap(prog)) {
+		if (!scheduledlist.FindRecordOverlap(prog) && (prog.GetStart() >= starttime)) {
 			config.logit("'%s' can now be recorded!", prog.GetQuickDescription().str());
 			scheduledlist.AddProg(prog);
 			rejectedlist.DeleteProg(i);
@@ -2437,6 +2437,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 
 		GetRecordingListFromRecordingSlave();
 	
+		cmd.Delete();
 		cmd.printf("nice rsync -v --partial --remove-source-files --ignore-missing-args %s %s:%s/'*.mpg' %s",
 				   config.GetRsyncArgs().str(),
 				   config.GetRecordingHost().str(),
