@@ -79,7 +79,7 @@ void findcards(void)
 					newcards.printf("%u %s\n", i, cardname.str());
 
 					AString cmd;
-					cmd.printf("femon -a %u 2>/dev/null | dvbfemon --card %u &", i, i);
+					cmd.printf("femon -a %u 2>/dev/null | dvbfemon --card %u >/dev/null &", i, i);
 					if (system(cmd) != 0) {
 						config.logit("Command '%s' failed", cmd.str());
 					}
