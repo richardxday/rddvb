@@ -45,7 +45,7 @@ void findcards(void)
 			bool     locked = false;
 
 			//config.printf("Trying %sHz on card %u...", AValue(freq).ToString().str(), i);
-			cmd.printf("timeout 10s dvbtune -c %u -f %s 2>%s", i, AValue(freq).ToString().str(), file.str());
+			cmd.printf("timeout 20s dvbtune -c %u -f %s 2>%s", i, AValue(freq).ToString().str(), file.str());
 
 			remove(file);
 
@@ -85,8 +85,10 @@ void findcards(void)
 					}
 				}
 				else if (cardname.Valid()) config.printf("%u: %s **NO SIGNAL**", i, cardname.str());
-				else if (locked)		   config.printf("%u: **NO CARDNAME**", i);
+				else if (locked)		   config.printf("%u: card **LOCKED** but no card name found", i);
+				else					   config.printf("%u: no card found", i);
 			}
+			else config.printf("%u: no output", i);
 		}
 
 		remove(file);
