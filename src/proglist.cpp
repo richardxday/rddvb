@@ -2603,7 +2603,8 @@ void ADVBProgList::FindSeries(AHash& hash) const
 
 	hash.Delete();
 	hash.Create(50, &DeleteSeries);
-
+	hash.EnableCaseInSensitive(true);
+	
 	for (i = 0; i < Count(); i++) {
 		const ADVBProg&          prog    = GetProg(i);
 		const ADVBProg::EPISODE& episode = prog.GetEpisode();

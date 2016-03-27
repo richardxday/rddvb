@@ -47,6 +47,10 @@ var filters = [
 		filter:{from:"Combined",titlefilter:"failed=1",timefilter:defaulttimefilter,expanded:-1,fetch:true},
 	},
 	{
+		title:"Titles",
+		filter:{from:"Titles",titlefilter:"",timefilter:"",expanded:-1,fetch:true},
+	},
+	{
 		title:"Patterns",
 		filter:{from:"Patterns",expanded:-1,fetch:true},
 	},
@@ -976,6 +980,45 @@ function populateprogs(id)
 	}
 }
 
+function populatetitles(id)
+{
+	var str = '';
+
+	displayfilter(0, -1, '');
+
+	if ((typeof response.titles != 'undefined') && (response.for > 0)) {
+		var status = showstatus('titles');
+
+		proglistelement = '';
+		
+		document.getElementById("status").innerHTML = status;
+		document.getElementById("statusbottom").innerHTML = status;
+
+		if (response.titles.length > 0) {
+			var i;
+
+			str += '<table class="titlelist">';
+
+			for (i = 0; i < response.titles.length; i++) {
+				var title = response.titles[i];
+
+				str += '<tr><td style="text-align:left;">' + title.title;
+				str += '</td><td>';
+				
+				str += '</td></tr>';
+			}
+
+			str += '</table>';
+		}
+	}
+	else {
+		document.getElementById("status").innerHTML = "No titles";
+		document.getElementById("list").innerHTML = '';
+	}
+
+	document.getElementById("list").innerHTML = str;
+}
+
 function recordprogramme(id)
 {
 	if (typeof response.progs[id] != 'undefined') {
@@ -1352,10 +1395,10 @@ function populatepattern(pattern, index)
 function populatepatterns(id)
 {
 	var str = '';
-	var i;
 
 	if ((typeof response.patterns != 'undefined') && (response.for > 0)) {
 		var status = showstatus('patterns');
+		var i, j;
 
 		document.getElementById("status").innerHTML = status;
 		document.getElementById("statusbottom").innerHTML = status;
@@ -1564,11 +1607,10 @@ function populatelogs(id)
 
 function populate(id)
 {
-	var str = '';
-
 	if (response != null) {
 		if		(typeof response.patterns != 'undefined') populatepatterns(id);
 		else if (typeof response.loglines != 'undefined') populatelogs(id);
+		else if (typeof response.titles   != 'undefined') populatetitles(id);
 		else if (typeof response.progs    != 'undefined') populateprogs(id);
 
 		populateusers();
