@@ -2523,7 +2523,7 @@ bool ADVBProgList::CheckRecordingNow()
 					
 		if (scheduledlist.ReadFromFile(config.GetScheduledFile())) {
 			ADVBProgList   shouldberecordinglist, shouldntberecordinglist;
-			const uint64_t now = (uint64_t)ADateTime(), slack = (uint64_t)2 * (uint64_t)60000;
+			const uint64_t now = (uint64_t)ADateTime().TimeStamp(true), slack = (uint64_t)2 * (uint64_t)60000;
 			uint_t i;
 
 			lock.ReleaseLock();
