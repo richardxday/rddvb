@@ -1009,7 +1009,7 @@ function populatetitles(id)
 				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '"', '', title.recorded + ' Recorded', 'Find recorded versions of this title') + '</td>';
 				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '" exists', '', title.exist + ' Available', 'Find recorded versions of this title that are available') + '</td>';
 				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '" scheduled', '', title.scheduled + ' Scheduled', 'Find scheduled versions of this title') + '</td>';
-				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '" failed', '', title.scheduled + ' Failed', 'Find failed versions of this title') + '</td>';
+				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '" failed', '', title.failed + ' Failed', 'Find failed versions of this title') + '</td>';
 				
 				str += '</tr>';
 			}
