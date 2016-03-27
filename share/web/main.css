@@ -55,14 +55,13 @@ div.sidebar button
 	padding-left:20px;
 	padding-right:20px;
 }
-table.proglist
+table.proglist,table.patternlist,table.titlelist
 {
 	width:100%;
 }
 table.proglist,table.patternlist,table.patternlist th
 {
 	background-color:#eee;
-	width:100%;
 }
 table.proglist td
 {
@@ -72,7 +71,7 @@ table.proglist td
 	vertical-align:middle;
 	width:1%;
 }
-table.patternlist th,table.patternlist td
+table.patternlist th,table.patternlist td,table.titlelist td
 {
 	border-top:1px solid #aaa;
 	padding:4px;
@@ -121,11 +120,11 @@ table.proglist tr.recorded:hover
 {
 	background-color:#88e;
 }
-table.proglist tr.scheduled,table.patternlist tr.enabled
+table.proglist tr.scheduled,table.patternlist tr.enabled,table.titlelist tr
 {
 	background-color:#8f8;
 }
-table.proglist tr.scheduled:hover,table.patternlist tr.enabled:hover
+table.proglist tr.scheduled:hover,table.patternlist tr.enabled:hover,table.titlelist tr:hover
 {
 	background-color:#7e7;
 }

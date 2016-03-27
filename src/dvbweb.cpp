@@ -99,10 +99,54 @@ void printpattern(AHash& patterns, const ADVBProg& prog)
 	}
 }
 
+void printseries(const ADVBProgList::SERIES& serieslist)
+{
+	uint_t j;
+
+	printf(",\"series\":[");
+	for (j = 0; j < serieslist.list.Count(); j++) {
+		const AString *str = (const AString *)serieslist.list[j];
+
+		if (j > 0) printf(",");
+		printf("{\"state\":");
+		if (str) {
+			if (str->Pos("-") >= 0) printf("\"incomplete\"");
+			else					printf("\"complete\"");
+		}
+		else printf("\"empty\"");
+		printf(",\"episodes\":\"%s\"}", str ? str->str() : "");
+	}
+	printf("]");
+}
+
+typedef struct {
+	AString title;
+	uint_t  recorded;
+	uint_t  scheduled;
+	uint_t  failed;
+} PROGTITLE;
+
+int inserttitle(uptr_t value1, uptr_t value2, void *context)
+{
+	const PROGTITLE *title1 = (const PROGTITLE *)value1;
+	const PROGTITLE *title2 = (const PROGTITLE *)value2;
+
+	(void)context;
+	
+	return CompareNoCase(title1->title, title2->title);
+}
+
+void deletetitle(uptr_t value, void *context)
+{
+	(void)context;
+	delete (PROGTITLE *)value;
+}
+
 int main(int argc, char *argv[])
 {
 	const ADVBConfig& config = ADVBConfig::Get(true);
 	ADVBProg		  prog;	// ensure ADVBProg initialisation takes place
+	AStdFile          log; //("/home/richard/dvbweb.log", "w");
 	AHash 			  vars(20, &AString::DeleteString);
 	AString   		  val, logdata, errors;
 	bool 			  base64encoded = true;
@@ -135,6 +179,8 @@ int main(int argc, char *argv[])
 				AString var = line.Left(p);
 				AString val = line.Mid(p + 1);
 
+				log.printf("%s='%s'\n", var.str(), val.str());
+				
 				//debug("Setting '%s' as '%s'\n", var.str(), val.str());
 
 				vars.Insert(var, (uptr_t)new AString(val));
@@ -145,6 +191,7 @@ int main(int argc, char *argv[])
 	if (Value(vars, val, "editpattern")) {
 		AString edit = val.ToLower();
 		AString user, pattern;
+
 		AString newuser, newpattern;
 
 		Value(vars, user, "user");
@@ -193,15 +240,19 @@ int main(int argc, char *argv[])
 	else {
 		enum {
 			DataSource_Progs = 0,
+			DataSource_Titles,
 			DataSource_Patterns,
 			DataSource_Logs,
 		};
 		ADVBProgList 	  recordedlist, scheduledlist, requestedlist, rejectedlist, combinedlist, failureslist, recordinglist, processinglist;
 		ADVBProgList 	  list[2], *proglist = NULL;
+		AHash     		  titleshash;
+		ADataList 		  titleslist;
 		ADataList	      patternlist;
 		ADVBPatterns::PATTERN filterpattern;
 		AHash 			  patterns(50, &ADVBPatterns::__DeletePattern);
 		AHash 			  fullseries;
+		AString           from;
 		uint_t 			  pagesize = (uint_t)config.GetConfigItem("pagesize", "20"), page = 0;
 		uint_t 			  datasource = DataSource_Progs;
 		uint_t 			  index = 0;
@@ -222,7 +273,7 @@ int main(int argc, char *argv[])
 		combinedlist.ReadFromFile(config.GetCombinedFile());
 		combinedlist.CreateHash();
 		combinedlist.FindSeries(fullseries);
-
+		
 		if (Value(vars, val, "deleteprogramme")) {
 			const ADVBProg *pprog;
 
@@ -264,45 +315,44 @@ int main(int argc, char *argv[])
 			ADVBProgList::ReadPatterns(patternlist, errors);
 		}
 
-		Value(vars, val, "from");
+		Value(vars, from, "from");
 
-		val = val.ToLower();
+		from = from.ToLower();
 
-		if (val == "listings") {
+		if (from == "listings") {
 			proglist = list + index;
 			proglist->ReadFromFile(config.GetListingsFile());
 			index = (index + 1) % NUMBEROF(list);
 		}
-		else if (val == "recorded") {
+		else if (from == "recorded") {
 			proglist = &recordedlist;
 		}
-		else if (val == "requested") {
+		else if (from == "requested") {
 			proglist = &requestedlist;
 		}
-		else if (val == "scheduled") {
+		else if (from == "scheduled") {
 			proglist = &scheduledlist;
 		}
-		else if (val == "rejected") {
+		else if (from == "rejected") {
 			proglist = &rejectedlist;
 		}
-		else if (val == "combined") {
+		else if (from == "combined") {
 			proglist = &combinedlist;
 		}
-		else if (val == "failures") {
+		else if (from == "failures") {
 			proglist = &failureslist;
 		}
-		else if (val == "processing") {
+		else if (from == "processing") {
 			proglist = &processinglist;
 		}
-		else if (val == "patterns") {
+		else if (from == "titles") {
+			proglist   = &combinedlist;
+			datasource = DataSource_Titles;
+		}
+		else if (from == "patterns") {
 			datasource = DataSource_Patterns;
 		}
-		else if (val == "sky") {
-			proglist = list + index;
-			proglist->ReadFromFile(config.GetDataDir().CatPath("skylistings.dat"));
-			index = (index + 1) % NUMBEROF(list);
-		}
-		else if (val == "logs") {
+		else if (from == "logs") {
 			if (Value(vars, val, "timefilter")) {
 				ADateTime dt;
 				int p;
@@ -318,25 +368,16 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		if (Value(vars, val, "pagesize")) {
-			int pval = (int)val;
-
-			pagesize = (uint_t)LIMIT(pval, 1, MAX_SIGNED(sint_t));
-		}
-	
-		if (Value(vars, val, "page")) {
-			int pval = (int)val;
-
-			page = (uint_t)LIMIT(pval, 0, MAX_SIGNED(sint_t));
-		}
-
 		if ((datasource == DataSource_Progs) && !proglist) {
 			proglist = list + index;
 			proglist->ReadFromFile(config.GetListingsFile());
 			index = (index + 1) % NUMBEROF(list);
 		}
 
-		if ((datasource == DataSource_Progs) && Value(vars, val, "filter") && val.Valid()) {
+		if (((datasource == DataSource_Progs) ||
+			 (datasource == DataSource_Titles)) &&
+			Value(vars, val, "filter") &&
+			val.Valid()) {
 			if (!proglist) {
 				proglist = list + index;
 				proglist->ReadFromFile(config.GetListingsFile());
@@ -352,6 +393,18 @@ int main(int argc, char *argv[])
 			proglist = reslist;
 		}
 
+		if (Value(vars, val, "pagesize")) {
+			int pval = (int)val;
+
+			pagesize = (uint_t)LIMIT(pval, 1, MAX_SIGNED(sint_t));
+		}
+	
+		if (Value(vars, val, "page")) {
+			int pval = (int)val;
+
+			page = (uint_t)LIMIT(pval, 0, MAX_SIGNED(sint_t));
+		}
+		
 		if ((datasource == DataSource_Patterns) && Value(vars, val, "filter") && val.Valid()) {
 			AString user_pat    = ParseRegex("*");
 			AString pattern_pat = ParseRegex("*");
@@ -462,7 +515,7 @@ int main(int argc, char *argv[])
 		}
 
 		printf("{");
-	
+
 		{
 			uint_t i, nitems, offset, count = pagesize;
 
@@ -470,6 +523,30 @@ int main(int argc, char *argv[])
 				default:
 				case DataSource_Progs:
 					nitems = proglist->Count();
+					break;
+
+				case DataSource_Titles:
+					titleshash.Create(50, &deletetitle);
+									  
+					for (i = 0; i < proglist->Count(); i++) {
+						const ADVBProg& prog = proglist->GetProg(i);
+						PROGTITLE *title;
+
+						if (((title = (PROGTITLE *)titleshash.Read(prog.GetTitle())) == NULL) && ((title = new PROGTITLE) != NULL)) {
+							title->title = prog.GetTitle();
+							title->recorded = title->scheduled = title->failed = 0;
+
+							titleshash.Insert(prog.GetTitle(), (uptr_t)title);
+							titleslist.Insert((uptr_t)title, &inserttitle);
+						}
+
+						if (title) {
+							if (prog.IsRecorded())  	   title->recorded++;
+							if (prog.IsScheduled()) 	   title->scheduled++;
+							if (prog.HasRecordingFailed()) title->failed++;
+						}
+					}
+					nitems = titleslist.Count();
 					break;
 
 				case DataSource_Patterns:
@@ -480,7 +557,7 @@ int main(int argc, char *argv[])
 					nitems = logdata.CountLines("\n", 0);
 					break;
 			}
-
+			
 			page   = MIN(page, (nitems / pagesize));
 			offset = page * pagesize;
 			if (page && (offset == nitems)) {
@@ -489,6 +566,8 @@ int main(int argc, char *argv[])
 			}
 			count = MIN(count, SUBZ(nitems, offset));
 
+			//printf("\n\npage: %u\npagesize: %u\ncount: %u\nnitems: %u\n\n", page, pagesize, count, nitems);
+			
 			printf("\"total\":%u", nitems);
 			printf(",\"page\":%u", page);
 			printf(",\"pagesize\":%u", pagesize);
@@ -539,13 +618,8 @@ int main(int argc, char *argv[])
 
 			switch (datasource) {
 				default:
-				case DataSource_Progs: {
-					AString from;
-					
+				case DataSource_Progs:
 					printf(",\"progs\":[\n");
-
-					Value(vars, from, "from");
-					from = from.ToLower();
 
 					for (i = 0; (i < count) && !HasQuit(); i++) {
 						ADVBProg& prog = proglist->GetProgWritable(offset + i);
@@ -572,33 +646,32 @@ int main(int argc, char *argv[])
 							printpattern(patterns, *prog2);
 							printf("}");
 						}
-
+						
 						const ADVBProgList::SERIES *serieslist = (const ADVBProgList::SERIES *)fullseries.Read(prog.GetTitle());
-						if (serieslist) {
-							uint_t j;
-
-							printf(",\"series\":[");
-							for (j = 0; j < serieslist->list.Count(); j++) {
-								const AString *str = (const AString *)serieslist->list[j];
-
-								if (j > 0) printf(",");
-								printf("{\"state\":");
-								if (str) {
-									if (str->Pos("-") >= 0) printf("\"incomplete\"");
-									else					printf("\"complete\"");
-								}
-								else printf("\"empty\"");
-								printf(",\"episodes\":\"%s\"}", str ? str->str() : "");
-							}
-							printf("]");
-						}
+						if (serieslist) printseries(*serieslist);
 
 						printf("}");
 					}
 
 					printf("]\n");
 					break;
-				}
+
+				case DataSource_Titles:
+					printf(",\"titles\":[\n");
+
+					for (i = 0; i < count; i++) {
+						const PROGTITLE& title = *(const PROGTITLE *)titleslist[i + offset];
+						
+						if (i) printf(",");
+						printf("{\"title\":\"%s\"", title.title.str());
+						printf(",\"scheduled\":%u", title.scheduled);
+						printf(",\"recorded\":%u", title.recorded);
+						printf(",\"failed\":%u", title.failed);
+						printf("}");
+					}
+
+					printf("]\n");
+					break;
 					
 				case DataSource_Patterns:
 					printf(",\"patterns\":[\n");
