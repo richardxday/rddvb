@@ -1105,8 +1105,15 @@ int main(int argc, char *argv[])
 
 				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
 					ADVBProg& prog = proglist.GetProgWritable(j);
-
-					if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
+					AString   oldfilename = prog.GenerateFilename();
+					
+					if ((!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) ||
+						(prog.IsConverted() && !AStdFile::exists(prog.GetFilename()) && AStdFile::exists(oldfilename))) {
+						if (!AStdFile::exists(prog.GetFilename()) && AStdFile::exists(oldfilename)) {
+							printf("Reverting back to oldfilename of '%s'\n", oldfilename.str());
+							prog.SetFilename(oldfilename);
+						}
+						
 						config.printf("Converting file %u/%u - '%s':", j + 1, proglist.Count(), prog.GetQuickDescription().str());
 						
 						prog.ConvertVideo(true);
