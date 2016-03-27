@@ -527,7 +527,8 @@ int main(int argc, char *argv[])
 
 				case DataSource_Titles:
 					titleshash.Create(50, &deletetitle);
-									  
+					titleshash.EnableCaseInSensitive(true);
+					
 					for (i = 0; i < proglist->Count(); i++) {
 						const ADVBProg& prog = proglist->GetProg(i);
 						PROGTITLE *title;
