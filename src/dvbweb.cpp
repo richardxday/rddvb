@@ -15,6 +15,18 @@
 #include "dvbpatterns.h"
 #include "findcards.h"
 
+typedef struct {
+	AString title;
+	struct {
+		uint_t  recorded;
+		uint_t  exist;
+		uint_t  scheduled;
+		uint_t  failed;
+		uint_t  isfilm;
+		uint_t  notfilm;
+	} counts;
+} PROGTITLE;
+
 bool Value(const AHash& vars, AString& val, const AString& var)
 {
 	AString *p;
@@ -118,13 +130,6 @@ void printseries(const ADVBProgList::SERIES& serieslist)
 	}
 	printf("]");
 }
-
-typedef struct {
-	AString title;
-	uint_t  recorded;
-	uint_t  scheduled;
-	uint_t  failed;
-} PROGTITLE;
 
 int inserttitle(uptr_t value1, uptr_t value2, void *context)
 {
@@ -535,16 +540,19 @@ int main(int argc, char *argv[])
 
 						if (((title = (PROGTITLE *)titleshash.Read(prog.GetTitle())) == NULL) && ((title = new PROGTITLE) != NULL)) {
 							title->title = prog.GetTitle();
-							title->recorded = title->scheduled = title->failed = 0;
+							memset(&title->counts, 0, sizeof(title->counts));
 
 							titleshash.Insert(prog.GetTitle(), (uptr_t)title);
 							titleslist.Insert((uptr_t)title, &inserttitle);
 						}
 
 						if (title) {
-							if (prog.IsRecorded())  	   title->recorded++;
-							if (prog.IsScheduled()) 	   title->scheduled++;
-							if (prog.HasRecordingFailed()) title->failed++;
+							if (prog.IsRecorded())  	   title->counts.recorded++;
+							if (AStdFile::exists(prog.GetFilename())) title->counts.exist++;
+							if (prog.IsScheduled()) 	   title->counts.scheduled++;
+							if (prog.HasRecordingFailed()) title->counts.failed++;
+							if (prog.IsFilm())			   title->counts.isfilm++;
+							else						   title->counts.notfilm++;
 						}
 					}
 					nitems = titleslist.Count();
@@ -665,9 +673,14 @@ int main(int argc, char *argv[])
 						
 						if (i) printf(",");
 						printf("{\"title\":\"%s\"", title.title.str());
-						printf(",\"scheduled\":%u", title.scheduled);
-						printf(",\"recorded\":%u", title.recorded);
-						printf(",\"failed\":%u", title.failed);
+						printf(",\"scheduled\":%u", title.counts.scheduled);
+						printf(",\"recorded\":%u", title.counts.recorded);
+						printf(",\"exist\":%u", title.counts.exist);
+						printf(",\"failed\":%u", title.counts.failed);
+						printf(",\"isfilm\":%u", title.counts.isfilm);
+						printf(",\"notfilm\":%u", title.counts.notfilm);
+						const ADVBProgList::SERIES *serieslist = (const ADVBProgList::SERIES *)fullseries.Read(title.title);
+						if (serieslist) printseries(*serieslist);
 						printf("}");
 					}
 
