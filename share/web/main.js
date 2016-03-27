@@ -139,7 +139,7 @@ function findfilter(titlefilter, str, title, style)
 
 function findfromfilter(from, titlefilter, timefilter, str, title, style)
 {
-	if (typeof title 	  == 'undefined') title = 'Search ' + from + ' using filter ' + filter.replace(/"/g, '&quot;');
+	if (typeof title 	  == 'undefined') title = 'Search ' + from + ' using filter ' + titlefilter.replace(/"/g, '&quot;');
 	if (typeof style 	  == 'undefined') style = '';
 	if (typeof timefilter == 'undefined') timefilter = '';
 
@@ -1002,10 +1002,16 @@ function populatetitles(id)
 			for (i = 0; i < response.titles.length; i++) {
 				var title = response.titles[i];
 
-				str += '<tr><td style="text-align:left;">' + title.title;
-				str += '</td><td>';
+				str += '<tr';
+
+				if ((title.isfilm > 0) && (title.notfilm == 0)) str += ' class="film"';
+				str += '><td style="text-align:left;">' + title.title + '</td>';
+				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '"', '', title.recorded + ' Recorded', 'Find recorded versions of this title') + '</td>';
+				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '" exists', '', title.exist + ' Available', 'Find recorded versions of this title that are available') + '</td>';
+				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '" scheduled', '', title.scheduled + ' Scheduled', 'Find scheduled versions of this title') + '</td>';
+				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '" failed', '', title.scheduled + ' Failed', 'Find failed versions of this title') + '</td>';
 				
-				str += '</td></tr>';
+				str += '</tr>';
 			}
 
 			str += '</table>';

@@ -160,11 +160,11 @@ table.proglist tr.processing:hover
 {
 	background-color:#e3e;
 }
-table.proglist tr.film
+table.proglist tr.film,table.titlelist tr.film
 {
 	background-color:#2ff;
 }
-table.proglist tr.film:hover
+table.proglist tr.film:hover,table.titlelist tr.film:hover
 {
 	background-color:#1ee;
 }
