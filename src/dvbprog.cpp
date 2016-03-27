@@ -1355,7 +1355,7 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 #if DEBUG_SAMEPROGRAMME
 			if (debugsameprogramme) debug("'%s' / '%s': both films\n", prog1.GetDescription().str(), prog2.GetDescription().str());
 #endif
-			same = true;
+			same = (prog1.GetYear() == prog2.GetYear());
 		}
 		else if (ep1.valid && ep2.valid) {
 			same = ((ep1.series == ep2.series) && (ep1.episode == ep2.episode));
