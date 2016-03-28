@@ -2449,6 +2449,8 @@ bool ADVBProgList::GetAndConvertRecordings()
 
 		if (!RunAndLogCommand(cmd)) config.printf("Warning: Failed to copy all recorded programmes from recording host");
 
+		CreateDirectory(config.GetSlaveLogDir());
+		
 		cmd.Delete();
 		cmd.printf("nice rsync -v -z --partial --ignore-missing-args %s %s:%s/'dvb*.txt' %s",
 				   config.GetRsyncArgs().str(),
