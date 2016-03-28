@@ -93,6 +93,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(recording,  		 Flag_recording,  	 	   "Programme recording"),
 	DEFINE_FLAG(postprocessing,		 Flag_postprocessing,	   "Programme recording being processing"),
 	DEFINE_FLAG(exists,				 Flag_exists,    	 	   "Programme exists"),
+	DEFINE_FLAG(available,			 Flag_exists,    	 	   "Programme is available"),
 	DEFINE_FLAG(notify,				 Flag_notify,    	 	   "Notify by when programme has recorded"),
 	DEFINE_FLAG(converted,			 Flag_converted,    	   "Programme has been converted"),
 	DEFINE_FLAG(film,				 Flag_film,				   "Programme is a film"),

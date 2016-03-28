@@ -19,7 +19,7 @@ typedef struct {
 	AString title;
 	struct {
 		uint_t  recorded;
-		uint_t  exist;
+		uint_t  available;
 		uint_t  scheduled;
 		uint_t  failed;
 		uint_t  isfilm;
@@ -548,7 +548,7 @@ int main(int argc, char *argv[])
 
 						if (title) {
 							if (prog.IsRecorded())  	   title->counts.recorded++;
-							if (AStdFile::exists(prog.GetFilename())) title->counts.exist++;
+							if (AStdFile::exists(prog.GetFilename())) title->counts.available++;
 							if (prog.IsScheduled()) 	   title->counts.scheduled++;
 							if (prog.HasRecordingFailed()) title->counts.failed++;
 							if (prog.IsFilm())			   title->counts.isfilm++;
@@ -675,7 +675,7 @@ int main(int argc, char *argv[])
 						printf("{\"title\":\"%s\"", title.title.str());
 						printf(",\"scheduled\":%u", title.counts.scheduled);
 						printf(",\"recorded\":%u", title.counts.recorded);
-						printf(",\"exist\":%u", title.counts.exist);
+						printf(",\"available\":%u", title.counts.available);
 						printf(",\"failed\":%u", title.counts.failed);
 						printf(",\"isfilm\":%u", title.counts.isfilm);
 						printf(",\"notfilm\":%u", title.counts.notfilm);
