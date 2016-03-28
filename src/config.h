@@ -32,6 +32,7 @@ public:
 	AString GetConfigDir()		   			 const;
 	AString GetDataDir()			   		 const;
 	AString GetLogDir()			   	  		 const;
+	AString GetSlaveLogDir()			  	 const {return GetConfigItem("slavelogdir", GetLogDir().CatPath(GetConfigItem("slavelogsubdir", "slave")));}
 	AString GetRecordingsDir()	   	  		 const {return CatPath(GetDataDir(), GetConfigItem("recdir", "recordings"));}
 	AString GetRecordingsStorageDir()		 const {return CatPath(GetRecordingsDir(), GetConfigItem("storagedir", "Temp"));}
 	AString GetRecordingsArchiveDir(const AString& user) const {return CatPath(GetRecordingsDir(), GetUserConfigItem(user, "achivedir", "Archive"));}
@@ -56,7 +57,8 @@ public:
 	AString GetCombinedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("combinedfile", "combined.dat"));}
 	AString GetExtraRecordFile()			 const {return CatPath(GetDataDir(), GetConfigItem("extrarecordfile", "extrarecordprogrammes.txt"));}
 	AString GetDVBCardsFile()                const {return CatPath(GetDataDir(), GetConfigItem("dvbcardsfile", "dvbcards.txt"));}
-	AString GetLogFile(uint32_t day)         const {return CatPath(GetLogDir(), "dvblog-" + ADateTime(day, 0UL).DateFormat("%Y-%M-%D") + ".txt");}
+	AString GetLogBase()				     const {return "dvblog-";}
+	AString GetLogFile(uint32_t day)         const {return CatPath(GetLogDir(), GetLogBase() + ADateTime(day, 0UL).DateFormat("%Y-%M-%D") + ".txt");}
 	AString GetRecordLogBase()				 const {return "dvbrecordlog-";}
 	AString GetRecordLog(uint32_t day) 		 const {return CatPath(GetLogDir(), GetRecordLogBase() + ADateTime(day, 0UL).DateFormat("%Y-%M") + ".txt");}
 	AString GetDVBSignalLogBase()			 const {return "dvbsignal-";}

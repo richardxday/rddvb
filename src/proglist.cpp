@@ -2454,6 +2454,16 @@ bool ADVBProgList::GetAndConvertRecordings()
 				   config.GetRsyncArgs().str(),
 				   config.GetRecordingHost().str(),
 				   config.GetLogDir().str(),
+				   config.GetLogBase().str(),
+				   config.GetSlaveLogDir().str());
+
+		if (!RunAndLogCommand(cmd)) config.printf("Warning: Failed to copy all DVB logs from recording host");
+
+		cmd.Delete();
+		cmd.printf("nice rsync -v -z --partial --ignore-missing-args %s %s:%s/'%s*.txt' %s",
+				   config.GetRsyncArgs().str(),
+				   config.GetRecordingHost().str(),
+				   config.GetLogDir().str(),
 				   config.GetDVBSignalLogBase().str(),
 				   config.GetLogDir().str());
 
