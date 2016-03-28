@@ -988,12 +988,15 @@ function populatetitles(id)
 
 	if ((typeof response.titles != 'undefined') && (response.for > 0)) {
 		var status = showstatus('titles');
-
+		var pattern = '';
+		
 		proglistelement = '';
 		
 		document.getElementById("status").innerHTML = status;
 		document.getElementById("statusbottom").innerHTML = status;
 
+		if (typeof response.parsedpattern.pattern != 'undefined') pattern = response.parsedpattern.pattern + ' ';
+		
 		if (response.titles.length > 0) {
 			var i;
 
@@ -1006,10 +1009,10 @@ function populatetitles(id)
 
 				if ((title.isfilm > 0) && (title.notfilm == 0)) str += ' class="film"';
 				str += '><td style="text-align:left;">' + title.title + '</td>';
-				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '"', '', title.recorded + ' Recorded', 'Find recorded versions of this title') + '</td>';
-				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '" exists', '', title.exist + ' Available', 'Find recorded versions of this title that are available') + '</td>';
-				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '" scheduled', '', title.scheduled + ' Scheduled', 'Find scheduled versions of this title') + '</td>';
-				str += '<td>' + findfromfilter('Combined', 'title="' + title.title + '" failed', '', title.failed + ' Failed', 'Find failed versions of this title') + '</td>';
+				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '"', '', title.recorded + ' Recorded', 'Find recorded versions of this title') + '</td>';
+				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" exists', '', title.exist + ' Available', 'Find recorded versions of this title that are available') + '</td>';
+				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" scheduled', '', title.scheduled + ' Scheduled', 'Find scheduled versions of this title') + '</td>';
+				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" failed', '', title.failed + ' Failed', 'Find failed versions of this title') + '</td>';
 				
 				str += '</tr>';
 			}
