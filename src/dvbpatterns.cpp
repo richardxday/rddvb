@@ -1101,7 +1101,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 						if (newmatch) break;
 					}
 				}
-				if (field.offset == ADVBProg::GetSubCategoryDataOffset()) {
+				else if (field.offset == ADVBProg::GetSubCategoryDataOffset()) {
 					AString _str(str);
 					uint_t j, m = _str.CountLines();
 
