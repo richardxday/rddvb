@@ -2428,7 +2428,7 @@ void ADVBProgList::CheckRecordingFile()
 bool ADVBProgList::GetAndConvertRecordings()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock lock("pullrecordings");
+	ADVBLock     lock("pullrecordings");
 	ADVBProgList reclist;
 	bool success = false;
 
@@ -2437,7 +2437,8 @@ bool ADVBProgList::GetAndConvertRecordings()
 	if (reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
 		AString cmd;
 		uint_t i, converted = 0;
-
+		bool   reschedule = false;
+		
 		GetRecordingListFromRecordingSlave();
 	
 		cmd.Delete();
@@ -2460,17 +2461,34 @@ bool ADVBProgList::GetAndConvertRecordings()
 
 		if (!RunAndLogCommand(cmd)) config.printf("Warning: Failed to copy all DVB logs from recording host");
 
-		success = true;
+		ADVBProgList convertlist;
 		for (i = 0; i < reclist.Count(); i++) {
-			ADVBProg& prog = reclist.GetProgWritable(i);
+			const ADVBProg& prog = reclist.GetProg(i);
 								
 			if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
-				config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
-						
-				success &= prog.ConvertVideo(true);
-									
-				converted++;
+				if (prog.IsOnceOnly() && prog.IsRecordingComplete() && !config.IsRecordingSlave()) {
+					if (ADVBPatterns::DeletePattern(prog.GetUser(), prog.GetPattern())) {
+						config.printf("Deleted pattern '%s', rescheduling...", prog.GetPattern());
+													
+						reschedule = true;
+					}
+				}
+
+				convertlist.AddProg(prog);
 			}
+		}
+
+		if (reschedule) ADVBProgList::SchedulePatterns();
+		
+		success = true;
+		for (i = 0; i < convertlist.Count(); i++) {
+			ADVBProg& prog = convertlist.GetProgWritable(i);
+			
+			config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
+						
+			success &= prog.ConvertVideo(true);
+			
+			converted++;
 		}
 
 		if (converted) config.printf("%u programmes converted", converted);

@@ -104,12 +104,13 @@ bool ADVBPatterns::UpdatePatternInFile(const AString& filename, const AString& p
 	return found;
 }
 
-void ADVBPatterns::AddPatternToFile(const AString& filename, const AString& pattern)
+bool ADVBPatterns::AddPatternToFile(const AString& filename, const AString& pattern)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
 	bool done = false;
-
+	bool added = false;
+	
 	if (fp.open(filename)) {
 		AString line;
 
@@ -129,59 +130,82 @@ void ADVBPatterns::AddPatternToFile(const AString& filename, const AString& patt
 			fp.close();
 			
 			config.logit("Add pattern '%s' to file '%s'", pattern.str(), filename.str());
+
+			added = true;
 		}
 	}
+
+	return added;
 }
 
-void ADVBPatterns::UpdatePattern(const AString& olduser, const AString& oldpattern, const AString& newuser, const AString& newpattern)
+bool ADVBPatterns::UpdatePattern(const AString& olduser, const AString& oldpattern, const AString& newuser, const AString& newpattern)
 {
 	ADVBLock lock("patterns");
-
+	bool changed = false;
+	
 	if (newuser != olduser) {
-		DeletePattern(olduser, oldpattern);
+		changed |= DeletePattern(olduser, oldpattern);
 		if (newpattern.Valid()) {
-			InsertPattern(newuser, newpattern);
+			changed |= InsertPattern(newuser, newpattern);
 		}
 	}
-	else if (newpattern != oldpattern) UpdatePattern(newuser, oldpattern, newpattern);
+	else if (newpattern != oldpattern) changed |= UpdatePattern(newuser, oldpattern, newpattern);
+
+	return changed;
 }
 
-void ADVBPatterns::UpdatePattern(const AString& user, const AString& pattern, const AString& newpattern)
+bool ADVBPatterns::UpdatePattern(const AString& user, const AString& pattern, const AString& newpattern)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock lock("patterns");
+	bool changed = false;
 	
-	if (user.Empty() || !UpdatePatternInFile(config.GetUserPatternsPattern().SearchAndReplace("{#?}", user), pattern, newpattern)) {
-		UpdatePatternInFile(config.GetPatternsFile(), pattern, newpattern);
+	if (user.Empty() || !(changed = UpdatePatternInFile(config.GetUserPatternsPattern().SearchAndReplace("{#?}", user), pattern, newpattern))) {
+		changed = UpdatePatternInFile(config.GetPatternsFile(), pattern, newpattern);
 	}
+
+	return changed;
 }
 
-void ADVBPatterns::InsertPattern(const AString& user, const AString& pattern)
+bool ADVBPatterns::InsertPattern(const AString& user, const AString& pattern)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock lock("patterns");
+	bool changed = false;
 	
-	if (user.Valid()) AddPatternToFile(config.GetUserPatternsPattern().SearchAndReplace("{#?}", user), pattern);
-	else			  AddPatternToFile(config.GetPatternsFile(), pattern);
+	if (user.Valid()) changed = AddPatternToFile(config.GetUserPatternsPattern().SearchAndReplace("{#?}", user), pattern);
+	else			  changed = AddPatternToFile(config.GetPatternsFile(), pattern);
+
+	return changed;
 }
 
-void ADVBPatterns::DeletePattern(const AString& user, const AString& pattern)
+bool ADVBPatterns::DeletePattern(const AString& user, const AString& pattern)
 {
-	UpdatePattern(user, pattern, "");
+	return UpdatePattern(user, pattern, "");
 }
 
-void ADVBPatterns::EnablePattern(const AString& user, const AString& pattern)
+bool ADVBPatterns::EnablePattern(const AString& user, const AString& pattern)
 {
+	ADVBLock lock("patterns");
+	bool changed = false;
+	
 	if (pattern[0] == '#') {
-		UpdatePattern(user, pattern, pattern.Mid(1));
+		changed = UpdatePattern(user, pattern, pattern.Mid(1));
 	}
+
+	return changed;
 }
 
-void ADVBPatterns::DisablePattern(const AString& user, const AString& pattern)
+bool ADVBPatterns::DisablePattern(const AString& user, const AString& pattern)
 {
+	ADVBLock lock("patterns");
+	bool changed = false;
+
 	if (pattern[0] != '#') {
-		UpdatePattern(user, pattern, "#" + pattern);
+		changed = UpdatePattern(user, pattern, "#" + pattern);
 	}
+
+	return changed;
 }
 
 void ADVBPatterns::GetFieldValue(const FIELD& field, VALUE& value, AString& val)

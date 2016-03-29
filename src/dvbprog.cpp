@@ -2056,7 +2056,7 @@ void ADVBProg::Record()
 								UpdateRecordedList();
 							}
 					
-							if (IsOnceOnly() && IsRecordingComplete()) {
+							if (IsOnceOnly() && IsRecordingComplete() && !config.IsRecordingSlave()) {
 								ADVBPatterns::DeletePattern(user, GetPattern());
 							
 								reschedule = true;
