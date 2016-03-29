@@ -1009,6 +1009,7 @@ function populatetitles(id)
 
 				if ((title.isfilm > 0) && (title.notfilm == 0)) str += ' class="film"';
 				str += '><td style="text-align:left;">' + title.title + '</td>';
+				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '"', '', title.total + ' In Total', 'Find recorded, available, scheduled and failed versions of this title') + '</td>';
 				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" recorded', '', title.recorded + ' Recorded', 'Find recorded versions of this title') + '</td>';
 				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" available', '', title.available + ' Available', 'Find recorded versions of this title that are available') + '</td>';
 				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" scheduled', '', title.scheduled + ' Scheduled', 'Find scheduled versions of this title') + '</td>';
