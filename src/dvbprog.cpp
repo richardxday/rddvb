@@ -2059,7 +2059,7 @@ void ADVBProg::Record()
 							if (IsOnceOnly() && IsRecordingComplete() && !config.IsRecordingSlave()) {
 								ADVBPatterns::DeletePattern(user, GetPattern());
 							
-								reschedule = true;
+								reschedule |= config.RescheduleAfterDeletingPattern(GetUser(), GetCategory());
 							}
 						
 							bool success = PostRecord();

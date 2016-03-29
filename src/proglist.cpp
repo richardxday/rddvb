@@ -2468,9 +2468,11 @@ bool ADVBProgList::GetAndConvertRecordings()
 			if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
 				if (prog.IsOnceOnly() && prog.IsRecordingComplete() && !config.IsRecordingSlave()) {
 					if (ADVBPatterns::DeletePattern(prog.GetUser(), prog.GetPattern())) {
-						config.printf("Deleted pattern '%s', rescheduling...", prog.GetPattern());
+						const bool rescheduleoption = config.RescheduleAfterDeletingPattern(prog.GetUser(), prog.GetCategory());
+						
+						config.printf("Deleted pattern '%s', %srescheduling...", prog.GetPattern(), rescheduleoption ? "" : "NOT ");
 													
-						reschedule = true;
+						reschedule |= rescheduleoption;
 					}
 				}
 
