@@ -9,12 +9,12 @@ public:
 	ADVBPatterns();
 	~ADVBPatterns() {}
 	
-	static void   UpdatePattern(const AString& olduser, const AString& oldpattern, const AString& newuser, const AString& newpattern);
-	static void   UpdatePattern(const AString& user, const AString& pattern, const AString& newpattern);
-	static void   InsertPattern(const AString& user, const AString& pattern);
-	static void   DeletePattern(const AString& user, const AString& pattern);
-	static void   EnablePattern(const AString& user, const AString& pattern);
-	static void   DisablePattern(const AString& user, const AString& pattern);
+	static bool   UpdatePattern(const AString& olduser, const AString& oldpattern, const AString& newuser, const AString& newpattern);
+	static bool   UpdatePattern(const AString& user, const AString& pattern, const AString& newpattern);
+	static bool   InsertPattern(const AString& user, const AString& pattern);
+	static bool   DeletePattern(const AString& user, const AString& pattern);
+	static bool   EnablePattern(const AString& user, const AString& pattern);
+	static bool   DisablePattern(const AString& user, const AString& pattern);
 
 	static uint_t ParsePatterns(ADataList& patternlist, const AString& patterns, AString& errors, const AString& sep, const AString& user = "");
 	static bool   ParsePattern(ADataList& patternlist, const AString& line, AString& errors, const AString& user = "");
@@ -179,7 +179,7 @@ protected:
 
 protected:
 	static bool UpdatePatternInFile(const AString& filename, const AString& pattern, const AString& newpattern);
-	static void AddPatternToFile(const AString& filename, const AString& pattern);
+	static bool AddPatternToFile(const AString& filename, const AString& pattern);
 
 	static void GetFieldValue(const FIELD& field, VALUE& value, AString& val);
 	static void AssignValue(ADVBProg& prog, const FIELD& field, const VALUE& value, uint8_t termtype = Operator_EQ);
