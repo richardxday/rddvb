@@ -24,6 +24,7 @@ typedef struct {
 		uint_t  failed;
 		uint_t  isfilm;
 		uint_t  notfilm;
+		uint_t  total;
 	} counts;
 } PROGTITLE;
 
@@ -553,6 +554,7 @@ int main(int argc, char *argv[])
 							if (prog.HasRecordingFailed()) title->counts.failed++;
 							if (prog.IsFilm())			   title->counts.isfilm++;
 							else						   title->counts.notfilm++;
+							title->counts.total++;
 						}
 					}
 					nitems = titleslist.Count();
@@ -679,8 +681,11 @@ int main(int argc, char *argv[])
 						printf(",\"failed\":%u", title.counts.failed);
 						printf(",\"isfilm\":%u", title.counts.isfilm);
 						printf(",\"notfilm\":%u", title.counts.notfilm);
+						printf(",\"total\":%u", title.counts.total);
+
 						const ADVBProgList::SERIES *serieslist = (const ADVBProgList::SERIES *)fullseries.Read(title.title);
 						if (serieslist) printseries(*serieslist);
+
 						printf("}");
 					}
 
