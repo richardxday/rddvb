@@ -197,7 +197,7 @@ void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
 
 		name = ReplaceStrings(name, replacements, NUMBEROF(replacements));
 
-		//debug("Channel %s=%s\n", id.str(), name.str());
+		//debug("Channel %s=%s icon=%s\n", id.str(), name.str(), icon.str());
 		
 		AddChannel(id, name);
 

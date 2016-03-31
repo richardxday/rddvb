@@ -824,7 +824,9 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	if (icon.Empty()) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
 	if (icon.Valid()) str.printf(",\"icon\":\"%s\"", JSONFormat(icon).str());
 
-	if ((icon = ADVBIconCache::Get().GetIcon("channel", GetChannel())).Valid()) str.printf(",\"channelicon\":\"%s\"", JSONFormat(icon).str());
+	icon = ADVBIconCache::Get().GetIcon("channel", GetChannel());
+	if (icon.Empty()) icon = ADVBIconCache::Get().GetIcon("channel", GetDVBChannel());
+	if (icon.Valid()) str.printf(",\"channelicon\":\"%s\"", JSONFormat(icon).str());
 
 	if ((p = GetString(data->strings.rating))[0]) str.printf(",\"rating\":\"%s\"", JSONFormat(p).str());
 #endif
