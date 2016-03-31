@@ -1167,7 +1167,15 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 							default:
 								break;
 						}
-					
+
+#if 0
+						debug("Date: comparing %s with %s (%s with %s)\n",
+							  AValue(val).ToString().str(),
+							  AValue(term.value.u64).ToString().str(),
+							  ADateTime(val).DateToStr().str(),
+							  ADateTime(term.value.u64).DateToStr().str());
+#endif
+						
 						res = COMPARE_ITEMS(val, term.value.u64);
 						break;
 					}
