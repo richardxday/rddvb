@@ -186,6 +186,7 @@ void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
 		{"Kiss 100", "Kiss"},
 		{"Magic 105.4", "Magic"},
 	};
+	const ADVBConfig& config = ADVBConfig::Get();
 	AString id   = channel.GetAttribute("id");
 	AString name = channel.GetChildValue("display-name");
 
@@ -197,7 +198,8 @@ void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
 
 		name = ReplaceStrings(name, replacements, NUMBEROF(replacements));
 
-		//debug("Channel %s=%s icon=%s\n", id.str(), name.str(), icon.str());
+		(void)config;
+		//config.logit("Channel %s=%s icon=%s\n", id.str(), name.str(), icon.str());
 		
 		AddChannel(id, name);
 

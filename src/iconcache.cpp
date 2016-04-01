@@ -16,12 +16,22 @@ ADVBIconCache::ADVBIconCache() : cache(300, &__DeleteEntry),
 	ADVBLock lock("iconcache");
 	if (fp.open(ADVBConfig::Get().GetIconCacheFilename(), "r")) {
 		AString line;
-
+		uint_t n = 0;
+		
 		while (line.ReadLn(fp) >= 0) {
-			SetIcon(line.Column(0), line.Column(1).DeQuotify().DeEscapify(), line.Column(2).DeQuotify().DeEscapify());
+			AString type = line.Column(0);
+			AString name = line.Column(1).DeQuotify().DeEscapify();
+			AString icon = line.Column(2).DeQuotify().DeEscapify();
+			
+			SetIcon(type, name, icon);
+			n++;
 		}
 		
 		fp.close();
+
+		ADVBConfig::Get().logit("Read %u lines resulting in %u items in icon cache", n, cache.GetItems());
+		
+		changed = false;
 	}
 }
 
@@ -29,11 +39,12 @@ ADVBIconCache::~ADVBIconCache()
 {
 	if (changed) {
 		AStdFile fp;
-		
+
 		ADVBLock lock("iconcache");
 		if (fp.open(ADVBConfig::Get().GetIconCacheFilename(), "w")) {
 			cache.Traverse(&__WriteEntry, &fp);
 			fp.close();
+			ADVBConfig::Get().logit("Wrote %u items from icon cache", cache.GetItems());
 		}
 	}
 }
