@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 				ADVBProg& prog = reclist.GetProgWritable(j);
 				prog.ClearExistsOnMediaServer();
 			}
-			reclist.WriteToFile(config.GetRecordedFile());
+			if (!HasQuit()) reclist.WriteToFile(config.GetRecordedFile());
 		}
 	}
 #endif
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
 					proglist.AssignEpisodes();
 
 					config.printf("Writing main listings file...");
-					if (proglist.WriteToFile(filename)) {
+					if (!HasQuit() && proglist.WriteToFile(filename)) {
 						config.printf("Wrote %u programmes to '%s'", proglist.Count(), filename.str());
 					}
 					else {
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
 						reclist.Modify(list, added, modified, ADVBProgList::Prog_Add);
 
 						if (added) {
-							if (reclist.WriteToFile(config.GetRecordedFile())) {
+							if (!HasQuit() && reclist.WriteToFile(config.GetRecordedFile())) {
 								config.printf("Merged programmes from '%s' into recorded list, total now %u (%u added)", filename.str(), reclist.Count(), added);
 							}
 							else config.printf("Failed to write recorded programme list back!");
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
 
 					proglist.SearchAndReplace("\xa3", "£");
 
-					if (proglist.WriteToFile(filename)) {
+					if (!HasQuit() && proglist.WriteToFile(filename)) {
 						printf("Wrote programmes to '%s'\n", filename.str());
 					}
 				}
@@ -594,7 +594,7 @@ int main(int argc, char *argv[])
 			else if ((strcmp(argv[i], "--write") == 0) || (strcmp(argv[i], "-w") == 0)) {
 				AString filename = config.GetNamedFile(argv[++i]);
 			
-				if (proglist.WriteToFile(filename)) {
+				if (!HasQuit() && proglist.WriteToFile(filename)) {
 					printf("Wrote %u programmes to '%s'\n", proglist.Count(), filename.str());
 				}
 				else {
@@ -761,7 +761,7 @@ int main(int argc, char *argv[])
 						uint_t j;
 						bool changed = false;
 
-						for (j = 0; j < reclist.Count(); j++) {
+						for (j = 0; (j < reclist.Count()) && !HasQuit(); j++) {
 							ADVBProg& prog = reclist.GetProgWritable(j);
 
 							if (prog.GetFilename() == filename1) {
@@ -773,7 +773,7 @@ int main(int argc, char *argv[])
 						}
 
 						if (changed) {
-							if (!reclist.WriteToFile(config.GetRecordedFile())) {
+							if (HasQuit() || !reclist.WriteToFile(config.GetRecordedFile())) {
 								config.printf("Failed to write recorded programme list back!");
 							}
 						}
@@ -818,7 +818,7 @@ int main(int argc, char *argv[])
 
 					if (changed) {
 						if (commit) {
-							if (!reclist.WriteToFile(config.GetRecordedFile())) {
+							if (HasQuit() || !reclist.WriteToFile(config.GetRecordedFile())) {
 								config.printf("Failed to write recorded programme list back!");
 							}
 						}
@@ -843,7 +843,7 @@ int main(int argc, char *argv[])
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
 					uint_t j, n = 0;
 
-					for (j = 0; j < reclist.Count(); j++) {
+					for (j = 0; (j < reclist.Count()) && !HasQuit(); j++) {
 						ADVBProg& prog = reclist.GetProgWritable(j);
 
 						if (prog.FixData()) n++;
@@ -851,7 +851,7 @@ int main(int argc, char *argv[])
 
 					config.printf("%u programmes changed", n);
 					
-					if (n && !reclist.WriteToFile(config.GetRecordedFile())) {
+					if (n && (HasQuit() || !reclist.WriteToFile(config.GetRecordedFile()))) {
 						config.printf("Failed to write recorded programme list back!");
 					}
 				}
@@ -864,11 +864,11 @@ int main(int argc, char *argv[])
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
 					uint_t j;
 
-					for (j = 0; j < reclist.Count(); j++) {
+					for (j = 0; (j < reclist.Count()) && !HasQuit(); j++) {
 						reclist.GetProgWritable(j).SetRecorded();
 					}
 
-					if (!reclist.WriteToFile(config.GetRecordedFile())) {
+					if (HasQuit() || !reclist.WriteToFile(config.GetRecordedFile())) {
 						config.printf("Failed to write recorded programme list back!");
 					}
 				}
@@ -952,13 +952,13 @@ int main(int argc, char *argv[])
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
 					uint_t j;
 
-					for (j = 0; j < reclist.Count(); j++) {
+					for (j = 0; (j < reclist.Count()) && !HasQuit(); j++) {
 						ADVBProg& prog = reclist.GetProgWritable(j);
 
 						prog.SetRecordingComplete();
 					}
 
-					if (!reclist.WriteToFile(config.GetRecordedFile())) {
+					if (HasQuit() || !reclist.WriteToFile(config.GetRecordedFile())) {
 						config.printf("Failed to write recorded programme list back!");
 					}
 				}
@@ -988,7 +988,7 @@ int main(int argc, char *argv[])
 						for (j = 0; j < n; j++) config.printf("%s", errors.Line(j).str());
 					}
 
-					for (j = 0; j < reslist.Count(); j++) {
+					for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
 						ADVBProg *prog;
 
 						if ((prog = reclist.FindUUIDWritable(reslist.GetProg(j))) != NULL) {
@@ -1004,7 +1004,7 @@ int main(int argc, char *argv[])
 					config.printf("Changed %u programme%s", changed, (changed == 1) ? "" : "s");
 
 					if (changed) {
-						if (!reclist.WriteToFile(config.GetRecordedFile())) {
+						if (HasQuit() || !reclist.WriteToFile(config.GetRecordedFile())) {
 							config.printf("Failed to write recorded programme list back!");
 						}
 					}
@@ -1017,18 +1017,18 @@ int main(int argc, char *argv[])
 				if (!AStdFile::exists(config.GetRecordFailuresFile()) || failureslist.ReadFromFile(config.GetRecordFailuresFile())) {
 					uint_t j;
 
-					for (j = 0; j < proglist.Count(); j++) {
+					for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
 						failureslist.AddProg(proglist.GetProg(j), false);
 					}
 
-					for (j = 0; j < failureslist.Count(); j++) {
+					for (j = 0; (j < failureslist.Count()) && !HasQuit(); j++) {
 						ADVBProg& prog = failureslist.GetProgWritable(j);
 
 						prog.ClearScheduled();
 						prog.SetRecordingFailed();
 					}
 					
-					if (!failureslist.WriteToFile(config.GetRecordFailuresFile())) {
+					if (HasQuit() || !failureslist.WriteToFile(config.GetRecordFailuresFile())) {
 						config.printf("Failed to write record failure list back!");
 					}
 				}
@@ -1059,7 +1059,7 @@ int main(int argc, char *argv[])
 					for (j = 0; j < n; j++) config.printf("%s", errors.Line(j).str());
 				}
 
-				for (j = 0; j < reslist.Count(); j++) {
+				for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
 					ADVBProg *prog;
 					
 					if ((prog = proglist.FindUUIDWritable(reslist.GetProg(j))) != NULL) {
