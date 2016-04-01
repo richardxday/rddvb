@@ -81,14 +81,15 @@ int main(int argc, char *argv[])
 		printf("\t--load\t\t\t\tRead listings from default file (-l)\n");
 		printf("\t--read <file>\t\t\tRead listings from file <file> (-r)\n");
 		printf("\t--merge <file>\t\t\tMerge listings from file <file>, adding any programmes that dot not exist\n");
-		printf("\t--modify-recorded <file>\t\tMerge listings from file <file> into recorded programmes, adding any programmes that dot not exist\n");
-		printf("\t--modify-recorded-from-recording-host\tAdd recorded programmes from recording host into recorded programmes, adding any programmes that dot not exist\n");
-		printf("\t--modify-scheduled-from-recording-host\tModfy scheduled programmes from recording host into scheduled programmes\n");
+		printf("\t--modify-recorded <file>\tMerge listings from file <file> into recorded programmes, adding any programmes that dot not exist\n");
+		printf("\t--modify-recorded-from-recording-host Add recorded programmes from recording host into recorded programmes, adding any programmes that dot not exist\n");
+		printf("\t--modify-scheduled-from-recording-host Modfy scheduled programmes from recording host into scheduled programmes\n");
 		printf("\t--jobs\t\t\t\tRead programmes from scheduled jobs\n");
 		printf("\t--write <file>\t\t\tWrite listings to file <file> (-w)\n");
 		printf("\t--sort\t\t\t\tSort list in chronological order\n");
 		printf("\t--sort-rev\t\t\tSort list in reverse-chronological order\n");
-		printf("\t--writetxt <file>\t\tWrite listings to file <file> in text format\n");
+		printf("\t--write-text <filename>\t\tWrite listings to file <filename> in text format\n");
+		printf("\t--write-gnuplot <filename>\tWrite listings to file <filename> in format usable by GNUPlot\n");
 		printf("\t--fix-pound <file>\t\tFix pound symbols in file\n");
 		printf("\t--update-dvb-channels\t\tUpdate DVB channel assignments\n");
 		printf("\t--update-uuid\t\t\tSet UUID's on every programme\n");
@@ -600,7 +601,7 @@ int main(int argc, char *argv[])
 					printf("Failed to write programme list to '%s'\n", filename.str());
 				}
 			}
-			else if (strcmp(argv[i], "--writetxt") == 0) {
+			else if (strcmp(argv[i], "--write-text") == 0) {
 				AString filename = config.GetNamedFile(argv[++i]);
 			
 				if (proglist.WriteToTextFile(filename)) {
@@ -608,6 +609,13 @@ int main(int argc, char *argv[])
 				}
 				else {
 					printf("Failed to write programme list to '%s'\n", filename.str());
+				}
+			}
+			else if (stricmp(argv[i], "--write-gnuplot") == 0) {
+				AString filename = argv[++i];
+
+				if (!proglist.WriteToGNUPlotFile(filename)) {
+					fprintf(stderr, "Failed to write GNU plot file %s\n", filename.str());
 				}
 			}
 			else if ((strcmp(argv[i], "--sort") == 0) || (strcmp(argv[i], "--sort-rev") == 0)) {
@@ -1254,13 +1262,6 @@ int main(int argc, char *argv[])
 			}
 			else if (stricmp(argv[i], "--check-recording-now") == 0) {
 				ADVBProgList::CheckRecordingNow();
-			}
-			else if (stricmp(argv[i], "--write-gnuplot") == 0) {
-				AString filename = argv[++i];
-
-				if (!proglist.WriteToGNUPlotFile(filename)) {
-					fprintf(stderr, "Failed to write GNU plot file %s\n", filename.str());
-				}
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
