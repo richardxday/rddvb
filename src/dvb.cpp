@@ -1255,6 +1255,13 @@ int main(int argc, char *argv[])
 			else if (stricmp(argv[i], "--check-recording-now") == 0) {
 				ADVBProgList::CheckRecordingNow();
 			}
+			else if (stricmp(argv[i], "--write-gnuplot") == 0) {
+				AString filename = argv[++i];
+
+				if (!proglist.WriteToGNUPlotFile(filename)) {
+					fprintf(stderr, "Failed to write GNU plot file %s\n", filename.str());
+				}
+			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
 			}
