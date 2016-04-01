@@ -47,6 +47,7 @@ bool RunAndLogCommand(const AString& cmd)
 	if (config.IsWebResponse()) cmd1.printf(" >>\"%s\" 2>&1", config.GetLogFile(ADateTime().GetDays()).str());
 	else						cmd1.printf(" 2>&1 | tee -a \"%s\"", config.GetLogFile(ADateTime().GetDays()).str());
 	
+	//config.printf("Running '%s'", cmd1.str());
 	bool success = (system(cmd1) == 0);
 	if (!success) config.logit("Command '%s' failed", cmd.str());
 

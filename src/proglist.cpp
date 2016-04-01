@@ -717,10 +717,11 @@ bool ADVBProgList::WriteToGNUPlotFile(const AString& filename) const
 	bool success = false;
 
 	if (fp.open(filename, "w")) {
-		const AString format = "%Y-%M-%D %h:%m:%s";
 		AHash channels(20);
 		uint_t i, j, n = 0;
 
+		fp.printf("#time channel-index dvb-card length(hours) recorded scheduled rejected desc\n");
+		
 		for (i = 0; i < Count(); i++) {
 			AString channel = GetProg(i).GetChannel();
 			
@@ -744,15 +745,16 @@ bool ADVBProgList::WriteToGNUPlotFile(const AString& filename) const
 						};
 						AString desc = prog.GetQuickDescription();
 						uint_t  card = prog.GetDVBCard();
-						uint_t  rej  = (uint_t)prog.IsRejected();
 						uint_t  k;
 
 						for (k = 0; k < NUMBEROF(times); k++) {
-							fp.printf("%s %u %u %s %u %s\n",
-									  ADateTime(times[k]).DateFormat(format).str(),
+							fp.printf("%s %u %u %s %u %u %u %s\n",
+									  ADateTime(times[k]).DateFormat("%Y-%M-%D %h:%m:%s").str(),
 									  n, card,
 									  AValue(levels[k]).ToString().str(),
-									  rej,
+									  (uint_t)prog.IsRecorded(),
+									  (uint_t)prog.IsScheduled(),
+									  (uint_t)prog.IsRejected(),
 									  desc.str());
 						}
 
@@ -2496,12 +2498,14 @@ bool ADVBProgList::GetAndConvertRecordings()
 	config.printf("Getting and converting recordings from record host '%s'", config.GetRecordingHost().str());
 	
 	if (reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
-		AString cmd;
+		AString   cmd;
+		uint32_t  tick;
 		uint_t i, converted = 0;
-		bool   reschedule = false;
+		bool      reschedule = false;
 		
 		GetRecordingListFromRecordingSlave();
-	
+
+		tick = GetTickCount();
 		cmd.Delete();
 		cmd.printf("nice rsync -v --partial --remove-source-files --ignore-missing-args %s %s:%s/'*.mpg' %s",
 				   config.GetRsyncArgs().str(),
@@ -2509,10 +2513,12 @@ bool ADVBProgList::GetAndConvertRecordings()
 				   config.GetRecordingsStorageDir().str(),
 				   config.GetRecordingsStorageDir().str());
 
-		if (!RunAndLogCommand(cmd)) config.printf("Warning: Failed to copy all recorded programmes from recording host");
-
+		if (RunAndLogCommand(cmd)) config.printf("File copy took %ss", AValue((GetTickCount() + 999 - tick) / 1000).ToString().str());
+		else					   config.printf("Warning: Failed to copy all recorded programmes from recording host");
+		
 		CreateDirectory(config.GetSlaveLogDir());
 		
+		tick = GetTickCount();
 		cmd.Delete();
 		cmd.printf("nice rsync -z --partial --ignore-missing-args %s %s:%s/'dvb*.txt' %s",
 				   config.GetRsyncArgs().str(),
@@ -2520,7 +2526,8 @@ bool ADVBProgList::GetAndConvertRecordings()
 				   config.GetLogDir().str(),
 				   config.GetSlaveLogDir().str());
 
-		if (!RunAndLogCommand(cmd)) config.printf("Warning: Failed to copy all DVB logs from recording host");
+		if (RunAndLogCommand(cmd)) config.printf("Log file copy took %ss", AValue((GetTickCount() + 999 - tick) / 1000).ToString().str());
+		else					   config.printf("Warning: Failed to copy all DVB logs from recording host");
 
 		ADVBProgList convertlist;
 		for (i = 0; i < reclist.Count(); i++) {
