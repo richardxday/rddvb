@@ -43,6 +43,8 @@ public:
 	bool WriteToFile(const AString& filename, bool updatedependantfiles = true) const;
 	bool WriteToTextFile(const AString& filename) const;
 
+	bool WriteToGNUPlotFile(const AString& filename) const;
+
 	void SearchAndReplace(const AString& search, const AString& replace);
 
 	int AddProg(const AString& prog, bool sort = true, bool removeoverlaps = false);
@@ -111,7 +113,7 @@ public:
 	void FindPopularTitles(AList& list, double (*fn)(const ADVBProg& prog, void *context), void *context = NULL) const;
 
 	void EnhanceListings();
-	
+							
 	static void UnscheduleAllProgrammes();
 	static uint_t SchedulePatterns(const ADateTime& starttime = ADateTime().TimeStamp(true), bool commit = true);
 	static bool WriteToJobList();

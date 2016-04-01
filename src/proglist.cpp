@@ -711,6 +711,67 @@ bool ADVBProgList::WriteToTextFile(const AString& filename) const
 	return success;
 }
 
+bool ADVBProgList::WriteToGNUPlotFile(const AString& filename) const
+{
+	AStdFile fp;
+	bool success = false;
+
+	if (fp.open(filename, "w")) {
+		const AString format = "%Y-%M-%D %h:%m:%s";
+		AHash channels(20);
+		uint_t i, j, n = 0;
+
+		for (i = 0; i < Count(); i++) {
+			AString channel = GetProg(i).GetChannel();
+			
+			if (!channels.Exists(channel)) {				
+				for (j = i; j < Count(); j++) {
+					const ADVBProg& prog = GetProg(j);
+					AString channel2 = prog.GetChannel();
+
+					if (channel2 == channel) {
+						const uint64_t times[] = {
+							prog.GetRecordStart() ? prog.GetRecordStart() : prog.GetStart(),
+							prog.GetStart(),
+							prog.GetStop(),
+							prog.GetRecordStop() ? prog.GetRecordStop() : prog.GetStop(),
+						};
+						const double levels[] = {
+							0.0,
+							(double)prog.GetLength() / 3600000.0,
+							(double)prog.GetLength() / 3600000.0,
+							0.0,
+						};
+						AString desc = prog.GetQuickDescription();
+						uint_t  card = prog.GetDVBCard();
+						uint_t  rej  = (uint_t)prog.IsRejected();
+						uint_t  k;
+
+						for (k = 0; k < NUMBEROF(times); k++) {
+							fp.printf("%s %u %u %s %u %s\n",
+									  ADateTime(times[k]).DateFormat(format).str(),
+									  n, card,
+									  AValue(levels[k]).ToString().str(),
+									  rej,
+									  desc.str());
+						}
+
+						fp.printf("\n\n");
+					}
+				}
+
+				channels.Insert(channel, n++);
+			}
+		}
+		
+		fp.close();
+
+		success = true;
+	}
+	
+	return success;
+}
+
 void ADVBProgList::SearchAndReplace(const AString& search, const AString& replace)
 {
 	uint_t i, n = Count();
@@ -2453,7 +2514,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 		CreateDirectory(config.GetSlaveLogDir());
 		
 		cmd.Delete();
-		cmd.printf("nice rsync -v -z --partial --ignore-missing-args %s %s:%s/'dvb*.txt' %s",
+		cmd.printf("nice rsync -z --partial --ignore-missing-args %s %s:%s/'dvb*.txt' %s",
 				   config.GetRsyncArgs().str(),
 				   config.GetRecordingHost().str(),
 				   config.GetLogDir().str(),
