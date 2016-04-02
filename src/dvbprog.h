@@ -440,7 +440,9 @@ protected:
 
 	static uint16_t GetUserDataOffset();
 	static uint16_t GetActorsDataOffset();
+#if DVBDATVERSION>=2
 	static uint16_t GetSubCategoryDataOffset();
+#endif
 	static uint16_t GetPriDataOffset();
 	static uint16_t GetScoreDataOffset();
 
