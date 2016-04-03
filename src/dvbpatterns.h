@@ -188,7 +188,7 @@ protected:
 
 	static int SortTermsByAssign(uptr_t item1, uptr_t item2, void *context);
 
-	static bool MatchString(const TERM& term, const char *str);
+	static bool MatchString(const TERM& term, const char *str, bool ignoreinvert = false);
 
 	static sint64_t TermTypeToInt64s(const void *p, uint_t termtype);
 	static void     Int64sToTermType(void *p, sint64_t val, uint_t termtype);
