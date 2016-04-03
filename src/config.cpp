@@ -60,7 +60,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 	CreateDirectory(GetRecordingsDir());
 	CreateDirectory(GetTempDir());
 	
-	{
+	if (CommitScheduling()) {
 		AList   users;
 		AString dir;
 
