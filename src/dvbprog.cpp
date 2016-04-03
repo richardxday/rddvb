@@ -187,10 +187,12 @@ uint16_t ADVBProg::GetActorsDataOffset()
 	return DVBPROG_OFFSET(strings.actors);
 }
 
+#if DVBDATVERSION>=2
 uint16_t ADVBProg::GetSubCategoryDataOffset()
 {
 	return DVBPROG_OFFSET(strings.subcategory);
 }
+#endif
 
 uint16_t ADVBProg::GetPriDataOffset()
 {

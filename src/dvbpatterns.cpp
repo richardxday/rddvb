@@ -874,6 +874,9 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 								   " or actor" + newtext +
 								   " or director" + newtext +
 								   " or category" + newtext +
+#if DVBDATVERSION>=2
+								   " or subcategory" + newtext +
+#endif
 								   conditions);
 
 				//debug("Split '%s' into:\npure text:'%s'\nconditions:'%s'\nnew pattern:'%s'\n", line.str(), puretext.str(), conditions.str(), newline.str());
@@ -1127,6 +1130,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 
 					if (term.data.opcode & Operator_Inverted) newmatch = !newmatch;
 				}
+#if DVBDATVERSION>=2
 				else if (field.offset == ADVBProg::GetSubCategoryDataOffset()) {
 					AString _str(str);
 					uint_t j, m = _str.CountLines();
@@ -1138,6 +1142,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 
 					if (term.data.opcode & Operator_Inverted) newmatch = !newmatch;
 				}
+#endif
 				else newmatch = MatchString(term, str);
 			}
 			else if (field.type == FieldType_prog) {
