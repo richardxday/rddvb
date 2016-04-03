@@ -1030,7 +1030,7 @@ AString ADVBPatterns::RemoveDuplicateTerms(PATTERN& pattern)
 	return newpattern;
 }
 
-bool ADVBPatterns::MatchString(const TERM& term, const char *str)
+bool ADVBPatterns::MatchString(const TERM& term, const char *str, bool ignoreinvert)
 {
 	AString temp;
 	bool match = false;
@@ -1090,7 +1090,7 @@ bool ADVBPatterns::MatchString(const TERM& term, const char *str)
 		}
 	}
 
-	return (term.data.opcode & Operator_Inverted) ? !match : match;
+	return ((term.data.opcode & Operator_Inverted) && !ignoreinvert) ? !match : match;
 }
 
 bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
@@ -1121,18 +1121,22 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 					uint_t j, m = _str.CountLines();
 
 					for (j = 0; j < m; j++) {
-						newmatch = MatchString(term, _str.Line(j));
+						newmatch = MatchString(term, _str.Line(j), true);
 						if (newmatch) break;
 					}
+
+					if (term.data.opcode & Operator_Inverted) newmatch = !newmatch;
 				}
 				else if (field.offset == ADVBProg::GetSubCategoryDataOffset()) {
 					AString _str(str);
 					uint_t j, m = _str.CountLines();
 
 					for (j = 0; j < m; j++) {
-						newmatch = MatchString(term, _str.Line(j));
+						newmatch = MatchString(term, _str.Line(j), true);
 						if (newmatch) break;
 					}
+
+					if (term.data.opcode & Operator_Inverted) newmatch = !newmatch;
 				}
 				else newmatch = MatchString(term, str);
 			}
