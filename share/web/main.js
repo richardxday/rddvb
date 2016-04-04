@@ -1,5 +1,5 @@
 var defaultuser = 'default';
-var defaulttimefilter = 'start>=yesterday,midnight';
+var defaulttimefilter = 'start>=midnight,yesterday';
 
 var iconimgsize = 'width=57 height=32';
 var iconimgbigsize = 'width=171 height=96';

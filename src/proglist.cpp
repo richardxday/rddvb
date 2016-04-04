@@ -1777,10 +1777,18 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	// first, remove programmes that do not have a valid DVB channel
 	// then, remove any that have already finished
 	// then, remove any that have already been recorded
+	const ADVBChannelList& channellist = ADVBChannelList::Get();
 	for (i = 0; i < Count();) {
 		const ADVBProg *otherprog;
 		ADVBProg& prog = GetProgWritable(i);
-
+		AString dvbchannel;
+		
+		// check DVB channel
+		if ((dvbchannel = channellist.LookupDVBChannel(prog.GetChannel())) != prog.GetDVBChannel()) {
+			config.logit("Changing DVB channel of '%s' from '%s' to '%s'", prog.GetDescription().str(), prog.GetDVBChannel(), dvbchannel.str());
+			prog.SetDVBChannel(dvbchannel);
+		}
+		
 		if (!prog.GetDVBChannel()[0]) {
 			config.logit("'%s' does not have a DVB channel", prog.GetDescription().str());
 

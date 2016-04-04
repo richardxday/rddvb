@@ -38,13 +38,15 @@ Filter:<br>
 </td><td>
 Time:<br>
 <select id="timefilter" onchange="dvbrequest({timefilter:document.getElementById(&quot;timefilter&quot;).value})">
-<option value="start&gt;=now,-1M,midnight">From a month ago</option>
-<option value="start&gt;=now,-1W,midnight">From a week ago</option>
-<option value="start&gt;=yesterday,midnight" selected>From yesterday</option>
-<option value="start&gt;=now,midnight">Today</option>
+<option value="start&gt;=midnight,-4W">From 4 weeks ago</option>
+<option value="start&gt;=midnight,-3W">From 3 weeks ago</option>
+<option value="start&gt;=midnight,-2W">From 2 weeks ago</option>
+<option value="start&gt;=midnight,-1W">From 1 week ago</option>
+<option value="start&gt;=midnight,yesterday" selected>From yesterday</option>
+<option value="start&gt;=midnight">Today</option>
 <option value="start&gt;=now start&lt;now">Now</option>
 <option value="start&gt;=now start&lt;now+1h">Next Hour</option>
-<option value="start&gt;=tomorrow,midnight">Tomorrow</option>
+<option value="start&gt;=midnight,tomorrow">Tomorrow</option>
 <option value="start&gt;now">Future</option>
 <option value="start=today">Today (Logs)</option>
 <option value="start=yesterday">Yesterday (Logs)</option>
