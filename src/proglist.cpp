@@ -1726,17 +1726,69 @@ void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool
 	if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after adding a programme", filename.str());
 }
 
-void ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
+bool ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock     lock("dvbfiles");
 	ADVBProgList list;
-
+	bool		 removed = false;
+	
 	if (list.ReadFromFile(filename)) {
 		if		(!list.DeleteProg(prog))	  config.logit("Failed to find programme '%s' in list to remove it!", prog.GetQuickDescription().str());
 		else if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after removing a programme", filename.str());
+		else removed = true;
 	}
 	else config.logit("Failed to read file '%s' for removing a programme", filename.str());
+
+	return removed;
+}
+
+bool ADVBProgList::RemoveFromList(const AString& filename, const AString& uuid)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	ADVBLock     lock("dvbfiles");
+	ADVBProgList list;
+	bool		 removed = false;
+
+	if (list.ReadFromFile(filename)) {
+		const ADVBProg *pprog;
+
+		if ((pprog = list.FindUUID(uuid)) != NULL) {
+			ADVBProg prog = *pprog;
+			if		(!list.DeleteProg(prog))	  config.logit("Failed to find programme '%s' in list to remove it!", prog.GetQuickDescription().str());
+			else if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after removing a programme", filename.str());
+			else removed = true;
+		}
+	}
+	else config.logit("Failed to read file '%s' for removing a programme", filename.str());
+
+	return removed;
+}
+
+bool ADVBProgList::RemoveFromRecordLists(const ADVBProg& prog)
+{
+	return RemoveFromRecordLists(prog.GetUUID());
+}
+
+bool ADVBProgList::RemoveFromRecordLists(const AString& uuid)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	bool removed = false;
+
+	{
+		ADVBLock lock("dvbfiles");
+		removed |= ADVBProgList::RemoveFromList(config.GetRecordFailuresFile(), uuid);
+		removed |= ADVBProgList::RemoveFromList(config.GetRecordedFile(), uuid);
+	}
+
+	if (config.GetRecordingHost().Valid()) {
+		AString cmd;
+		
+		cmd.printf("dvb --delete-from-record-lists %s", uuid.str());
+		RunAndLogCommand(cmd);
+	}
+	
+	return removed;
 }
 
 uint_t ADVBProgList::Schedule(const ADateTime& starttime)
@@ -1753,6 +1805,26 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 
 	oldrejectedlist.ReadFromFile(config.GetRejectedFile());
 
+	config.logit("--------------------------------------------------------------------------------");
+	for (i = 0; i < Count(); ) {
+		ADVBProg& prog = GetProgWritable(i);
+		AString dvbchannel;
+
+		// check and update DVB channel
+		if ((dvbchannel = ADVBChannelList::Get().LookupDVBChannel(prog.GetChannel())) != prog.GetDVBChannel()) {
+			config.logit("Changing DVB channel of '%s' from '%s' to '%s'", prog.GetDescription().str(), prog.GetDVBChannel(), dvbchannel.str());
+			prog.SetDVBChannel(dvbchannel);
+		}
+		
+		if (!prog.GetDVBChannel()[0]) {
+			config.logit("'%s' does not have a DVB channel", prog.GetDescription().str());
+
+			DeleteProg(i);
+		}
+		else i++;
+	}
+	config.logit("--------------------------------------------------------------------------------");
+
 	WriteToFile(config.GetRequestedFile(), false);
 
 	recordedlist.ReadFromFile(config.GetRecordedFile());
@@ -1761,7 +1833,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	// read running job(s)
 	runninglist.ReadFromFile(config.GetRecordingFile());
 	runninglist.CreateHash();
-	
+
 	config.logit("--------------------------------------------------------------------------------");
 	config.printf("Found: %u programmes:", Count());
 	config.logit("--------------------------------------------------------------------------------");
@@ -1773,28 +1845,16 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 					 prog.GetDescription(1).str(),
 					 ((rprog = runninglist.FindUUID(prog)) != NULL) ? AString(" (recording on DVB card %s)").Arg(rprog->GetDVBCard()).str() : "");
 	}
+	config.logit("--------------------------------------------------------------------------------");
 	
 	// first, remove programmes that do not have a valid DVB channel
 	// then, remove any that have already finished
 	// then, remove any that have already been recorded
-	const ADVBChannelList& channellist = ADVBChannelList::Get();
 	for (i = 0; i < Count();) {
 		const ADVBProg *otherprog;
 		ADVBProg& prog = GetProgWritable(i);
-		AString dvbchannel;
-		
-		// check DVB channel
-		if ((dvbchannel = channellist.LookupDVBChannel(prog.GetChannel())) != prog.GetDVBChannel()) {
-			config.logit("Changing DVB channel of '%s' from '%s' to '%s'", prog.GetDescription().str(), prog.GetDVBChannel(), dvbchannel.str());
-			prog.SetDVBChannel(dvbchannel);
-		}
-		
-		if (!prog.GetDVBChannel()[0]) {
-			config.logit("'%s' does not have a DVB channel", prog.GetDescription().str());
 
-			DeleteProg(i);
-		}
-		else if (!prog.AllowRepeats() && ((otherprog = recordedlist.FindCompleteRecording(prog)) != NULL)) {
+		if (!prog.AllowRepeats() && ((otherprog = recordedlist.FindCompleteRecording(prog)) != NULL)) {
 			config.logit("'%s' has already been recorded ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
 
 			DeleteProg(i);

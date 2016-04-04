@@ -113,7 +113,7 @@ AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 		{"BBC THREE", "BBC3"},
 		{"BBC FOUR", "BBC4"},
 		{"BBC R1X", "BBC Radia 1Xtra"},
-		{"BBC Radio 4 Ex", "BBC Radia 4 Extra"},
+		{"BBC Radio 4 Ex", "BBC Radio 4 Extra"},
 		{"CBBC Channel", "CBBC"},
 		{" N West", ""},
 		{" S West", ""},
@@ -134,7 +134,8 @@ AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 
 const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name) const
 {
-	return (const CHANNEL *)hash.Read(name);
+	const CHANNEL *chan = (const CHANNEL *)hash.Read(name);
+	return chan;
 }
 
 ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name, bool create)
@@ -150,7 +151,7 @@ ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name,
 		list.Add((uptr_t)chan);
 
 		hash.Insert(chan->name, (uptr_t)chan);
-		hash.Insert(chan->convertedname, (uptr_t)chan);
+		if (chan->convertedname != chan->name) hash.Insert(chan->convertedname, (uptr_t)chan);
 
 		changed = true;
 	}
