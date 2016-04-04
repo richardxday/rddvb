@@ -147,6 +147,7 @@ int main(int argc, char *argv[])
 		printf("\t--use-converted-filename\tChange filename to that of converted file, without actually converting file\n");
 		printf("\t--regenerate-filename\t\tChange filename of current list of programmes (dependant on converted state), renaming files (in original directory OR current directory)\n");
 		printf("\t--delete-files\t\t\tDelete encoded files from programmes in current list\n");
+		printf("\t--delete-from-record-lists <uuid> Delete programme with UUID <uuid> from record lists (recorded and record failues)\n");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
 #if DVBDATVERSION > 1
@@ -507,7 +508,7 @@ int main(int argc, char *argv[])
 				}
 
 				printf("Deleted %u programmes\n", ndeleted);
-			}
+			}			
 			else if ((strcmp(argv[i], "--list") == 0) || (strcmp(argv[i], "-L") == 0)) {
 				uint_t j;
 
@@ -1183,6 +1184,17 @@ int main(int argc, char *argv[])
 					const ADVBProg& prog = proglist.GetProg(j);
 
 					prog.DeleteEncodedFiles();
+				}
+			}
+			else if (stricmp(argv[i], "--delete-from-record-lists") == 0) {
+				AString uuid = argv[++i];
+
+				if (ADVBProgList::RemoveFromRecordLists(uuid)) {
+					printf("Removed programme with UUID '%s' from record lists\n", uuid.str());
+				}
+				else {
+					fprintf(stderr, "Failed to remove programme with UUID '%s' from record lists\n", uuid.str());
+					res = -1;
 				}
 			}
 			else if (stricmp(argv[i], "--record-success") == 0) {

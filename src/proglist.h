@@ -127,7 +127,10 @@ public:
 	static bool CheckRecordingNow();
 	
 	static void AddToList(const AString& filename, const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);
-	static void RemoveFromList(const AString& filename, const ADVBProg& prog);
+	static bool RemoveFromList(const AString& filename, const ADVBProg& prog);
+	static bool RemoveFromList(const AString& filename, const AString& uuid);
+	static bool RemoveFromRecordLists(const ADVBProg& prog);
+	static bool RemoveFromRecordLists(const AString& uuid);
 	
 protected:
 	CHANNEL *GetChannelWritable(const AString& id) const {return (CHANNEL *)channelhash.Read(id);}

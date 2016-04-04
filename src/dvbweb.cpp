@@ -297,9 +297,8 @@ int main(int argc, char *argv[])
 
 				if ((type == "all") || (type == "recordlist")) {
 					config.logit("Deleting '%s' from recorded and failed lists", prog.GetQuickDescription().str());
-					
-					ADVBProgList::RemoveFromList(config.GetRecordFailuresFile(), prog);
-					ADVBProgList::RemoveFromList(config.GetRecordedFile(), prog);
+
+					ADVBProgList::RemoveFromRecordLists(prog);
 
 					recordedlist.DeleteAll();
 					recordedlist.ReadFromFile(config.GetRecordedFile());
