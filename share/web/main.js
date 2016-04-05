@@ -358,17 +358,26 @@ function getdatestring(datems)
 
 function populatedates(prog)
 {
-	prog.starttime    = new Date(prog.start).toTimeString().substr(0, 5);
-	prog.stoptime     = new Date(prog.stop).toTimeString().substr(0, 5);
-	prog.startdate    = getdatestring(prog.start);
-
-	prog.recstarttime = new Date(prog.recstart).toTimeString().substr(0, 5);
-	prog.recstoptime  = new Date(prog.recstop).toTimeString().substr(0, 5);
-	prog.recstartdate = getdatestring(prog.recstart);
-
-	prog.actstarttime = new Date(prog.actstart).toTimeString().substr(0, 5);
-	prog.actstoptime  = new Date(prog.actstop).toTimeString().substr(0, 5);
-	prog.actstartdate = getdatestring(prog.actstart);
+	if ((typeof prog.start != 'undefined') &&
+		(typeof prog.stop  != 'undefined')) {
+		prog.starttime    = new Date(prog.start).toTimeString().substr(0, 5);
+		prog.stoptime     = new Date(prog.stop).toTimeString().substr(0, 5);
+		prog.startdate    = getdatestring(prog.start);
+	}
+	
+	if ((typeof prog.recstart != 'undefined') &&
+		(typeof prog.recstop  != 'undefined')) {
+		prog.recstarttime = new Date(prog.recstart).toTimeString().substr(0, 5);
+		prog.recstoptime  = new Date(prog.recstop).toTimeString().substr(0, 5);
+		prog.recstartdate = getdatestring(prog.recstart);
+	}
+	
+	if ((typeof prog.actstart != 'undefined') &&
+		(typeof prog.actstop  != 'undefined')) {
+		prog.actstarttime = new Date(prog.actstart).toTimeString().substr(0, 5);
+		prog.actstoptime  = new Date(prog.actstop).toTimeString().substr(0, 5);
+		prog.actstartdate = getdatestring(prog.actstart);
+	}
 }
 
 function gettimesearchstring(datems)
@@ -558,6 +567,8 @@ function populateprogs(id)
 							detailsstr += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
 						}
 
+						if ((progvb > 3) && !prog.flags.recordable) detailsstr += '<span style="font-size:150%;">-- Not Recordable --</span><br><br>';
+						
 						if ((progvb > 1) && (typeof prog.icon != 'undefined')) {
 							detailsstr += '<table class="proglist" style="border:0px"><tr' + classname + '><td style="border:0px">';
 							detailsstr += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" ' + iconimgbigsize + ' /></a>';
@@ -646,6 +657,10 @@ function populateprogs(id)
 							str1 += 'Starring ' + str2 + '.';
 						}
 
+						if ((progvb > 2) && (typeof prog.dvbchannel != 'undefined')) {
+							str1 += ' DVB channel ' + find('dvbchannel', prog.dvbchannel) + '.';
+						}
+						
 						if (str1 != '') {
 							detailsstr += '<br><br>';
 							detailsstr += str1;
@@ -660,9 +675,9 @@ function populateprogs(id)
 							!prog.flags.failed     	   &&
 							!prog.flags.running        &&
 							!prog.flags.postprocessing &&
+							prog.flags.recordable      &&
 							(typeof prog.recorded  == 'undefined') &&
-							(typeof prog.scheduled == 'undefined') &&
-							((typeof prog.dvbchannel != 'undefined') && (prog.dvbchannel != ''))) {
+							(typeof prog.scheduled == 'undefined')) {
 							//str1 += '<br><br>';
 							if (typeof response.users != 'undefined') {
 								str1 += '<select class="addrecord" id="addrec' + i + 'user">';
