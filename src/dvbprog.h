@@ -192,6 +192,7 @@ public:
 		Flag_exists = _Flag_extra_start,
 		Flag_converted,
 		Flag_film,
+		Flag_recordable,
 	};
 	void     SetFlags(uint32_t flags)	{data->flags = flags;}
 	uint32_t GetFlags()		   	  const {return data->flags;}
@@ -241,7 +242,8 @@ public:
 	void   ClearRecordingFailed()       {ClrFlag(Flag_recordingfailed);}
 	bool   IsNotifySet()		  const {return GetFlag(Flag_notify);}
 	void   SetNotify()	  		  		{SetFlag(Flag_notify);}
-	
+	bool   IsRecordable()         const {return ((data->start > (uint64_t)ADateTime().TimeStamp(true)) && GetDVBChannel()[0]);}
+												 
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}
 

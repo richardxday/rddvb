@@ -97,6 +97,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(notify,				 Flag_notify,    	 	   "Notify by when programme has recorded"),
 	DEFINE_FLAG(converted,			 Flag_converted,    	   "Programme has been converted"),
 	DEFINE_FLAG(film,				 Flag_film,				   "Programme is a film"),
+	DEFINE_FLAG(recordable,			 Flag_recordable,		   "Programme is recordable"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
 	DEFINE_FIELD(series,   	  episode.series,   uint8_t,  "Series"),
@@ -376,6 +377,10 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 
 		case Flag_film:
 			set = IsFilm();
+			break;
+
+		case Flag_recordable:
+			set = IsRecordable();
 			break;
 	}
 
