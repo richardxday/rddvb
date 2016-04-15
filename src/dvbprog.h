@@ -242,6 +242,7 @@ public:
 	void   ClearRecordingFailed()       {ClrFlag(Flag_recordingfailed);}
 	bool   IsNotifySet()		  const {return GetFlag(Flag_notify);}
 	void   SetNotify()	  		  		{SetFlag(Flag_notify);}
+	bool   IsAvailable()		  const {return (IsConverted() && AStdFile::exists(GetFilename()));}
 	bool   IsRecordable()         const {return ((data->start > (uint64_t)ADateTime().TimeStamp(true)) && GetDVBChannel()[0]);}
 												 
 	sint_t GetPri()   	       	  const {return data->pri;}
