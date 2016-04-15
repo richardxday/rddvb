@@ -2074,8 +2074,9 @@ void ADVBProg::Record()
 						
 							bool success = PostRecord();
 							if (success) success = PostProcess();
-							if (success) success = ConvertVideo();
+							if (success) success = ConvertVideoEx();
 							if (success) OnRecordSuccess();
+							else		 failed  = true;
 						}
 						else {
 							config.printf("Record of '%s' ('%s') is zero length", GetTitleAndSubtitle().str(), filename.str());
@@ -2543,7 +2544,7 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 	return success;
 }
 
-bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
+bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString src  	   = GetFilename();
@@ -2827,6 +2828,28 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 					  GetQuickDescription().str(),
 					  AValue((taken + 999) / 1000).ToString().str(),
 					  taken ? AString(" (%0.3;x real-time)").Arg((double)GetLength() / (double)taken).str() : "");
+	}
+	else config.logit("Process failed!");
+	
+	return success;
+}
+
+bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	bool success = ConvertVideoEx(verbose, cleanup);
+
+	if (!success) {
+		OnRecordFailure();
+		
+		ClearScheduled();
+		SetRecordingFailed();
+		
+		{
+			FlagsSaver saver(this);
+			ClearRunning();
+			ADVBProgList::AddToList(config.GetRecordFailuresFile(), *this);
+		}
 	}
 	
 	return success;
