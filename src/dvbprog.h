@@ -475,6 +475,8 @@ protected:
 	AString GeneratePostRecordCommand() const;
 	AString GeneratePostProcessCommand() const;
 
+	bool ConvertVideoEx(bool verbose = false, bool cleanup = true);
+
 	AString ReplaceTerms(const AString& str) const;
 	AString ReplaceFilenameTerms(const AString& str, bool converted) const;
 	AString ReplaceDirectoryTerms(const AString& str) const;

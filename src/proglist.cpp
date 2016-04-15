@@ -2626,9 +2626,13 @@ bool ADVBProgList::GetAndConvertRecordings()
 			
 			config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
 						
-			success &= prog.ConvertVideo(true);
-			
-			converted++;
+			if (prog.ConvertVideo(true)) {
+				converted++;
+			}
+			else {
+				success = false;
+				prog.OnRecordFailure();
+			}
 		}
 
 		if (converted) config.printf("%u programmes converted", converted);
