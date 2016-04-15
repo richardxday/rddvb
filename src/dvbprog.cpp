@@ -1876,7 +1876,10 @@ bool ADVBProg::UpdateFileSize(uint_t nsecs)
 
 		if (!valid) config.printf("File considered to be invalid as rate it too small!");
 	}
-	else SetFileSize(0);
+	else {
+		config.printf("File '%s' doesn't exist!", filename.str());
+		SetFileSize(0);
+	}
 	
 	return valid;
 }
@@ -2058,38 +2061,31 @@ void ADVBProg::Record()
 						failed = true;
 					}
 					else if (UpdateFileSize(nsecs)) {
-						if (GetFileSize() > 0) {
-							config.printf("Adding '%s' to list of recorded programmes", GetTitleAndSubtitle().str());
+						config.printf("Adding '%s' to list of recorded programmes", GetTitleAndSubtitle().str());
 							
-							ClearScheduled();
-							SetRecorded();
+						ClearScheduled();
+						SetRecorded();
 							
-							{
-								FlagsSaver saver(this);
-								ClearRunning();
-								UpdateRecordedList();
-							}
+						{
+							FlagsSaver saver(this);
+							ClearRunning();
+							UpdateRecordedList();
+						}
 					
-							if (IsOnceOnly() && IsRecordingComplete() && !config.IsRecordingSlave()) {
-								ADVBPatterns::DeletePattern(user, GetPattern());
+						if (IsOnceOnly() && IsRecordingComplete() && !config.IsRecordingSlave()) {
+							ADVBPatterns::DeletePattern(user, GetPattern());
 							
-								reschedule |= config.RescheduleAfterDeletingPattern(GetUser(), GetCategory());
-							}
+							reschedule |= config.RescheduleAfterDeletingPattern(GetUser(), GetCategory());
+						}
 						
-							bool success = PostRecord();
-							if (success) success = PostProcess();
-							if (success) success = ConvertVideoEx();
-							if (success) OnRecordSuccess();
-							else		 failed  = true;
-						}
-						else {
-							config.printf("Record of '%s' ('%s') is zero length", GetTitleAndSubtitle().str(), filename.str());
-							remove(filename);
-							failed = true;
-						}
+						bool success = PostRecord();
+						if (success) success = PostProcess();
+						if (success) success = ConvertVideoEx();
+						if (success) OnRecordSuccess();
+						else		 failed  = true;
 					}
 					else {
-						config.printf("Record of '%s' ('%s') doesn't exist", GetTitleAndSubtitle().str(), filename.str());
+						config.printf("Record of '%s' ('%s') is not valid or doesn't exist", GetTitleAndSubtitle().str(), filename.str());
 						failed = true;
 					} 
 				}
