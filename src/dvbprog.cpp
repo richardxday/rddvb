@@ -1857,24 +1857,28 @@ bool ADVBProg::UpdateFileSize(uint_t nsecs)
 	const ADVBConfig& config = ADVBConfig::Get();
 	FILE_INFO info;
 	AString   filename = GetFilename();
-	bool      exists   = true;
+	bool      valid    = true;
 				
 	if (::GetFileInfo(filename, &info)) {
 		uint64_t oldfilesize = GetFileSize();
-		
+		uint32_t rate        = (uint32_t)(info.FileSize / (1024 * (uint64_t)nsecs));
+
 		config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s%s",
 					  GetFilename(),
 					  AValue(info.FileSize / (1024 * 1024)).ToString().str(),
 					  AValue(nsecs).ToString().str(),
-					  AValue(info.FileSize / (1024 * (uint64_t)nsecs)).ToString().str(),
+					  AValue(rate).ToString().str(),
 					  oldfilesize ? AString(", file size ratio = %0.3;").Arg((double)info.FileSize / (double)oldfilesize).str() : "");
 
 		SetFileSize(info.FileSize);
-		exists = true;
+
+		valid = (rate > 0);
+
+		if (!valid) config.printf("File considered to be invalid as rate it too small!");
 	}
 	else SetFileSize(0);
 	
-	return exists;
+	return valid;
 }
 
 bool ADVBProg::UpdateRecordedList()
