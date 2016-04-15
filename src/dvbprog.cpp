@@ -853,7 +853,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	}
 	str.printf("}");
 
-	if (data->filesize) str.printf(",\"filesize\":%" FMT64 "u", data->filesize);
+	if (data->filesize) str.printf(",\"filesize\":%s", AValue(data->filesize).ToString().str());
 	if (data->assignedepisode) str.printf(",\"assignedepisode\":%u", data->assignedepisode);
 	if (data->year) str.printf(",\"year\":%u", (uint_t)data->year);
 
