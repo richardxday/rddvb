@@ -314,8 +314,6 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const FIELD& field, const VALUE& 
 					break;
 			}
 
-			//debug("%" FMT64 "s / %" FMT64 "s = %" FMT64 "s\n", val1, val2, val);
-
 			Int64sToTermType(ptr, val, field.type);
 
 			// detect writing to dvbcard
@@ -976,8 +974,6 @@ void ADVBPatterns::Int64sToTermType(void *p, sint64_t val, uint_t termtype)
 			minval = 0;
 			maxval = (sint64_t)((1ULL << (bytes << 3)) - 1);
 		}
-
-		//debug("val = %" FMT64 "s, min = " FMT64 "s, max = " FMT64 "s\n", val, minval, maxval);
 
 		// limit value to correct range for type
 		val = LIMIT(val, minval, maxval);

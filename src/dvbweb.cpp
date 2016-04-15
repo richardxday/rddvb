@@ -599,7 +599,7 @@ int main(int argc, char *argv[])
 					if (fp.open(config.GetSearchesFile())) {
 						AString line;
 
-						printf(",\"searchesref\":%" FMT64 "u", (uint64_t)info.WriteTime);
+						printf(",\"searchesref\":%s", AValue((uint64_t)info.WriteTime).ToString().str());
 						printf(",\"searches\":[");
 						bool needscomma = false;
 						while (line.ReadLn(fp) >= 0) {
