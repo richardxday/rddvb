@@ -567,7 +567,11 @@ function populateprogs(id)
 							detailsstr += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
 						}
 
-						if ((progvb > 3) && !prog.flags.recordable) detailsstr += '<span style="font-size:150%;">-- Not Recordable --</span><br><br>';
+						if ((progvb > 3) &&
+							!prog.flags.recorded &&
+							!prog.flags.scheduled &&
+							!prog.flags.rejected &&
+							!prog.flags.recordable) detailsstr += '<span style="font-size:150%;">-- Not Recordable --</span><br><br>';
 						
 						if ((progvb > 1) && (typeof prog.icon != 'undefined')) {
 							detailsstr += '<table class="proglist" style="border:0px"><tr' + classname + '><td style="border:0px">';
@@ -750,6 +754,7 @@ function populateprogs(id)
 											}
 
 											if		(prog.series[j].episodes[k] == 'r') alttext += ' (Recorded)';
+											else if (prog.series[j].episodes[k] == 'a') alttext += ' (Available)';
 											else if (prog.series[j].episodes[k] == 's') alttext += ' (Scheduled)';
 											else if (prog.series[j].episodes[k] == 'x') alttext += ' (Rejected)';
 											else if (prog.series[j].episodes[k] == '-') alttext += ' (Unknown)';

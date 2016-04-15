@@ -1784,8 +1784,8 @@ bool ADVBProgList::RemoveFromRecordLists(const AString& uuid)
 	if (config.GetRecordingHost().Valid()) {
 		AString cmd;
 		
-		cmd.printf("dvb --delete-from-record-lists %s", uuid.str());
-		RunAndLogCommand(cmd);
+		cmd.printf("dvb --delete-from-record-lists \"%s\"", uuid.Escapify().str());
+		RunRemoteCommand(cmd);
 	}
 	
 	return removed;
@@ -2806,15 +2806,17 @@ void ADVBProgList::FindSeries(AHash& hash) const
 					char t = elist[ind], t1 = t;
 					if		(prog.IsScheduled())	    t1 = 's';
 					else if	(prog.HasRecordingFailed()) t1 = 'f';
+					else if	(prog.IsAvailable())  		t1 = 'a';
 					else if	(prog.IsRecorded())  		t1 = 'r';
 					else if (prog.IsRejected())  		t1 = 'x';
 
 					static const char *allowablechanges[] = {
-						"-sfrx",
-						"sfr",
-						"fsrx",
-						"rsx",
-						"xsfr",
+						"-sfarx",
+						"sfar",
+						"fsrax",
+						"asx",
+						"rasx",
+						"xsfar",
 					};
 					uint_t i;
 					for (i = 0; i < NUMBEROF(allowablechanges); i++) {

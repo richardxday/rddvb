@@ -49,6 +49,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_STRING(episodenum, "Episode ID (XMLTV)"),
 	DEFINE_STRING(uuid, "UUID"),
 	DEFINE_STRING(filename, "Recorded filename"),
+	DEFINE_STRING(pattern, "Pattern used to find programme"),
 	DEFINE_FIELD(actor, strings.actors, string, "Actor(s)"),
 
 #if DVBDATVERSION > 1
@@ -368,7 +369,7 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 
 	switch (flag) {
 		case Flag_exists:
-			set = AStdFile::exists(GetFilename());
+			set = IsAvailable();
 			break;
 
 		case Flag_converted:
