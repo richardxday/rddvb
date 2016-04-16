@@ -45,7 +45,7 @@ ADVBChannelList::ADVBChannelList() : hash(40),
 					chan->pidlist.DeleteList();
 
 					uint_t i, n = line.CountColumns();
-					for (i = 2; (i < n) && (chan->pidlist.Count() < 2); i++) {
+					for (i = 2; (i < n); i++) {
 						AString col = line.Column(i);
 
 						chan->pidlist.Add((uint_t)col);
@@ -230,6 +230,17 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 							pidlist.Sort(&__CompareItems);
 
 							if (pidlist.Count() && (pidlist != chan->pidlist)) {
+								AString str;
+
+								str.printf("Changing PID list for '%s' from '", chan->name.str());
+								for (i = 0; i < chan->pidlist.Count(); i++) str.printf(" %s", AValue(chan->pidlist[i]).ToString().str());
+
+								str.printf("' to '");
+								for (i = 0; i < pidlist.Count(); i++) str.printf(" %s", AValue(pidlist[i]).ToString().str());
+								str.printf("'");
+
+								config.printf("%s", str.str());
+								
 								chan->pidlist = pidlist;
 								changed = true;
 							}
