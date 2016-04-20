@@ -35,7 +35,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		{"copyaudio", 	 	 	"-acodec copy"},
 		{"mp3audio",  	 	 	"-acodec mp3 -b:a {conf:mp3bitrate}"},
 		{"h264preset",   	 	"veryfast"},
-		{"h264bufsize",  	 	"2000k"},
+		{"h264bufsize",  	 	"3000k"},
 		{"videodeinterlace", 	"yadif"},
 		{"videofilter",  	 	"-filter:v {conf:videodeinterlace}"},
 		{"filters",		 	 	"{conf:videofilter} {conf:audiofilter}"},
