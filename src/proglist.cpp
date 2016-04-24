@@ -1048,37 +1048,43 @@ void ADVBProgList::CreateHash()
 const ADVBProg *ADVBProgList::FindUUID(const AString& uuid) const
 {
 	const ADVBProg *prog = NULL;
+	int p;
 
-	if (proghash.Valid()) prog = (const ADVBProg *)proghash.Read(uuid);
+	if		(proghash.Valid())				 prog = (const ADVBProg *)proghash.Read(uuid);
+	else if ((p = FindUUIDIndex(uuid)) >= 0) prog = &GetProg(p);
+	
+	return prog;
+}
+
+int ADVBProgList::FindUUIDIndex(const AString& uuid) const
+{
+	int res = -1;
+	
+	if (proghash.Valid()) {
+		res = proglist.Find(proghash.Read(uuid));
+	}
 	else {
 		uint_t i, n = Count();
-
+	
 		for (i = 0; i < n; i++) {
 			if (GetProg(i) == uuid) {
-				prog = &GetProg(i);
+				res = (int)i;
 				break;
 			}
 		}
 	}
-	
-	return prog;
+
+
+	return res;
 }
 
 ADVBProg *ADVBProgList::FindUUIDWritable(const AString& uuid) const
 {
 	ADVBProg *prog = NULL;
+	int p;
 
-	if (proghash.Valid()) prog = (ADVBProg *)proghash.Read(uuid);
-	else {
-		uint_t i, n = Count();
-
-		for (i = 0; i < n; i++) {
-			if (GetProg(i) == uuid) {
-				prog = &GetProgWritable(i);
-				break;
-			}
-		}
-	}
+	if		(proghash.Valid())				 prog = (ADVBProg *)proghash.Read(uuid);
+	else if ((p = FindUUIDIndex(uuid)) >= 0) prog = &GetProgWritable(p);
 	
 	return prog;
 }
@@ -1713,6 +1719,12 @@ void ADVBProgList::Sort(bool reverse)
 void ADVBProgList::Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), void *pContext)
 {
 	proglist.Sort(fn, pContext);
+}
+
+int ADVBProgList::CompareEpisode(uptr_t item1, uptr_t item2, void *pContext)
+{
+	UNUSED(pContext);
+	return ADVBProg::CompareEpisode(((const ADVBProg *)item1)->GetEpisode(), ((const ADVBProg *)item2)->GetEpisode());
 }
 
 void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool sort, bool removeoverlaps)

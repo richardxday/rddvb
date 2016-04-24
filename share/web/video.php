@@ -2,12 +2,16 @@
 <html>
 <?php
 
+ //print_r($_SERVER);
+
 if (isset($_GET['prog'])) $prog = $_GET['prog'];
 if (isset($argc) && ($argc > 1)) {
 	$prog = $argv[1];
 	$verbose = false;
 }
 else $verbose = false;
+
+$script = $_SERVER['SCRIPTNAME'];
 
 exec('dvbdecodeprog "' . $prog . '"', $res);
 $prog = json_decode(implode('', $res), true);
@@ -57,7 +61,13 @@ else {
 			echo "Episode <b>" . $prog['episode']['episode'] . "</b>";
 			if (isset($prog['episode']['episodes'])) echo " of <b>" . $prog['episode']['episodes'] . "</b>";
 		}
-		echo ".<br><br>\n";
+		echo ".<br>\n";
+		if (isset($prog['next'])) {
+			echo "<h2>Next: <a href=\"$script?prog=" . urlencode($prog['next']['prog']) . "\">" . $prog['next']['desc'] . "</a></h2>\n";
+		}
+		if (isset($prog['previous'])) {
+			echo "<h2>Previous: <a href=\"$script?prog=" . urlencode($prog['previous']['prog']) . "\">" . $prog['previous']['desc'] . "</a></h2>\n";
+		}
 	}
 	if (isset($prog['actors'])) {
 		echo "Starring:<ul>";

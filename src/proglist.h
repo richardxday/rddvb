@@ -72,6 +72,8 @@ public:
 	void CreateHash();
 	const ADVBProg *FindUUID(const ADVBProg& prog) const {return FindUUID(prog.GetUUID());}
 	const ADVBProg *FindUUID(const AString& uuid) const;
+	int				FindUUIDIndex(const ADVBProg& prog) const {return FindUUIDIndex(prog.GetUUID());}
+	int				FindUUIDIndex(const AString& uuid) const;
 	ADVBProg 	   *FindUUIDWritable(const ADVBProg& prog) const {return FindUUIDWritable(prog.GetUUID());}
 	ADVBProg 	   *FindUUIDWritable(const AString& uuid) const;
 
@@ -92,6 +94,8 @@ public:
 	void Sort(bool reverse = false);
 	void Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), void *pContext = NULL);
 
+	static int CompareEpisode(uptr_t item1, uptr_t item2, void *pContext);
+	
 	void PrioritizeProgrammes(uint_t card, ADVBProgList& scheduledlist, ADVBProgList& rejectedlist, uint64_t recstarttime);
 	uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));
 

@@ -155,6 +155,8 @@ public:
 	static EPISODE GetEpisode(const AString& str);
 	static AString GetEpisodeString(const EPISODE& ep);
 
+	static int CompareEpisode(const EPISODE& ep1, const EPISODE& ep2);
+	
 	const EPISODE& GetEpisode() 		 const {return data->episode;}
 	AString GetEpisodeString()  		 const {return GetEpisodeString(GetEpisode());}
 
