@@ -1138,6 +1138,21 @@ AString ADVBProg::GetEpisodeString(const EPISODE& ep)
 	return res;
 }
 
+int ADVBProg::CompareEpisode(const EPISODE& ep1, const EPISODE& ep2)
+{
+	if (ep1.valid && ep2.valid) {
+		if (ep1.series && ep2.series) {
+			if (ep1.series < ep2.series) return -1;
+			if (ep1.series > ep2.series) return  1;
+		}
+		if (ep1.episode && ep2.episode) {
+			if (ep1.episode < ep2.episode) return -1;
+			if (ep1.episode > ep2.episode) return  1;
+		}
+	}
+	return 0;
+}
+
 AString ADVBProg::GetDescription(uint_t verbosity) const
 {
 	ADateTime start = GetStartDT().UTCToLocal();
