@@ -77,6 +77,8 @@ protected:
 		FieldType_uint8_t,
 		FieldType_sint8_t,
 		FieldType_prog,
+		FieldType_external_uint32_t,
+		FieldType_external_sint32_t,
 		FieldType_flag,
 		FieldType_lastflag = FieldType_flag + 63,
 	};

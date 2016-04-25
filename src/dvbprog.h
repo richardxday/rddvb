@@ -145,6 +145,15 @@ public:
 
 	AString GetPrefItem(const AString& name, const AString& defval = "") const;
 
+	uint_t	GetRate() const {return GetActualLength() ? (uint_t)((8000 * GetFileSize()) / GetActualLength()) : 0;}
+
+	enum {
+		Compare_brate = 0,
+		Compare_kbrate
+	};
+	int CompareExternal(uint_t id, uint32_t value) const;
+	int CompareExternal(uint_t id, sint32_t value) const;
+						 
 	typedef PACKEDSTRUCT {
 		uint8_t  valid;
 		uint8_t  series;

@@ -222,10 +222,12 @@ void ADVBPatterns::GetFieldValue(const FIELD& field, VALUE& value, AString& val)
 			break;
 
 		case FieldType_uint32_t:
+		case FieldType_external_uint32_t:
 			value.u32 = (uint32_t)val;
 			break;
 
 		case FieldType_sint32_t:
+		case FieldType_external_sint32_t:
 			value.s32 = (sint32_t)val;
 			break;
 
@@ -770,10 +772,12 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 					}
 
 					case FieldType_uint32_t:
+					case FieldType_external_uint32_t:
 						term->value.u32 = (uint32_t)value;
 						break;
 
 					case FieldType_sint32_t:
+					case FieldType_external_sint32_t:
 						term->value.s32 = (sint32_t)value;
 						break;
 
@@ -1257,6 +1261,14 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 						break;
 					}
 
+					case FieldType_external_uint32_t:
+						res = prog.CompareExternal(field.offset, term.value.u32);
+						break;
+						
+					case FieldType_external_sint32_t:
+						res = prog.CompareExternal(field.offset, term.value.s32);
+						break;
+						
 					case FieldType_flag...FieldType_lastflag: {
 						uint8_t cmp = prog.GetFlag(field.type - FieldType_flag);
 

@@ -34,6 +34,8 @@ const ADVBProg::DVBPROG *ADVBProg::nullprog = (const ADVBProg::DVBPROG *)NULL;
 #define DEFINE_FLAG(name,flag,desc)			{#name, ADVBPatterns::FieldType_flag + flag, false, DVBPROG_OFFSET(flags), desc}
 #define DEFINE_FLAG_ASSIGN(name,flag,desc)	{#name, ADVBPatterns::FieldType_flag + flag, true, DVBPROG_OFFSET(flags), desc}
 #define DEFINE_ASSIGN(name,var,type,desc)	{#name, ADVBPatterns::FieldType_##type, true, DVBPROG_OFFSET(var), desc}
+#define DEFINE_EXTERNAL(name,id,type,desc)  {#name, ADVBPatterns::FieldType_external_##type, false, id, desc}
+
 const ADVBProg::FIELD ADVBProg::fields[] = {
 	{"prog", ADVBPatterns::FieldType_prog, false, 0, "Encoded Programme"},
 
@@ -115,14 +117,17 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG_ASSIGN(onceonly,	  Flag_onceonly,      "Once recorded, delete the pattern"),
 	DEFINE_FLAG_ASSIGN(notify,		  Flag_notify,        "Once recorded, run 'notifycmd'"),
 
-	DEFINE_ASSIGN(pri,        pri,        	 	sint8_t, "Scheduling priority"),
+	DEFINE_ASSIGN(pri,        pri,        	 	sint8_t,  "Scheduling priority"),
 	DEFINE_ASSIGN(score,	  score,			sint16_t, "Record score"),
 	DEFINE_ASSIGN(prehandle,  prehandle,  	 	uint16_t, "Record pre-handle (minutes)"),
 	DEFINE_ASSIGN(posthandle, posthandle, 	 	uint16_t, "Record post-handle (minutes)"),
-	DEFINE_ASSIGN(user,		  strings.user,  	string, "User"),
-	DEFINE_ASSIGN(dir,		  strings.dir,  	string, "Directory to store file in"),
-	DEFINE_ASSIGN(prefs,	  strings.prefs, 	string, "Misc prefs"),
-	DEFINE_ASSIGN(dvbcard,    dvbcard,        	uint8_t, "DVB card to record from"),
+	DEFINE_ASSIGN(user,		  strings.user,  	string,   "User"),
+	DEFINE_ASSIGN(dir,		  strings.dir,  	string,   "Directory to store file in"),
+	DEFINE_ASSIGN(prefs,	  strings.prefs, 	string,   "Misc prefs"),
+	DEFINE_ASSIGN(dvbcard,    dvbcard,        	uint8_t,  "DVB card to record from"),
+
+	DEFINE_EXTERNAL(brate,	  Compare_brate,  	uint32_t, "Encoded file bit rate (bits/s)"),
+	DEFINE_EXTERNAL(kbrate,   Compare_kbrate, 	uint32_t, "Encoded file bit rate (kbits/s)"),
 };
 
 const AString ADVBProg::tempfilesuffix     = "tmp";
@@ -853,7 +858,12 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	}
 	str.printf("}");
 
-	if (data->filesize) str.printf(",\"filesize\":%s", AValue(data->filesize).ToString().str());
+	if (data->filesize) {
+		str.printf(",\"filesize\":%s", AValue(data->filesize).ToString().str());
+
+		uint_t rate = GetRate() / 1024;
+		if (rate) str.printf(",\"rate\":%u", rate);
+	}
 	if (data->assignedepisode) str.printf(",\"assignedepisode\":%u", data->assignedepisode);
 	if (data->year) str.printf(",\"year\":%u", (uint_t)data->year);
 
@@ -1298,7 +1308,10 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 
 			bool exists = AStdFile::exists(GetFilename());
 			str1.printf(" File %sexists",  exists ? "" : "does *not* ");
-			if (exists) str1.printf(" and is %sMB in size", AValue(GetFileSize() / (1024 * 1024)).ToString().str());
+			if (GetFileSize()) str1.printf(" and %s %sMB in size", exists ? "is" : "was", AValue(GetFileSize() / (1024 * 1024)).ToString().str());
+
+			uint_t rate = GetRate() / 1024;
+			if (rate) str1.printf(" (rate %ukbits/s)", rate);
 			str1.printf(".");
 		}
 
@@ -1355,6 +1368,56 @@ AString ADVBProg::GetQuickDescription() const
 			   GetChannel());
 
 	return str;
+}
+
+int ADVBProg::CompareExternal(uint_t id, uint32_t value) const
+{
+	uint32_t val;
+	int res = 0;
+
+	switch (id) {
+		case Compare_brate:
+			val = GetRate();
+			if (val < value) res = -1;
+			if (val > value) res =  1;
+			break;
+
+		case Compare_kbrate:
+			val = GetRate();
+			if (( val         / 1024) < value) res = -1;
+			if (((val + 1023) / 1024) > value) res =  1;
+			break;
+			
+		default:
+			break;
+	}
+	
+	return res;
+}
+
+int ADVBProg::CompareExternal(uint_t id, sint32_t value) const
+{
+	sint32_t val;
+	int res = 0;
+
+	switch (id) {
+		case Compare_brate:
+			val = GetRate();
+			if (val < value) res = -1;
+			if (val > value) res =  1;
+			break;
+
+		case Compare_kbrate:
+			val = GetRate();
+			if (( val         / 1024) < value) res = -1;
+			if (((val + 1023) / 1024) > value) res =  1;
+			break;
+			
+		default:
+			break;
+	}
+	
+	return res;
 }
 
 bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
