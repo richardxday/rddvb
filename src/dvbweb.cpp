@@ -652,7 +652,7 @@ int main(int argc, char *argv[])
 
 						if (((prog2 = recordedlist.FindSimilar(prog)) != NULL) && (prog2 != &prog)) {
 							printf(",\"recorded\":{");
-							printf("%s", prog2->ExportToJSON().str());
+							printf("%s", prog2->ExportToJSON(true).str());
 							printpattern(patterns, *prog2);
 							printf("}");
 						}

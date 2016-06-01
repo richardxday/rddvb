@@ -34,6 +34,8 @@ else {
 	if (isset($prog['subtitle'])) echo " / " . $prog['subtitle'];
 	echo "</h1><br>\n";
 
+	//print_r($prog);
+	
 	echo '<center><video autoplay controls>' . "\n";
 	echo '<source src="' . $prog['file'] . '" />' . "\n";
 	echo '</video></center>' . "\n";
@@ -80,5 +82,4 @@ else {
 ?>
 </body>
 <link rel="stylesheet" type="text/css" href="main.css" />
-<script src="main.js"></script>
 </html>
