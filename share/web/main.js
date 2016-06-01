@@ -539,7 +539,7 @@ function populateprogs(id)
 					headerstr += '{reltime}';
 					headerstr += '</td>';
 
-					if (downloadlink != '') headerstr += '<td style="font-size:90%;">' + adddownloadlink(prog) + '</td>';
+					if (downloadlink != '') headerstr += '<td style="font-size:90%;">' + downloadlink + '</td>';
 
 					headerstr += '<td>';
 					headerstr += '<td style="width:20px;cursor:pointer;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
@@ -571,6 +571,7 @@ function populateprogs(id)
 							!prog.flags.recorded &&
 							!prog.flags.scheduled &&
 							!prog.flags.rejected &&
+							!prog.flags.failed &&
 							!prog.flags.recordable) detailsstr += '<span style="font-size:150%;">-- Not Recordable --</span><br><br>';
 						
 						if ((progvb > 1) && (typeof prog.icon != 'undefined')) {
