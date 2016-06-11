@@ -13,7 +13,7 @@ fi
 
 LISTINGSFILE="archives/listings-`date +%Y-%m-%d`.xmltv"
 if [ ! -f "$LISTINGSFILE.gz" ] ; then
-  tv_grab_uk_atlas --days 14 >"$LISTINGSFILE"
+  tv_grab_sd_json --days 14 >"$LISTINGSFILE"
   dvb --update "$LISTINGSFILE"
   gzip "$LISTINGSFILE"
 fi

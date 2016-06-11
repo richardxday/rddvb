@@ -29,7 +29,7 @@ ADVBIconCache::ADVBIconCache() : cache(300, &__DeleteEntry),
 		
 		fp.close();
 
-		ADVBConfig::Get().logit("Read %u lines resulting in %u items in icon cache", n, cache.GetItems());
+		//ADVBConfig::Get().logit("Read %u lines resulting in %u items in icon cache", n, cache.GetItems());
 		
 		changed = false;
 	}
@@ -44,7 +44,7 @@ ADVBIconCache::~ADVBIconCache()
 		if (fp.open(ADVBConfig::Get().GetIconCacheFilename(), "w")) {
 			cache.Traverse(&__WriteEntry, &fp);
 			fp.close();
-			ADVBConfig::Get().logit("Wrote %u items from icon cache", cache.GetItems());
+			//ADVBConfig::Get().logit("Wrote %u items from icon cache", cache.GetItems());
 		}
 	}
 }

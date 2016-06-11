@@ -150,9 +150,6 @@ int main(int argc, char *argv[])
 		printf("\t--delete-from-record-lists <uuid> Delete programme with UUID <uuid> from record lists (recorded and record failues)\n");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
-#if DVBDATVERSION > 1
-		printf("\t--update-brand-series-episode\tUpdate bse in current list from listings file\n");
-#endif
 		printf("\t--get-and-convert-recorded\tPull and convert any recordings from recording host\n");
 		printf("\t--update-recordings-list\tPull list of programmes being recorded\n");
 		printf("\t--check-recording-now\t\tCheck to see if programmes that should be being recording are recording\n");
@@ -1207,65 +1204,6 @@ int main(int argc, char *argv[])
 					prog.OnRecordSuccess();
 				}
 			}
-#if DVBDATVERSION > 1
-			else if (stricmp(argv[i], "--update-brand-series-episode") == 0) {
-				ADVBProgList listings;
-
-				if (listings.ReadFromFile(config.GetListingsFile())) {
-					uint_t j, n = 0;
-
-					for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-						const ADVBProg *prog;
-						
-						if (!proglist[j].GetBrandSeriesEpisode()[0]) {
-							if (((prog = listings.FindSimilar(proglist[j])) != NULL) && prog->GetBrandSeriesEpisode()[0]) {
-								proglist.GetProgWritable(j).SetBrandSeriesEpisode(prog->GetBrandSeriesEpisode());
-								config.printf("Updating '%s' with brand.series.episode '%s' from '%s'", proglist[j].GetQuickDescription().str(), prog->GetBrandSeriesEpisode(), prog->GetQuickDescription().str());
-								n++;
-							}
-						}
-					}
-
-					printf("%u programmes updated\n", n);
-				}
-			}
-			else if (stricmp(argv[i], "--strip-brand-series-episode") == 0) {
-				ADateTime start("1-feb-2016,midnight", ADateTime::Time_Absolute);
-				uint_t j, n = 0;
-				
-				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-					ADVBProg& prog = proglist.GetProgWritable(j);
-
-					if (prog.GetBrandSeriesEpisode()[0] && (prog.GetStopDT() < start)) {
-						prog.SetBrandSeriesEpisode("");
-						config.printf("Stripping brand.series.episode from '%s'", prog.GetQuickDescription().str());
-						n++;
-					}
-				}
-
-				printf("%u programmes updated\n", n);
-			}
-			else if (stricmp(argv[i], "--find-brand-series-episode") == 0) {
-				ADVBProgList listings;
-
-				if (listings.ReadFromFile(config.GetListingsFile())) {
-					uint_t j, n = 0;
-
-					for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-						const ADVBProg *prog;
-						
-						if (!proglist[j].GetBrandSeriesEpisode()[0]) {
-							if (((prog = listings.FindSimilar(proglist[j])) != NULL) && prog->GetBrandSeriesEpisode()[0]) {
-								config.printf("Update '%s' with brand.series.episode '%s' from '%s'", proglist[j].GetQuickDescription().str(), prog->GetBrandSeriesEpisode(), prog->GetQuickDescription().str());
-								n++;
-							}
-						}
-					}
-
-					printf("%u programmes found\n", n);
-				}
-			}
-#endif
 			else if (stricmp(argv[i], "--get-and-convert-recorded") == 0) {
 				if (!ADVBProgList::GetAndConvertRecordings()) res = -1;
 			}
