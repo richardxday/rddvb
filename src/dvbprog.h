@@ -111,7 +111,7 @@ public:
 	const char *GetDirector()		 	 const {return GetString(data->strings.director);}
 	const char *GetEpisodeNum()		 	 const {return GetString(data->strings.episodenum);}
 #if DVBDATVERSION > 1
-	const char *GetBrandSeriesEpisode()	 const {return GetString(data->strings.brandseriesepisode);}
+	const char *GetEpisodeID()			 const {return GetString(data->strings.episodeid);}
 #endif
 	const char *GetUser()			 	 const {return GetString(data->strings.user);}
 	const char *GetDir()			 	 const {return GetString(data->strings.dir);}
@@ -137,7 +137,7 @@ public:
 	bool SetPrefs(const char   	  *str)    	   {return SetString(&data->strings.prefs,   	str);}
 
 #if DVBDATVERSION > 1
-	bool SetBrandSeriesEpisode(const char *str) {return SetString(&data->strings.brandseriesepisode, str);}
+	bool SetEpisodeID(const char *str)		   {return SetString(&data->strings.episodeid,  str);}
 #endif
 
 	AString GetFilenameStub() const;
@@ -431,7 +431,7 @@ protected:
 			uint16_t category;
 			uint16_t director;
 			uint16_t episodenum;
-			uint16_t brandseriesepisode;
+			uint16_t episodeid;
 			uint16_t user;
 			uint16_t dir;
 			uint16_t filename;

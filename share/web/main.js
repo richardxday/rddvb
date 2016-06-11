@@ -1,8 +1,8 @@
 var defaultuser = 'default';
 var defaulttimefilter = 'start>=midnight,yesterday';
 
-var iconimgsize = 'width=57 height=32';
-var iconimgbigsize = 'width=171 height=96';
+var iconimgstyle = 'max-width:60px;max-height:60px';
+var iconimgbigstyle = 'max-width:170px;max-height:170px';
 var daynames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 var monthnames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 var response = null;
@@ -462,7 +462,7 @@ function populateprogs(id)
 					headerstr += '</td><td>';
 					headerstr += findfilter('stop>"' + gettimesearchstring(prog.start) + '" start<"' + gettimesearchstring(prog.stop) + '"', prog.starttime + ' - ' + prog.stoptime, 'Search for programmes during these times');
 					headerstr += '</td><td>';
-					if (typeof prog.channelicon != 'undefined') headerstr += '<a href="' + prog.channelicon + '"><img src="' + prog.channelicon + '" ' + iconimgsize + ' /></a>';
+					if (typeof prog.channelicon != 'undefined') headerstr += '<a href="' + prog.channelicon + '"><img src="' + prog.channelicon + '" style="' + iconimgstyle + '" /></a>';
 					else										headerstr += '&nbsp;';
 					headerstr += '</td><td>';
 					headerstr += find('channel', prog.channel, 'Seach for programmes on this channel');
@@ -506,6 +506,11 @@ function populateprogs(id)
 						str1 += str2;
 					}
 
+					if ((typeof prog.episodeid != 'undefined') && (prog.episodeid != '')) {
+						if (str1 != '') str1 += '<br>';
+						str1 += findfromfilter('Combined', 'episodeid="' + prog.episodeid + '"', '', prog.episodeid, 'View programmes of this ID in scheduled/recorded programmes');
+					}
+
 					if (str1 != '') headerstr += str1;
 					else			headerstr += '<br>&nbsp;'
 					
@@ -518,7 +523,7 @@ function populateprogs(id)
 					else headerstr += '&nbsp;';
 
 					headerstr += '</td><td>';
-					if (typeof prog.icon != 'undefined') headerstr += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" ' + iconimgsize + ' /></a>';
+					if (typeof prog.icon != 'undefined') headerstr += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" style="' + iconimgstyle + '"/></a>';
 					else								 headerstr += '&nbsp;';
 
 					var downloadlink = '';
@@ -576,7 +581,7 @@ function populateprogs(id)
 						
 						if ((progvb > 1) && (typeof prog.icon != 'undefined')) {
 							detailsstr += '<table class="proglist" style="border:0px"><tr' + classname + '><td style="border:0px">';
-							detailsstr += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" ' + iconimgbigsize + ' /></a>';
+							detailsstr += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" style="' + iconimgbigstyle + '" /></a>';
 							detailsstr += '</td><td class="desc" style="width:100%">';
 						}
 

@@ -55,14 +55,10 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FIELD(actor, strings.actors, string, "Actor(s)"),
 
 #if DVBDATVERSION > 1
-	DEFINE_STRING(brandseriesepisode, "Brand, series and episode"),
+	DEFINE_STRING(episodeid, "Episode ID"),
 	DEFINE_STRING(icon, "Programme icon"),
 	DEFINE_STRING(rating, "Age rating"),
 	DEFINE_STRING(subcategory, "Programme subcategor(ies)"),
-
-	DEFINE_FIELD(bsebrand, strings.brandseriesepisode, string, "Brand from brand, series and episode"),
-	DEFINE_FIELD(bseseries, strings.brandseriesepisode, string, "Series from brand, series and episode"),
-	DEFINE_FIELD(bseepisode, strings.brandseriesepisode, string, "Episode from brand, series and episode"),
 #endif
 	
 	DEFINE_FIELD(on, start, date, "Day"),
@@ -475,8 +471,9 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	else										 SetString(&data->strings.episodenum, GetField(str, "episodenum"));
 
 #if DVBDATVERSION > 1
-	if		(FieldExists(str, "episodenum:brand.series.episode")) SetString(&data->strings.brandseriesepisode, GetField(str, "episodenum:brand.series.episode"));
-	else if (FieldExists(str, "brandseriesepisode"))			  SetString(&data->strings.brandseriesepisode, GetField(str, "brandseriesepisode"));
+	if		(FieldExists(str, "episodenum:dd_progid"))			SetString(&data->strings.episodeid, GetField(str, "episodenum:dd_progid"));
+	else if	(FieldExists(str, "episodenum:brandseriesepisode")) SetString(&data->strings.episodeid, GetField(str, "episodenum:brandseriesepisode"));
+	else if (FieldExists(str, "episodeid"))						SetString(&data->strings.episodeid, GetField(str, "episodeid"));
 #endif
 
 	{
@@ -708,8 +705,8 @@ AString ADVBProg::ExportToText() const
 	str.printf("flags=$%08x\n", data->flags);
 
 #if DVBDATVERSION > 1
-	if ((p = GetString(data->strings.brandseriesepisode))[0]) str.printf("brandseriesepisode=%s\n", p);
-	if ((p = GetString(data->strings.rating))[0])			  str.printf("rating=%s\n", p);
+	if ((p = GetString(data->strings.episodeid))[0]) str.printf("episodeid=%s\n", p);
+	if ((p = GetString(data->strings.rating))[0])	 str.printf("rating=%s\n", p);
 
 	AString icon = GetString(data->strings.icon);
 	if (icon.Empty()) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
@@ -823,15 +820,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	}
 
 #if DVBDATVERSION > 1
-	AString bse;
-	if ((bse = GetString(data->strings.brandseriesepisode)).Valid()) {
-		str.printf(",\"brandseriesepisode\":{");
-		str.printf("\"full\":\"%s\"", JSONFormat(bse).str());
-		str.printf(",\"brand\":\"%s\"", JSONFormat(bse.Line(0, ".", 0)).str());
-		str.printf(",\"series\":\"%s\"", JSONFormat(bse.Line(1, ".", 0)).str());
-		str.printf(",\"episode\":\"%s\"", JSONFormat(bse.Line(2, ".", 0)).str());
-		str.printf("}");
-	}
+	if (GetString(data->strings.episodeid)[0]) str.printf(",\"episodeid\":\"%s\"", GetString(data->strings.episodeid));
 
 	AString icon = GetString(data->strings.icon);
 	if (icon.Empty()) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
@@ -1110,6 +1099,12 @@ ADVBProg::EPISODE ADVBProg::GetEpisode(const AString& str)
 			episode.series   = _series  + 1;
 			episode.episode  = _episode + 1;
 		}
+		else if (sscanf(str, "..%u/%u",
+						&_episode,
+						&_episodes) == 2) {
+			episode.episode  = _episode + 1;
+			episode.episodes = _episodes + 1;
+		}
 		else if (sscanf(str, ".%u.",
 						&_episode) == 1) {
 			episode.episode  = _episode + 1;
@@ -1171,10 +1166,9 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 	AString str;
 	const char *p;
 
-	str.printf("%s - %s%s : %s : %s",
+	str.printf("%s - %s : %s : %s",
 			   start.DateFormat("%d %D-%N-%Y %h:%m").str(),
 			   stop.DateFormat("%h:%m").str(),
-			   (stop.GetDays() != start.GetDays()) ? AString(" (%)").Arg(stop.DateFormat("%D-%N-%Y")).str() : "",
 			   GetChannel(),
 			   GetTitle());
 
@@ -1245,7 +1239,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 			}
 			
 #if DVBDATVERSION > 1
-			if ((p = GetBrandSeriesEpisode())[0]) {
+			if ((p = GetEpisodeID())[0]) {
 				if (epstr.Valid()) epstr.printf(" ");
 				epstr.printf("(%s)", p);
 			}
@@ -1458,11 +1452,11 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 #endif
 		}
 #if DVBDATVERSION > 1
-		else if (prog1.GetBrandSeriesEpisode()[0] && prog2.GetBrandSeriesEpisode()[0]) {
-			// brand.series.episode is valid in both -> sameness can be determined
-			same = (CompareCase(prog1.GetBrandSeriesEpisode(), prog2.GetBrandSeriesEpisode()) == 0);
+		else if (prog1.GetEpisodeID()[0] && prog2.GetEpisodeID()[0]) {
+			// episodeid is valid in both -> sameness can be determined
+			same = (CompareCase(prog1.GetEpisodeID(), prog2.GetEpisodeID()) == 0);
 #if DEBUG_SAMEPROGRAMME
-			if (debugsameprogramme) debug("'%s' / '%s': brand.series.episode '%s' / '%s': %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), prog1.GetBrandSeriesEpisode(), prog2.GetBrandSeriesEpisode(), same ? "same" : "different");
+			if (debugsameprogramme) debug("'%s' / '%s': episodeid '%s' / '%s': %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), prog1.GetEpisodeID(), prog2.GetEpisodeID(), same ? "same" : "different");
 #endif
 		}
 #endif
@@ -1607,19 +1601,8 @@ void ADVBProg::SearchAndReplace(const AString& search, const AString& replace)
 
 const char *ADVBProg::PreProcessString(const char *field, AString& temp, const char *str)
 {
-	if (CompareNoCase(field, "bsebrand") == 0) {
-		temp = AString(str).Line(0, ".", 0);
-		str  = temp.str();
-	}
-	else if (CompareNoCase(field, "bseseries") == 0) {
-		temp = AString(str).Line(1, ".", 0);
-		str  = temp.str();
-	}
-	else if (CompareNoCase(field, "bseepisode") == 0) {
-		temp = AString(str).Line(2, ".", 0);
-		str  = temp.str();
-	}
-	
+	(void)field;
+	(void)temp;
 	return str;
 }
 
