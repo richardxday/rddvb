@@ -5,14 +5,17 @@ lib_LTLIBRARIES = librddvb-@RDDVB_MAJORMINOR@.la
 librddvb_@RDDVB_MAJORMINOR@_la_LDFLAGS =		\
 	-no-undefined								\
 	-version-info $(RDDVB_LIBVERSION)			\
-     $(RDDVB_LDFLAGS)
+     $(RDDVB_LDFLAGS)							\
+     $(JSONCPP_LDFLAGS)
 
 librddvb_@RDDVB_MAJORMINOR@_la_LIBADD =			\
-	$(RDLIB_LIBS)
+	$(RDLIB_LIBS)								\
+	$(JSONCPP_LIBS)
 
 librddvb_@RDDVB_MAJORMINOR@_la_CPPFLAGS =		\
 	$(RDDVB_CFLAGS)								\
-	$(RDLIB_CFLAGS)
+	$(RDLIB_CFLAGS)								\
+	$(JSONCPP_CFLAGS)
 
 librddvb_@RDDVB_MAJORMINOR@_la_SOURCES = 		\
 	channellist.cpp								\
@@ -48,11 +51,13 @@ bin_PROGRAMS = dvb dvbweb dvbdecodeprog dvbfemon
 
 dvb_LDADD =										\
 	$(RDLIB_LIBS)								\
-	$(RDDVB_LIBS)
+	$(RDDVB_LIBS)								\
+    $(JSONCPP_LIBS)
 
 dvb_CPPFLAGS =									\
 	$(RDLIB_CFLAGS)								\
-	$(RDDVB_CFLAGS)
+	$(RDDVB_CFLAGS)								\
+	$(JSONCPP_CFLAGS)
 
 dvb_SOURCES =									\
 	dvb.cpp
@@ -61,11 +66,13 @@ EXTRA_dvb_DEPENDENCIES = $(lib_LTLIBRARIES)
 
 dvbweb_LDADD =									\
 	$(RDLIB_LIBS)								\
-	$(RDDVB_LIBS)
+	$(RDDVB_LIBS)								\
+    $(JSONCPP_LIBS)
 
 dvbweb_CPPFLAGS =								\
 	$(RDLIB_CFLAGS)								\
-	$(RDDVB_CFLAGS)
+	$(RDDVB_CFLAGS)								\
+	$(JSONCPP_CFLAGS)
 
 dvbweb_SOURCES =								\
 	dvbweb.cpp
@@ -74,11 +81,13 @@ EXTRA_dvbweb_DEPENDENCIES = $(lib_LTLIBRARIES)
 
 dvbdecodeprog_LDADD =							\
 	$(RDLIB_LIBS)								\
-	$(RDDVB_LIBS)
+	$(RDDVB_LIBS)								\
+    $(JSONCPP_LIBS)
 
 dvbdecodeprog_CPPFLAGS =						\
 	$(RDLIB_CFLAGS)								\
-	$(RDDVB_CFLAGS)
+	$(RDDVB_CFLAGS)								\
+	$(JSONCPP_CFLAGS)
 
 dvbdecodeprog_SOURCES =							\
 	dvbdecodeprog.cpp
@@ -87,11 +96,13 @@ EXTRA_dvbdecodeprog_DEPENDENCIES = $(lib_LTLIBRARIES)
 
 dvbfemon_LDADD =								\
 	$(RDLIB_LIBS)								\
-	$(RDDVB_LIBS)
+	$(RDDVB_LIBS)								\
+    $(JSONCPP_LIBS)
 
 dvbfemon_CPPFLAGS =								\
 	$(RDLIB_CFLAGS)								\
-	$(RDDVB_CFLAGS)
+	$(RDDVB_CFLAGS)								\
+	$(JSONCPP_CFLAGS)
 
 dvbfemon_SOURCES =								\
 	dvbfemon.cpp
