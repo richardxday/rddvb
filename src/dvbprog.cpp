@@ -1125,7 +1125,7 @@ ADVBProg::EPISODE ADVBProg::GetEpisode(const AString& str)
 AString ADVBProg::GetEpisodeString(const EPISODE& ep)
 {
 	AString res;
-
+	
 	if (ep.valid) {
 		AString efmt, tfmt;
 		uint_t n = 2;
@@ -1139,7 +1139,19 @@ AString ADVBProg::GetEpisodeString(const EPISODE& ep)
 		if (ep.episode)  res.printf(efmt.str(), ep.episode);
 		if (ep.episodes) res.printf(tfmt.str(), ep.episodes);
 	}
+	
+	return res;
+}
 
+AString ADVBProg::GetEpisodeString() const
+{
+	AString res, _res;
+
+	if ((res = GetEpisodeString(GetEpisode())).Empty())
+	{
+		if ((_res = GetString(data->strings.episodeid)).Valid() && (_res.Left(2) == "EP")) res = _res.Left(2) + _res.Right(4);
+	}
+	
 	return res;
 }
 
