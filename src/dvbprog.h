@@ -167,7 +167,7 @@ public:
 	static int CompareEpisode(const EPISODE& ep1, const EPISODE& ep2);
 	
 	const EPISODE& GetEpisode() 		 const {return data->episode;}
-	AString GetEpisodeString()  		 const {return GetEpisodeString(GetEpisode());}
+	AString GetEpisodeString()  		 const;
 
 	uint_t GetAssignedEpisode()          const {return data->assignedepisode;}
 	void SetAssignedEpisode(uint16_t ep) 	   {data->assignedepisode = ep;}
