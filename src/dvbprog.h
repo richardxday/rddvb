@@ -204,6 +204,8 @@ public:
 		Flag_converted,
 		Flag_film,
 		Flag_recordable,
+
+		Flag_total,
 	};
 	void     SetFlags(uint32_t flags)	{data->flags = flags;}
 	uint32_t GetFlags()		   	  const {return data->flags;}
@@ -212,7 +214,7 @@ public:
 	bool   IsRepeat() 	   	   	  const {return GetFlag(Flag_repeat);}
 	bool   IsPlus1()  	   	   	  const {return GetFlag(Flag_plus1);}
 	bool   IsRepeatOrPlus1()   	  const {return IsRepeat() || IsPlus1();}
-	bool   IsFilm()   	       	  const {return (CompareNoCase(GetCategory(), "film") == 0);}
+	bool   IsFilm()   	       	  const {return ((CompareNoCase(GetCategory(), "film") == 0) || (stristr(GetSubCategory(), "movie") != NULL));}
 	bool   UseDescription()    	  const {return GetFlag(Flag_usedesc);}
 	bool   AllowRepeats()      	  const {return GetFlag(Flag_allowrepeats);}
 	bool   IsUrgent()		   	  const {return GetFlag(Flag_urgent);}

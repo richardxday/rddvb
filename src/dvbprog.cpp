@@ -452,6 +452,7 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 {
 	static const AString tsod = "tsod.plus-1.";
 	const ADVBConfig& config = ADVBConfig::Get();
+	const char *pstr;
 	AString _str;
 	int p = 0;
 	
@@ -476,19 +477,16 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	else if (FieldExists(str, "episodeid"))						SetString(&data->strings.episodeid, GetField(str, "episodeid"));
 #endif
 
-	{
-		const char *pstr;
-		if ((pstr = GetString(data->strings.episodenum))[0]) {
-			data->episode = GetEpisode(pstr);
-		}
-		else {
-			data->episode.series   = (uint_t)GetField(str, "series");
-			data->episode.episode  = (uint_t)GetField(str, "episode");
-			data->episode.episodes = (uint_t)GetField(str, "episodes");
-			data->episode.valid    = (data->episode.series || data->episode.episode || data->episode.episodes);
-		}
+	if ((pstr = GetString(data->strings.episodenum))[0]) {
+		data->episode = GetEpisode(pstr);
 	}
-	
+	else {
+		data->episode.series   = (uint_t)GetField(str, "series");
+		data->episode.episode  = (uint_t)GetField(str, "episode");
+		data->episode.episodes = (uint_t)GetField(str, "episodes");
+		data->episode.valid    = (data->episode.series || data->episode.episode || data->episode.episodes);
+	}
+
 	SetString(&data->strings.title, GetField(str, "title"));
 	SetString(&data->strings.subtitle, GetField(str, "subtitle"));
 
