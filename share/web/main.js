@@ -451,7 +451,7 @@ function populateprogs(id)
 					else if (prog1.flags.scheduled) 	 classname = ' class="scheduled"';
 					else if	(prog1.flags.recorded)    	 classname = ' class="recorded"';
 					else if (prog1.flags.rejected)	 	 classname = ' class="rejected"';
-					else if ((typeof prog1.category != 'undefined') && (prog1.category == 'Film')) classname = ' class="film"';
+					else if (prog1.flags.film)			 classname = ' class="film"';
 
 					trstr += '<tr' + classname + ' id="prog' + i + 'header"></tr>';
 					trstr += '<tr' + classname + ' id="prog' + i + 'details"></tr>';
@@ -701,7 +701,7 @@ function populateprogs(id)
 							else str1 += defaultuser;
 
 							str1 += '&nbsp;&nbsp;&nbsp;';
-							if ((typeof prog.category != 'undefined') && (prog.category.toLowerCase() == 'film')) {
+							if (typeof prog.flags.film != 'undefined' && prog.flags.film) {
 								str1 += '<button class="addrecord" onclick="recordprogramme(' + i + ')">Record Film</button>';
 							}
 							else {
@@ -1065,7 +1065,7 @@ function recordprogramme(id)
 
 		if (user == defaultuser) user = '';
 
-		if (prog.category.toLowerCase() == 'film') pattern += ' category=' + prog.category.toLowerCase() + ' dir:="Films" onceonly:=1 pri:=-3';
+		if ((typeof prog.flags.film != 'undefined') && prog.flags.film)  pattern += ' film=1 dir:="Films" onceonly:=1 pri:=-3';
 		
 		if (typeof prog.subtitle != 'undefined') pattern += ' subtitle="' + prog.subtitle + '"';
 		
