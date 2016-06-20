@@ -36,6 +36,15 @@ AC_SUBST(ACLOCAL_AMFLAGS)
 DX_DOXYGEN_FEATURE(ON)
 DX_INIT_DOXYGEN(rddvb, doxygen.cfg)
 
+if test "x$prefix" = "xNONE" ; then
+  prefix="/usr/local"
+fi
+if test "x$exec_prefix" = "xNONE" ; then
+  exec_prefix=$prefix
+fi
+
+RDDVB_GLOBAL_CFLAGS="$RDDVB_GLOBAL_CFLAGS -DRDDVB_SHARE_DIR=\\\"${prefix}/share/${PACKAGE}\\\""
+ 
 # Check if we should enable GPL code  (./configure --enable-gpl)
 AC_MSG_CHECKING(whether to include code under gpl)
 AC_ARG_ENABLE(gpl, AS_HELP_STRING([--disable-gpl], [disable code under GPL]), ENABLE_GPL="no", ENABLE_GPL="yes")
@@ -66,8 +75,7 @@ if test "x${HAVE_RDLIB}" != xyes ; then
   AC_MSG_ERROR([rdlib-0.1 >= $RDLIB_VER is required])
 fi
 
-# Checks for typedefs, structures, and compiler characteristics.
-AC_TYPE_SIZE_T
+RDDVB_CFLAGS="$RDDVB_CFLAGS $RDDVB_GLOBAL_CFLAGS"
 
 AC_APPEND_SUPPORTED_CFLAGS(RDDVB_CFLAGS, [-Wall])
 AC_APPEND_SUPPORTED_CFLAGS(RDDVB_CFLAGS, [-Werror])
@@ -78,6 +86,7 @@ AC_APPEND_SUPPORTED_CFLAGS(RDDVB_CFLAGS, [-fsigned-char])
 RDDVB_LDFLAGS=""
 AC_APPEND_SUPPORTED_LDFLAGS(RDDVB_LDFLAGS, [-Wl,--no-undefined])
 
+AC_SUBST(RDDVB_GLOBAL_CFLAGS)
 AC_SUBST(RDDVB_CFLAGS)
 AC_SUBST(RDDVB_LDFLAGS)
 
