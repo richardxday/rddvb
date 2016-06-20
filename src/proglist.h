@@ -27,6 +27,7 @@ public:
 	bool ReadFromFile(const AString& filename);
 	bool ReadFromXMLTVFile(const AString& filename);
 	bool ReadFromTextFile(const AString& filename);
+	bool ReadFromJSONFile(const AString& filename);
 	bool ReadFromJobList(bool runningonly = false);
 
 	enum {

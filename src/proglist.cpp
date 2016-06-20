@@ -8,6 +8,7 @@
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
 #include <rdlib/XMLDecode.h>
+#include <json/json.h>
 
 #include "config.h"
 #include "proglist.h"
@@ -524,31 +525,48 @@ bool ADVBProgList::ReadFromBinaryFile(const AString& filename, bool sort, bool r
 			
 			if (HasQuit()) break;
 		}
-
-#if 0
-		if (success) {
-			uint_t i;
-			bool   changed = false;
-			
-			for (i = 0; i < Count(); i++) {
-				ADVBProg& prog = GetProgWritable(i);
-				AString   str1 = prog.GetSubCategory();
-				AString   str2 = str1.SearchAndReplace(",", "\n");
-
-				if (str2 != str1) {
-					prog.SetSubCategory(str2 + "\n");
-					changed = true;
-				}
-			}
-
-			if (changed) {
-				config.printf("Updating '%s'", filename.str());
-				WriteToFile(filename);
-			}
-		}
-#endif
 		
 		//config.printf("Read data from '%s', parsing complete", filename.str());
+	}
+
+	return success;
+}
+
+bool ADVBProgList::ReadFromJSONFile(const AString& filename)
+{
+	//const ADVBConfig& config = ADVBConfig::Get();
+	AString data;
+	//bool    notempty = (Count() != 0);
+	bool    success = false;
+
+	if (data.ReadFromFile(filename)) {
+		Json::Reader reader;
+		Json::Value  obj;
+
+		if (reader.parse(data.str(), obj)) {
+			if (obj.isMember("Channels") && obj["Channels"].isArray()) {
+				const Json::Value& channels = obj["Channels"];
+				uint_t i, nchannels = (uint_t)channels.size();
+				
+				for (i = 0; i < nchannels; i++) {
+					const Json::Value& channel = channels[i];
+
+					if (channel.isMember("DisplayName")) printf("Channel %u/%u: '%s'\n", i, (uint_t)channels.size(), channel["DisplayName"].asString().c_str());
+					if (channel.isMember("TvListings") && channel["TvListings"].isArray()) {
+						const Json::Value& tvlistings = channel["TvListings"];
+						uint_t j, ntvlistings = (uint_t)tvlistings.size();
+
+						for (j = 0; j < ntvlistings; j++) {
+							const Json::Value& programme = tvlistings[j];
+							
+							
+						}
+					}
+				}
+				
+				success = true;
+			}
+		}
 	}
 
 	return success;
@@ -568,6 +586,9 @@ bool ADVBProgList::ReadFromFile(const AString& filename)
 	}
 	else if (filename.Suffix() == "txt") {
 		success = ReadFromTextFile(filename);
+	}
+	else if (filename.Suffix() == "json") {
+		success = ReadFromJSONFile(filename);
 	}
 	else if (filename.Suffix() == "dat") {
 		success = ReadFromBinaryFile(filename, notempty, notempty);
@@ -2715,6 +2736,8 @@ bool ADVBProgList::CheckRecordingNow()
 	ADVBLock     lock("dvbfiles");
 	ADVBProgList scheduledlist, recordinglist;
 	bool         success = false;
+
+	if (config.GetRecordingHost().Valid() && !GetRecordingListFromRecordingSlave()) return false;
 	
 	if (recordinglist.ReadFromFile(config.GetRecordingFile())) {
 		recordinglist.CreateHash();
