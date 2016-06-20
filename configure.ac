@@ -36,6 +36,15 @@ AC_SUBST(ACLOCAL_AMFLAGS)
 DX_DOXYGEN_FEATURE(ON)
 DX_INIT_DOXYGEN(rddvb, doxygen.cfg)
 
+if test "x$prefix" = "xNONE" ; then
+  prefix="/usr/local"
+fi
+if test "x$exec_prefix" = "xNONE" ; then
+  exec_prefix=$prefix
+fi
+
+RDDVB_GLOBAL_CFLAGS="$RDDVB_GLOBAL_CFLAGS -DRDDVB_SHARE_DIR=\\\"${prefix}/share/${PACKAGE}\\\""
+ 
 # Check if we should enable GPL code  (./configure --enable-gpl)
 AC_MSG_CHECKING(whether to include code under gpl)
 AC_ARG_ENABLE(gpl, AS_HELP_STRING([--disable-gpl], [disable code under GPL]), ENABLE_GPL="no", ENABLE_GPL="yes")
@@ -72,8 +81,7 @@ if test "x${HAVE_JSONCPP}" != xyes ; then
   AC_MSG_ERROR([jsoncpp >= $JSONCPP_VER is required])
 fi
 
-AC_SUBST(JSONCPP_CFLAGS)
-AC_SUBST(JSONCPP_LDFLAGS)
+RDDVB_CFLAGS="$RDDVB_CFLAGS $JSONCPP_CFLAGS $RDDVB_GLOBAL_CFLAGS"
 
 AC_APPEND_SUPPORTED_CFLAGS(RDDVB_CFLAGS, [-Wall])
 AC_APPEND_SUPPORTED_CFLAGS(RDDVB_CFLAGS, [-Werror])
@@ -87,9 +95,10 @@ AC_LANG_POP([C++])
 
 AC_SUBST([AM_CXXFLAGS],["$AM_CXXFLAGS $RDDVB_CXXFLAGS"])
 
-RDDVB_LDFLAGS=""
+RDDVB_LDFLAGS="$JSONCPP_LDFLAGS"
 AC_APPEND_SUPPORTED_LDFLAGS(RDDVB_LDFLAGS, [-Wl,--no-undefined])
 
+AC_SUBST(RDDVB_GLOBAL_CFLAGS)
 AC_SUBST(RDDVB_CFLAGS)
 AC_SUBST(RDDVB_LDFLAGS)
 

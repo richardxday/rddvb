@@ -5,8 +5,7 @@ lib_LTLIBRARIES = librddvb-@RDDVB_MAJORMINOR@.la
 librddvb_@RDDVB_MAJORMINOR@_la_LDFLAGS =		\
 	-no-undefined								\
 	-version-info $(RDDVB_LIBVERSION)			\
-     $(RDDVB_LDFLAGS)							\
-     $(JSONCPP_LDFLAGS)
+     $(RDDVB_LDFLAGS)
 
 librddvb_@RDDVB_MAJORMINOR@_la_LIBADD =			\
 	$(RDLIB_LIBS)								\
@@ -14,8 +13,7 @@ librddvb_@RDDVB_MAJORMINOR@_la_LIBADD =			\
 
 librddvb_@RDDVB_MAJORMINOR@_la_CPPFLAGS =		\
 	$(RDDVB_CFLAGS)								\
-	$(RDLIB_CFLAGS)								\
-	$(JSONCPP_CFLAGS)
+	$(RDLIB_CFLAGS)
 
 librddvb_@RDDVB_MAJORMINOR@_la_SOURCES = 		\
 	channellist.cpp								\
