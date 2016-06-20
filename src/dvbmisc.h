@@ -9,8 +9,8 @@ extern AString JSONFormat(const AString& str);
 extern AString JSONTime(uint64_t dt);
 
 typedef struct {
-	const char *search;
-	const char *replace;
+	AString search;
+	AString replace;
 } REPLACEMENT;
 extern AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint_t n);
 

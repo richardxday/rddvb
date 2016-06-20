@@ -7,6 +7,8 @@
 #include <rdlib/SettingsHandler.h>
 #include <rdlib/DataList.h>
 
+#include <vector>
+
 #include "dvbmisc.h"
 
 class ADVBConfig {
@@ -32,6 +34,7 @@ public:
 	AString GetConfigDir()		   			 const;
 	AString GetDataDir()			   		 const;
 	AString GetLogDir()			   	  		 const;
+	AString GetShareDir()			   		 const;
 	AString GetSlaveLogDir()			  	 const {return GetConfigItem("slavelogdir", GetLogDir().CatPath(GetConfigItem("slavelogsubdir", "slave")));}
 	AString GetRecordingsDir()	   	  		 const {return CatPath(GetDataDir(), GetConfigItem("recdir", "recordings"));}
 	AString GetRecordingsStorageDir()		 const {return CatPath(GetRecordingsDir(), GetConfigItem("storagedir", "Temp"));}
@@ -54,6 +57,10 @@ public:
 	AString GetProcessingFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("processingfile", "processing.dat"));}
 	AString GetRecordFailuresFile()			 const {return CatPath(GetDataDir(), GetConfigItem("recordfailuresfile", "recordfailures.dat"));}
 	AString GetCombinedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("combinedfile", "combined.dat"));}
+
+	AString GetDVBReplacementsFile()		 const {return CatPath(GetShareDir(), GetConfigItem("dvbreplacementsfile",   "dvbchannelreplacements.txt"));}
+	AString GetXMLTVReplacementsFile()		 const {return CatPath(GetShareDir(), GetConfigItem("xmltvreplacementsfile", "xmltvchannelreplacements.txt"));}
+
 	AString GetExtraRecordFile()			 const {return CatPath(GetDataDir(), GetConfigItem("extrarecordfile", "extrarecordprogrammes.txt"));}
 	AString GetDVBCardsFile()                const {return CatPath(GetDataDir(), GetConfigItem("dvbcardsfile", "dvbcards.txt"));}
 	AString GetLogBase()				     const {return "dvblog-";}
@@ -132,6 +139,8 @@ public:
 
 	const AString& GetDefaultInterRecTime() const;
 
+	bool ReadReplacementsFile(std::vector<REPLACEMENT>& replacements, const AString& filename) const;
+	
 	bool ExtractLogData(const ADateTime& start, const ADateTime& end, const AString& filename) const;
 	
 protected:

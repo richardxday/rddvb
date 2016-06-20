@@ -107,33 +107,12 @@ ADVBChannelList& ADVBChannelList::Get()
 
 AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 {
-	static const REPLACEMENT replacements[] = {
-		{"BBC ONE", "BBC1"},
-		{"BBC TWO", "BBC2"},
-		{"BBC THREE", "BBC3"},
-		{"BBC FOUR", "BBC4"},
-		{"BBC R1X", "BBC Radia 1Xtra"},
-		{"BBC Radio 4 Ex", "BBC Radio 4 Extra"},
-		{"BBC RB 1", "BBC Red Button One"},
-		{"CBBC Channel", "CBBC"},
-		{" N West", ""},
-		{" S West", ""},
-		{" N East", ""},
-		{" S East", ""},
-		{" +1", "+1"},
-		{"Sky Three", "Sky3"},
-		{"More 4", "More4"},
-		{"5 USA", "5USA"},
-		{"price-drop", "price drop"},
-		{"Al Jazeera Eng", "Al Jazeera English"},
-		{"Box Nation", "BoxNation"},
-		{"Create & Craft", "Create and Craft"},
-		{"Capital FM", "Capital Radio"},
-		{"ADULT Babestn", "Babestation"},
-		{"talkSPORT", "Talk Sport"},
-	};
+	static std::vector<REPLACEMENT> replacements;
+	const ADVBConfig& config = ADVBConfig::Get();
 
-	return ReplaceStrings(str, replacements, NUMBEROF(replacements));
+	if (!replacements.size()) config.ReadReplacementsFile(replacements, config.GetDVBReplacementsFile());
+
+	return ReplaceStrings(str, &replacements[0], (uint_t)replacements.size());
 }
 
 const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name) const
