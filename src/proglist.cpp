@@ -499,7 +499,7 @@ bool ADVBProgList::ReadFromJSONFile(const AString& filename)
 						for (j = 0; j < ntvlistings; j++) {
 							const Json::Value& programme = tvlistings[j];
 							
-							
+							(void)programme;
 						}
 					}
 				}
