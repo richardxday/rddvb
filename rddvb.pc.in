@@ -10,6 +10,6 @@ Description: DVB auto-scheduler
 Requires.private: @RDDVB_PKG_DEPS@
 Version: @VERSION@
 Libs: -L${libdir} -lrddvb-@RDDVB_MAJORMINOR@
-Cflags: -I${includedir}
+Cflags: -I${includedir} @RDDVB_GLOBAL_CFLAGS@
 
 

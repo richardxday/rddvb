@@ -109,6 +109,11 @@ AString ADVBConfig::GetLogDir() const
 	return GetConfigItem("logdir", DEFAULTLOGDIR);
 }
 
+AString ADVBConfig::GetShareDir() const
+{
+	return GetConfigItem("sharedir", RDDVB_SHARE_DIR);
+}
+
 AString ADVBConfig::GetTempFile(const AString& name, const AString& suffix) const
 {
 	return GetTempDir().CatPath(AString("%;_%08x%;").Arg(name).Arg(::GetTickCount()).Arg(suffix));
@@ -363,6 +368,40 @@ void ADVBConfig::ListUsers(AList& list) const
 	}
 
 	list.Sort(&AString::AlphaCompareCase);
+}
+
+bool ADVBConfig::ReadReplacementsFile(std::vector<REPLACEMENT>& replacements, const AString& filename) const
+{
+	AStdFile fp;
+	bool success = false;
+
+	if (fp.open(filename)) {
+		AString line;
+
+		//printf("Reading replacements file '%s':", filename.str());
+		
+		while (line.ReadLn(fp) >= 0) {
+			int p = 0;
+				
+			if ((line.Word(0)[0] != ';') && ((p = line.Pos("=")) >= 0)) {
+				REPLACEMENT repl = {
+					line.Left(p).Word(0).DeQuotify(),
+					line.Mid(p + 1).Word(0).DeQuotify(),
+				};
+
+				//printf("Replacement: '%s' -> '%s'", repl.search.str(), repl.replace.str());
+				
+				replacements.push_back(repl);
+			}
+		}
+			
+		fp.close();
+
+		success = true;
+	}
+	else logit("Failed to open replacements file '%s'", filename.str());
+		
+	return success;
 }
 
 bool ADVBConfig::ExtractLogData(const ADateTime& start, const ADateTime& end, const AString& filename) const
