@@ -513,7 +513,7 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	SetString(&data->strings.desc, GetField(str, "desc"));
 
 	{
-		AString category, subcategory = GetField(str, "subcategory");
+		AString category, subcategory = GetField(str, "subcategory").DeEscapify();
 		bool    ignoreothercategories = subcategory.Valid();
 		
 		for (p = 0; (_str = GetField(str, "category", p, &p)).Valid(); p++) {
@@ -684,7 +684,7 @@ AString ADVBProg::ExportToText() const
 	if ((p = GetString(data->strings.subtitle))[0]) str.printf("subtitle=%s\n", p);
 	if ((p = GetString(data->strings.desc))[0]) str.printf("desc=%s\n", p);
 	if ((p = GetString(data->strings.category))[0]) str.printf("category=%s\n", p);
-	if ((p = GetString(data->strings.subcategory))[0]) str.printf("subcategory=%s\n", p);
+	if ((p = GetString(data->strings.subcategory))[0]) str.printf("subcategory=%s\n", AString(p).Escapify().str());
 	if ((p = GetString(data->strings.director))[0]) str.printf("director=%s\n", p);
 	if ((p = GetString(data->strings.episodenum))[0]) str.printf("episodenum=%s\n", p);
 	if ((p = GetString(data->strings.user))[0]) str.printf("user=%s\n", p);

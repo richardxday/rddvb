@@ -73,4 +73,13 @@ APPLICATION := dvbdecodeprog
 OBJECTS     := $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
+LOCAL_INSTALLED_BINARIES := $(shell find scripts -type f)
+LOCAL_INSTALLED_BINARIES := $(LOCAL_INSTALLED_BINARIES:scripts/%=$(INSTALLBINDST)/%)
+INSTALLEDBINARIES += $(LOCAL_INSTALLED_BINARIES)
+UNINSTALLFILES += $(LOCAL_INSTALLED_BINARIES)
+
+$(INSTALLBINDST)/%: scripts/%
+	@$(SUDO) $(MAKEFILEDIR)/copyifnewer "$<" "$@"
+
 include $(MAKEFILEDIR)/makefile.post
+
