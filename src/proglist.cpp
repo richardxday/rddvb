@@ -371,16 +371,21 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 							GetProgrammeValues(str, pNode->GetChildren());
 							
 							//debug("%s", str.str());
-							
-							if (stop > start) {
-								if (AddProg(str, true, true) < 0) {
+
+							{
+								ADVBProg prog = str;
+
+								if (!prog.Valid()) config.logit("Ignoring invalid programme");
+								else if (stop <= start) {
+									config.logit("Ignoring zero length programme '%s'", prog.GetQuickDescription().str());
+								}
+								else if (stricmp(prog.GetTitle(), "to be announced") == 0) {
+									// ignore programmes with the above title
+								}
+								else if (AddProg(prog, true, true) < 0) {
 									config.printf("Failed to add prog!");
 									success = false;
 								}
-							}
-							else {
-								ADVBProg prog = str;
-								config.logit("Ignoring zero length programme '%s'", prog.GetQuickDescription().str());
 							}
 						}
 					}
