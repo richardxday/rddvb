@@ -37,10 +37,17 @@ HEADERS :=										\
 	iconcache.h									\
 	proglist.h
 
-EXTRA_CFLAGS += $(shell pkg-config --cflags rdlib-0.1)
-EXTRA_CFLAGS += $(shell pkg-config --cflags jsoncpp)
-EXTRA_LIBS   += $(shell pkg-config --libs rdlib-0.1)
-EXTRA_LIBS   += $(shell pkg-config --libs jsoncpp)
+GLOBAL_CFLAGS += $(shell pkg-config --cflags rdlib-0.1)
+GLOBAL_LIBS   += $(shell pkg-config --libs rdlib-0.1)
+
+GLOBAL_CFLAGS += $(shell pkg-config --cflags jsoncpp)
+GLOBAL_LIBS   += $(shell pkg-config --libs jsoncpp)
+
+GLOBAL_CFLAGS += $(shell curl-config --cflags)
+GLOBAL_LIBS   += $(shell curl-config --libs) -lcrypto
+
+GLOBAL_CFLAGS += $(shell pkg-config --cflags libdvbpsi)
+GLOBAL_LIBS   += $(shell pkg-config --libs libdvbpsi)
 
 include $(MAKEFILEDIR)/makefile.prebuild
 
@@ -70,6 +77,16 @@ OBJECTS     := $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
 APPLICATION := dvbdecodeprog
+OBJECTS     := $(APPLICATION:%=%.o)
+include $(MAKEFILEDIR)/makefile.app
+
+INSTALL_BINARIES:=0
+
+APPLICATION := sdfetch
+OBJECTS     := $(APPLICATION:%=%.o)
+include $(MAKEFILEDIR)/makefile.app
+
+APPLICATION := eitdecode
 OBJECTS     := $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
