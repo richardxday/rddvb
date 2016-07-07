@@ -59,6 +59,7 @@ bool SendFileToRecordingHost(const AString& filename)
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
 
+	remove(filename);
 	cmd.printf("scp -p -C %s \"%s\" %s:\"%s\"", config.GetSCPArgs().str(), filename.str(), config.GetRecordingHost().str(), filename.str());
 
 	return RunAndLogCommand(cmd);
@@ -74,6 +75,7 @@ bool GetFileFromRecordingHost(const AString& filename, const AString& localfilen
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
 
+	remove(localfilename);
 	cmd.printf("scp -p -C %s %s:\"%s\" \"%s\"", config.GetSCPArgs().str(), config.GetRecordingHost().str(), filename.str(), localfilename.str());
 
 	return RunAndLogCommand(cmd);
