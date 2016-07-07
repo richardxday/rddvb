@@ -116,7 +116,7 @@ static void dumpeit(void *p_cb_data, dvbpsi_eit_t *p_new_eit)
 
 	const dvbpsi_eit_event_t *p_event = p_new_eit->p_first_event;
 	while (p_event) {
-		printf("Event: TS ID %u Network ID %u Event ID %u starttime %016lx duration %u\n", p_new_eit->i_ts_id, p_new_eit->i_network_id, p_event->i_event_id, p_event->i_start_time, p_event->i_duration);
+		printf("Event: TS ID %u Network ID %u Event ID %u starttime %s duration %u\n", p_new_eit->i_ts_id, p_new_eit->i_network_id, p_event->i_event_id, AValue(p_event->i_start_time).ToString("016x").str(), p_event->i_duration);
 
 		DumpDescriptors("Event", p_event->p_first_descriptor);
 
