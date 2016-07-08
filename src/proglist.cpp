@@ -103,6 +103,10 @@ bool ADVBProgList::ModifyFromRecordingHost(const AString& filename, uint_t mode,
 				if (list.ReadFromFile(dstfilename)) {
 					uint_t added, modified;
 
+					config.logit("List (from '%s') is %u programmes long, modifying list (from '%s') is %u programmes long",
+								 filename.str(), Count(),
+								 dstfilename.str(), list.Count());
+					
 					Modify(list, added, modified, mode, sort);
 
 					if (added || modified) {
