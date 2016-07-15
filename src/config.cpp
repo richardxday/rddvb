@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <unistd.h>
+
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
 
@@ -116,7 +118,7 @@ AString ADVBConfig::GetShareDir() const
 
 AString ADVBConfig::GetTempFile(const AString& name, const AString& suffix) const
 {
-	return GetTempDir().CatPath(AString("%;_%08x%;").Arg(name).Arg(::GetTickCount()).Arg(suffix));
+	return GetTempDir().CatPath(AString("%_%08x_%08x%").Arg(name).Arg(getpid()).Arg(::GetTickCount()).Arg(suffix));
 }
 
 void ADVBConfig::CheckUpdate() const
@@ -274,7 +276,7 @@ void ADVBConfig::vlogit(const char *fmt, va_list ap, bool show) const
 		uint_t i, n = str.CountLines("\n", 0);
 
 		for (i = 0; i < n; i++) {
-			fp.printf("%s: %s\n", dt.DateFormat("%Y-%M-%D %h:%m:%s.%S").str(), str.Line(i, "\n", 0).str());
+			fp.printf("%s [%05u]: %s\n", dt.DateFormat("%Y-%M-%D %h:%m:%s.%S").str(), (uint_t)getpid(), str.Line(i, "\n", 0).str());
 		}
 
 		fp.close();

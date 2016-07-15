@@ -58,10 +58,14 @@ bool SendFileToRecordingHost(const AString& filename)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
-
+	bool    success;
+	
+	//config.logit("'%s' -> '%s:%s'...", filename.str(), config.GetRecordingHost().str(), filename.str());
 	cmd.printf("scp -p -C %s \"%s\" %s:\"%s\"", config.GetSCPArgs().str(), filename.str(), config.GetRecordingHost().str(), filename.str());
+	success = RunAndLogCommand(cmd);
+	//config.logit("'%s' -> '%s:%s' %s", filename.str(), config.GetRecordingHost().str(), filename.str(), success ? "success" : "failed");
 
-	return RunAndLogCommand(cmd);
+	return success;
 }
 
 bool GetFileFromRecordingHost(const AString& filename)
@@ -73,11 +77,15 @@ bool GetFileFromRecordingHost(const AString& filename, const AString& localfilen
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
+	bool    success;
 
 	remove(localfilename);
+	//config.logit("'%s:%s' -> '%s'...", config.GetRecordingHost().str(), filename.str(), localfilename.str());
 	cmd.printf("scp -p -C %s %s:\"%s\" \"%s\"", config.GetSCPArgs().str(), config.GetRecordingHost().str(), filename.str(), localfilename.str());
+	success = RunAndLogCommand(cmd);
+	//config.logit("'%s:%s' -> '%s' %s", config.GetRecordingHost().str(), filename.str(), localfilename.str(), success ? "success" : "failed");
 
-	return RunAndLogCommand(cmd);
+	return success;
 }
 
 bool RunRemoteCommand(const AString& cmd)

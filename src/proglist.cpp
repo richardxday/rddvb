@@ -89,7 +89,8 @@ bool ADVBProgList::ModifyFromRecordingHost(const AString& filename, uint_t mode,
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString host;
 	bool    success = false;
-
+	bool    save = false;
+	
 	DeleteAll();
 	
 	if ((host = config.GetRecordingHost()).Valid()) {
@@ -113,6 +114,7 @@ bool ADVBProgList::ModifyFromRecordingHost(const AString& filename, uint_t mode,
 						if (WriteToFile(filename)) {
 							if (added || modified) config.printf("Modified programmes in '%s' from recording host, total now %u (%u added, %u modified)", filename.str(), Count(), added, modified);
 							success = true;
+							save = true;
 						}
 						else config.printf("Failed to write programme list back!");
 					}
@@ -127,7 +129,12 @@ bool ADVBProgList::ModifyFromRecordingHost(const AString& filename, uint_t mode,
 		}
 		else config.printf("Failed to get '%s' from recording host", filename.str());
 
-		remove(dstfilename);
+		if (save) {
+			AString dstfilename1 = config.GetTempFile("proglist-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s.%S"), ".dat");
+			config.logit("Saving '%s' as '%s'", dstfilename.str(), dstfilename1.str());
+			rename(dstfilename, dstfilename1);
+		}
+		else remove(dstfilename);
 	}
 	else config.printf("No remote host configured!");
 
