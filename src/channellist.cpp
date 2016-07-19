@@ -28,7 +28,7 @@ ADVBChannelList::ADVBChannelList() : hash(40),
 				if ((chan = GetChannelByName(name, true)) != NULL) {
 					chan->freq = (uint32_t)_freq;
 					chan->pidlist.DeleteList();
-					
+
 					if ((uint_t)_pid1) {
 						chan->pidlist.Add((uint_t)_pid1);
 					}
@@ -72,13 +72,13 @@ ADVBChannelList::~ADVBChannelList()
 
 			if ((str = new AString) != NULL) {
 				uint_t j;
-				
+
 				str->printf("%s,%u", chan->name.str(), chan->freq);
 
 				for (j = 0; j < chan->pidlist.Count(); j++) {
 					str->printf(",%u", (uint_t)chan->pidlist[j]);
 				}
-				
+
 				strlist.Add(str);
 			}
 		}
@@ -174,7 +174,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 				}
 				else {
 					service += line + "\n";
-							
+
 					if (line == "</service>") {
 						CHANNEL *chan = GetChannelByName(servname, true);
 
@@ -182,7 +182,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 							AHash     pidhash(10);
 							ADataList pidlist;
 							uint_t i, n = service.CountLines("\n", 0);
-							
+
 							chan->freq = freq;
 
 							for (i = 0; i < n; i++) {
@@ -223,7 +223,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 								str.printf("'");
 
 								config.printf("%s", str.str());
-								
+
 								chan->pidlist = pidlist;
 								changed = true;
 							}
@@ -234,7 +234,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 					}
 				}
 			}
-			
+
 			fp.close();
 		}
 	}
@@ -248,7 +248,7 @@ bool ADVBChannelList::Update(uint_t card, const AString& channel, bool verbose)
 {
 	const CHANNEL *chan;
 	bool success = false;
-	
+
 	if ((chan = GetChannelByName(channel)) != NULL) {
 		success = Update(card, chan->freq, verbose);
 	}
@@ -282,7 +282,7 @@ bool ADVBChannelList::GetPIDList(uint_t card, const AString& channel, AString& p
 	const CHANNEL *chan;
 	AString str;
 	bool    success = true;
-	
+
 	if (update) success &= Update(card, channel);
 
 	if ((chan = GetChannelByName(channel)) != NULL) {
@@ -309,7 +309,7 @@ bool ADVBChannelList::GetPIDList(uint_t card, const AString& channel, AString& p
 		config.printf("Failed to find channel '%s'", channel.str());
 		success = false;
 	}
-	
+
 	return success;
 }
 

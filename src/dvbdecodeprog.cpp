@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProg prog;	// ensure ADVBProg initialisation takes place
-	
+
 	if (argc > 1) {
 		if (prog.Base64Decode(argv[1])) {
 			printf("{%s", prog.ExportToJSON().str());
@@ -48,6 +48,6 @@ int main(int argc, char *argv[])
 		else printf("{\"error\": \"Unable to decode Base64 programme\"}");
 	}
 	else printf("Usage: dvbdecodeprog <base64-programme>\n");
-	
+
 	return 0;
 }

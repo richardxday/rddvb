@@ -8,7 +8,7 @@ class ADVBPatterns {
 public:
 	ADVBPatterns();
 	~ADVBPatterns() {}
-	
+
 	static bool   UpdatePattern(const AString& olduser, const AString& oldpattern, const AString& newuser, const AString& newpattern);
 	static bool   UpdatePattern(const AString& user, const AString& pattern, const AString& newpattern);
 	static bool   InsertPattern(const AString& user, const AString& pattern);
@@ -201,7 +201,7 @@ protected:
 	static AString ToString(const TERM&  	val);
 	static AString ToString(const FIELD& 	val);
 	static AString ToString(const TERMDATA& val);
-	
+
 protected:
 	static OPERATOR operators[];
 };

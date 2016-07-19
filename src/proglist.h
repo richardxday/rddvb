@@ -35,10 +35,10 @@ public:
 		Prog_Add    	  = 2,
 		Prog_ModifyAndAdd = 3,
 	};
-	
+
 	void Modify(const ADVBProgList& list, uint_t& added, uint_t& modified, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
 	bool ModifyFromRecordingHost(const AString& filename, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
-	
+
 	void UpdateDVBChannels();
 
 	bool WriteToFile(const AString& filename, bool updatedependantfiles = true) const;
@@ -51,7 +51,7 @@ public:
 	int AddProg(const AString& prog, bool sort = true, bool removeoverlaps = false);
 	int AddProg(const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);
 	uint_t ModifyProg(const ADVBProg& prog, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
-	
+
 	void AssignEpisodes(bool reverse = false, bool ignorerepeats = false);
 
 	void DeleteProgrammesBefore(const ADateTime& dt);
@@ -96,7 +96,7 @@ public:
 	void Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), void *pContext = NULL);
 
 	static int CompareEpisode(uptr_t item1, uptr_t item2, void *pContext);
-	
+
 	void PrioritizeProgrammes(uint_t card, ADVBProgList& scheduledlist, ADVBProgList& rejectedlist, uint64_t recstarttime);
 	uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));
 
@@ -105,7 +105,7 @@ public:
 		ADataList list;
 	} SERIES;
 	void FindSeries(AHash& hash) const;
-	
+
 	typedef struct {
 		double recordedfactor;
 		double scheduledfactor;
@@ -118,7 +118,7 @@ public:
 	void FindPopularTitles(AList& list, double (*fn)(const ADVBProg& prog, void *context), void *context = NULL) const;
 
 	void EnhanceListings();
-							
+
 	static void UnscheduleAllProgrammes();
 	static uint_t SchedulePatterns(const ADateTime& starttime = ADateTime().TimeStamp(true), bool commit = true);
 	static bool WriteToJobList();
@@ -130,13 +130,13 @@ public:
 	static bool GetAndConvertRecordings();
 	static bool GetRecordingListFromRecordingSlave();
 	static bool CheckRecordingNow();
-	
+
 	static void AddToList(const AString& filename, const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);
 	static bool RemoveFromList(const AString& filename, const ADVBProg& prog);
 	static bool RemoveFromList(const AString& filename, const AString& uuid);
 	static bool RemoveFromRecordLists(const ADVBProg& prog);
 	static bool RemoveFromRecordLists(const AString& uuid);
-	
+
 protected:
 	CHANNEL *GetChannelWritable(const AString& id) const {return (CHANNEL *)channelhash.Read(id);}
 	void DeleteChannel(const AString& id);

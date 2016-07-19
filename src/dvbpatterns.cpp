@@ -78,7 +78,7 @@ bool ADVBPatterns::UpdatePatternInFile(const AString& filename, const AString& p
 				if (line == pattern) {
 					if (newpattern.Valid()) ofp.printf("%s\n", newpattern.str());
 					changed = found = true;
-					
+
 					if (newpattern.Valid()) {
 						config.logit("Changed pattern '%s' to '%s' in file '%s'", pattern.str(), newpattern.str(), filename.str());
 					}
@@ -110,7 +110,7 @@ bool ADVBPatterns::AddPatternToFile(const AString& filename, const AString& patt
 	AStdFile fp;
 	bool done = false;
 	bool added = false;
-	
+
 	if (fp.open(filename)) {
 		AString line;
 
@@ -128,7 +128,7 @@ bool ADVBPatterns::AddPatternToFile(const AString& filename, const AString& patt
 		if (fp.open(filename, "a")) {
 			fp.printf("%s\n", pattern.str());
 			fp.close();
-			
+
 			config.logit("Add pattern '%s' to file '%s'", pattern.str(), filename.str());
 
 			added = true;
@@ -142,7 +142,7 @@ bool ADVBPatterns::UpdatePattern(const AString& olduser, const AString& oldpatte
 {
 	ADVBLock lock("patterns");
 	bool changed = false;
-	
+
 	if (newuser != olduser) {
 		changed |= DeletePattern(olduser, oldpattern);
 		if (newpattern.Valid()) {
@@ -159,7 +159,7 @@ bool ADVBPatterns::UpdatePattern(const AString& user, const AString& pattern, co
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock lock("patterns");
 	bool changed = false;
-	
+
 	if (user.Empty() || !(changed = UpdatePatternInFile(config.GetUserPatternsPattern().SearchAndReplace("{#?}", user), pattern, newpattern))) {
 		changed = UpdatePatternInFile(config.GetPatternsFile(), pattern, newpattern);
 	}
@@ -172,7 +172,7 @@ bool ADVBPatterns::InsertPattern(const AString& user, const AString& pattern)
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock lock("patterns");
 	bool changed = false;
-	
+
 	if (user.Valid()) changed = AddPatternToFile(config.GetUserPatternsPattern().SearchAndReplace("{#?}", user), pattern);
 	else			  changed = AddPatternToFile(config.GetPatternsFile(), pattern);
 
@@ -188,7 +188,7 @@ bool ADVBPatterns::EnablePattern(const AString& user, const AString& pattern)
 {
 	ADVBLock lock("patterns");
 	bool changed = false;
-	
+
 	if (pattern[0] == '#') {
 		changed = UpdatePattern(user, pattern, pattern.Mid(1));
 	}
@@ -267,7 +267,7 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const FIELD& field, const VALUE& 
 				memcpy(&offset, ptr, sizeof(offset));
 				str = prog.GetString(offset);
 			}
-			
+
 			str += value.str;
 
 			prog.SetString((const uint16_t *)ptr, str.str());
@@ -402,7 +402,7 @@ AString ADVBPatterns::GetPatternDefinitionsJSON()
 
 	str.printf("\"patterndefs\":");
 	str.printf("{\"fields\":[");
-	
+
 	for (i = 0; i < nfields; i++) {
 		const FIELD& field = fields[i];
 
@@ -657,7 +657,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 				}
 			}
 
-			if (!implicitvalue) {		
+			if (!implicitvalue) {
 				char quote = 0;
 				if (IsQuoteChar(line[i])) quote = line[i++];
 
@@ -864,7 +864,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 			conditions = line.Mid(p);
 		}
 		else puretext  = line;
-	
+
 		if (puretext.Valid()) {
 			for (i = 0; puretext[i] && (IsAlphaChar(puretext[i]) || IsNumeralChar(puretext[i]) || (puretext[i] == ' ') || (puretext[i] == '-')); i++) ;
 
@@ -882,7 +882,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 								   conditions);
 
 				//debug("Split '%s' into:\npure text:'%s'\nconditions:'%s'\nnew pattern:'%s'\n", line.str(), puretext.str(), conditions.str(), newline.str());
-			
+
 				pattern.errors.Delete();
 				errors = ParsePattern(newline, pattern, user);
 			}
@@ -1015,7 +1015,7 @@ AString ADVBPatterns::RemoveDuplicateTerms(PATTERN& pattern)
 			pattern.list.RemoveIndex(i);
 		}
 		else i++;
-	}	
+	}
 
 	for (i = 0; i < pattern.list.Count(); i++) {
 		const TERM&     term = *(const TERM *)pattern.list[i];
@@ -1039,7 +1039,7 @@ bool ADVBPatterns::MatchString(const TERM& term, const char *str, bool ignoreinv
 	bool match = false;
 
 	str = ADVBProg::PreProcessString(term.field->name, temp, str);
-	
+
 	switch (term.data.opcode & ~Operator_Inverted) {
 		case Operator_Regex:
 			match = (IsRegexAnyPattern(term.value.str) || MatchRegex(str, term.value.str));
@@ -1106,7 +1106,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 	for (i = 0; (i < n) && (match || orflag); i++) {
 		const TERM&  term  = *(const TERM *)list[i];
 		const FIELD& field = *term.field;
-			  
+
 		if (!RANGE(term.data.opcode, Operator_First_Assignable, Operator_Last_Assignable)) {
 			const uint8_t *ptr = prog.GetDataPtr(field.offset);
 			int  res      = 0;
@@ -1184,7 +1184,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 							  ADateTime(val).DateToStr().str(),
 							  ADateTime(term.value.u64).DateToStr().str());
 #endif
-						
+
 						res = COMPARE_ITEMS(val, term.value.u64);
 						break;
 					}
@@ -1264,11 +1264,11 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 					case FieldType_external_uint32_t:
 						res = prog.CompareExternal(field.offset, term.value.u32);
 						break;
-						
+
 					case FieldType_external_sint32_t:
 						res = prog.CompareExternal(field.offset, term.value.s32);
 						break;
-						
+
 					case FieldType_flag...FieldType_lastflag: {
 						uint8_t cmp = prog.GetFlag(field.type - FieldType_flag);
 
@@ -1328,7 +1328,7 @@ void ADVBPatterns::AssignValues(ADVBProg& prog, const PATTERN& pattern)
 					VALUE value;
 
 					GetFieldValue(field, value, val);
-					
+
 					AssignValue(prog, field, value);
 				}
 			}
@@ -1378,7 +1378,7 @@ AString ADVBPatterns::ToString(const VALUE& val, uint8_t fieldtype, uint8_t date
 					dt.Set((uint32_t)val.u64, 0);
 					str.printf("%s", dt.DateFormat("%Y-%M-%D").str());
 					break;
-					
+
 				case DateType_weekday:
 					str.printf("%s", dt.GetDayName(val.u64));
 					break;
@@ -1409,7 +1409,7 @@ AString ADVBPatterns::ToString(const VALUE& val, uint8_t fieldtype, uint8_t date
 			str.printf("flag%u", (uint_t)(fieldtype - FieldType_flag));
 			break;
 	}
-	
+
 	return str;
 }
 
@@ -1418,7 +1418,7 @@ AString ADVBPatterns::ToString(const TERM& val)
 	AString str;
 
 	str.printf("%s, %s, %s", ToString(val.data).str(), ToString(*val.field).str(), ToString(val.value, val.field->type, val.datetype).str());
-	
+
 	return str;
 }
 
@@ -1436,7 +1436,7 @@ AString ADVBPatterns::ToString(const TERMDATA& val)
 	AString str;
 
 	str.printf("Term [%u:%u] '%s' field %u opcode %u opindex %u orflag %u", val.start, val.length, val.value.str(), (uint_t)val.field, (uint_t)val.opcode, (uint_t)val.opindex, (uint_t)val.orflag);
-	
+
 	return str;
 }
 
@@ -1445,10 +1445,10 @@ AString ADVBPatterns::ToString(const PATTERN& pattern)
 	const ADataList& list = pattern.list;
 	uint_t i, n = list.Count();
 	AString str;
-	
+
 	for (i = 0; i < n; i++) {
 		const TERM& term = *(const TERM *)list[i];
-		
+
 		str.printf("Term %u/%u: %s\n", i, n, ToString(term).str());
 	}
 

@@ -25,7 +25,6 @@ protected:
 
 protected:
 	AString name;
-	bool    locked;
 
 	static AHash lockhash;
 };

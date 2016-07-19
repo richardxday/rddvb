@@ -23,5 +23,5 @@ extern bool SendFileRunRemoteCommand(const AString& filename, const AString& cmd
 extern bool RunRemoteCommandGetFile(const AString& cmd, const AString& filename);
 
 extern bool TriggerServerCommand(const AString& cmd);
-	
+
 #endif

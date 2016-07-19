@@ -15,7 +15,7 @@ static size_t __writedata(void *contents, size_t size, size_t count, void *conte
 	size_t bytes = size * count;
 
 	res += std::string((const char *)contents, bytes);
-	
+
 	return bytes;
 }
 
@@ -25,7 +25,7 @@ static bool Post(CURL *curl, const char *url, const Json::Value& postdata, Json:
 	std::string _postdata, _response;
 	CURLcode res;
 	bool success = false;
-	
+
 	{
 		Json::FastWriter writer;
 		_postdata = writer.write(postdata);
@@ -78,14 +78,14 @@ void SetAuthentication(Json::Value& obj, const char *user, const char *password)
 	obj["username"] = user;
 	obj["password"] = sha1password;
 }
-					   
+
 int main(int argc, char *argv[])
 {
 	(void)argc;
 	(void)argv;
 
 	curl_global_init(CURL_GLOBAL_DEFAULT);
-	
+
 	CURL *curl;
 	if ((curl = curl_easy_init()) != NULL) {
 		Json::Value postdata, resp;
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 				resp.isMember("token") && resp["token"].isString()) {
 				std::string token = resp["token"].asString();
 
-				
+
 			}
 			else fprintf(stderr, "Response reported error (code %d)\n", code);
 		}
@@ -111,4 +111,4 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-	
+

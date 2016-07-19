@@ -69,7 +69,7 @@ void ADVBEpisodeHandler::SetEpisode(const AString& key, uint32_t value)
 void ADVBEpisodeHandler::AssignEpisode(ADVBProg& prog, bool ignorerepeats)
 {
 	//const ADVBConfig& config = ADVBConfig::Get();
-	
+
 	if (!prog.IsFilm() && (CompareNoCase(prog.GetTitle(), "Close") != 0)) {
 		if (!prog.GetAssignedEpisode()) {
 			AString  key = prog.GetTitle();
@@ -86,7 +86,7 @@ void ADVBEpisodeHandler::AssignEpisode(ADVBProg& prog, bool ignorerepeats)
 					SetDayOffset(key, epn);
 					epn = 0;
 				}
-		
+
 				SetEpisode(key, epn);
 				valid = true;
 			}
@@ -95,7 +95,7 @@ void ADVBEpisodeHandler::AssignEpisode(ADVBProg& prog, bool ignorerepeats)
 				valid = true;
 			}
 			//else debug("Key '%s' doesn't exist in episodehash\n", key.str());
-			
+
 			if (valid) {
 				prog.SetAssignedEpisode(epn + 1);
 			}

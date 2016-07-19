@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Usage: videosig [-s <w>x<h>] [-n <n>] [-if <input-file>] -of <output-file>\n");
 		exit(1);
 	}
-	
+
 	for (i = 1; i < argc; i++) {
 		if (stricmp(argv[i], "-s") == 0) {
 			uint_t w, h;
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 	if (ifp && ofile.isopen() && wid && hgt && n) {
 		std::vector<uint8_t> inbuf;
 		std::vector<uint8_t> outbuf;
-		
+
 		inbuf.resize(wid * hgt * 3);
 		outbuf.resize(n * n * 3);
 
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
 			for (i = 0; i < n; i++) {
 				uint_t y = (((2 * i + 1) * hgt) / div) * hgt;
-				
+
 				for (j = 0; j < n; j++) {
 					uint_t x = ((2 * j + 1) * wid) / div;
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 					p += 3;
 				}
 			}
-			
+
 			ofile.writebytes(&outbuf[0], outbuf.size());
 
 			nframes++;
@@ -73,6 +73,6 @@ int main(int argc, char *argv[])
 	ofile.close();
 
 	printf("Total %u frames processed\n", nframes);
-	
+
 	return 0;
 }

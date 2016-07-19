@@ -18,7 +18,7 @@ public:
 
 	void WebResponse() {webresponse = true;}
 	bool IsWebResponse() const {return webresponse;}
-		
+
 	AString GetConfigItem(const AString& name) const;
 	AString GetConfigItem(const AString& name, const AString& defval) const;
 	AString GetUserConfigItem(const AString& user, const AString& name) const {return GetConfigItem(user + ":" + name, GetConfigItem(name));}
@@ -75,16 +75,16 @@ public:
 	AString GetRegionalChannels()            const {return GetConfigItem("regionalchannels", "bbc1.bbc.co.uk=north-west,bbc2.bbc.co.uk=north-west,bbc2.bbc.co.uk=england,itv1.itv.co.uk=granada");}
 
 	AString GetNamedFile(const AString& name) const;
-	
+
 	AString GetConvertedFileSuffix(const AString& user, const AString& def = "mp4") const {return GetUserConfigItem(user, "filesuffix", def);}
 	AString ReplaceTerms(const AString& user, const AString& str) const;
 	AString ReplaceTerms(const AString& user, const AString& subitem, const AString& str) const;
-	
+
 	uint_t  GetPhysicalDVBCard(uint_t n = 0, bool forcemapping = false) const;
 	uint_t  GetMaxDVBCards()				 const {return dvbcards.Count();}
 	bool    RotateDVBCards()				 const {return ((uint_t)GetConfigItem("rotatedvbcards", "0") != 0);}
 	AString GetDVBFrequencyRange()           const {return GetConfigItem("dvbfreqrange", "474,530,8");}
-	
+
 	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "15");}
 	uint_t  GetDaysToKeep()					 const {return (uint_t)GetConfigItem("daystokeep", "7");}
 	sint_t  GetScoreThreshold()				 const {return (sint_t)GetConfigItem("scorethreshold", "100");}
@@ -92,7 +92,7 @@ public:
 	bool    CommitScheduling()				 const {return ((uint_t)GetConfigItem("commitscheduling", "0") != 0);}
 
 	bool    RescheduleAfterDeletingPattern(const AString& user, const AString& category) const {return ((uint_t)GetUserSubItemConfigItem(user, category, "rescheduleafterdeletingpattern", "0") != 0);}
-	
+
 	bool    IsRecordingSlave()				 const {return ((uint_t)GetConfigItem("isrecordingslave", "0"));}
 	bool    ConvertVideos()					 const {return ((uint_t)GetConfigItem("convertvideos", AString("%").Arg(!IsRecordingSlave())));}
 	bool    EnableCombined()				 const {return ((uint_t)GetConfigItem("enablecombined", AString("%").Arg(!IsRecordingSlave())));}
@@ -106,7 +106,7 @@ public:
 	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");}
 
 	AString GetServerURL()					 const {return GetConfigItem("serverurl", "");}
-	
+
 	bool    ForceSubs(const AString& user)   const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
 
 	AString GetEncodeCommand(const AString& user, const AString& category) 		 const {return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodecmd", "avconv"));}
@@ -126,7 +126,7 @@ public:
 	uint_t  GetServerPort()                  const {return GetConfigItem("serverport", "1722");}
 	AString GetServerGetAndConvertCommand()  const {return GetConfigItem("servergetandconvertcommand", "dvbgetandconvertrecorded");}
 	AString GetServerUpdateRecordingsCommand() const {return GetConfigItem("serverupdaterecordingscommand", "dvbupdaterecordings");}
-	
+
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 	void printf(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 	void vlogit(const char *fmt, va_list ap, bool show = false) const;
@@ -140,13 +140,13 @@ public:
 	const AString& GetDefaultInterRecTime() const;
 
 	bool ReadReplacementsFile(std::vector<REPLACEMENT>& replacements, const AString& filename) const;
-	
+
 	bool ExtractLogData(const ADateTime& start, const ADateTime& end, const AString& filename) const;
-	
+
 protected:
 	void MapDVBCards();
 	void CheckUpdate() const;
-	
+
 private:
 	ADVBConfig();
 	~ADVBConfig() {}

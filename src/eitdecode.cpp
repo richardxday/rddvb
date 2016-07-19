@@ -130,7 +130,7 @@ static void dumpeit(void *p_cb_data, dvbpsi_eit_t *p_new_eit)
 static void newsubtable(dvbpsi_t *p_dvbpsi, uint8_t table_id, uint16_t extension, void *p_zero)
 {
 	(void)p_zero;
-	
+
 	if ((table_id >= 0x4e) && (table_id <= 0x5f))
 	{
 		if (!dvbpsi_eit_attach(p_dvbpsi, table_id, extension, dumpeit, NULL))
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 	bool b_ok;
 
 	(void)DumpDescriptors;
-	
+
 	if (argc > 1) {
 		if (_fp.open(argv[1], "rb")) fp = &_fp;
 		else {
@@ -158,12 +158,12 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 	}
-	
+
 	p_dvbpsi = dvbpsi_new(&message, DVBPSI_MSG_WARN);
 	if (p_dvbpsi) {
 		if (dvbpsi_AttachDemux(p_dvbpsi, newsubtable, NULL)) {
 			b_ok = ReadPacket(*fp, data);
-			
+
 			while (b_ok)
 			{
 				uint16_t pid = ((uint16_t)(data[1] & 0x1f) << 8) + data[2];
@@ -173,12 +173,12 @@ int main(int argc, char *argv[])
 			dvbpsi_DetachDemux(p_dvbpsi);
 		}
 		else fprintf(stderr, "Failed to attach demux to dvbpsi handler\n");
-			
+
 		dvbpsi_delete(p_dvbpsi);
 	}
 	else fprintf(stderr, "Failed to create new dvbpsi handler\n");
 
 	_fp.close();
-	
+
 	return 0;
 }
