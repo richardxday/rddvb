@@ -18,7 +18,7 @@ enum {
 void findcards(void)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	
+
 	if (config.GetRecordingHost().Valid()) {
 		RunRemoteCommandGetFile("dvb --find-cards", config.GetDVBCardsFile());
 	}
@@ -33,7 +33,7 @@ void findcards(void)
 		if (system("killall dvbfemon") != 0) {
 			config.logit("Failed to kill running dvbfemon processes");
 		}
-		
+
 		file = config.GetTempFile("cards", ".txt");
 
 		oldcards.ReadFromFile(config.GetDVBCardsFile());
@@ -71,7 +71,7 @@ void findcards(void)
 
 					if (cardname.Valid() && locked) break;
 				}
-			
+
 				fp.close();
 
 				if (cardname.Valid() && locked) {
@@ -99,7 +99,7 @@ void findcards(void)
 			AString cmd;
 			if ((cmd = config.GetConfigItem("dvbcardschangedcmd")).Valid()) {
 				AStdFile fp;
-				
+
 				file = config.GetTempFile("cards", ".txt");
 
 				if (fp.open(file, "w")) {
@@ -128,10 +128,10 @@ sint_t findcard(const AString& pattern, const ADataList *cardlist)
 
 	if (fp.open(ADVBConfig::Get().GetDVBCardsFile())) {
 		AString line;
-				
+
 		while (line.ReadLn(fp) >= 0) {
 			uint_t testcard = (uint_t)line.Word(0);
-			
+
 			if ((!cardlist || (cardlist->Find(testcard) < 0)) && MatchRegex(line.Words(1), pat)) {
 				card = testcard;
 				break;

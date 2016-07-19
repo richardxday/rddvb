@@ -51,7 +51,7 @@ void printuserdetails(const AString& user)
 	int p;
 	if ((p = dir.Pos("/{"))  >= 0) dir  = dir.Left(p);
 	if ((p = rdir.Pos("/{")) >= 0) rdir = rdir.Left(p);
-	
+
 	printf(",\"folder\":\"%s\"", JSONFormat(dir).str());
 	printf(",\"fullfolder\":\"%s\"", JSONFormat(rdir).str());
 
@@ -138,7 +138,7 @@ int inserttitle(uptr_t value1, uptr_t value2, void *context)
 	const PROGTITLE *title2 = (const PROGTITLE *)value2;
 
 	(void)context;
-	
+
 	return CompareNoCase(title1->title, title2->title);
 }
 
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 				AString val = line.Mid(p + 1);
 
 				log.printf("%s='%s'\n", var.str(), val.str());
-				
+
 				//debug("Setting '%s' as '%s'\n", var.str(), val.str());
 
 				vars.Insert(var, (uptr_t)new AString(val));
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 		Value(vars, pattern, "pattern");
 		Value(vars, newuser, "newuser");
 		Value(vars, newpattern, "newpattern");
-			
+
 		if (edit == "add") {
 			ADVBPatterns::InsertPattern(newuser, newpattern);
 		}
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
 		combinedlist.ReadFromFile(config.GetCombinedFile());
 		combinedlist.CreateHash();
 		combinedlist.FindSeries(fullseries);
-		
+
 		if (Value(vars, val, "deleteprogramme")) {
 			const ADVBProg *pprog;
 
@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
 				AString  type;
 
 				Value(vars, type, "type");
-			
+
 				if ((type == "all") || (type == "video")) {
 					if (!prog.DeleteEncodedFiles()) {
 						errors.printf("Failed to delete all files");
@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
 			}
 			else errors.printf("Failed to find UUID '%s' for file deletion", val.str());
 		}
-	
+
 		{
 			AString errors;		// use local var to prevent global one being modified
 			ADVBProgList::ReadPatterns(patternlist, errors);
@@ -403,13 +403,13 @@ int main(int argc, char *argv[])
 
 			pagesize = (uint_t)LIMIT(pval, 1, MAX_SIGNED(sint_t));
 		}
-	
+
 		if (Value(vars, val, "page")) {
 			int pval = (int)val;
 
 			page = (uint_t)LIMIT(pval, 0, MAX_SIGNED(sint_t));
 		}
-		
+
 		if ((datasource == DataSource_Patterns) && Value(vars, val, "filter") && val.Valid()) {
 			AString user_pat    = ParseRegex("*");
 			AString pattern_pat = ParseRegex("*");
@@ -430,7 +430,7 @@ int main(int argc, char *argv[])
 				if (!val[i]) break;
 
 				AString field = AString(val.str() + fs, i - fs).ToLower();
-		
+
 				while (IsWhiteSpace(val[i])) i++;
 				if (!val[i]) break;
 
@@ -533,7 +533,7 @@ int main(int argc, char *argv[])
 				case DataSource_Titles:
 					titleshash.Create(50, &deletetitle);
 					titleshash.EnableCaseInSensitive(true);
-					
+
 					for (i = 0; i < proglist->Count(); i++) {
 						const ADVBProg& prog = proglist->GetProg(i);
 						PROGTITLE *title;
@@ -567,7 +567,7 @@ int main(int argc, char *argv[])
 					nitems = logdata.CountLines("\n", 0);
 					break;
 			}
-			
+
 			page   = MIN(page, (nitems / pagesize));
 			offset = page * pagesize;
 			if (page && (offset == nitems)) {
@@ -577,7 +577,7 @@ int main(int argc, char *argv[])
 			count = MIN(count, SUBZ(nitems, offset));
 
 			//printf("\n\npage: %u\npagesize: %u\ncount: %u\nnitems: %u\n\n", page, pagesize, count, nitems);
-			
+
 			printf("\"total\":%u", nitems);
 			printf(",\"page\":%u", page);
 			printf(",\"pagesize\":%u", pagesize);
@@ -645,7 +645,7 @@ int main(int argc, char *argv[])
 							else if ((prog2 = scheduledlist.FindUUID(prog))  != NULL) prog.Modify(*prog2);
 							else if ((prog2 = recordedlist.FindUUID(prog))   != NULL) prog.Modify(*prog2);
 						}
-						
+
 						printf("{");
 						printf("%s", prog.ExportToJSON(true).str());
 						printpattern(patterns, prog);
@@ -656,7 +656,7 @@ int main(int argc, char *argv[])
 							printpattern(patterns, *prog2);
 							printf("}");
 						}
-						
+
 						const ADVBProgList::SERIES *serieslist = (const ADVBProgList::SERIES *)fullseries.Read(prog.GetTitle());
 						if (serieslist) printseries(*serieslist);
 
@@ -671,7 +671,7 @@ int main(int argc, char *argv[])
 
 					for (i = 0; i < count; i++) {
 						const PROGTITLE& title = *(const PROGTITLE *)titleslist[i + offset];
-						
+
 						if (i) printf(",");
 						printf("{\"title\":\"%s\"", title.title.str());
 						printf(",\"scheduled\":%u", title.counts.scheduled);
@@ -690,7 +690,7 @@ int main(int argc, char *argv[])
 
 					printf("]\n");
 					break;
-					
+
 				case DataSource_Patterns:
 					printf(",\"patterns\":[\n");
 
@@ -700,7 +700,7 @@ int main(int argc, char *argv[])
 						if (i > 0) printf(",\n");
 
 						printpattern(pattern);
-					}		
+					}
 
 					printf("]");
 					break;

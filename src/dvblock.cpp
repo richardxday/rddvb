@@ -16,7 +16,7 @@ AHash ADVBLock::lockhash(10, &ADVBLock::__DeleteLock);
 
 ADVBLock::ADVBLock(const AString& iname) : name(iname)
 {
-	locked = GetLock();
+	GetLock();
 }
 
 ADVBLock::~ADVBLock()
@@ -47,8 +47,11 @@ AString ADVBLock::GetFilename(const LOCK *lock)
 
 bool ADVBLock::GetLock(uint_t n)
 {
+	const ADVBConfig& config = ADVBConfig::Get();
 	LOCK *lock = (LOCK *)lockhash.Read(name);
 	bool success = false;
+
+	(void)config;
 
 	if (!lock) {
 		if ((lock = new LOCK) != NULL) {
@@ -66,25 +69,28 @@ bool ADVBLock::GetLock(uint_t n)
 
 			if ((lock->fd = open(lockfile, O_CREAT | O_RDWR, (S_IRUSR | S_IWUSR))) >= 0) {
 				if (flock(lock->fd, LOCK_EX) >= 0) {
-					//debug("Acquired lock '%s' (filename '%s')\n", name.str(), lockfile.str());
+					//config.logit("Acquired lock '%s' (filename '%s')\n", name.str(), lockfile.str());
 					lock->refcount += n;
 					success = true;
 				}
-				else debug("Failed to lock file: %s\n", strerror(errno));
+				else config.logit("Failed to lock file: %s\n", strerror(errno));
 			}
-			else debug("Failed to create lockfile '%s' (%s)!  All Hell could break loose!!\n", lockfile.str(), strerror(errno));
+			else config.logit("Failed to create lockfile '%s' (%s)!  All Hell could break loose!!\n", lockfile.str(), strerror(errno));
 		}
 	}
-	else debug("Failed to create lock '%s'!\n", name.str());
+	else config.logit("Failed to create lock '%s'!\n", name.str());
 
 	return success;
 }
 
 void ADVBLock::ReleaseLock(uint_t n)
 {
+	const ADVBConfig& config = ADVBConfig::Get();
 	LOCK *lock = (LOCK *)lockhash.Read(name);
 
-	if (locked && lock) {
+	(void)config;
+
+	if (lock) {
 		lock->refcount = SUBZ(lock->refcount, n);
 
 		if (!lock->refcount) {
@@ -93,9 +99,9 @@ void ADVBLock::ReleaseLock(uint_t n)
 			close(lock->fd);
 			lock->fd = -1;
 
-			remove(lockfile);
+			//config.logit("Released lock '%s' (filename '%s')\n", name.str(), lockfile.str());
 
-			//debug("Released lock and removed '%s' (filename '%s')\n", name.str(), lockfile.str());
+			lockhash.Remove(name);
 		}
 	}
 }

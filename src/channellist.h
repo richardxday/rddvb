@@ -28,7 +28,7 @@ public:
 		ADataList pidlist;
 	} CHANNEL;
 	const CHANNEL *GetChannel(uint_t n) const {return (const CHANNEL *)list[n];}
-	
+
 private:
 	ADVBChannelList();
 	~ADVBChannelList();

@@ -45,7 +45,7 @@ public:
 	bool OverlapsOnSameChannel(const ADVBProg& prog) const {return (Overlaps(prog) && (CompareNoCase(GetChannelID(), prog.GetChannelID()) == 0));}
 
 	bool RecordOverlaps(const ADVBProg& prog) const {return ((data->recstop > prog.data->recstart) && (data->recstart < prog.data->recstop));}
-	
+
 	bool operator == (const ADVBProg& obj) const {return (CompareNoCase(GetUUID(), obj.GetUUID()) == 0);}
 	bool operator != (const ADVBProg& obj) const {return (CompareNoCase(GetUUID(), obj.GetUUID()) != 0);}
 
@@ -96,7 +96,7 @@ public:
 
 	void	    SetFileSize(uint64_t filesize) {data->filesize = filesize;}
 	uint64_t    GetFileSize()          	 const {return data->filesize;}
-	
+
 	static AString GetHex(uint64_t t)		   {return AString("$%016x").Arg(t);}
 	static AString GetHex(const ADateTime& dt) {return GetHex((uint64_t)dt);}
 
@@ -153,7 +153,7 @@ public:
 	};
 	int CompareExternal(uint_t id, uint32_t value) const;
 	int CompareExternal(uint_t id, sint32_t value) const;
-						 
+
 	typedef PACKEDSTRUCT {
 		uint8_t  valid;
 		uint8_t  series;
@@ -165,7 +165,7 @@ public:
 	static AString GetEpisodeString(const EPISODE& ep);
 
 	static int CompareEpisode(const EPISODE& ep1, const EPISODE& ep2);
-	
+
 	const EPISODE& GetEpisode() 		 const {return data->episode;}
 	AString GetEpisodeString()  		 const;
 
@@ -196,7 +196,7 @@ public:
 		Flag_ignorerecording,
 		Flag_recordingfailed,
 		Flag_notify,
-		
+
 		Flag_count,
 
 		_Flag_extra_start = 32,
@@ -209,7 +209,7 @@ public:
 	};
 	void     SetFlags(uint32_t flags)	{data->flags = flags;}
 	uint32_t GetFlags()		   	  const {return data->flags;}
-	
+
 	bool   GetFlag(uint8_t flag)  const;
 	bool   IsRepeat() 	   	   	  const {return GetFlag(Flag_repeat);}
 	bool   IsPlus1()  	   	   	  const {return GetFlag(Flag_plus1);}
@@ -257,7 +257,7 @@ public:
 	void   SetNotify()	  		  		{SetFlag(Flag_notify);}
 	bool   IsAvailable()		  const {return (IsConverted() && AStdFile::exists(GetFilename()));}
 	bool   IsRecordable()         const {return ((data->start > (uint64_t)ADateTime().TimeStamp(true)) && GetDVBChannel()[0]);}
-												 
+
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}
 
@@ -320,7 +320,7 @@ public:
 	bool PostRecord();
 	bool PostProcess();
 	bool UpdateRecordedList();
-	
+
 	bool IsConverted() const {return (AString(GetFilename()).Suffix() != recordedfilesuffix);}
 	bool ConvertVideo(bool verbose = false, bool cleanup = true);
 
@@ -330,7 +330,7 @@ public:
 	bool FixData();
 
 	AString GetConvertedDestinationDirectory() const;
-	
+
 	static bool FilePatternExists(const AString& filename);
 
 	static bool GetFileFormat(const AString& filename, AString& format);
@@ -348,7 +348,7 @@ protected:
 	static AString 	GetField(const AString& str, const AString& field, int p = 0, int *pos = NULL);
 
 	AString GetProgrammeKey() const;
-	
+
 #if DVBDATVERSION==1
 	typedef PACKEDSTRUCT {
 		uint64_t start;
@@ -451,7 +451,7 @@ protected:
 		char     strdata[0];
 	} DVBPROG;
 #endif
-	
+
 	uint8_t *GetDataPtr(uint16_t offset) const {return (uint8_t *)((uptr_t)data + offset);}
 
 	static uint16_t GetUserDataOffset();
@@ -471,13 +471,13 @@ protected:
 	const char *GetString(uint16_t offset)   const {return data->strdata + offset;}
 	bool StringValid(const uint16_t *offset) const {return (offset[1] > offset[0]);}
 	bool SetString(const uint16_t *offset, const char *str);
-	
+
 	uint32_t GetFlagMask(uint8_t flag, bool set = true) const {return set ? (1U << flag) : ~(1U << flag);}
 	void 	 SetFlag(uint8_t flag, bool set = true);
 	void 	 ClrFlag(uint8_t flag) {SetFlag(flag, false);}
 
 	bool MatchString(const TERM& term, const char *str) const;
-	
+
 	static const FIELD *GetFields(uint_t& nfields);
 
 	static void StaticInit();
@@ -496,7 +496,7 @@ protected:
 
 	AString GetLogFile() const;
 	bool    RunCommand(const AString& cmd, bool logoutput = false) const;
-	
+
 	static uint64_t CalcTime(const char *str);
 	static AString GenTime(uint64_t t, const char *format = "%02u:%02u:%02u.%03u");
 	static AString GetParentheses(const AString& line, int p = 0);
@@ -528,7 +528,7 @@ protected:
 		ADVBProg *prog;
 		uint32_t flags;
 	};
-	
+
 protected:
 	DVBPROG  		   *data;
 	uint16_t 		   maxsize;

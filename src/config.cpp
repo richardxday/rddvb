@@ -54,14 +54,14 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 	for (i = 0; i < NUMBEROF(__defaults); i++) {
 		defaults.Insert(__defaults[i].name, (uptr_t)new AString(__defaults[i].value));
 	}
-	
+
 	CreateDirectory(GetConfigDir());
 	CreateDirectory(GetDataDir());
 	CreateDirectory(GetLogDir());
 	CreateDirectory(GetRecordingsStorageDir());
 	CreateDirectory(GetRecordingsDir());
 	CreateDirectory(GetTempDir());
-	
+
 	if (CommitScheduling()) {
 		AList   users;
 		AString dir;
@@ -131,9 +131,9 @@ AString ADVBConfig::GetConfigItem(const AString& name) const
 {
 	const AString *def = NULL;
 	AString res;
-	
+
 	CheckUpdate();
-	
+
 	if (config.Exists(name)) res = config.Get(name);
 	else if ((def = (const AString *)defaults.Read(name)) != NULL) res = *def;
 
@@ -150,7 +150,7 @@ AString ADVBConfig::GetConfigItem(const AString& name, const AString& defval) co
 
 	if (config.Exists(name)) res = config.Get(name);
 	else					 res = defval;
-	
+
 	//debug("Request for '%s' (def: '%s'): '%s'\n", name.str(), defval.str(), res.str());
 
 	return res;
@@ -170,7 +170,7 @@ AString ADVBConfig::GetNamedFile(const AString& name) const
 	else if (name == "processing") 			  filename = GetProcessingFile();
 	else if (name == "extrarecordprogrammes") filename = GetExtraRecordFile();
 	else									  filename = name;
-	
+
 	return filename;
 }
 
@@ -179,7 +179,7 @@ AString ADVBConfig::GetRelativePath(const AString& filename) const
 	AString res;
 
 	if (filename.StartsWith(GetRecordingsDir())) res = AString("/videos").CatPath(filename.Mid(GetRecordingsDir().len()));
-	
+
 	return res;
 }
 
@@ -187,7 +187,7 @@ AString ADVBConfig::ReplaceTerms(const AString& user, const AString& _str) const
 {
 	AString str = _str;
 	int p1, p2;
-	
+
 	while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.Pos("}", p1)) >= 0)) {
 		AString item = GetUserConfigItem(user, str.Mid(p1 + 6, p2 - p1 - 6));
 
@@ -201,7 +201,7 @@ AString ADVBConfig::ReplaceTerms(const AString& user, const AString& subitem, co
 {
 	AString str = _str;
 	int p1, p2;
-	
+
 	while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.Pos("}", p1)) >= 0)) {
 		AString item = GetUserSubItemConfigItem(user, subitem, str.Mid(p1 + 6, p2 - p1 - 6));
 
@@ -216,20 +216,20 @@ void ADVBConfig::MapDVBCards()
 	uint_t i;
 
 	dvbcards.DeleteList();
-	
+
 	for (i = 0; i < 4; i++) {
 		AString defname = "*";
 		AString cardname;
 		sint_t  card = -1;
 
 		cardname = GetConfigItem(AString("card%;").Arg(i), defname);
-	
+
 		if ((card = findcard(cardname, &dvbcards)) >= 0) {
 			dvbcards.Add((uint_t)card);
 		}
 		else break;
 	}
-	
+
 	printf("DVB card mapping:");
 	for (i = 0; i < dvbcards.Count(); i++) {
 		printf("Virtual card %u -> physical card %u", i, (uint_t)dvbcards[i]);
@@ -271,7 +271,7 @@ void ADVBConfig::vlogit(const char *fmt, va_list ap, bool show) const
 	AStdFile  fp;
 
 	str.vprintf(fmt, ap);
-	
+
 	if (fp.open(filename, "a")) {
 		uint_t i, n = str.CountLines("\n", 0);
 
@@ -316,7 +316,7 @@ void ADVBConfig::ListUsers(AList& list) const
 	AString  _users             = GetConfigItem("users");
 	AStdFile fp;
 	uint_t   i, n = _users.CountColumns();
-	
+
 	//debug("Reading users from config %s\n", config.GetFilename().str());
 
 	for (i = 0; i < n; i++) {
@@ -334,7 +334,7 @@ void ADVBConfig::ListUsers(AList& list) const
 		while (line.ReadLn(fp) >= 0) {
 			AString user;
 			int p;
-			
+
 			if		((p = line.PosNoCase(" user:=")) >= 0) user = line.Mid(p + 7).Word(0).DeQuotify();
 			else if (line.PosNoCase("user:=") == 0)        user = line.Mid(6).Word(0).DeQuotify();
 
@@ -346,7 +346,7 @@ void ADVBConfig::ListUsers(AList& list) const
 
 		fp.close();
 	}
-	
+
 	::CollectFiles(filepattern.PathPart(), filepattern.FilePart(), 0, userpatterns);
 
 	const AString *file = AString::Cast(userpatterns.First());
@@ -381,10 +381,10 @@ bool ADVBConfig::ReadReplacementsFile(std::vector<REPLACEMENT>& replacements, co
 		AString line;
 
 		//printf("Reading replacements file '%s':", filename.str());
-		
+
 		while (line.ReadLn(fp) >= 0) {
 			int p = 0;
-				
+
 			if ((line.Word(0)[0] != ';') && ((p = line.Pos("=")) >= 0)) {
 				REPLACEMENT repl = {
 					line.Left(p).Word(0).DeQuotify(),
@@ -392,17 +392,17 @@ bool ADVBConfig::ReadReplacementsFile(std::vector<REPLACEMENT>& replacements, co
 				};
 
 				//printf("Replacement: '%s' -> '%s'", repl.search.str(), repl.replace.str());
-				
+
 				replacements.push_back(repl);
 			}
 		}
-			
+
 		fp.close();
 
 		success = true;
 	}
 	else logit("Failed to open replacements file '%s'", filename.str());
-		
+
 	return success;
 }
 
@@ -410,14 +410,14 @@ bool ADVBConfig::ExtractLogData(const ADateTime& start, const ADateTime& end, co
 {
 	AStdFile dst;
 	bool success = false;
-	
+
 	if (dst.open(filename, "w")) {
 		ADateTime dt;
 		uint32_t day1 = start.GetDays();
 		uint32_t day2 = end.GetDays();
 		uint32_t day;
 		bool     valid = false;
-		
+
 		for (day = day1; day <= day2; day++) {
 			AStdFile src;
 
@@ -432,11 +432,11 @@ bool ADVBConfig::ExtractLogData(const ADateTime& start, const ADateTime& end, co
 						if (dt >= end) break;
 					}
 				}
-				
+
 				src.close();
 			}
 		}
-		
+
 		dst.close();
 	}
 

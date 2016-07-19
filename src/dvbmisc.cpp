@@ -46,7 +46,7 @@ bool RunAndLogCommand(const AString& cmd)
 
 	if (config.IsWebResponse()) cmd1.printf(" >>\"%s\" 2>&1", config.GetLogFile(ADateTime().GetDays()).str());
 	else						cmd1.printf(" 2>&1 | tee -a \"%s\"", config.GetLogFile(ADateTime().GetDays()).str());
-	
+
 	//config.printf("Running '%s'", cmd1.str());
 	bool success = (system(cmd1) == 0);
 	if (!success) config.logit("Command '%s' failed", cmd.str());
@@ -59,7 +59,7 @@ bool SendFileToRecordingHost(const AString& filename)
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
 	bool    success;
-	
+
 	//config.logit("'%s' -> '%s:%s'...", filename.str(), config.GetRecordingHost().str(), filename.str());
 	cmd.printf("scp -p -C %s \"%s\" %s:\"%s\"", config.GetSCPArgs().str(), filename.str(), config.GetRecordingHost().str(), filename.str());
 	success = RunAndLogCommand(cmd);
@@ -113,7 +113,7 @@ bool TriggerServerCommand(const AString& cmd)
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString host = config.GetServerHost();
 	bool success = false;
-	
+
 	if (host.Valid()) {
 		static ASocketServer server;
 		static AStdSocket    socket(server);
@@ -121,7 +121,7 @@ bool TriggerServerCommand(const AString& cmd)
 		if (!socket.isopen()) {
 			if (socket.open("0.0.0.0", 0, ASocketServer::Type_Datagram)) {
 				uint_t port = config.GetServerPort();
-				
+
 				if (!socket.setdatagramdestination(host, port)) {
 					config.printf("Failed to set %s:%u as UDP destination for server command triggers", host.str(), port);
 				}

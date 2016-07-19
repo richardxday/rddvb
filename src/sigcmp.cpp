@@ -25,7 +25,7 @@ public:
 		data1 = &_data1;
 		data2 = &_data2;
 	}
-	
+
 protected:
 	virtual void *Run() {
 		const uint8_t * const ptr1 = &(*data1)[0];
@@ -43,16 +43,16 @@ protected:
 			ThreadLock lock(globallock);
 			fprintf(stderr, "Starting thread %u of %u\n", nthread, nthreads);
 		}
-		
+
 		for (offset = -range + (sint_t)(nthread * step1); (offset < range) && !HasQuit(); offset += step1 * nthreads) {
 			std::vector<sint_t> buffer((uint_t)fps);
 			sint64_t sum = 0;
-			
+
 			for (i = 0; (i < nframes1); i += step2) {
 				sint_t val = 0;
-				
+
 				j = i + offset;
-				
+
 				if (RANGE(j, 0, nframes2 - 1)) {
 					const uint_t p1 = (uint_t)i * framesize;
 					const uint_t p2 = (uint_t)j * framesize;
@@ -100,7 +100,7 @@ protected:
 
 protected:
 	uint_t nthread;
-	
+
 	static ThreadLockObject globallock;
 	static uint_t nthreads;
 
@@ -134,12 +134,12 @@ uint_t Process::completed = 0;
 int main(int argc, char *argv[])
 {
 	AQuitHandler quithandler;
-	
+
 	if (argc < 3) {
 		fprintf(stderr, "Usage: sigcmp [-n <n>] <file1> <file2>\n");
 		exit(1);
 	}
-	
+
 	uint_t n = 5;
 	int arg = 1;
 
@@ -181,13 +181,13 @@ int main(int argc, char *argv[])
 		}
 		else fprintf(stderr, "Failed to open file '%s' for reading\n", argv[arg]);
 	}
-	
+
 	arg++;
-	
+
 	if (fdata1.size() && fdata2.size()) {
 		Process processors[5];
 		uint_t i;
-		
+
 		Process::SetParameters(n, fdata1, fdata2);
 
 		for (i = 0; i < NUMBEROF(processors); i++) {

@@ -28,7 +28,7 @@ STATS readstats(ASettingsHandler& statsstorage, const AString& name)
 	stats.max 	= statsstorage.Get(stats.name + ":max");
 	stats.sum 	= statsstorage.Get(stats.name + ":sum");
 	stats.count = statsstorage.Get(stats.name + ":count");
-	
+
 	return stats;
 }
 
@@ -61,23 +61,23 @@ void logsignalstats(uint_t card, const STATS *stats, uint_t n)
 	AString  msg;
 	AStdFile fp;
 	uint_t i;
-		
+
 	msg.printf("%s %u", ADateTime().DateFormat("%Y-%M-%D %h:%m:%s.%S").str(), card);
-		
+
 	for (i = 0; i < n; i++) {
 		const STATS& stats1 = stats[i];
-		
+
 		msg.printf(" %s %u %u",
 				   stats1.name.str(),
 				   stats1.min, stats1.max);
-		
+
 		if (stats1.count) {
 			msg.printf(" %s",
 					   AValue((stats1.sum + stats1.count / 2) / stats1.count).ToString().str());
 		}
 		else msg.printf(" -");
 	}
-	
+
 	if (fp.open(config.GetDVBSignalLog(ADateTime().GetDays()), "a")) {
 		fp.printf("%s\n", msg.str());
 		fp.close();
@@ -106,15 +106,15 @@ int main(int argc, char *argv[])
 		readstats(statsstorage, "signal"),
 		readstats(statsstorage, "snr"),
 	};
-	
+
 	values["lock"]      = statsstorage.Get("lockstatus", "unlocked");
 
 	while (!HasQuit() && (line.ReadLn(Stdin) > 0)) {
 		uint_t i, n = line.CountLines("|");
 		bool waslocked = (((it = values.find("lock")) != values.end()) && (it->second == "locked"));
-		
+
 		values["lock"] = "unlocked";
-		
+
 		for (i = 0; i < n; i++) {
 			AString column = line.Line(i, "|").Words(0);
 			AString name   = column.Word(0).ToLower();
@@ -125,23 +125,23 @@ int main(int argc, char *argv[])
 				name  = "lock";
 				value = "locked";
 			}
-			
+
 			values[name] = value;
 		}
 
 		statsstorage.Set("lockstatus", values["lock"]);
-		
+
 		bool locked = (((it = values.find("lock")) != values.end()) && (it->second == "locked"));
 		if (locked != waslocked) {
 			uint64_t t = (uint64_t)ADateTime().TimeStamp(true);
-			
+
 			if (locked) {
 				locktime = t;
 				config.printf("Card %u LOCKED (unlocked for %ss)", card, AValue((t - unlocktime) / 1000).ToString().str());
 			}
 			else {
 				AString msg;
-				
+
 				unlocktime = t;
 				msg.printf("Card %u UNLOCKED (locked for %ss):",
 						   card, AValue((t - locktime) / 1000).ToString().str());
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 					const STATS& stats1 = stats[i];
 
 					if (i) msg.printf(",");
-					
+
 					msg.printf(" %s {%u, %u}",
 							   stats1.name.str(),
 							   stats1.min, stats1.max);
@@ -170,10 +170,10 @@ int main(int argc, char *argv[])
 		if (locked) {
 			bool justlocked = (!waslocked && locked);
 			bool log = false;
-			
+
 			for (i = 0; i < NUMBEROF(stats); i++) {
 				STATS& stats1 = stats[i];
-				
+
 				updatestats(stats1, values[stats1.name], justlocked);
 				writestats(statsstorage, stats1);
 
@@ -191,6 +191,6 @@ int main(int argc, char *argv[])
 
 		statsstorage.Write();
 	}
-	
+
 	return 0;
 }

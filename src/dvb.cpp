@@ -34,7 +34,7 @@ static bool __DisplaySeries(const char *key, uptr_t value, void *context)
 
 		for (j = 0; j < serieslist.Count(); j++) {
 			const AString *str = (const AString *)serieslist[j];
-			
+
 			if (str) printf("Programme '%s' series %u: %s\n", key, j, str->str());
 		}
 	}
@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
 		}
 	}
 #endif
-	
+
 	(void)prog;
-	
+
 	if ((argc == 1) || ((argc > 1) && ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)))) {
 		printf("Usage: dvb {<file>|<cmd> ...}\n");
 		printf("Where <cmd> is:\n");
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 			else if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0) || (AString(argv[i]).Suffix() == "xmltv") || (AString(argv[i]).Suffix() == "txt")) {
 				AString filename = config.GetListingsFile();
 				AString updatefile;
-				
+
 				if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0)) i++;
 
 				config.printf("Reading main listings file...");
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 
 				if (list.ReadFromFile(filename)) {
 					uint_t added, modified;
-					
+
 					proglist.Modify(list, added, modified, ADVBProgList::Prog_Add);
 
 					printf("Merged programmes from '%s', total now %u (%u added)\n", filename.str(), proglist.Count(), added);
@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
 					if (list.ReadFromFile(filename)) {
 						uint_t added, modified;
-						
+
 						reclist.Modify(list, added, modified, ADVBProgList::Prog_Add);
 
 						if (added) {
@@ -368,9 +368,9 @@ int main(int argc, char *argv[])
 
 				if (otherlist.ReadFromFile(argv[++i])) {
 					uint_t j;
-					
+
 					printf("Loading %u programmes into test list\n", otherlist.Count());
-					
+
 					for (j = 0; j < proglist.Count(); j++) {
 						const ADVBProg *prog;
 
@@ -398,7 +398,7 @@ int main(int argc, char *argv[])
 					printf("Finding programmes...\n");
 
 					proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
-				
+
 					proglist = reslist;
 
 					if (errors.Valid()) {
@@ -407,7 +407,7 @@ int main(int argc, char *argv[])
 						uint_t j, n = errors.CountLines();
 						for (j = 0; j < n; j++) printf("%s", errors.Line(j).str());
 					}
-					
+
 					printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 				}
 				else printf("Failed to read patterns from '%s'", filename.str());
@@ -421,7 +421,7 @@ int main(int argc, char *argv[])
 				uint_t       j;
 
 				proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
-				
+
 				printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 
 				if (errors.Valid()) {
@@ -448,7 +448,7 @@ int main(int argc, char *argv[])
 
 				if (patterns.ReadFromFile(filename)) {
 					proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
-				
+
 					printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 
 					if (errors.Valid()) {
@@ -471,7 +471,7 @@ int main(int argc, char *argv[])
 			}
 			else if ((strcmp(argv[i], "--delete-recorded") == 0) ||
 					 (strcmp(argv[i], "--delete-using-file") == 0)) {
-				AString      filename = config.GetRecordedFile(); 
+				AString      filename = config.GetRecordedFile();
 				ADVBProgList proglist2;
 
 				if (strcmp(argv[i], "--delete-using-file") == 0) filename = config.GetNamedFile(argv[++i]);
@@ -497,7 +497,7 @@ int main(int argc, char *argv[])
 				for (j = 0; j < proglist.Count(); j++) {
 					const ADVBProg& prog = proglist.GetProg(j);
 					const ADVBProg  *sprog;
-					
+
 					while ((sprog = proglist.FindSimilar(prog, &prog)) != NULL) {
 						proglist.DeleteProg(*sprog);
 						ndeleted++;
@@ -505,7 +505,7 @@ int main(int argc, char *argv[])
 				}
 
 				printf("Deleted %u programmes\n", ndeleted);
-			}			
+			}
 			else if ((strcmp(argv[i], "--list") == 0) || (strcmp(argv[i], "-L") == 0)) {
 				uint_t j;
 
@@ -591,7 +591,7 @@ int main(int argc, char *argv[])
 			}
 			else if ((strcmp(argv[i], "--write") == 0) || (strcmp(argv[i], "-w") == 0)) {
 				AString filename = config.GetNamedFile(argv[++i]);
-			
+
 				if (!HasQuit() && proglist.WriteToFile(filename)) {
 					printf("Wrote %u programmes to '%s'\n", proglist.Count(), filename.str());
 				}
@@ -601,7 +601,7 @@ int main(int argc, char *argv[])
 			}
 			else if (strcmp(argv[i], "--write-text") == 0) {
 				AString filename = config.GetNamedFile(argv[++i]);
-			
+
 				if (proglist.WriteToTextFile(filename)) {
 					printf("Wrote %u programmes to '%s'\n", proglist.Count(), filename.str());
 				}
@@ -662,7 +662,7 @@ int main(int argc, char *argv[])
 					uint_t    nsecs;
 
 					config.printf("Adding %s to recorded...", prog.GetQuickDescription().str());
-					
+
 					prog.ClearScheduled();
 					prog.ClearRecording();
 					prog.ClearRunning();
@@ -674,7 +674,7 @@ int main(int argc, char *argv[])
 					config.printf("Faking actual start and stop times (%s-%s)", prog.GetActualStartDT().DateFormat("%h:%m:%s").str(), prog.GetActualStopDT().DateFormat("%h:%m:%s").str());
 
 					nsecs = (uint_t)((prog.GetActualStop() - prog.GetActualStart()) / 1000);
-					
+
 					if (::GetFileInfo(filename, &info)) {
 						config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s",
 									  filename.str(),
@@ -722,7 +722,7 @@ int main(int argc, char *argv[])
 				ADVBChannelList& list = ADVBChannelList::Get();
 				const AString freqs = argv[++i];
 				uint_t j, n = freqs.CountColumns();
-				
+
 				for (j = 0; j < n; j++) {
 					list.Update(dvbcard, (uint32_t)(1.0e6 * (double)freqs.Column(j)), true);
 				}
@@ -848,7 +848,7 @@ int main(int argc, char *argv[])
 					}
 
 					config.printf("%u programmes changed", n);
-					
+
 					if (n && (HasQuit() || !reclist.WriteToFile(config.GetRecordedFile()))) {
 						config.printf("Failed to write recorded programme list back!");
 					}
@@ -881,11 +881,11 @@ int main(int argc, char *argv[])
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
 					uint_t j, k, n = dirs.CountLines(",");
 					uint_t found = 0;
-					
+
 					for (j = 0; (j < reclist.Count()) && !HasQuit(); j++) {
 						ADVBProg& prog = reclist.GetProgWritable(j);
 						FILE_INFO info;
-												
+
 						if (!AStdFile::exists(prog.GetFilename())) {
 							AString filename1 = prog.GenerateFilename(prog.IsConverted());
 							if (AStdFile::exists(filename1)) {
@@ -913,7 +913,7 @@ int main(int argc, char *argv[])
 									if (!AStdFile::exists(prog.GetFilename()) || config.GetRelativePath(prog.GetFilename()).Empty()) {
 										AString filename1 = dir->CatPath(AString(prog.GetFilename()).FilePart());
 										AString filename2 = filename1.Prefix() + "." + config.GetConvertedFileSuffix(prog.GetUser());
-										
+
 										if (AStdFile::exists(filename2)) {
 											prog.SetFilename(filename2);
 											found++;
@@ -970,7 +970,7 @@ int main(int argc, char *argv[])
 				ADVBProgList reclist;
 				bool         ignore = (stricmp(argv[i], "--set-ignore-flag") == 0);
 				AString      patterns = argv[++i], errors;
-				
+
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
 					ADVBProgList reslist;
 					uint_t j, changed = 0;
@@ -981,7 +981,7 @@ int main(int argc, char *argv[])
 
 					if (errors.Valid()) {
 						config.printf("Errors:");
-						
+
 						uint_t j, n = errors.CountLines();
 						for (j = 0; j < n; j++) config.printf("%s", errors.Line(j).str());
 					}
@@ -1025,7 +1025,7 @@ int main(int argc, char *argv[])
 						prog.ClearScheduled();
 						prog.SetRecordingFailed();
 					}
-					
+
 					if (HasQuit() || !failureslist.WriteToFile(config.GetRecordFailuresFile())) {
 						config.printf("Failed to write record failure list back!");
 					}
@@ -1052,14 +1052,14 @@ int main(int argc, char *argv[])
 
 				if (errors.Valid()) {
 					printf("Errors:");
-					
+
 					uint_t j, n = errors.CountLines();
 					for (j = 0; j < n; j++) config.printf("%s", errors.Line(j).str());
 				}
 
 				for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
 					ADVBProg *prog;
-					
+
 					if ((prog = proglist.FindUUIDWritable(reslist.GetProg(j))) != NULL) {
 						if (prog->GetUser() != newuser) {
 							prog->SetUser(newuser);
@@ -1067,7 +1067,7 @@ int main(int argc, char *argv[])
 						}
 					}
 				}
-				
+
 				printf("Changed %u programme%s\n", changed, (changed == 1) ? "" : "s");
 			}
 			else if (stricmp(argv[i], "--show-encoding-args") == 0) {
@@ -1086,7 +1086,7 @@ int main(int argc, char *argv[])
 							   proccmd.str(),
 							   args.Line(k, ";").Words(0).str());
 					}
-					
+
 					printf("\n");
 				}
 			}
@@ -1098,7 +1098,7 @@ int main(int argc, char *argv[])
 
 					if (AStdFile::exists(prog.GetFilename())) {
 						AString format;
-						
+
 						if (ADVBProg::GetFileFormat(prog.GetFilename(), format)) {
 							printf("%s: %s\n", prog.GetQuickDescription().str(), format.str());
 						}
@@ -1112,16 +1112,16 @@ int main(int argc, char *argv[])
 				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
 					ADVBProg& prog = proglist.GetProgWritable(j);
 					AString   oldfilename = prog.GenerateFilename();
-					
+
 					if ((!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) ||
 						(prog.IsConverted() && !AStdFile::exists(prog.GetFilename()) && AStdFile::exists(oldfilename))) {
 						if (!AStdFile::exists(prog.GetFilename()) && AStdFile::exists(oldfilename)) {
 							printf("Reverting back to oldfilename of '%s'\n", oldfilename.str());
 							prog.SetFilename(oldfilename);
 						}
-						
+
 						config.printf("Converting file %u/%u - '%s':", j + 1, proglist.Count(), prog.GetQuickDescription().str());
-						
+
 						prog.ConvertVideo(true);
 
 						converted++;
@@ -1222,6 +1222,6 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	
+
 	return res;
 }

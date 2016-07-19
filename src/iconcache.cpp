@@ -17,20 +17,20 @@ ADVBIconCache::ADVBIconCache() : cache(300, &__DeleteEntry),
 	if (fp.open(ADVBConfig::Get().GetIconCacheFilename(), "r")) {
 		AString line;
 		uint_t n = 0;
-		
+
 		while (line.ReadLn(fp) >= 0) {
 			AString type = line.Column(0);
 			AString name = line.Column(1).DeQuotify().DeEscapify();
 			AString icon = line.Column(2).DeQuotify().DeEscapify();
-			
+
 			SetIcon(type, name, icon);
 			n++;
 		}
-		
+
 		fp.close();
 
 		//ADVBConfig::Get().logit("Read %u lines resulting in %u items in icon cache", n, cache.GetItems());
-		
+
 		changed = false;
 	}
 }
@@ -61,7 +61,7 @@ bool ADVBIconCache::__WriteEntry(const char *key, uptr_t item, void *context)
 	AStdFile& fp = *(AStdFile *)context;
 
 	(void)key;
-	
+
 	fp.printf("%s,\"%s\",\"%s\"\n", entry->type.str(), entry->name.Escapify().str(), entry->icon.Escapify().str());
 
 	return true;
@@ -76,7 +76,7 @@ AString ADVBIconCache::GetIcon(const AString& type, const AString& name) const
 {
 	const ENTRY *entry;
 	AString icon;
-	
+
 	if ((entry = GetEntry(type, name)) != NULL) {
 		icon = entry->icon;
 	}
