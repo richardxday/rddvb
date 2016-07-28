@@ -447,8 +447,8 @@ function populateprogs(id)
 
 					if		(prog.flags.postprocessing)  classname = ' class="processing"';
 					else if	(prog.flags.running)		 classname = ' class="recording"';
-					else if (prog1.flags.failed)		 classname = ' class="failed"';
-					else if (prog1.flags.scheduled) 	 classname = ' class="scheduled"';
+					else if (prog.flags.failed)			 classname = ' class="failed"';
+					else if (prog.flags.scheduled)		 classname = ' class="scheduled"';
 					else if	(prog1.flags.recorded)    	 classname = ' class="recorded"';
 					else if (prog1.flags.rejected)	 	 classname = ' class="rejected"';
 					else if (prog1.flags.film)			 classname = ' class="film"';
