@@ -97,6 +97,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(converted,			 Flag_converted,    	   "Programme has been converted"),
 	DEFINE_FLAG(film,				 Flag_film,				   "Programme is a film"),
 	DEFINE_FLAG(recordable,			 Flag_recordable,		   "Programme is recordable"),
+	DEFINE_FLAG(partial,			 Flag_partialpattern,      "Pattern is partial and not complete"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
 	DEFINE_FIELD(series,   	  episode.series,   uint8_t,  "Series"),
@@ -105,13 +106,14 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 
 	DEFINE_FIELD(assignedepisode, assignedepisode, uint16_t, "Assigned episode"),
 
-	DEFINE_FLAG_ASSIGN(usedesc,		  Flag_usedesc,       "Use description"),
-	DEFINE_FLAG_ASSIGN(allowrepeats,  Flag_allowrepeats,  "Allow repeats to be recorded"),
-	DEFINE_FLAG_ASSIGN(urgent,		  Flag_urgent,   	  "Record as soon as possible"),
-	DEFINE_FLAG_ASSIGN(markonly,	  Flag_markonly, 	  "Do not record, just mark as recorded"),
-	DEFINE_FLAG_ASSIGN(postprocess,	  Flag_postprocess,   "Post process programme"),
-	DEFINE_FLAG_ASSIGN(onceonly,	  Flag_onceonly,      "Once recorded, delete the pattern"),
-	DEFINE_FLAG_ASSIGN(notify,		  Flag_notify,        "Once recorded, run 'notifycmd'"),
+	DEFINE_FLAG_ASSIGN(usedesc,		  Flag_usedesc,       	   "Use description"),
+	DEFINE_FLAG_ASSIGN(allowrepeats,  Flag_allowrepeats,  	   "Allow repeats to be recorded"),
+	DEFINE_FLAG_ASSIGN(urgent,		  Flag_urgent,   	  	   "Record as soon as possible"),
+	DEFINE_FLAG_ASSIGN(markonly,	  Flag_markonly, 	  	   "Do not record, just mark as recorded"),
+	DEFINE_FLAG_ASSIGN(postprocess,	  Flag_postprocess,   	   "Post process programme"),
+	DEFINE_FLAG_ASSIGN(onceonly,	  Flag_onceonly,      	   "Once recorded, delete the pattern"),
+	DEFINE_FLAG_ASSIGN(notify,		  Flag_notify,        	   "Once recorded, run 'notifycmd'"),
+	DEFINE_FLAG_ASSIGN(partial,		  Flag_partialpattern,     "Pattern is partial and not complete"),
 
 	DEFINE_ASSIGN(pri,        pri,        	 	sint8_t,  "Scheduling priority"),
 	DEFINE_ASSIGN(score,	  score,			sint16_t, "Record score"),
@@ -121,7 +123,10 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_ASSIGN(dir,		  strings.dir,  	string,   "Directory to store file in"),
 	DEFINE_ASSIGN(prefs,	  strings.prefs, 	string,   "Misc prefs"),
 	DEFINE_ASSIGN(dvbcard,    dvbcard,        	uint8_t,  "DVB card to record from"),
-
+#if DVBDATVERSION>1
+	DEFINE_ASSIGN(tags,		  strings.tags, 	string,   "Programme tags"),
+#endif
+	
 	DEFINE_EXTERNAL(brate,	  Compare_brate,  	uint32_t, "Encoded file bit rate (bits/s)"),
 	DEFINE_EXTERNAL(kbrate,   Compare_kbrate, 	uint32_t, "Encoded file bit rate (kbits/s)"),
 };
@@ -190,7 +195,7 @@ uint16_t ADVBProg::GetActorsDataOffset()
 	return DVBPROG_OFFSET(strings.actors);
 }
 
-#if DVBDATVERSION>=2
+#if DVBDATVERSION > 1
 uint16_t ADVBProg::GetSubCategoryDataOffset()
 {
 	return DVBPROG_OFFSET(strings.subcategory);
@@ -206,6 +211,13 @@ uint16_t ADVBProg::GetScoreDataOffset()
 {
 	return DVBPROG_OFFSET(score);
 }
+
+#if DVBDATVERSION > 1
+uint16_t ADVBProg::GetTagsDataOffset()
+{
+	return DVBPROG_OFFSET(strings.tags);
+}
+#endif
 
 void ADVBProg::Init()
 {
@@ -548,6 +560,7 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	SetString(&data->strings.actors, actors);
 
 	SetString(&data->strings.prefs, GetField(str, "prefs").SearchAndReplace(",", "\n"));
+	SetString(&data->strings.tags,  GetField(str, "tags"));
 
 	SetUser(GetField(str, "user"));
 	if (FieldExists(str, "dir")) SetDir(GetField(str, "dir"));
@@ -721,6 +734,12 @@ AString ADVBProg::ExportToText() const
 		str.printf("pri=%d\n", (int)data->pri);
 	}
 
+#if DVBDATVERSION > 1
+	if ((p = GetString(data->strings.tags))[0]) {
+		str.printf("tags=%s\n", p);
+	}
+#endif
+	
 	if (RecordDataValid()) {
 		str.printf("jobid=%u\n", data->jobid);
 		str.printf("dvbcard=%u\n", (uint_t)data->dvbcard);
@@ -799,6 +818,25 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 		str.printf("]");
 	}
 
+#if DVBDATVERSION > 1
+	if ((p = GetString(data->strings.tags))[0]) {
+		AString _tags = AString(p);
+		uint_t i, n = _tags.CountLines("||", 0);
+
+		str.printf(",\"tags\":[");
+
+		for (i = 0; i < n; i++) {
+			AString tag = _tags.Line(i, "||");
+			if (tag.FirstChar() == '|') tag = tag.Mid(1);
+			if (tag.LastChar()  == '|') tag = tag.Left(tag.len() - 1);
+			if (i) str.printf(",");
+			str.printf("\"%s\"", JSONFormat(tag).str());
+		}
+
+		str.printf("]");
+	}
+#endif
+	
 	if (data->episode.valid) {
 		str.printf(",\"episode\":{");
 
@@ -1279,6 +1317,24 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 		if ((verbosity > 3) && GetPattern()[0]) {
 			if (str1.Valid()) str1.printf("\n\n");
 			str1.printf("Found with pattern '%s', pri %d (score %d)", GetPattern(), (int)data->pri, (int)data->score);
+			
+#if DVBDATVERSION > 1
+			if ((verbosity > 4) && GetString(data->strings.tags)[0]) {
+				AString _tags = GetString(data->strings.tags);
+				uint_t i, n = _tags.CountLines("||", 0);
+
+				str1.printf(", tags: ");
+
+				for (i = 0; i < n; i++) {
+					AString tag = _tags.Line(i, "||");
+					if (tag.FirstChar() == '|') tag = tag.Mid(1);
+					if (tag.LastChar()  == '|') tag = tag.Left(tag.len() - 1);
+					if (i) str1.printf(",");
+					str1.printf("%s", tag.str());
+				}
+			}
+#endif
+
 			if (GetUser()[0]) str1.printf(", user '%s'", GetUser());
 			if (data->jobid) str1.printf(" (job %u, card %u)", data->jobid, (uint_t)data->dvbcard);
 			if (IsRejected()) str1.printf(" ** REJECTED **");
@@ -1607,13 +1663,6 @@ void ADVBProg::SearchAndReplace(const AString& search, const AString& replace)
 	for (i = 0; i < (sizeof(data->strings) / sizeof(strs[0])); i++) {
 		SetString(strs + i, AString(GetString(strs[i])).SearchAndReplace(search, replace));
 	}
-}
-
-const char *ADVBProg::PreProcessString(const char *field, AString& temp, const char *str)
-{
-	(void)field;
-	(void)temp;
-	return str;
 }
 
 AString ADVBProg::ReplaceDirectoryTerms(const AString& str) const

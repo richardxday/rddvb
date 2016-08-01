@@ -196,6 +196,7 @@ public:
 		Flag_ignorerecording,
 		Flag_recordingfailed,
 		Flag_notify,
+		Flag_partialpattern,
 
 		Flag_count,
 
@@ -257,7 +258,10 @@ public:
 	void   SetNotify()	  		  		{SetFlag(Flag_notify);}
 	bool   IsAvailable()		  const {return (IsConverted() && AStdFile::exists(GetFilename()));}
 	bool   IsRecordable()         const {return ((data->start > (uint64_t)ADateTime().TimeStamp(true)) && GetDVBChannel()[0]);}
-
+	void   SetPartialPattern()			{SetFlag(Flag_partialpattern);}
+	void   ClearPartialPattern()		{ClrFlag(Flag_partialpattern);}
+	bool   IsPartialPattern()     const {return GetFlag(Flag_partialpattern);}
+	
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}
 
@@ -273,8 +277,6 @@ public:
 	void   SetJobID(uint_t id)		    {data->jobid   = id;}
 
 	bool   RecordDataValid()   	  const {return (data->recstart || data->recstop);}
-
-	static const char *PreProcessString(const char *field, AString& temp, const char *str);
 
 	static int Compare(const ADVBProg *prog1, const ADVBProg *prog2, const bool *reverse = NULL);
 
@@ -444,7 +446,8 @@ protected:
 			uint16_t icon;
 			uint16_t rating;
 			uint16_t subcategory;
-			uint16_t reserved[2];
+			uint16_t tags;
+			uint16_t reserved[1];
 			uint16_t end;
 		} strings;
 
@@ -456,11 +459,14 @@ protected:
 
 	static uint16_t GetUserDataOffset();
 	static uint16_t GetActorsDataOffset();
-#if DVBDATVERSION>=2
+#if DVBDATVERSION > 1
 	static uint16_t GetSubCategoryDataOffset();
 #endif
 	static uint16_t GetPriDataOffset();
 	static uint16_t GetScoreDataOffset();
+#if DVBDATVERSION > 1
+	static uint16_t GetTagsDataOffset();
+#endif
 
 	static AString ValidFilename(const AString& str, bool dir = false);
 

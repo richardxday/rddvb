@@ -1101,29 +1101,37 @@ void ADVBProgList::FindProgrammes(ADVBProgList& dest, const ADataList& patternli
 		for (j = 0; (j < n) && !HasQuit(); j++) {
 			const PATTERN& pattern = *(const PATTERN *)patternlist[j];
 
-			if (pattern.enabled && prog.Match(pattern)) {
-				if (pattern.exclude) {
-					excluded = true;
-					break;
-				}
+			if (pattern.enabled) {
+				bool match = prog1 ? prog1->Match(pattern) : prog.Match(pattern);
 
-				if (!prog1) prog1 = new ADVBProg(prog);
-
-				if (prog1) {
-					if (!prog1->GetPattern()[0]) {
-						prog1->SetPattern(pattern.pattern);
-
-						if (pattern.user.Valid()) {
-							prog1->SetUser(pattern.user);
-						}
-
-						prog1->AssignValues(pattern);
-					}
-					else prog1->UpdateValues(pattern);
-
-					if (!pattern.scorebased) {
-						addtolist = true;
+				if (match) {
+					if (pattern.exclude) {
+						excluded = true;
 						break;
+					}
+
+					if (!prog1) prog1 = new ADVBProg(prog);
+
+					if (prog1) {
+						if (!prog1->GetPattern()[0] || prog1->IsPartialPattern()) {
+							prog1->SetPattern(pattern.pattern);
+
+							if (pattern.user.Valid()) {
+								prog1->SetUser(pattern.user);
+							}
+
+							prog1->ClearPartialPattern();
+							prog1->AssignValues(pattern);
+						}
+						else {
+							prog1->ClearPartialPattern();
+							prog1->UpdateValues(pattern);
+						}
+					
+						if (!pattern.scorebased && !prog1->IsPartialPattern()) {
+							addtolist = true;
+							break;
+						}
 					}
 				}
 			}
