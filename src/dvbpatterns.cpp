@@ -41,6 +41,7 @@ ADVBPatterns::OPERATOR ADVBPatterns::operators[] = {
     {">",  	false, FieldTypes_String,                    Operator_GT, "Is greater than", 0},
 
     {"+=", 	true,  FieldTypes_String,                    Operator_Concat, "Is concatenated with", 0},
+    {"-=", 	true,  FieldTypes_String,                    Operator_Remove, "Removal of", 0},
     {":=", 	true,  FieldTypes_String,                    Operator_Assign, "Is set to", 0},
     {":=", 	true,  FieldTypes_Default,                   Operator_Assign, "Is set to", 0},
 
@@ -268,7 +269,14 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const FIELD& field, const VALUE& 
 				str = prog.GetString(offset);
 			}
 
-			str += value.str;
+			if (termtype == Operator_Remove) {
+				uint16_t offset;
+
+				memcpy(&offset, ptr, sizeof(offset));
+				str = prog.GetString(offset);
+				str = str.SearchAndReplace(value.str, "");
+			}
+			else str += value.str;
 
 			prog.SetString((const uint16_t *)ptr, str.str());
 			break;
@@ -701,6 +709,12 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 
 				switch (term->field->type) {
 					case FieldType_string:
+#if DVBDATVERSION > 1
+						if (fieldptr->offset == ADVBProg::GetTagsDataOffset()) {
+							value = "|" + value + "|";
+						}
+#endif
+						
 						if ((opcode & ~Operator_Inverted) == Operator_Regex) {
 							AString regexerrors;
 							AString rvalue;
@@ -876,7 +890,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 								   " or actor" + newtext +
 								   " or director" + newtext +
 								   " or category" + newtext +
-#if DVBDATVERSION>=2
+#if DVBDATVERSION > 1
 								   " or subcategory" + newtext +
 #endif
 								   conditions);
@@ -1035,10 +1049,7 @@ AString ADVBPatterns::RemoveDuplicateTerms(PATTERN& pattern)
 
 bool ADVBPatterns::MatchString(const TERM& term, const char *str, bool ignoreinvert)
 {
-	AString temp;
 	bool match = false;
-
-	str = ADVBProg::PreProcessString(term.field->name, temp, str);
 
 	switch (term.data.opcode & ~Operator_Inverted) {
 		case Operator_Regex:
@@ -1130,7 +1141,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 
 					if (term.data.opcode & Operator_Inverted) newmatch = !newmatch;
 				}
-#if DVBDATVERSION>=2
+#if DVBDATVERSION > 1
 				else if (field.offset == ADVBProg::GetSubCategoryDataOffset()) {
 					AString _str(str);
 					uint_t j, m = _str.CountLines();

@@ -100,6 +100,7 @@ protected:
 
 		Operator_Assign,
 		Operator_Concat,
+		Operator_Remove,
 		Operator_Add,
 		Operator_Subtract,
 		Operator_Multiply,
