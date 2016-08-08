@@ -134,6 +134,11 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 const AString ADVBProg::tempfilesuffix     = "tmp";
 const AString ADVBProg::recordedfilesuffix = "mpg";
 
+AString ADVBProg::dayformat  	 = "%d";
+AString ADVBProg::dateformat 	 = "%D-%N-%Y";
+AString ADVBProg::timeformat 	 = "%h:%m";
+AString ADVBProg::fulltimeformat = "%h:%m:%s";
+
 ADVBProg::ADVBProg()
 {
 	Init();
@@ -170,12 +175,18 @@ ADVBProg::~ADVBProg()
 void ADVBProg::StaticInit()
 {
 	if (!fieldhash.Valid()) {
+		const ADVBConfig& config = ADVBConfig::Get();
 		uint_t i;
 
 		fieldhash.Create(20);
 		for (i = 0; i < NUMBEROF(fields); i++) {
 			fieldhash.Insert(fields[i].name, (uptr_t)(fields + i));
 		}
+
+		dayformat  	   = config.GetConfigItem("dayformat",  	"%d");
+		dateformat 	   = config.GetConfigItem("dateformat", 	" %D-%N-%Y ");
+		timeformat 	   = config.GetConfigItem("timeformat", 	"%h:%m");
+		fulltimeformat = config.GetConfigItem("fulltimeformat", "%h:%m:%s");
 	}
 }
 
@@ -1215,8 +1226,8 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 	const char *p;
 
 	str.printf("%s - %s : %s : %s",
-			   start.DateFormat("%d %D-%N-%Y %h:%m").str(),
-			   stop.DateFormat("%h:%m").str(),
+			   start.DateFormat(dayformat + dateformat + timeformat).str(),
+			   stop.DateFormat(timeformat).str(),
 			   GetChannel(),
 			   GetTitle());
 
@@ -1343,16 +1354,16 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 		if ((verbosity > 3) && data->recstart) {
 			if (str1.Valid()) str1.printf("\n\n");
 			str1.printf("Set to record %s - %s (%um %us)",
-						GetRecordStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m:%s").str(),
-						GetRecordStopDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
+						GetRecordStartDT().UTCToLocal().DateFormat(dayformat + dateformat + fulltimeformat).str(),
+						GetRecordStopDT().UTCToLocal().DateFormat(fulltimeformat).str(),
 						(uint_t)(GetRecordLength() / 60000ULL), (uint_t)((GetRecordLength() % 60000ULL) / 1000ULL));
 
 			if (GetUser()[0]) str1.printf(" by user '%s'", GetUser());
 
 			if (data->actstart) {
 				str1.printf(", actual record time %s - %s (%um %us)%s",
-							GetActualStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m:%s").str(),
-							GetActualStopDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
+							GetActualStartDT().UTCToLocal().DateFormat(dayformat + dateformat + fulltimeformat).str(),
+							GetActualStopDT().UTCToLocal().DateFormat(fulltimeformat).str(),
 							(uint_t)(GetActualLength() / 60000ULL), (uint_t)((GetActualLength() % 60000ULL) / 1000ULL),
 							IsRecordingComplete() ? "" : " *not complete* ");
 			}
@@ -1421,10 +1432,9 @@ AString ADVBProg::GetQuickDescription() const
 
 	ADateTime start = GetStartDT().UTCToLocal();
 	ADateTime stop  = GetStopDT().UTCToLocal();
-	str.printf(" (%s - %s%s on %s)",
-			   start.DateFormat("%d %D-%N-%Y %h:%m").str(),
-			   stop.DateFormat("%h:%m").str(),
-			   (stop.GetDays() != start.GetDays()) ? AString(" (%)").Arg(stop.DateFormat("%D-%N-%Y")).str() : "",
+	str.printf(" (%s - %s on %s)",
+			   start.DateFormat(dayformat + dateformat + timeformat).str(),
+			   stop.DateFormat(timeformat).str(),
 			   GetChannel());
 
 	return str;
@@ -1800,8 +1810,8 @@ bool ADVBProg::WriteToJobQueue()
 
 		str.printf("\nCard %u, priority %d, Recording %s - %s\n",
 				   GetDVBCard(), GetPri(),
-				   GetRecordStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m:%s").str(),
-				   GetRecordStopDT().UTCToLocal().DateFormat("%h:%m:%s").str());
+				   GetRecordStartDT().UTCToLocal().DateFormat(dayformat + dateformat + fulltimeformat).str(),
+				   GetRecordStopDT().UTCToLocal().DateFormat(fulltimeformat).str());
 
 		str.printf("\nUser '%s', pattern '%s'\n",
 				   GetUser(), GetPattern());
