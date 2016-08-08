@@ -546,6 +546,10 @@ protected:
 	static const FIELD 	 fields[];
 	static const AString tempfilesuffix;
 	static const AString recordedfilesuffix;
+	static AString       dayformat;
+	static AString       dateformat;
+	static AString       timeformat;
+	static AString       fulltimeformat;
 };
 
 #endif
