@@ -528,9 +528,9 @@ function populateprogs(id)
 
 					var downloadlink = '';
 					if (prog.flags.postprocessing || prog.flags.running) ;
-					else if (typeof prog.file != 'undefined') downloadlink = adddownloadlink(prog);
 					else if ((typeof prog.recorded != 'undefined') &&
 							 (typeof prog.recorded.file != 'undefined')) downloadlink = adddownloadlink(prog.recorded);
+					else if (typeof prog.file != 'undefined') downloadlink = adddownloadlink(prog);
 
 					headerstr += '</td><td class="title"';
 					if (downloadlink == '') headerstr += ' colspan=2';
