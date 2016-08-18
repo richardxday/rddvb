@@ -11,7 +11,8 @@ if (isset($argc) && ($argc > 1)) {
 }
 else $verbose = false;
 
-$script = $_SERVER['SCRIPTNAME'];
+if (isset($_SERVER['SCRIPTNAME'])) $script = $_SERVER['SCRIPTNAME'];
+else							   $script = '';
 
 exec('dvbdecodeprog "' . $prog . '"', $res);
 $prog = json_decode(implode('', $res), true);
