@@ -1892,13 +1892,12 @@ void ADVBProg::AddToList(ADataList *list)
 	list->Add((uptr_t)this);
 }
 
-void ADVBProg::SetPriorityScore(uint_t card)
+void ADVBProg::SetPriorityScore()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 
 	priority_score = config.GetPriorityScale() * data->pri;
 	if (IsUrgent()) priority_score += config.GetUrgentScale();
-	if (IsDVBCardSpecified() && (card == GetDVBCard())) priority_score += config.GetDVBCardScale();
 	if (list) priority_score += (list->Count() - 1) * config.GetRepeatsScale();
 }
 
@@ -1920,19 +1919,14 @@ int ADVBProg::SortListByOverlaps(uptr_t item1, uptr_t item2, void *context)
 {
 	const ADVBProg& prog1 	   = *(const ADVBProg *)item1;
 	const ADVBProg& prog2 	   = *(const ADVBProg *)item2;
-	const uint64_t& starttime  = *(const uint64_t *)context;
-	uint_t          prog1after = (prog1.GetRecordStart() >= starttime);
-	uint_t          prog2after = (prog2.GetRecordStart() >= starttime);
 	bool			prog1urg   = prog1.IsUrgent();
 	bool			prog2urg   = prog2.IsUrgent();
 	int res = 0;
 
+	UNUSED(context);
+	
 	if		( prog1urg && !prog2urg) 		  		  		   		  res = -1;
 	else if (!prog1urg &&  prog2urg) 		  		  		   		  res =  1;
-	else if	(prog1after > prog2after)								  res = -1;
-	else if	(prog1after < prog2after)								  res =  1;
-	else if	(prog1.GetPreRecordHandle() > prog2.GetPreRecordHandle()) res = -1;
-	else if (prog1.GetPreRecordHandle() < prog2.GetPreRecordHandle()) res =  1;
 	else if	(!prog1urg && (prog1.overlaps < prog2.overlaps))  		  res = -1;
 	else if (!prog1urg && (prog1.overlaps > prog2.overlaps))  		  res =  1;
 	else if	(prog1.GetStart() < prog2.GetStart()) 		   			  res = -1;

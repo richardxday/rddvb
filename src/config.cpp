@@ -242,7 +242,14 @@ uint_t ADVBConfig::GetPhysicalDVBCard(uint_t n, bool forcemapping) const
 		(const_cast<ADVBConfig *>(this))->MapDVBCards();
 	}
 
-	return (n < dvbcards.Count()) ? dvbcards[n] : 0;
+	return dvbcards[n];
+}
+
+uint_t ADVBConfig::GetVirtualDVBCard(uint_t n) const
+{
+	sint_t n1 = dvbcards.Find(n);
+
+	return (n1 >= 0) ? n1 : ~0;
 }
 
 void ADVBConfig::logit(const char *fmt, ...) const

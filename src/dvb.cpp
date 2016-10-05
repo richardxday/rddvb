@@ -693,7 +693,7 @@ int main(int argc, char *argv[])
 			else if (strcmp(argv[i], "--card") == 0) {
 				const uint_t newcard = (uint_t)AString(argv[++i]);
 
-				config.GetPhysicalDVBCard();
+				config.GetPhysicalDVBCard(0);
 				if (config.GetMaxDVBCards()) {
 					if (newcard < config.GetMaxDVBCards()) {
 						dvbcard = config.GetPhysicalDVBCard(newcard);
@@ -706,7 +706,7 @@ int main(int argc, char *argv[])
 			else if (strcmp(argv[i], "--dvbcard") == 0) {
 				dvbcard = (uint_t)AString(argv[++i]);
 
-				config.GetPhysicalDVBCard();
+				config.GetPhysicalDVBCard(0);
 				printf("Switched to using physical card %u\n", dvbcard);
 			}
 			else if (strcmp(argv[i], "--pids") == 0) {
@@ -745,7 +745,7 @@ int main(int argc, char *argv[])
 			}
 			else if (strcmp(argv[i], "--find-cards") == 0) {
 				findcards();
-				config.GetPhysicalDVBCard();
+				config.GetPhysicalDVBCard(0);
 				config.printf("Total %u DVB cards found", config.GetMaxDVBCards());
 			}
 			else if (strcmp(argv[i], "--change-filename") == 0) {

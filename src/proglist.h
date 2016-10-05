@@ -97,7 +97,7 @@ public:
 
 	static int CompareEpisode(uptr_t item1, uptr_t item2, void *pContext);
 
-	void PrioritizeProgrammes(uint_t card, ADVBProgList& scheduledlist, ADVBProgList& rejectedlist, uint64_t recstarttime);
+	void PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *recstarttimes, uint_t nlists, ADVBProgList& rejectedlist);
 	uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));
 
 	typedef struct {
@@ -162,10 +162,10 @@ protected:
 	uint_t FindIndex(const ADVBProg& prog) const;
 
 	void AdjustRecordTimes();
-	uint_t ScheduleEx(ADVBProgList& recordedlist, const ADVBProgList& runninglist, ADVBProgList& allscheduledlist, ADVBProgList& allrejectedlist, const ADateTime& starttime, uint_t card);
+	uint_t ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& allscheduledlist, ADVBProgList& allrejectedlist, const ADateTime& starttime);
 
 	bool ReadFromBinaryFile(const AString& filename, bool sort = false, bool removeoverlaps = false);
-
+	
 	static void DeleteChannel(uptr_t item, void *context) {
 		CHANNEL *channel = (CHANNEL *)item;
 		UNUSED(context);
