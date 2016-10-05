@@ -80,9 +80,9 @@ public:
 	AString ReplaceTerms(const AString& user, const AString& str) const;
 	AString ReplaceTerms(const AString& user, const AString& subitem, const AString& str) const;
 
-	uint_t  GetPhysicalDVBCard(uint_t n = 0, bool forcemapping = false) const;
+	uint_t  GetPhysicalDVBCard(uint_t n, bool forcemapping = false) const;
+	uint_t  GetVirtualDVBCard(uint_t n)      const;
 	uint_t  GetMaxDVBCards()				 const {return dvbcards.Count();}
-	bool    RotateDVBCards()				 const {return ((uint_t)GetConfigItem("rotatedvbcards", "0") != 0);}
 	AString GetDVBFrequencyRange()           const {return GetConfigItem("dvbfreqrange", "474,530,8");}
 
 	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "15");}
