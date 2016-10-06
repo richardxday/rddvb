@@ -1240,6 +1240,9 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 		if (ep.valid) {
 			str.printf(" (%s)", GetEpisodeString(ep).str());
 		}
+		if ((p = GetString(data->strings.episodeid))[0]) {
+			str.printf(" (%s)", p);
+		}
 		if (data->assignedepisode) {
 			str.printf(" (F%u)", data->assignedepisode);
 		}
@@ -1418,11 +1421,15 @@ AString ADVBProg::GetTitleSubtitleAndChannel() const
 AString ADVBProg::GetQuickDescription() const
 {
 	AString str = GetTitleAndSubtitle();
+	const char *p;
 	EPISODE ep;
 
 	ep = GetEpisode();
 	if (ep.valid) {
 		str.printf(" (%s)", GetEpisodeString(ep).str());
+	}
+	if ((p = GetString(data->strings.episodeid))[0]) {
+		str.printf(" (%s)", p);
 	}
 	if (data->assignedepisode) {
 		str.printf(" (F%u)", data->assignedepisode);
@@ -1901,18 +1908,30 @@ void ADVBProg::SetPriorityScore()
 	if (list) priority_score += (list->Count() - 1) * config.GetRepeatsScale();
 }
 
-void ADVBProg::CountOverlaps(const ADVBProgList& proglist)
+bool ADVBProg::CountOverlaps(const ADVBProgList& proglist)
 {
-	uint_t i;
-
-	overlaps = 0;
+	uint_t i, newoverlaps = 0;
+	bool changed;
+	
 	for (i = 0; i < proglist.Count(); i++) {
 		const ADVBProg& prog = proglist.GetProg(i);
 
 		if ((prog != *this) && !SameProgramme(prog, *this) && RecordOverlaps(prog)) {
-			overlaps++;
+			newoverlaps++;
 		}
 	}
+
+	// detect when number of overlaps changes
+	if (newoverlaps != overlaps) {
+		if (overlaps) {
+			const ADVBConfig& config = ADVBConfig::Get();
+			config.logit("'%s' changed from %u overlaps to %u", GetQuickDescription().str(), overlaps, newoverlaps);
+		}
+		overlaps = newoverlaps;
+		changed  = true;
+	}
+	
+	return changed;
 }
 
 int ADVBProg::SortListByOverlaps(uptr_t item1, uptr_t item2, void *context)

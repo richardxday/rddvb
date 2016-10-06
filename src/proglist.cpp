@@ -1988,6 +1988,27 @@ int ADVBProgList::SortDataLists(uptr_t item1, uptr_t item2, void *context)
 	return ADVBProg::CompareScore(prog1, prog2);
 }
 
+void ADVBProgList::CountOverlaps(ADataList& repeatlists)
+{
+	uint_t i;
+	
+	// set scores for the first programme of each list (for sorting below)
+	for (i = 0; i < repeatlists.Count(); i++) {
+		ADataList& list = *(ADataList *)repeatlists[i];
+		uint_t j;
+		bool   changed = false;
+		
+		for (j = 0; j < list.Count(); j++) {
+			ADVBProg& prog = *(ADVBProg *)list[j];
+
+			changed |= prog.CountOverlaps(*this);
+			prog.SetPriorityScore();
+		}
+		
+		if (changed) list.Sort(&ADVBProg::SortListByOverlaps);
+	}
+}
+
 void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *recstarttimes, uint_t nlists, ADVBProgList& rejectedlist)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -2028,20 +2049,8 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 		}
 	}
 
-	// set scores for the first programme of each list (for sorting below)
-	for (i = 0; i < repeatlists.Count(); i++) {
-		ADataList& list = *(ADataList *)repeatlists[i];
-		uint_t j;
-
-		for (j = 0; j < list.Count(); j++) {
-			ADVBProg& prog = *(ADVBProg *)list[j];
-
-			prog.SetPriorityScore();
-			prog.CountOverlaps(*this);
-		}
-
-		list.Sort(&ADVBProg::SortListByOverlaps);
-	}
+	// count overlaps for every programme
+	CountOverlaps(repeatlists);
 
 	// sort lists so that programme with fewest repeats is first
 	repeatlists.Sort(&SortDataLists);
@@ -2078,7 +2087,8 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 			ADataList& list = *(ADataList *)repeatlists[i];
 
 			if (list.Count() > 0) {
-				ADVBProg *prog = (ADVBProg *)list.First();
+				ADataList deletelist;
+				ADVBProg  *prog = (ADVBProg *)list.First();
 				uint_t j, k;
 				
 				// find a list to schedule this programme on
@@ -2094,8 +2104,9 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 						schedulelist.AddProg(*prog);
 
 						// remove programme from list to check
+						deletelist.Add(list[0]);	// add to delete list that is used later to delete programme from this object
 						list.Pop();
-
+						
 						// remove any programmes that do NOT have the allow repeats flag set
 						// OR that use the same base channel
 						static const uint64_t hour = 3600UL * 1000UL;
@@ -2106,11 +2117,15 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 						for (k = 0; k < list.Count();) {
 							const ADVBProg& prog2 = *(const ADVBProg *)list[k];
 
-							if		(!prog2.AllowRepeats()) list.RemoveIndex(j);
+							if (!prog2.AllowRepeats()) {
+								deletelist.Add(list[k]);	// add to delete list that is used later to delete programme from this object
+								list.RemoveIndex(k);
+							}
 							else if ((prog2.GetBaseChannel() == channel) &&
 									 (( prog2.IsPlus1() && (prog2.GetStart() == start1)) ||
 									  (!prog2.IsPlus1() && (prog2.GetStart() == start)))) {
 								config.logit("Removing '%s' because it is +/- 1 hour from '%s'", prog2.GetQuickDescription().str(), prog->GetQuickDescription().str());
+								deletelist.Add(list[k]);	// add to delete list that is used later to delete programme from this object
 								list.RemoveIndex(k);
 							}
 							else k++;
@@ -2119,7 +2134,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 						config.logit("'%s' does not overlap: can be recorded (card %u, order %u, programmes left %u)",
 									 prog->GetQuickDescription().str(),
 									 vcard,
-									 i,
+									 i + 1,
 									 list.Count());
 						
 						break;
@@ -2138,6 +2153,16 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 					list.Pop();
 				}
 
+				if (deletelist.Count() > 0) {
+					// delete programmes from this list
+					for (j = 0; j < deletelist.Count(); j++) {
+						DeleteProg(*(ADVBProg *)deletelist[j]);
+					}
+
+					// now count overlaps again
+					CountOverlaps(repeatlists);
+				}
+				
 				// any non-empty lists cause process to be repeated
 				done &= (list.Count() == 0);
 			}

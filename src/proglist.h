@@ -96,7 +96,8 @@ public:
 	void Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), void *pContext = NULL);
 
 	static int CompareEpisode(uptr_t item1, uptr_t item2, void *pContext);
-
+	
+	void CountOverlaps(ADataList& repeatlists);
 	void PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *recstarttimes, uint_t nlists, ADVBProgList& rejectedlist);
 	uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));
 
