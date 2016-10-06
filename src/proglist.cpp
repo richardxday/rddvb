@@ -1894,9 +1894,6 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 
 	n = ScheduleEx(runninglist, scheduledlist, rejectedlist, starttime);
 
-	scheduledlist.Sort();
-	rejectedlist.Sort();
-
 	scheduledlist.WriteToFile(config.GetScheduledFile(), false);
 	for (i = 0; i < rejectedlist.Count(); i++) {
 		rejectedlist.GetProgWritable(i).SetRejected();
@@ -2261,6 +2258,9 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 	delete[] recstarttimes;
 	delete[] schedulelists;
 
+	allscheduledlist.Sort();
+	allrejectedlist.Sort();
+	
 	config.logit("--------------------------------------------------------------------------------");
 	config.printf("Scheduling: %u programmes in total:", allscheduledlist.Count());
 	config.logit("--------------------------------------------------------------------------------");
