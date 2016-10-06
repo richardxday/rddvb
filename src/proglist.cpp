@@ -2097,12 +2097,23 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 						list.Pop();
 
 						// remove any programmes that do NOT have the allow repeats flag set
+						// OR that use the same base channel
+						static const uint64_t hour = 3600UL * 1000UL;
+						AString  channel = prog->GetBaseChannel();
+						bool     plus1   = prog->IsPlus1();
+						uint64_t start   = prog->GetStart() - (plus1 ? hour : 0);
+						uint64_t start1  = start + hour;
 						for (k = 0; k < list.Count();) {
 							const ADVBProg& prog2 = *(const ADVBProg *)list[k];
 
-							if (!prog2.AllowRepeats()) list.RemoveIndex(k);
+							if		(!prog2.AllowRepeats()) list.RemoveIndex(j);
+							else if ((prog2.GetBaseChannel() == channel) &&
+									 (( prog2.IsPlus1() && (prog2.GetStart() == start1)) ||
+									  (!prog2.IsPlus1() && (prog2.GetStart() == start)))) {
+								config.logit("Removing '%s' because it is +/- 1 hour from '%s'", prog2.GetQuickDescription().str(), prog->GetQuickDescription().str());
+								list.RemoveIndex(k);
+							}
 							else k++;
-
 						}
 
 						config.logit("'%s' does not overlap: can be recorded (card %u, order %u, programmes left %u)",
