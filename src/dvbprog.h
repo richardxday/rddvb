@@ -300,7 +300,7 @@ public:
 
 	void SetPriorityScore();
 	int  GetPriorityScore() const {return priority_score;}
-	void CountOverlaps(const ADVBProgList& proglist);
+	bool CountOverlaps(const ADVBProgList& proglist);
 	uint_t GetOverlaps() const {return overlaps;}
 
 	typedef ADVBPatterns::PATTERN PATTERN;
