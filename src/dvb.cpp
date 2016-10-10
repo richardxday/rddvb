@@ -77,6 +77,10 @@ int main(int argc, char *argv[])
 		printf("\t--confdir\t\t\tPrint conf directory\n");
 		printf("\t--datadir\t\t\tPrint data directory\n");
 		printf("\t--logdir\t\t\tPrint log directory\n");
+		printf("\t--dayformat <format>\t\tFormat string for day (default '%s')\n", ADVBProg::GetDayFormat().str());
+		printf("\t--dateformat <format>\t\tFormat string for date (default '%s')\n", ADVBProg::GetDateFormat().str());
+		printf("\t--timeformat <format>\tFormat string for time (default '%s')\n", ADVBProg::GetTimeFormat().str());
+		printf("\t--fulltimeformat <format>\t\t\tFormat string for fulltime (default '%s')\n", ADVBProg::GetFullTimeFormat().str());
 		printf("\t--update <file>\t\t\tUpdate main listings with file <file> (-u)\n");
 		printf("\t--load\t\t\t\tRead listings from default file (-l)\n");
 		printf("\t--read <file>\t\t\tRead listings from file <file> (-r)\n");
@@ -164,6 +168,10 @@ int main(int argc, char *argv[])
 			else if (strcmp(argv[i], "--confdir") == 0) printf("%s\n", config.GetConfigDir().str());
 			else if (strcmp(argv[i], "--datadir") == 0) printf("%s\n", config.GetDataDir().str());
 			else if (strcmp(argv[i], "--logdir") == 0)  printf("%s\n", config.GetLogDir().str());
+			else if (strcmp(argv[i], "--dayformat") == 0) ADVBProg::SetDayFormat(argv[++i]);
+			else if (strcmp(argv[i], "--dateformat") == 0) ADVBProg::SetDateFormat(argv[++i]);
+			else if (strcmp(argv[i], "--timeformat") == 0) ADVBProg::SetTimeFormat(argv[++i]);
+			else if (strcmp(argv[i], "--fulltimeformat") == 0) ADVBProg::SetFullTimeFormat(argv[++i]);
 			else if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0) || (AString(argv[i]).Suffix() == "xmltv") || (AString(argv[i]).Suffix() == "txt")) {
 				AString filename = config.GetListingsFile();
 				AString updatefile;
