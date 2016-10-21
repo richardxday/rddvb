@@ -68,7 +68,21 @@ void findcards(void)
 							 (line.PosNoCase("fe_has_sync")   >= 0)) {
 						locked = true;
 					}
+					else if (line.PosNoCase("device or resource busy") >= 0) {
+						// card is in use -> assume it has not changed
+						// need to find card in existing list
+						uint_t j, n = oldcards.CountLines();
 
+						for (j = 0; j < n; j++) {
+							if ((uint_t)oldcards.Line(j).Word(0) == i) {
+								cardname = oldcards.Line(j).Words(1);
+								config.printf("Warning: card %u is busy, assuming it is '%s'", i, cardname.str());
+								locked = true;
+								break;
+							}
+						}
+					}
+					
 					if (cardname.Valid() && locked) break;
 				}
 
