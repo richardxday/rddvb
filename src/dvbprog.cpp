@@ -1923,10 +1923,12 @@ bool ADVBProg::CountOverlaps(const ADVBProgList& proglist)
 
 	// detect when number of overlaps changes
 	if (newoverlaps != overlaps) {
+#if 0
 		if (overlaps) {
 			const ADVBConfig& config = ADVBConfig::Get();
 			config.logit("'%s' changed from %u overlaps to %u", GetQuickDescription().str(), overlaps, newoverlaps);
 		}
+#endif
 		overlaps = newoverlaps;
 		changed  = true;
 	}
