@@ -2092,12 +2092,14 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 				uint_t j, k;
 				
 				// find a list to schedule this programme on
-				for (j = 0; j < nlists; j++) {
+				for (j = 0; j < (nlists * 2); j++) {
 					uint_t vcard = (j + i) % nlists;
 					ADVBProgList& schedulelist = schedulelists[vcard];
 
 					// programme must start after list's rec start time and not overlap anything already on it
-					if ((prog->GetStart() >= recstarttimes[vcard]) && !schedulelist.FindRecordOverlap(*prog)) {
+					if ((prog->GetStart() >= recstarttimes[vcard]) &&
+						(((j <  nlists) && !schedulelist.FindRecordOverlap(*prog)) ||
+						 ((j >= nlists) && !schedulelist.FindOverlap(*prog)))) {
 						// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
 
 						// add to scheduling list
