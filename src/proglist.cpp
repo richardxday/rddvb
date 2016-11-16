@@ -2085,14 +2085,14 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 		
 		for (i = 0; i < repeatlists.Count(); i++) {
 			ADataList& list = *(ADataList *)repeatlists[i];
-
+			
 			if (list.Count() > 0) {
 				ADataList deletelist;
 				ADVBProg  *prog = (ADVBProg *)list.First();
-				uint_t j, k;
-				
+				uint_t j, k, nchecks = nlists * 2;
+
 				// find a list to schedule this programme on
-				for (j = 0; j < (nlists * 2); j++) {
+				for (j = 0; j < nchecks; j++) {
 					uint_t vcard = (j + i) % nlists;
 					ADVBProgList& schedulelist = schedulelists[vcard];
 
@@ -2143,7 +2143,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 					}
 				}
 
-				if (j == nlists) {
+				if (j == nchecks) {
 					if (list.Count() == 1) {
 						// the last repeat overlaps something so cannot be recorded -> the programme is *rejected*
 						config.logit("No repeats of '%s' can be recorded!", prog->GetQuickDescription().str());

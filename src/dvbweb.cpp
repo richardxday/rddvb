@@ -221,6 +221,7 @@ int main(int argc, char *argv[])
 			ADVBPatterns::DeletePattern(user, pattern);
 		}
 	}
+	
 	if (Value(vars, val, "schedule")) {
 		bool commit = (val == "commit");
 

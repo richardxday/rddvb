@@ -639,7 +639,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			else if (strcmp(argv[i], "--start-time") == 0) {
-				starttime.StrToDate(argv[i]);
+				starttime.StrToDate(argv[++i]);
 			}
 			else if (strcmp(argv[i], "--fake-schedule") == 0) {
 				ADVBProgList::SchedulePatterns(starttime, false);
