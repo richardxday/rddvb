@@ -1072,7 +1072,7 @@ function recordprogramme(id)
 		postdata += "editpattern=add\n";
 		postdata += "newuser=" + user + "\n";
 		postdata += "newpattern=" + pattern + "\n";
-		//postdata += "schedule=commit\n";
+		postdata += "schedule=commit\n";
 
 		dvbrequest({from:"Combined", titlefilter:pattern, timefilter:defaulttimefilter}, postdata);
 	}
@@ -1091,7 +1091,7 @@ function recordseries(id)
 		postdata += "editpattern=add\n";
 		postdata += "newuser=" + user + "\n";
 		postdata += "newpattern=" + pattern + "\n";
-		//postdata += "schedule=commit\n";
+		postdata += "schedule=commit\n";
 
 		dvbrequest({from:"Combined", titlefilter:pattern, timefilter:defaulttimefilter}, postdata);
 	}
