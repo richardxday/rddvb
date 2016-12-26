@@ -84,7 +84,7 @@ protected:
 	};
 
 	enum {
-		Operator_Inverted = 0x40,
+		Operator_Inverted = 0x80,
 
 		Operator_EQ = 0,
 		Operator_LT,
@@ -97,7 +97,11 @@ protected:
 		Operator_Within,
 		Operator_Starts,
 		Operator_Ends,
-
+		Operator_StartsWithLT,
+		Operator_StartsWithGT,
+		Operator_EndsWithLT,
+		Operator_EndsWithGT,
+		
 		Operator_Assign,
 		Operator_Concat,
 		Operator_Remove,
@@ -111,6 +115,11 @@ protected:
 		Operator_NE 		 	  = Operator_Inverted | Operator_EQ,
 		Operator_LE 		 	  = Operator_Inverted | Operator_GT,
 		Operator_GE 		 	  = Operator_Inverted | Operator_LT,
+
+		Operator_StartsWithLE	  = Operator_Inverted | Operator_StartsWithGT,
+		Operator_StartsWithGE	  = Operator_Inverted | Operator_StartsWithLT,
+		Operator_EndsWithLE	      = Operator_Inverted | Operator_EndsWithGT,
+		Operator_EndsWithGE	      = Operator_Inverted | Operator_EndsWithLT,
 
 		Operator_NotRegex    	  = Operator_Inverted | Operator_Regex,
 		Operator_NotContains 	  = Operator_Inverted | Operator_Contains,
