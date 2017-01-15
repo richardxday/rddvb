@@ -252,6 +252,13 @@ uint_t ADVBConfig::GetVirtualDVBCard(uint_t n) const
 	return (n1 >= 0) ? n1 : ~0;
 }
 
+void ADVBConfig::Set(const AString& var, const AString& val) const
+{
+	// must cheat const system
+	ASettingsHandler *pconfig = const_cast<ASettingsHandler *>(&config);
+	pconfig->Set(var, val);
+}
+
 void ADVBConfig::logit(const char *fmt, ...) const
 {
 	va_list ap;

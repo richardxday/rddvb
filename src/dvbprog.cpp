@@ -2747,11 +2747,14 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup)
 	}
 
 	if (success) {
-		uint_t track;
+		AString filename;
+		uint_t  track;
 
-		if (((track = (uint_t)config.GetConfigItem("audiotrack:" + AString(GetTitle()), "0")) > 0) &&
-			AStdFile::exists(basename + AString("-%02;").Arg(track) + ".mp2")) {
-			mp2file = basename + AString("-%02;").Arg(track) + ".mp2";
+		if (((track = (uint_t)config.GetAudioTrack(GetUUID(),
+												   config.GetAudioTrack(GetTitle(),
+																		config.GetAudioTrack()))) > 1) &&
+			AStdFile::exists(filename = basename + AString("-%02;").Arg(track) + ".mp2")) {
+			mp2file = filename;
 			config.printf("Using track %u for '%s': '%s'", track, GetQuickDescription().str(), mp2file.str());
 		}
 	}

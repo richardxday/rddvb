@@ -107,6 +107,10 @@ public:
 
 	AString GetServerURL()					 const {return GetConfigItem("serverurl", "");}
 
+	AString GetAudioTrack()					 const {return GetConfigItem("audiotrack", "0");}
+	
+	AString GetAudioTrack(const AString& str, const AString& defval = "") const {return GetConfigItem("audiotrack:" + str,defval);}
+																			   
 	bool    ForceSubs(const AString& user)   const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
 
 	AString GetEncodeCommand(const AString& user, const AString& category) 		 const {return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodecmd", "avconv"));}
@@ -126,6 +130,9 @@ public:
 	uint_t  GetServerPort()                  const {return GetConfigItem("serverport", "1722");}
 	AString GetServerGetAndConvertCommand()  const {return GetConfigItem("servergetandconvertcommand", "dvbgetandconvertrecorded");}
 	AString GetServerUpdateRecordingsCommand() const {return GetConfigItem("serverupdaterecordingscommand", "dvbupdaterecordings");}
+
+	// NOTE: function cheats 'const'!
+	void Set(const AString& var, const AString& val) const;
 
 	void logit(const char *fmt, ...) const PRINTF_FORMAT_METHOD;
 	void printf(const char *fmt, ...) const PRINTF_FORMAT_METHOD;

@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
 		printf("\t--dateformat <format>\t\tFormat string for date (default '%s')\n", ADVBProg::GetDateFormat().str());
 		printf("\t--timeformat <format>\tFormat string for time (default '%s')\n", ADVBProg::GetTimeFormat().str());
 		printf("\t--fulltimeformat <format>\t\t\tFormat string for fulltime (default '%s')\n", ADVBProg::GetFullTimeFormat().str());
+		printf("\t--set <var>=<val>\t\t\t\tSet variable in configuration file for this session only\n");
 		printf("\t--update <file>\t\t\tUpdate main listings with file <file> (-u)\n");
 		printf("\t--load\t\t\t\tRead listings from default file (-l)\n");
 		printf("\t--read <file>\t\t\tRead listings from file <file> (-r)\n");
@@ -172,6 +173,17 @@ int main(int argc, char *argv[])
 			else if (strcmp(argv[i], "--dateformat") == 0) ADVBProg::SetDateFormat(argv[++i]);
 			else if (strcmp(argv[i], "--timeformat") == 0) ADVBProg::SetTimeFormat(argv[++i]);
 			else if (strcmp(argv[i], "--fulltimeformat") == 0) ADVBProg::SetFullTimeFormat(argv[++i]);
+			else if (strcmp(argv[i], "--set") == 0) {
+				AString str = argv[++i];
+				int p;
+
+				if ((p = str.Pos("=")) >= 0) {
+					AString var = str.Left(p);
+					AString val = str.Mid(p + 1).DeQuotify().DeEscapify();
+					config.Set(var, val);
+				}
+				else config.printf("Configuration setting '%s' invalid, format should be '<var>=<val>'", str.str());
+			}
 			else if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0) || (AString(argv[i]).Suffix() == "xmltv") || (AString(argv[i]).Suffix() == "txt")) {
 				AString filename = config.GetListingsFile();
 				AString updatefile;
