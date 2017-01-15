@@ -2729,7 +2729,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup)
 	AString   args     = config.GetEncodeArgs(GetUser(), GetCategory());
 	AString   m2vfile  = basename + ".m2v";
 	AString   mp2file  = basename + ".mp2";
-	bool      success = true;
+	bool      success  = true;
 
 	CreateDirectory(dst.PathPart());
 
@@ -2744,6 +2744,16 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup)
 		success &= RunCommand(cmd, !verbose);
 		remove(basename + ".sup");
 		remove(basename + ".sup.IFO");
+	}
+
+	if (success) {
+		uint_t track;
+
+		if (((track = (uint_t)config.GetConfigItem("audiotrack:" + AString(GetTitle()), "0")) > 0) &&
+			AStdFile::exists(basename + AString("-%02;").Arg(track) + ".mp2")) {
+			mp2file = basename + AString("-%02;").Arg(track) + ".mp2";
+			config.printf("Using track %u for '%s': '%s'", track, GetQuickDescription().str(), mp2file.str());
+		}
 	}
 
 	std::vector<SPLIT> splits;
@@ -2761,9 +2771,9 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup)
 			static const AString videomarker  = "video basics";
 			static const AString lengthmarker = "video length:";
 			AString  line;
-			AString  aspect = "16:9";
-			uint64_t t1     = 0;
-			uint64_t t2     = 0;
+			AString  aspect   = "16:9";
+			uint64_t t1       = 0;
+			uint64_t t2       = 0;
 			uint64_t totallen = 0;
 
 			config.printf("Analysing logfile:");
