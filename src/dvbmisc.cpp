@@ -1,4 +1,5 @@
 
+#include <sys/stat.h>
 #include <signal.h>
 
 #include <rdlib/Regex.h>
@@ -133,4 +134,15 @@ bool TriggerServerCommand(const AString& cmd)
 	}
 
 	return success;
+}
+
+bool SameFile(const AString& file1, const AString& file2)
+{
+	struct stat stat1, stat2;
+
+	return ((file1 == file2) ||
+			((lstat(file1, &stat1) == 0) &&
+			 (lstat(file2, &stat2) == 0) &&
+			 (stat1.st_dev == stat2.st_dev) &&
+			 (stat1.st_ino == stat2.st_ino)));
 }

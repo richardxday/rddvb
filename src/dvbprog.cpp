@@ -2529,7 +2529,11 @@ bool ADVBProg::CopyFile(const AString& src, const AString& dst, bool binary)
 	AStdFile fp1, fp2;
 	bool success = false;
 
-	if (fp1.open(src, binary ? "rb" : "r")) {
+	if (SameFile(src, dst)) {
+		config.printf("File copy: '%s' and '%s' are the same file", src.str(), dst.str());
+		success = true;
+	}
+	else if (fp1.open(src, binary ? "rb" : "r")) {
 		if (fp2.open(dst, binary ? "wb" : "w")) {
 			success = CopyFile(fp1, fp2);
 			if (!success) config.logit("Failed to copy '%s' to '%s': transfer failed", src.str(), dst.str());
@@ -2546,7 +2550,11 @@ bool ADVBProg::MoveFile(const AString& src, const AString& dst, bool binary)
 	const ADVBConfig& config = ADVBConfig::Get();
 	bool success = false;
 
-	if		(rename(src, dst) == 0) success = true;
+	if (SameFile(src, dst)) {
+		config.printf("File move: '%s' and '%s' are the same file", src.str(), dst.str());
+		success = true;
+	}
+	else if	(rename(src, dst) == 0) success = true;
 	else if (CopyFile(src, dst, binary)) {
 		if (remove(src) == 0) success = true;
 		else config.logit("Failed to remove '%s' after copy", src.str());
@@ -2689,7 +2697,7 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 	return success;
 }
 
-bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup)
+bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString src  	   = GetFilename();
@@ -2698,14 +2706,14 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup)
 
 	CreateDirectory(archivedst.PathPart());
 
-	if (IsConverted() || (src == dst)) return true;
+	if (IsConverted() || SameFile(src, dst)) return true;
 
 	if (!AStdFile::exists(src)) {
 		config.printf("Error: source '%s' does not exist", src.str());
 		return false;
 	}
 
-	if (AStdFile::exists(dst)) {
+	if (!force && AStdFile::exists(dst)) {
 		config.printf("Warning: destination '%s' exists, assuming conversion is complete", dst.str());
 		SetFilename(dst);
 		return true;
@@ -2992,10 +3000,10 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup)
 	return success;
 }
 
-bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
+bool ADVBProg::ConvertVideo(bool verbose, bool cleanup, bool force)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	bool success = ConvertVideoEx(verbose, cleanup);
+	bool success = ConvertVideoEx(verbose, cleanup, force);
 
 	if (!success) {
 		OnRecordFailure();
@@ -3008,6 +3016,35 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup)
 			ClearRunning();
 			ADVBProgList::AddToList(config.GetRecordFailuresFile(), *this);
 		}
+	}
+
+	return success;
+}
+
+bool ADVBProg::ForceConvertVideo(bool verbose, bool cleanup)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString src 	= GetArchiveRecordingFilename();
+	AString dst 	= GetTempRecordingFilename();
+	bool    success = false;
+
+	if (verbose) config.printf("Force converting '%s', source file '%s', intermediate file '%s'", GetQuickDescription().str(), src.str(), dst.str());
+	
+	if (!AStdFile::exists(dst)) {
+		if (AStdFile::exists(src)) {
+			if (verbose) config.printf("Copying file '%s' to '%s' to convert", src.str(), dst.str());
+			if (CopyFile(src, dst)) {
+				if (verbose) config.printf("Copied file okay");
+				success = true;
+			}
+		}
+		else config.printf("File '%s' doesn't exists", src.str());
+	}
+	else success = true;
+
+	if (success) {
+		SetFilename(dst);
+		success = ConvertVideo(verbose, cleanup, true);
 	}
 
 	return success;
@@ -3039,4 +3076,18 @@ bool ADVBProg::DeleteEncodedFiles() const
 	}
 
 	return success;
+}
+
+AString ADVBProg::GetArchiveRecordingFilename() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString filename = GetFilename();
+	return ReplaceFilenameTerms(config.GetRecordingsArchiveDir(GetUser()), false).CatPath(filename.FilePart().Prefix() + "." + recordedfilesuffix);
+}
+
+AString ADVBProg::GetTempRecordingFilename() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString filename = GetFilename();
+	return ReplaceFilenameTerms(config.GetRecordingsStorageDir(), false).CatPath(filename.FilePart().Prefix() + "." + recordedfilesuffix);
 }

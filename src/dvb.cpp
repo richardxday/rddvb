@@ -156,6 +156,7 @@ int main(int argc, char *argv[])
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
 		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
 		printf("\t--get-and-convert-recorded\tPull and convert any recordings from recording host\n");
+		printf("\t--force-convert-files\t\tconvert files in current list, even if they have already been converted\n");
 		printf("\t--update-recordings-list\tPull list of programmes being recorded\n");
 		printf("\t--check-recording-now\t\tCheck to see if programmes that should be being recording are recording\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
@@ -1226,6 +1227,15 @@ int main(int argc, char *argv[])
 			}
 			else if (stricmp(argv[i], "--get-and-convert-recorded") == 0) {
 				if (!ADVBProgList::GetAndConvertRecordings()) res = -1;
+			}
+			else if (stricmp(argv[i], "--force-convert-files") == 0) {
+				uint_t j;
+
+				for (j = 0; j < proglist.Count(); j++) {
+					ADVBProg& prog = proglist.GetProgWritable(j);
+
+					prog.ForceConvertVideo(true);
+				}
 			}
 			else if (stricmp(argv[i], "--update-recordings-list") == 0) {
 				if (!ADVBProgList::GetRecordingListFromRecordingSlave()) res = -1;

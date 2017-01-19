@@ -333,15 +333,16 @@ public:
 	bool UpdateRecordedList();
 
 	bool IsConverted() const {return (AString(GetFilename()).Suffix() != recordedfilesuffix);}
-	bool ConvertVideo(bool verbose = false, bool cleanup = true);
-
+	bool ConvertVideo(bool verbose = false, bool cleanup = true, bool force = false);
+	bool ForceConvertVideo(bool verbose = false, bool cleanup = true);
+	
 	void GetEncodedFiles(AList& files) const;
 	bool DeleteEncodedFiles() const;
 
 	bool FixData();
 
 	AString GetConvertedDestinationDirectory() const;
-
+	
 	static bool FilePatternExists(const AString& filename);
 
 	static bool GetFileFormat(const AString& filename, AString& format);
@@ -503,12 +504,15 @@ protected:
 	AString GeneratePostRecordCommand() const;
 	AString GeneratePostProcessCommand() const;
 
-	bool ConvertVideoEx(bool verbose = false, bool cleanup = true);
+	bool ConvertVideoEx(bool verbose = false, bool cleanup = true, bool force = false);
 
 	AString ReplaceTerms(const AString& str) const;
 	AString ReplaceFilenameTerms(const AString& str, bool converted) const;
 	AString ReplaceDirectoryTerms(const AString& str) const;
 
+	AString GetArchiveRecordingFilename() const;
+	AString GetTempRecordingFilename() const;
+	
 	AString GetLogFile() const;
 	bool    RunCommand(const AString& cmd, bool logoutput = false) const;
 

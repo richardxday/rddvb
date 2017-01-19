@@ -78,6 +78,12 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 	}
 }
 
+ADVBConfig::~ADVBConfig()
+{
+	// ensure no changes are saved
+	config.ClearChanged();
+}
+
 const ADVBConfig& ADVBConfig::Get(bool webresponse)
 {
 	return (const ADVBConfig &)ADVBConfig::GetWriteable(webresponse);
@@ -257,8 +263,6 @@ void ADVBConfig::Set(const AString& var, const AString& val) const
 	// must cheat const system
 	ASettingsHandler *pconfig = const_cast<ASettingsHandler *>(&config);
 	pconfig->Set(var, val);
-	// prevent changes being saved
-	pconfig->ClearChanged();
 }
 
 void ADVBConfig::logit(const char *fmt, ...) const

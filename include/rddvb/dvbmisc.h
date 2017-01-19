@@ -24,4 +24,6 @@ extern bool RunRemoteCommandGetFile(const AString& cmd, const AString& filename)
 
 extern bool TriggerServerCommand(const AString& cmd);
 
+extern bool SameFile(const AString& file1, const AString& file2);
+	
 #endif

@@ -156,7 +156,7 @@ protected:
 
 private:
 	ADVBConfig();
-	~ADVBConfig() {}
+	~ADVBConfig();
 
 protected:
 	ASettingsHandler config;
