@@ -55,6 +55,9 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		defaults.Insert(__defaults[i].name, (uptr_t)new AString(__defaults[i].value));
 	}
 
+	// ensure no changes are saved
+	config.EnableWrite(false);
+	
 	CreateDirectory(GetConfigDir());
 	CreateDirectory(GetDataDir());
 	CreateDirectory(GetLogDir());
@@ -80,8 +83,6 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 
 ADVBConfig::~ADVBConfig()
 {
-	// ensure no changes are saved
-	config.ClearChanged();
 }
 
 const ADVBConfig& ADVBConfig::Get(bool webresponse)
