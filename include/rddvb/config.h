@@ -79,6 +79,12 @@ public:
 	AString GetConvertedFileSuffix(const AString& user, const AString& def = "mp4") const {return GetUserConfigItem(user, "filesuffix", def);}
 	AString ReplaceTerms(const AString& user, const AString& str) const;
 	AString ReplaceTerms(const AString& user, const AString& subitem, const AString& str) const;
+	
+	AString GetTempFileSuffix()     		 const {return GetConfigItem("tempfilesuffix", "tmp");}
+	AString GetRecordedFileSuffix() 		 const {return GetConfigItem("recordedfilesuffix", "mpg");}
+	AString GetVideoFileSuffix() 			 const {return GetConfigItem("videofilesuffix", "m2v");}
+	AString GetAudioFileSuffix() 			 const {return GetConfigItem("audiofilesuffix", "mp2");}
+	AString GetAudioDestFileSuffix() 		 const {return GetConfigItem("audiodestfilesuffix", "mp3");}
 
 	uint_t  GetPhysicalDVBCard(uint_t n, bool forcemapping = false) const;
 	uint_t  GetVirtualDVBCard(uint_t n)      const;
@@ -107,9 +113,11 @@ public:
 
 	AString GetServerURL()					 const {return GetConfigItem("serverurl", "");}
 
+	AString GetVideoTrack()					 const {return GetConfigItem("videotrack", "0");}
+	AString GetVideoTrack(const AString& str, const AString& defval = "") const {return GetConfigItem("videotrack:" + str, defval);}
+
 	AString GetAudioTrack()					 const {return GetConfigItem("audiotrack", "0");}
-	
-	AString GetAudioTrack(const AString& str, const AString& defval = "") const {return GetConfigItem("audiotrack:" + str,defval);}
+	AString GetAudioTrack(const AString& str, const AString& defval = "") const {return GetConfigItem("audiotrack:" + str, defval);}
 																			   
 	bool    ForceSubs(const AString& user)   const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
 

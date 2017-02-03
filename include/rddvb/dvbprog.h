@@ -528,6 +528,13 @@ protected:
 		uint64_t start, length;
 	} SPLIT;
 
+	typedef struct {
+		uint_t  pid;
+		AString filename;
+	} MEDIAFILE;
+
+	static bool CompareMediaFiles(const MEDIAFILE& file1, const MEDIAFILE& file2);
+	
 	void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect);
 	bool EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose) const;
 
@@ -555,14 +562,16 @@ protected:
 	sint_t   		   priority_score;
 	uint_t	 		   overlaps;
 
-	static AHash       	 fieldhash;
-	static const FIELD 	 fields[];
-	static const AString tempfilesuffix;
-	static const AString recordedfilesuffix;
-	static AString       dayformat;
-	static AString       dateformat;
-	static AString       timeformat;
-	static AString       fulltimeformat;
+	static AHash       fieldhash;
+	static const FIELD fields[];
+	static AString     dayformat;
+	static AString     dateformat;
+	static AString     timeformat;
+	static AString     fulltimeformat;
+	static AString 	   tempfilesuffix;
+	static AString 	   recordedfilesuffix;
+	static AString 	   videofilesuffix;
+	static AString 	   audiofilesuffix;
 };
 
 #endif

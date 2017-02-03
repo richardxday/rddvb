@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 
 #include <map>
+#include <algorithm>
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
@@ -131,13 +132,14 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_EXTERNAL(kbrate,   Compare_kbrate, 	uint32_t, "Encoded file bit rate (kbits/s)"),
 };
 
-const AString ADVBProg::tempfilesuffix     = "tmp";
-const AString ADVBProg::recordedfilesuffix = "mpg";
-
 AString ADVBProg::dayformat  	 = "%d";
 AString ADVBProg::dateformat 	 = "%D-%N-%Y";
 AString ADVBProg::timeformat 	 = "%h:%m";
 AString ADVBProg::fulltimeformat = "%h:%m:%s";
+AString ADVBProg::tempfilesuffix;
+AString ADVBProg::recordedfilesuffix;
+AString ADVBProg::videofilesuffix;
+AString ADVBProg::audiofilesuffix;
 
 ADVBProg::ADVBProg()
 {
@@ -187,6 +189,15 @@ void ADVBProg::StaticInit()
 		dateformat 	   = config.GetConfigItem("dateformat", 	" %D-%N-%Y ");
 		timeformat 	   = config.GetConfigItem("timeformat", 	"%h:%m");
 		fulltimeformat = config.GetConfigItem("fulltimeformat", "%h:%m:%s");
+	}
+
+	if (tempfilesuffix.Empty()) {
+		const ADVBConfig& config = ADVBConfig::Get();
+
+		tempfilesuffix     = config.GetTempFileSuffix();
+		recordedfilesuffix = config.GetRecordedFileSuffix();
+		videofilesuffix    = config.GetVideoFileSuffix();
+		audiofilesuffix    = config.GetAudioFileSuffix();
 	}
 }
 
@@ -2697,9 +2708,19 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 	return success;
 }
 
+bool ADVBProg::CompareMediaFiles(const MEDIAFILE& file1, const MEDIAFILE& file2)
+{
+	return ((file1.pid < file2.pid) ||
+			((file1.pid == file2.pid) && (file1.filename < file2.filename)));
+}
+
 bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 {
-	const ADVBConfig& config = ADVBConfig::Get();
+	const ADVBConfig& config         = ADVBConfig::Get();
+	const AString tempfilesuffix     = config.GetTempFileSuffix();
+	const AString recordedfilesuffix = config.GetRecordedFileSuffix();
+	const AString videofilesuffix    = config.GetVideoFileSuffix();
+	const AString audiofilesuffix    = config.GetAudioFileSuffix();
 	AString src  	   = GetFilename();
 	AString dst  	   = GenerateFilename(true);
 	AString archivedst = ReplaceFilenameTerms(config.GetRecordingsArchiveDir(GetUser()), false).CatPath(src.FilePart());
@@ -2735,16 +2756,12 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	AString   logfile  = basename + "_log.txt";
 	AString   proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
 	AString   args     = config.GetEncodeArgs(GetUser(), GetCategory());
-	AString   m2vfile  = basename + ".m2v";
-	AString   mp2file  = basename + ".mp2";
 	bool      success  = true;
 
 	CreateDirectory(dst.PathPart());
 
 	if (AStdFile::exists(src) &&
-		(!AStdFile::exists(m2vfile) ||
-		 !AStdFile::exists(mp2file) ||
-		 !AStdFile::exists(logfile))) {
+		!AStdFile::exists(logfile)) {
 		AString cmd;
 
 		cmd.printf("nice projectx -ini %s/X.ini \"%s\"", config.GetConfigDir().str(), src.str());
@@ -2754,38 +2771,28 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 		remove(basename + ".sup.IFO");
 	}
 
-	if (success) {
-		AString filename;
-		uint_t  track;
-
-		if (((track = (uint_t)config.GetAudioTrack(GetUUID(),
-												   config.GetAudioTrack(GetTitle(),
-																		config.GetAudioTrack()))) > 1) &&
-			AStdFile::exists(filename = basename + AString("-%02;").Arg(track) + ".mp2")) {
-			mp2file = filename;
-			config.printf("Using track %u for '%s': '%s'", track, GetQuickDescription().str(), mp2file.str());
-		}
-	}
-
 	std::vector<SPLIT> splits;
 	std::map<AString,uint64_t> lengths;
 	AString bestaspect;
-	AList   delfiles;
+	std::vector<MEDIAFILE> videofiles;
+	std::vector<MEDIAFILE> audiofiles;
 
-	if (success &&
-		AStdFile::exists(m2vfile) &&
-		AStdFile::exists(mp2file)) {
+	if (success) {
 		AStdFile fp;
 
 		if (fp.open(logfile)) {
 			static const AString formatmarker = "new format in next leading sequenceheader detected";
 			static const AString videomarker  = "video basics";
 			static const AString lengthmarker = "video length:";
+			static const AString filemarker   = "---> new File:";
+			static const AString pidmarker    = "++> Mpg ";
+			static const AString pidmarker2   = "PID";
 			AString  line;
 			AString  aspect   = "16:9";
 			uint64_t t1       = 0;
 			uint64_t t2       = 0;
 			uint64_t totallen = 0;
+			uint_t   pid = 0;
 
 			config.printf("Analysing logfile:");
 
@@ -2821,6 +2828,29 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 						config.printf("Total length %s", GenTime(totallen).str());
 					}
 				}
+
+				if (((p = line.PosNoCase(pidmarker)) >= 0) &&
+					((p = line.PosNoCase(pidmarker2, p + pidmarker.len())) >= 0)) {
+					pid = (uint16_t)line.Mid(p).Word(1);
+				}
+				
+				if ((p = line.PosNoCase(filemarker)) >= 0) {
+					p += filemarker.len();
+
+					AString filename = line.Mid(p).Words(0).DeQuotify();
+					config.printf("Created file: %s%s (PID %u)", filename.str(), AStdFile::exists(filename) ? "" : " (DOES NOT EXIST!)", pid);
+					
+					if (AStdFile::exists(filename)) {
+						MEDIAFILE file = {pid, filename};
+						
+						if (filename.Suffix() == videofilesuffix) {
+							videofiles.push_back(file);
+						}
+						else if (filename.Suffix() == audiofilesuffix) {
+							audiofiles.push_back(file);
+						}
+					}
+				}
 			}
 
 			{
@@ -2843,11 +2873,60 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 		}
 	}
 
+	if (videofiles.size() > 0) {
+		std::sort(videofiles.begin(), videofiles.end(), CompareMediaFiles);
+
+		size_t i;
+		config.printf("Video files:");
+		for (i = 0; i < videofiles.size(); i++) {
+			config.printf("%2u: PID %5u %s", (uint_t)i, videofiles[i].pid, videofiles[i].filename.str());
+		}
+	}
+	if (audiofiles.size() > 0) {
+		std::sort(audiofiles.begin(), audiofiles.end(), CompareMediaFiles);
+	
+		size_t i;
+		config.printf("Audio files:");
+		for (i = 0; i < audiofiles.size(); i++) {
+			config.printf("%2u: PID %5u %s", (uint_t)i, audiofiles[i].pid, audiofiles[i].filename.str());
+		}
+	}
+
+	AString m2vfile;
+	AString mp2file;
+	uint_t  videotrack = (uint_t)config.GetVideoTrack(GetUUID(),
+													  config.GetVideoTrack(GetTitle(),
+																		   config.GetVideoTrack()));
+
+	if (videotrack < (uint_t)videofiles.size()) {
+		m2vfile = videofiles[videotrack].filename;
+		config.printf("Using video track %u of '%s', file '%s'", videotrack, GetQuickDescription().str(), m2vfile.str());
+	}
+	else if (videofiles.size()) {
+		m2vfile = videofiles[0].filename;
+		config.printf("Video track %u of '%s' doesn't exists, using file '%s' instead", videotrack, GetQuickDescription().str(), m2vfile.str());
+	}
+	else config.printf("Warning: no video file(s) associated with '%s'", GetQuickDescription().str());
+
+	uint_t  audiotrack = (uint_t)config.GetAudioTrack(GetUUID(),
+													  config.GetAudioTrack(GetTitle(),
+																		   config.GetAudioTrack()));
+	
+	if (audiotrack < (uint_t)audiofiles.size()) {
+		mp2file = audiofiles[audiotrack].filename;
+		config.printf("Using audio track %u of '%s', file '%s'", audiotrack, GetQuickDescription().str(), mp2file.str());
+	}
+	else if (audiofiles.size()) {
+		mp2file = audiofiles[0].filename;
+		config.printf("Audio track %u of '%s' doesn't exists, using file '%s' instead", audiotrack, GetQuickDescription().str(), mp2file.str());
+	}
+	else config.printf("Warning: no audio file(s) associated with '%s'", GetQuickDescription().str());
+	
 	if (success) {
-		if (!AStdFile::exists(m2vfile) && AStdFile::exists(mp2file)) {
+		if (m2vfile.Empty() && mp2file.Valid()) {
 			config.printf("No video: audio only");
 
-			dst = dst.Prefix() + ".mp3";
+			dst = dst.Prefix() + "." + config.GetAudioDestFileSuffix();
 			AString tempdst = config.GetRecordingsStorageDir().CatPath(dst.FilePart().Prefix() + "_temp." + dst.Suffix());
 
 			AString cmd;
@@ -2882,7 +2961,11 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 			if (!AStdFile::exists(remuxsrc)) {
 				AString cmd;
 
-				cmd.printf("nice %s -fflags +genpts -i \"%s.m2v\" -i \"%s.mp2\" -acodec copy -vcodec copy -v warning -f mpegts \"%s\"", proccmd.str(), basename.str(), basename.str(), remuxsrc.str());
+				cmd.printf("nice %s -fflags +genpts -i \"%s.%s\" -i \"%s.%s\" -acodec copy -vcodec copy -v warning -f mpegts \"%s\"",
+						   proccmd.str(),
+						   basename.str(), videofilesuffix.str(),
+						   basename.str(), audiofilesuffix.str(),
+						   remuxsrc.str());
 
 				success &= RunCommand(cmd, !verbose);
 			}
@@ -2971,17 +3054,19 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	}
 
 	if (success && cleanup) {
+		AList delfiles;
+		
 		CollectFiles(basename.PathPart(), basename.FilePart() + ".sup.*", RECURSE_ALL_SUBDIRS, delfiles);
-		CollectFiles(basename.PathPart(), basename.FilePart() + "-*.m2v", RECURSE_ALL_SUBDIRS, delfiles);
-		CollectFiles(basename.PathPart(), basename.FilePart() + "-*.mp2", RECURSE_ALL_SUBDIRS, delfiles);
+		CollectFiles(basename.PathPart(), basename.FilePart() + "-*." + videofilesuffix, RECURSE_ALL_SUBDIRS, delfiles);
+		CollectFiles(basename.PathPart(), basename.FilePart() + "-*." + audiofilesuffix, RECURSE_ALL_SUBDIRS, delfiles);
 
 		const AString *file = AString::Cast(delfiles.First());
 		while (file) {
 			remove(*file);
 			file = file->Next();
 		}
-		remove(basename + ".m2v");
-		remove(basename + ".mp2");
+		remove(basename + "." + videofilesuffix);
+		remove(basename + "." + audiofilesuffix);
 		remove(logfile);
 	}
 
