@@ -2533,19 +2533,15 @@ void ADVBProgList::CheckRecordingFile()
 bool ADVBProgList::GetAndConvertRecordings()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBLock     lock("pullrecordings");
-	ADVBProgList reclist;
-	bool success = false;
-
+	AString  cmd;
+	uint32_t tick;
+		
 	config.printf("Getting and converting recordings from record host '%s'", config.GetRecordingHost().str());
 
-	if (reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
-		AString   cmd;
-		uint32_t  tick;
-		uint_t i, converted = 0;
-		bool      reschedule = false;
+	{
+		ADVBLock lock("copyfiles");
 
-		GetRecordingListFromRecordingSlave();
+		CreateDirectory(config.GetRecordingsStorageDir());
 
 		tick = GetTickCount();
 		cmd.Delete();
@@ -2570,6 +2566,17 @@ bool ADVBProgList::GetAndConvertRecordings()
 
 		if (RunAndLogCommand(cmd)) config.printf("Log file copy took %ss", AValue((GetTickCount() + 999 - tick) / 1000).ToString().str());
 		else					   config.printf("Warning: Failed to copy all DVB logs from recording host");
+	}
+	
+	ADVBLock     lock("pullrecordings");
+	ADVBProgList reclist;
+	bool success = false;
+
+	if (reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
+		uint_t i, converted = 0;
+		bool   reschedule = false;
+
+		GetRecordingListFromRecordingSlave();
 
 		ADVBProgList convertlist;
 		for (i = 0; i < reclist.Count(); i++) {
