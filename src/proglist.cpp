@@ -1127,7 +1127,7 @@ void ADVBProgList::FindProgrammes(ADVBProgList& dest, const ADataList& patternli
 							prog1->ClearPartialPattern();
 							prog1->UpdateValues(pattern);
 						}
-					
+
 						if (!pattern.scorebased && !prog1->IsPartialPattern()) {
 							addtolist = true;
 							break;
@@ -1975,7 +1975,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	return n;
 }
 
-int ADVBProgList::SortDataLists(uptr_t item1, uptr_t item2, void *context)
+int ADVBProgList::CompareRepeatLists(uptr_t item1, uptr_t item2, void *context)
 {
 	// item1 and item2 are ADataList objects, sort them according to the number of items in the list (fewest first);
 	const ADataList& list1 = *(const ADataList *)item1;
@@ -1991,20 +1991,20 @@ int ADVBProgList::SortDataLists(uptr_t item1, uptr_t item2, void *context)
 void ADVBProgList::CountOverlaps(ADataList& repeatlists)
 {
 	uint_t i;
-	
+
 	// set scores for the first programme of each list (for sorting below)
 	for (i = 0; i < repeatlists.Count(); i++) {
 		ADataList& list = *(ADataList *)repeatlists[i];
 		uint_t j;
 		bool   changed = false;
-		
+
 		for (j = 0; j < list.Count(); j++) {
 			ADVBProg& prog = *(ADVBProg *)list[j];
 
 			changed |= prog.CountOverlaps(*this);
 			prog.SetPriorityScore();
 		}
-		
+
 		if (changed) list.Sort(&ADVBProg::SortListByOverlaps);
 	}
 }
@@ -2052,15 +2052,24 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 	// count overlaps for every programme
 	CountOverlaps(repeatlists);
 
+	if ((uint)config.GetConfigItem("sortrepeatlistsbytime", "0") > 0) {
+		for (i = 0; i < repeatlists.Count(); i++) {
+			ADataList& list = *(ADataList *)repeatlists[i];
+			
+			// sort list of repeats by time
+			list.Sort(&ADVBProg::CompareProgrammesByTime);
+		}
+	}
+	
 	// sort lists so that programme with fewest repeats is first
-	repeatlists.Sort(&SortDataLists);
+	repeatlists.Sort(&CompareRepeatLists);
 
 	//config.logit("Using priority scale %d, repeats scale %d", ADVBProg::priscale, ADVBProg::repeatsscale);
 
 	// display all repeats of each found programme
 	for (i = 0; i < repeatlists.Count(); i++) {
 		const ADataList& list = *(const ADataList *)repeatlists[i];
-		const ADVBProg&  prog = *(const ADVBProg *)list[0];
+		const ADVBProg& prog = *(const ADVBProg *)list[0];
 
 		config.logit("Order %u/%d: '%s' has %u repeats, pri %d, %u overlaps (score %d)", i + 1, repeatlists.Count(), prog.GetQuickDescription().str(), list.Count(), prog.GetPri(), prog.GetOverlaps(), prog.GetPriorityScore());
 
@@ -2082,10 +2091,10 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 	bool done = false;
 	while (!done) {
 		done = true;
-		
+
 		for (i = 0; i < repeatlists.Count(); i++) {
 			ADataList& list = *(ADataList *)repeatlists[i];
-			
+
 			if (list.Count() > 0) {
 				ADataList deletelist;
 				ADVBProg  *prog = (ADVBProg *)list.First();
@@ -2098,7 +2107,10 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 
 					// programme must start after list's rec start time and not overlap anything already on it
 					if ((prog->GetStart() >= recstarttimes[vcard]) &&
+						// run twice over the scheduling list for each card:
+						// once not allowing any overlapping of pre- and post- handles
 						(((j <  nlists) && !schedulelist.FindRecordOverlap(*prog)) ||
+						 // and once allowing the overlapping of pre- and post- handles
 						 ((j >= nlists) && !schedulelist.FindOverlap(*prog)))) {
 						// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
 
@@ -2108,7 +2120,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 						// remove programme from list to check
 						deletelist.Add(list[0]);	// add to delete list that is used later to delete programme from this object
 						list.Pop();
-						
+
 						// remove any programmes that do NOT have the allow repeats flag set
 						// OR that use the same base channel
 						static const uint64_t hour = 3600UL * 1000UL;
@@ -2138,19 +2150,22 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 									 vcard,
 									 i + 1,
 									 list.Count());
-						
+
 						break;
 					}
 				}
 
+				// this repeat of the programme cannot be scheduled
 				if (j == nchecks) {
+					// check to see if this repeat is the last one
 					if (list.Count() == 1) {
 						// the last repeat overlaps something so cannot be recorded -> the programme is *rejected*
 						config.logit("No repeats of '%s' can be recorded!", prog->GetQuickDescription().str());
-						
+
+						// add programme to rejected list
 						rejectedlist.AddProg(*prog);
 					}
-					
+
 					// remove programme from list to check
 					list.Pop();
 				}
@@ -2164,7 +2179,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 					// now count overlaps again
 					CountOverlaps(repeatlists);
 				}
-				
+
 				// any non-empty lists cause process to be repeated
 				done &= (list.Count() == 0);
 			}
@@ -2172,7 +2187,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 	}
 
 	config.printf("Prioritization complete");
-	
+
 	for (i = 0; i < nlists; i++) {
 		ADVBProgList& scheduledlist = schedulelists[i];
 
@@ -2213,13 +2228,13 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 		// set initial earliest schedule time
 		recstarttimes[i] = recstarttime;
 	}
-	
+
 	// for running list, adjust earliest scheduling time so as not to trampling on ongoing recordings
 	if (runninglist.Count()) {
 		for (i = 0; i < runninglist.Count(); i++) {
 			const ADVBProg& prog = runninglist[i];
 			uint_t vcard = config.GetVirtualDVBCard(prog.GetDVBCard());
-			
+
 			if (vcard < ncards) {
 				recstarttimes[vcard] = MAX(recstarttimes[vcard], prog.GetRecordStop() + 10000);
 				config.logit("Adjusting earliest record start time to %s for card %u (physical card %u)", ADateTime(recstarttimes[vcard]).DateToStr().str(), vcard, (uint_t)prog.GetDVBCard());
@@ -2260,7 +2275,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 		ADVBProgList& scheduledlist = schedulelists[i];
 		const ADVBProg *errorprog;
 		uint_t dvbcard = config.GetPhysicalDVBCard(i);
-		
+
 		if ((errorprog = scheduledlist.FindFirstRecordOverlap()) != NULL) {
 			config.printf("Error: found overlap in schedule list for card %u ('%s')!", i, errorprog->GetQuickDescription().str());
 		}
@@ -2271,7 +2286,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 		for (j = 0; j < scheduledlist.Count(); j++) {
 			ADVBProg& prog = scheduledlist.GetProgWritable(j);
 			const ADVBProg *rprog;
-			
+
 			prog.SetScheduled();
 			prog.SetDVBCard(dvbcard);
 
@@ -2284,7 +2299,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 
 				allrejectedlist.DeleteProg(*rprog);
 			}
-			
+
 			config.logit("%s (%s - %s)",
 						 prog.GetDescription(1).str(),
 						 prog.GetRecordStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m:%s").str(),
@@ -2298,7 +2313,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 
 	allscheduledlist.Sort();
 	allrejectedlist.Sort();
-	
+
 	config.logit("--------------------------------------------------------------------------------");
 	config.printf("Scheduling: %u programmes in total:", allscheduledlist.Count());
 	config.logit("--------------------------------------------------------------------------------");
@@ -2312,7 +2327,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 					 prog.GetDVBCard());
 	}
 	config.logit("--------------------------------------------------------------------------------");
-	
+
 	return allrejectedlist.Count();
 }
 
@@ -2535,7 +2550,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString  cmd;
 	uint32_t tick;
-		
+
 	config.printf("Getting and converting recordings from record host '%s'", config.GetRecordingHost().str());
 
 	{
@@ -2567,7 +2582,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 		if (RunAndLogCommand(cmd)) config.printf("Log file copy took %ss", AValue((GetTickCount() + 999 - tick) / 1000).ToString().str());
 		else					   config.printf("Warning: Failed to copy all DVB logs from recording host");
 	}
-	
+
 	ADVBLock     lock("pullrecordings");
 	ADVBProgList reclist;
 	bool success = false;

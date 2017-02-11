@@ -1910,6 +1910,14 @@ void ADVBProg::AddToList(ADataList *list)
 	list->Add((uptr_t)this);
 }
 
+int ADVBProg::CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context)
+{
+	const ADVBProg *prog1 = (const ADVBProg *)item1;
+	const ADVBProg *prog2 = (const ADVBProg *)item2;
+
+	return Compare(prog1, prog2, (const bool *)context);
+}
+
 void ADVBProg::SetPriorityScore()
 {
 	const ADVBConfig& config = ADVBConfig::Get();

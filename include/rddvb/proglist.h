@@ -188,7 +188,7 @@ protected:
 		delete (SERIES *)item;
 	}
 
-	static int SortDataLists(uptr_t item1, uptr_t item2, void *context);
+	static int CompareRepeatLists(uptr_t item1, uptr_t item2, void *context);
 
 	static int SortProgs(uptr_t item1, uptr_t item2, void *pContext);
 	static int SortChannels(uptr_t item1, uptr_t item2, void *pContext);

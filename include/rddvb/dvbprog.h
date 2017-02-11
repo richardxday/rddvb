@@ -307,6 +307,8 @@ public:
 	void AddToList(ADataList *list);
 	const ADataList *GetList() const {return list;}
 
+	static int CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context);
+	
 	void SetPriorityScore();
 	int  GetPriorityScore() const {return priority_score;}
 	bool CountOverlaps(const ADVBProgList& proglist);
