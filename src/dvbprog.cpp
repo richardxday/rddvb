@@ -251,7 +251,7 @@ void ADVBProg::Init()
 
 	// initialise record scheduling data
 	list           = NULL;
-	priority_score = 0;
+	priority_score = 0.0;
 	overlaps       = 0;
 }
 
@@ -1910,6 +1910,11 @@ void ADVBProg::AddToList(ADataList *list)
 	list->Add((uptr_t)this);
 }
 
+void ADVBProg::RemoveFromList()
+{
+	if (list) list->Remove((uptr_t)this);
+}
+
 int ADVBProg::CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context)
 {
 	const ADVBProg *prog1 = (const ADVBProg *)item1;
@@ -1918,13 +1923,29 @@ int ADVBProg::CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context)
 	return Compare(prog1, prog2, (const bool *)context);
 }
 
-void ADVBProg::SetPriorityScore()
+void ADVBProg::SetPriorityScore(const ADateTime& starttime)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 
-	priority_score = config.GetPriorityScale() * data->pri;
+	priority_score = config.GetPriorityScale() * (double)data->pri + config.GetOverlapScale() * (double)overlaps;
 	if (IsUrgent()) priority_score += config.GetUrgentScale();
-	if (list) priority_score += (list->Count() - 1) * config.GetRepeatsScale();
+	if (list) priority_score += config.GetRepeatsScale() * (double)(list->Count() - 1);
+	priority_score += config.GetDelayScale() * (double)(GetStartDT().GetDays() - starttime.GetDays());
+}
+
+bool ADVBProg::BiasPriorityScore(const ADVBProg& prog)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	bool changed = false;
+						 
+	// if the specified programme overlaps this programme *just* in terms
+	// of pre- and post- handles, bias the priority score
+	if (RecordOverlaps(prog) && !Overlaps(prog)) {
+		priority_score += config.GetRecordOverlapScale();
+		changed = true;
+	}
+
+	return changed;
 }
 
 bool ADVBProg::CountOverlaps(const ADVBProgList& proglist)
@@ -1989,6 +2010,12 @@ int ADVBProg::CompareScore(const ADVBProg& prog1, const ADVBProg& prog2)
 	else res = CompareNoCase(prog1.GetQuickDescription(), prog2.GetQuickDescription());
 
 	return res;
+}
+
+int ADVBProg::SortListByScore(uptr_t item1, uptr_t item2, void *context)
+{
+	UNUSED(context);
+	return CompareScore(*(const ADVBProg *)item1, *(const ADVBProg *)item2);
 }
 
 bool ADVBProg::GetRecordPIDs(AString& pids, bool update) const

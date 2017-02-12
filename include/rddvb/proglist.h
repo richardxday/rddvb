@@ -97,8 +97,8 @@ public:
 
 	static int CompareEpisode(uptr_t item1, uptr_t item2, void *pContext);
 	
-	void CountOverlaps(ADataList& repeatlists);
-	void PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *recstarttimes, uint_t nlists, ADVBProgList& rejectedlist);
+	void CountOverlaps(ADataList& repeatlists, const ADateTime& starttime);
+	void PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *recstarttimes, uint_t nlists, ADVBProgList& rejectedlist, const ADateTime& starttime);
 	uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));
 
 	typedef struct {

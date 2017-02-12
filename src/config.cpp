@@ -464,3 +464,32 @@ bool ADVBConfig::ExtractLogData(const ADateTime& start, const ADateTime& end, co
 	return success;
 }
 
+double ADVBConfig::GetPriorityScale() const
+{
+	return (double)GetConfigItem("priscale", "2.0");
+}
+
+double ADVBConfig::GetOverlapScale() const
+{
+	return (double)GetConfigItem("overlapscale", "-.2");
+}
+
+double ADVBConfig::GetRepeatsScale() const
+{
+	return (double)GetConfigItem("repeatsscale", "-1.0");
+}
+
+double ADVBConfig::GetUrgentScale() const
+{
+	return (double)GetConfigItem("urgentscale", "3.0");
+}
+
+double ADVBConfig::GetDelayScale() const
+{
+	return (double)GetConfigItem("delayscale", "-.5");
+}
+
+double ADVBConfig::GetRecordOverlapScale() const
+{
+	return (double)GetConfigItem("recordoverlapscale", "-2.0");
+}

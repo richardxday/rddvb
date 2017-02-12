@@ -305,15 +305,18 @@ public:
 
 	void ClearList() {list = NULL;}
 	void AddToList(ADataList *list);
-	const ADataList *GetList() const {return list;}
-
+	ADataList *GetList() const {return list;}
+	void RemoveFromList();
+	
 	static int CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context);
 	
-	void SetPriorityScore();
-	int  GetPriorityScore() const {return priority_score;}
-	bool CountOverlaps(const ADVBProgList& proglist);
-	uint_t GetOverlaps() const {return overlaps;}
+	void   SetPriorityScore(const ADateTime& starttime);
+	double GetPriorityScore() const {return priority_score;}
+	bool   BiasPriorityScore(const ADVBProg& prog);
 
+	bool   CountOverlaps(const ADVBProgList& proglist);
+	uint_t GetOverlaps() const {return overlaps;}
+	
 	typedef ADVBPatterns::PATTERN PATTERN;
 	bool Match(const PATTERN& pattern) const {return ADVBPatterns::Match(*this, pattern);}
 	void AssignValues(const PATTERN& pattern) {ADVBPatterns::AssignValues(*this, pattern);}
@@ -321,7 +324,8 @@ public:
 
 	static int SortListByOverlaps(uptr_t item1, uptr_t item2, void *context);
 	static int CompareScore(const ADVBProg& prog1, const ADVBProg& prog2);
-
+	static int SortListByScore(uptr_t item1, uptr_t item2, void *context);
+	
 	AString Base64Encode() const {return ::Base64Encode((const uint8_t *)data, sizeof(*data) + data->strings.end);}
 
 	AString GetLinkToFile() const;
@@ -560,8 +564,8 @@ protected:
 protected:
 	DVBPROG  		   *data;
 	uint16_t 		   maxsize;
-	const ADataList    *list;
-	sint_t   		   priority_score;
+	ADataList		   *list;
+	double   		   priority_score;
 	uint_t	 		   overlaps;
 
 	static AHash       fieldhash;

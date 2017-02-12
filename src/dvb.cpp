@@ -79,9 +79,9 @@ int main(int argc, char *argv[])
 		printf("\t--logdir\t\t\tPrint log directory\n");
 		printf("\t--dayformat <format>\t\tFormat string for day (default '%s')\n", ADVBProg::GetDayFormat().str());
 		printf("\t--dateformat <format>\t\tFormat string for date (default '%s')\n", ADVBProg::GetDateFormat().str());
-		printf("\t--timeformat <format>\tFormat string for time (default '%s')\n", ADVBProg::GetTimeFormat().str());
-		printf("\t--fulltimeformat <format>\t\t\tFormat string for fulltime (default '%s')\n", ADVBProg::GetFullTimeFormat().str());
-		printf("\t--set <var>=<val>\t\t\t\tSet variable in configuration file for this session only\n");
+		printf("\t--timeformat <format>\t\tFormat string for time (default '%s')\n", ADVBProg::GetTimeFormat().str());
+		printf("\t--fulltimeformat <format>\tFormat string for fulltime (default '%s')\n", ADVBProg::GetFullTimeFormat().str());
+		printf("\t--set <var>=<val>\t\tSet variable in configuration file for this session only\n");
 		printf("\t--update <file>\t\t\tUpdate main listings with file <file> (-u)\n");
 		printf("\t--load\t\t\t\tRead listings from default file (-l)\n");
 		printf("\t--read <file>\t\t\tRead listings from file <file> (-r)\n");
@@ -643,7 +643,7 @@ int main(int argc, char *argv[])
 				printf("%sorted list\n", reverse ? "Reverse s" : "S");
 			}
 			else if (strcmp(argv[i], "--schedule") == 0) {
-				ADVBProgList::SchedulePatterns();
+				ADVBProgList::SchedulePatterns(starttime);
 			}
 			else if (strcmp(argv[i], "--write-scheduled-jobs") == 0) {
 				if (!ADVBProgList::WriteToJobList()) {
