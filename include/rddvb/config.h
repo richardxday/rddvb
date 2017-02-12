@@ -21,11 +21,14 @@ public:
 
 	AString GetConfigItem(const AString& name) const;
 	AString GetConfigItem(const AString& name, const AString& defval) const;
-	AString GetUserConfigItem(const AString& user, const AString& name) const {return GetConfigItem(user + ":" + name, GetConfigItem(name));}
-	AString GetUserConfigItem(const AString& user, const AString& name, const AString& defval) const {return GetConfigItem(user + ":" + name, GetConfigItem(name, defval));}
+	AString GetUserConfigItem(const AString& user, const AString& name) const {return GetHierarchicalConfigItem(user, name);}
+	AString GetUserConfigItem(const AString& user, const AString& name, const AString& defval) const {return GetHierarchicalConfigItem(user, name, defval);}
 	AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name) const {return GetUserConfigItem(user, name + ":" + subitem, GetUserConfigItem(user, name, GetConfigItem(name + ":" + subitem, GetConfigItem(name))));}
 	AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name, const AString& defval) const {return GetUserConfigItem(user, name + ":" + subitem, GetUserConfigItem(user, name, GetConfigItem(name + ":" + subitem, GetConfigItem(name, defval))));}
 
+	AString GetHierarchicalConfigItem(const AString& str, const AString& name) const {return str.Valid() ? GetConfigItem(str + ":" + name) : GetConfigItem(name);}
+	AString GetHierarchicalConfigItem(const AString& str, const AString& name, const AString& defval) const {return str.Valid() ? GetConfigItem(str + ":" + name, defval) : GetConfigItem(name, defval);}
+	
 	bool    ConfigItemExists(const AString& name) const {return config.Exists(name);}
 	bool    UserConfigItemExists(const AString& user, const AString& name) const {return ConfigItemExists(user + ":" + name);}
 
@@ -102,24 +105,11 @@ public:
 	bool    IsRecordingSlave()				 const {return ((uint_t)GetConfigItem("isrecordingslave", "0"));}
 	bool    ConvertVideos()					 const {return ((uint_t)GetConfigItem("convertvideos", AString("%").Arg(!IsRecordingSlave())));}
 	bool    EnableCombined()				 const {return ((uint_t)GetConfigItem("enablecombined", AString("%").Arg(!IsRecordingSlave())));}
-
-	double  GetPriorityScale()               const;
-	double  GetOverlapScale()                const;
-	double  GetRepeatsScale()                const;
-	double  GetUrgentScale()                 const;
-	double  GetDelayScale()                  const;
-	double  GetRecordOverlapScale()			 const;
 	
 	AString GetPriorityDVBPIDs()			 const {return GetConfigItem("prioritypids", "");}
 	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");}
 
 	AString GetServerURL()					 const {return GetConfigItem("serverurl", "");}
-
-	AString GetVideoTrack()					 const {return GetConfigItem("videotrack", "0");}
-	AString GetVideoTrack(const AString& str, const AString& defval = "") const {return GetConfigItem("videotrack:" + str, defval);}
-
-	AString GetAudioTrack()					 const {return GetConfigItem("audiotrack", "0");}
-	AString GetAudioTrack(const AString& str, const AString& defval = "") const {return GetConfigItem("audiotrack:" + str, defval);}
 
 	bool    ForceSubs(const AString& user)   const {return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);}
 

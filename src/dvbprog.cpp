@@ -141,6 +141,16 @@ AString ADVBProg::recordedfilesuffix;
 AString ADVBProg::videofilesuffix;
 AString ADVBProg::audiofilesuffix;
 
+const AString ADVBProg::videotrackname 	  	   = "videotrack";
+const AString ADVBProg::audiotrackname 	  	   = "audiotrack";
+
+const AString ADVBProg::priorityscalename 	   = "priorityscale";
+const AString ADVBProg::overlapscalename 	   = "overlapscale";
+const AString ADVBProg::urgentscalename  	   = "urgentscale";
+const AString ADVBProg::repeatsscalename 	   = "repeatsscale";
+const AString ADVBProg::delayscalename   	   = "delayscale";
+const AString ADVBProg::recordoverlapscalename = "recordoverlapscale";
+
 ADVBProg::ADVBProg()
 {
 	Init();
@@ -1664,6 +1674,15 @@ AString ADVBProg::GetPrefItem(const AString& name, const AString& defval) const
 	return res;
 }
 
+AString ADVBProg::GetHierarchicalConfigItem(const AString& name, const AString& defval) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	return config.GetHierarchicalConfigItem(GetUUID(), name,
+											config.GetHierarchicalConfigItem(GetTitle(), name,
+																			 config.GetHierarchicalConfigItem(GetUser(), name,
+																											  config.GetConfigItem(name, defval))));
+}
+	
 AString ADVBProg::ValidFilename(const AString& str, bool dir)
 {
 	AString res;
@@ -1925,23 +1944,24 @@ int ADVBProg::CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context)
 
 void ADVBProg::SetPriorityScore(const ADateTime& starttime)
 {
-	const ADVBConfig& config = ADVBConfig::Get();
+	priority_score = ((double)GetHierarchicalConfigItem(priorityscalename, "2.0") * (double)data->pri +
+					  (double)GetHierarchicalConfigItem(overlapscalename, "-.2")  * (double)overlaps);
 
-	priority_score = config.GetPriorityScale() * (double)data->pri + config.GetOverlapScale() * (double)overlaps;
-	if (IsUrgent()) priority_score += config.GetUrgentScale();
-	if (list) priority_score += config.GetRepeatsScale() * (double)(list->Count() - 1);
-	priority_score += config.GetDelayScale() * (double)(GetStartDT().GetDays() - starttime.GetDays());
+	if (IsUrgent()) priority_score += (double)GetHierarchicalConfigItem(urgentscalename, "3.0");
+	
+	if (list) priority_score += (double)GetHierarchicalConfigItem(repeatsscalename, "-1.0") * (double)(list->Count() - 1);
+
+	priority_score += (double)GetHierarchicalConfigItem(delayscalename, "-.5") * (double)(GetStartDT().GetDays() - starttime.GetDays());
 }
 
 bool ADVBProg::BiasPriorityScore(const ADVBProg& prog)
 {
-	const ADVBConfig& config = ADVBConfig::Get();
 	bool changed = false;
 						 
 	// if the specified programme overlaps this programme *just* in terms
 	// of pre- and post- handles, bias the priority score
 	if (RecordOverlaps(prog) && !Overlaps(prog)) {
-		priority_score += config.GetRecordOverlapScale();
+		priority_score += (double)GetHierarchicalConfigItem(recordoverlapscalename, "-2.0");
 		changed = true;
 	}
 
@@ -2929,9 +2949,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
 	AString m2vfile;
 	AString mp2file;
-	uint_t  videotrack = (uint_t)config.GetVideoTrack(GetUUID(),
-													  config.GetVideoTrack(GetTitle(),
-																		   config.GetVideoTrack()));
+	uint_t  videotrack = (uint_t)GetHierarchicalConfigItem(videotrackname, "0");
 
 	if (videotrack < (uint_t)videofiles.size()) {
 		m2vfile = videofiles[videotrack].filename;
@@ -2943,9 +2961,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	}
 	else config.printf("Warning: no video file(s) associated with '%s'", GetQuickDescription().str());
 
-	uint_t  audiotrack = (uint_t)config.GetAudioTrack(GetUUID(),
-													  config.GetAudioTrack(GetTitle(),
-																		   config.GetAudioTrack()));
+	uint_t audiotrack = (uint_t)GetHierarchicalConfigItem(audiotrackname, "0");
 	
 	if (audiotrack < (uint_t)audiofiles.size()) {
 		mp2file = audiofiles[audiotrack].filename;

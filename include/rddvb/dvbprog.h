@@ -365,6 +365,8 @@ protected:
 	static bool    	FieldExists(const AString& str, const AString& field, int p = 0, int *pos = NULL);
 	static AString 	GetField(const AString& str, const AString& field, int p = 0, int *pos = NULL);
 
+	AString GetHierarchicalConfigItem(const AString& name, const AString& defval = "") const;
+
 	AString GetProgrammeKey() const;
 
 #if DVBDATVERSION==1
@@ -568,16 +570,24 @@ protected:
 	double   		   priority_score;
 	uint_t	 		   overlaps;
 
-	static AHash       fieldhash;
-	static const FIELD fields[];
-	static AString     dayformat;
-	static AString     dateformat;
-	static AString     timeformat;
-	static AString     fulltimeformat;
-	static AString 	   tempfilesuffix;
-	static AString 	   recordedfilesuffix;
-	static AString 	   videofilesuffix;
-	static AString 	   audiofilesuffix;
+	static AHash       	 fieldhash;
+	static const FIELD 	 fields[];
+	static AString     	 dayformat;
+	static AString     	 dateformat;
+	static AString     	 timeformat;
+	static AString     	 fulltimeformat;
+	static AString 	   	 tempfilesuffix;
+	static AString 	   	 recordedfilesuffix;
+	static AString 	   	 videofilesuffix;
+	static AString 	   	 audiofilesuffix;
+	static const AString videotrackname;
+	static const AString audiotrackname;
+	static const AString priorityscalename;
+	static const AString overlapscalename;
+	static const AString urgentscalename;
+	static const AString repeatsscalename;
+	static const AString delayscalename;
+	static const AString recordoverlapscalename;
 };
 
 #endif
