@@ -57,7 +57,6 @@
 "5 Star"="5STAR"
 "ITV1"="ITV"
 "Smooth FM 102.2"="Smooth Radio"
-"True Ent"="True Entertainment"
 "Yesterday UKTV"="Yesterday"
 "Your TV"="YourTV"
 "Heart FM"="Heart"
