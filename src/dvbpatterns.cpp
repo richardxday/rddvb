@@ -361,12 +361,16 @@ void ADVBPatterns::__DeleteTerm(uptr_t item, void *context)
 
 	UNUSED(context);
 
-	if (term->field->type == FieldType_string) {
-		if (term->value.str) delete[] term->value.str;
+	if (term->field) {
+		if (term->field->type == FieldType_string) {
+			if (term->value.str) delete[] term->value.str;
+		}
+		else if (term->field->type == FieldType_prog) {
+			if (term->value.prog) delete term->value.prog;
+		}
 	}
-	else if (term->field->type == FieldType_prog) {
-		if (term->value.prog) delete term->value.prog;
-	}
+	
+	if (term->pattern) delete term->pattern;
 
 	delete term;
 }
@@ -535,6 +539,58 @@ bool ADVBPatterns::ParsePattern(ADataList& patternlist, const AString& line, ASt
 	return success;
 }
 
+uint_t ADVBPatterns::Skip(const AString& line, uint_t i, char terminator)
+{
+	while (line[i] && (line[i] != terminator)) {
+		char newterminator = 0;
+
+		if		(IsQuoteChar(terminator) && (line[i] == '\\') && line[i + 1]) i += 2;
+		else if (IsQuoteChar(line[i])) newterminator = line[i];
+		else if (line[i] == '(')       newterminator = ')';
+		else if (line[i] == '[')       newterminator = ']';
+		else if (line[i] == '{')       newterminator = '}';
+
+		if (newterminator) {
+			i = Skip(line, i + 1, newterminator);
+			if (line[i] == newterminator) i++;
+			else break;
+		}
+		else i++;
+	}
+
+	return i;
+}
+
+uint_t ADVBPatterns::CheckOrStatement(const AString& line, uint_t i, bool& orflag)
+{
+	orflag = false;
+
+	if ((line.Mid(i, 2).ToLower() == "and") && IsWhiteSpace(line[i + 3])) {
+		i += 3;
+
+		while (IsWhiteSpace(line[i])) i++;
+	}
+	else if ((line.Mid(i, 2).ToLower() == "or") && IsWhiteSpace(line[i + 2])) {
+		orflag = true;
+		i += 2;
+
+		while (IsWhiteSpace(line[i])) i++;
+	}
+	else if ((line[i] == '&') && IsWhiteSpace(line[i + 1])) {
+		i += 1;
+
+		while (IsWhiteSpace(line[i])) i++;
+	}
+	else if ((line[i] == '|') && IsWhiteSpace(line[i + 1])) {
+		orflag = true;
+		i += 1;
+
+		while (IsWhiteSpace(line[i])) i++;
+	}
+
+	return i;
+}
+
 AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const AString& user)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -572,291 +628,349 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 
 	if (line[i]) {
 		while (line[i] && errors.Empty()) {
-			if (!IsSymbolStart(line[i])) {
-				errors.printf("Character '%c' (at %u) is not a legal field start character (term %u)", line[i], i, list.Count() + 1);
-				break;
-			}
-
-			uint_t fieldstart = i++;
-			while (IsSymbolChar(line[i])) i++;
-			AString field = line.Mid(fieldstart, i - fieldstart).ToLower();
-
 			while (IsWhiteSpace(line[i])) i++;
 
-			if (field == "exclude") {
-				pattern.exclude = true;
-				continue;
-			}
+			if (line[i] == '(') {
+				i++;
 
-			const FIELD *fieldptr = (const FIELD *)ADVBProg::fieldhash.Read(field);
-			if (!fieldptr) {
-				uint_t nfields;
-				const FIELD *fields = ADVBProg::GetFields(nfields);
+				while (IsWhiteSpace(line[i])) i++;
 
-				errors.printf("'%s' (at %u) is not a valid search field (term %u), valid search fields are: ", field.str(), fieldstart, list.Count() + 1);
-				for (i = 0; i < nfields; i++) {
-					const FIELD& field = fields[i];
+				uint_t i0 = i;
+				i = Skip(line, i, ')');
+				uint_t i1 = i;
 
-					if (i) errors.printf(", ");
-					errors.printf("'%s'", field.name);
-				}
-				break;
-			}
+				if (line[i] == ')') {
+					AString subline = line.Mid(i0, i1 - i0).Words(0);
+					PATTERN *subpattern;
+					bool    orflag;
 
-			uint_t opstart = i;
-
-			const char *str = line.str() + i;
-			bool isassign = fieldptr->assignable;
-			uint_t j;
-			uint_t opindex = 0, opcode = Operator_EQ;
-			for (j = 0; j < NUMBEROF(operators); j++) {
-				if (((isassign == operators[j].assign) ||
-					 (isassign && !operators[j].assign)) &&
-					(operators[j].fieldtypes & (1U << fieldptr->type)) &&
-					(strncmp(str, operators[j].str, operators[j].len) == 0)) {
-					i      += operators[j].len;
-					opindex = j;
-					opcode  = operators[j].opcode;
-					break;
-				}
-			}
-
-			while (IsWhiteSpace(line[i])) i++;
-
-			AString value;
-			bool    implicitvalue = false;
-			if (j == NUMBEROF(operators)) {
-				if (!line[i] || IsSymbolStart(line[i])) {
-					if (fieldptr->assignable) {
-						switch (fieldptr->type) {
-							case FieldType_string:
-								break;
-
-							case FieldType_date:
-								value = "now";
-								break;
-
-							default:
-								value = "1";
-								break;
-						}
-
-						opcode = Operator_Assign;
-					}
-					else opcode = Operator_NE;
-
-					for (j = 0; j < NUMBEROF(operators); j++) {
-						if ((opcode == operators[j].opcode) &&
-							((isassign == operators[j].assign) ||
-							 (isassign && !operators[j].assign)) &&
-							(operators[j].fieldtypes & (1U << fieldptr->type))) {
-							opindex = j;
-							break;
-						}
-					}
-
-					implicitvalue = true;
-				}
-				else {
-					errors.printf("Symbols at %u do not represent a legal operator (term %u), legal operators for the field '%s' are: ", opstart, list.Count() + 1, field.str());
-
-					bool flag = false;
-					for (j = 0; j < NUMBEROF(operators); j++) {
-						if (((isassign == operators[j].assign) ||
-							 (isassign && !operators[j].assign)) &&
-							(operators[j].fieldtypes & (1U << fieldptr->type))) {
-							if (flag) errors.printf(", ");
-							errors.printf("'%s'", operators[j].str);
-							flag = true;
-						}
-					}
-					break;
-				}
-			}
-
-			if (!implicitvalue) {
-				char quote = 0;
-				if (IsQuoteChar(line[i])) quote = line[i++];
-
-				uint_t valuestart = i;
-				while (line[i] && ((!quote && !IsWhiteSpace(line[i])) || (quote && (line[i] != quote)))) {
-					if (line[i] == '\\') i++;
 					i++;
-				}
+					while (IsWhiteSpace(line[i])) i++;
 
-				value = line.Mid(valuestart, i - valuestart).DeEscapify();
+					i = CheckOrStatement(line, i, orflag);
 
-				if (quote && (line[i] == quote)) i++;
+					if ((subpattern = new PATTERN) != NULL)
+					{
+						AString suberrors = ParsePattern(subline, *subpattern, user);
 
-				while (IsWhiteSpace(line[i])) i++;
-			}
+						if (suberrors.Empty()) {
+							TERM *term;
 
-			bool orflag = false;
-			if ((line.Mid(i, 2).ToLower() == "or") && IsWhiteSpace(line[i + 2])) {
-				orflag = true;
-				i += 2;
+							if ((term = new TERM) != NULL) {
+								term->data.start   = i0;
+								term->data.length  = i1 - i0;
+								term->data.field   = 0;
+								term->data.opcode  = 0;
+								term->data.opindex = 0;
+								term->data.orflag  = orflag;
+								term->field    	   = NULL;
+								term->datetype 	   = DateType_none;
+								term->pattern      = subpattern;
 
-				while (IsWhiteSpace(line[i])) i++;
-			}
-			else if ((line[i] == '|') && IsWhiteSpace(line[i + 1])) {
-				orflag = true;
-				i += 1;
-
-				while (IsWhiteSpace(line[i])) i++;
-			}
-
-			if ((term = new TERM) != NULL) {
-				term->data.start   = fieldstart;
-				term->data.length  = i - fieldstart;
-				term->data.field   = fieldptr - ADVBProg::fields;
-				term->data.opcode  = opcode;
-				term->data.opindex = opindex;
-				term->data.value   = value;
-				term->data.orflag  = (orflag && !RANGE(opcode, Operator_First_Assignable, Operator_Last_Assignable));
-				term->field    	   = fieldptr;
-				term->datetype 	   = DateType_none;
-
-				switch (term->field->type) {
-					case FieldType_string:
-#if DVBDATVERSION > 1
-						if (fieldptr->offset == ADVBProg::GetTagsDataOffset()) {
-							value = "|" + value + "|";
-						}
-#endif
-						
-						if ((opcode & ~Operator_Inverted) == Operator_Regex) {
-							AString regexerrors;
-							AString rvalue;
-
-							rvalue = ParseRegex(value, regexerrors);
-							if (regexerrors.Valid()) {
-								errors.printf("Regex error in value '%s' (term %u): %s", value.str(), list.Count() + 1, regexerrors.str());
-							}
-
-							value = rvalue;
-						}
-						term->value.str = value.Steal();
-						break;
-
-					case FieldType_date: {
-						ADateTime dt;
-						uint_t specified;
-
-						dt.StrToDate(value, ADateTime::Time_Relative_Local, &specified);
-
-						//debug("Value '%s', specified %u\n", value.str(), specified);
-
-						if (!specified) {
-							errors.printf("Failed to parse date '%s' (term %u)", value.str(), list.Count() + 1);
-							break;
-						}
-						else if (((specified == ADateTime::Specified_Day) && (stricmp(term->field->name, "on") == 0)) ||
-								 (stricmp(term->field->name, "day") == 0)) {
-							//debug("Date from '%s' is '%s' (week day only)\n", value.str(), dt.DateToStr().str());
-							term->value.u64 = dt.GetWeekDay();
-							term->datetype  = DateType_weekday;
-						}
-						else if (specified & ADateTime::Specified_Day) {
-							specified |= ADateTime::Specified_Date;
-						}
-
-						if (term->datetype == DateType_none) {
-							specified &= ADateTime::Specified_Date | ADateTime::Specified_Time;
-
-							if (specified == (ADateTime::Specified_Date | ADateTime::Specified_Time)) {
-								//debug("Date from '%s' is '%s' (full date and time)\n", value.str(), dt.DateToStr().str());
-								term->value.u64 = (uint64_t)dt;
-								term->datetype  = DateType_fulldate;
-							}
-							else if (specified == ADateTime::Specified_Date) {
-								//debug("Date from '%s' is '%s' (date only)\n", value.str(), dt.DateToStr().str());
-								term->value.u64 = dt.GetDays();
-								term->datetype  = DateType_date;
-							}
-							else if (specified == ADateTime::Specified_Time) {
-								//debug("Date from '%s' is '%s' (time only)\n", value.str(), dt.DateToStr().str());
-								term->value.u64 = dt.GetMS();
-								term->datetype  = DateType_time;
+								list.Add((uptr_t)term);
 							}
 							else {
-								errors.printf("Unknown date specifier '%s' (term %u)", value.str(), list.Count() + 1);
-							}
-						}
-						break;
-					}
-
-					case FieldType_span:
-					case FieldType_age: {
-						ADateTime dt;
-						//ADateTime::EnableDebugStrToDate(true);
-						term->value.u64 = (uint64_t)ADateTime(value, ADateTime::Time_Absolute);
-						//ADateTime::EnableDebugStrToDate(false);
-						break;
-					}
-
-					case FieldType_uint32_t:
-					case FieldType_external_uint32_t:
-						term->value.u32 = (uint32_t)value;
-						break;
-
-					case FieldType_sint32_t:
-					case FieldType_external_sint32_t:
-						term->value.s32 = (sint32_t)value;
-						break;
-
-					case FieldType_uint16_t:
-						term->value.u16 = (uint16_t)value;
-						break;
-
-					case FieldType_sint16_t:
-						term->value.s16 = (sint16_t)value;
-						break;
-
-					case FieldType_uint8_t:
-						term->value.u8 = (uint8_t)(uint16_t)value;
-						break;
-
-					case FieldType_sint8_t:
-						term->value.s8 = (sint8_t)(sint16_t)value;
-						break;
-
-					case FieldType_flag...FieldType_lastflag:
-						term->value.u8 = ((uint32_t)value != 0);
-						//debug("Setting test of flag to %u\n", (uint_t)term->value.u8);
-						break;
-
-					case FieldType_prog: {
-						ADVBProg *prog;
-
-						if ((prog = new ADVBProg) != NULL) {
-							if (prog->Base64Decode(value)) {
-								term->value.prog = prog;
-							}
-							else {
-								errors.printf("Failed to decode base64 programme ('%s') for %s at %u (term %u)", value.str(), field.str(), fieldstart, list.Count() + 1);
-								delete prog;
+								if (errors.Valid()) errors += "\n";
+								errors.printf("Failed to allocate term for sub-pattern (term %u)", list.Count() + 1);
+								break;
 							}
 						}
 						else {
-							errors.printf("Failed to allocate memory for base64 programme ('%s') for %s at %u (term %u)", value.str(), field.str(), fieldstart, list.Count() + 1);
+							if (errors.Valid()) errors += "\n";
+							errors += suberrors;
+							break;
+						}
+					}
+					else {
+						if (errors.Valid()) errors += "\n";
+						errors.printf("Failed to allocate sub-pattern (term %u)", list.Count() + 1);
+						break;
+					}
+				}
+				else {
+					if (errors.Valid()) errors += "\n";
+					errors.printf("Unterminated sub-pattern (at %u) (term %u)", i, list.Count() + 1);
+					break;
+				}
+			}
+			else {
+				if (!IsSymbolStart(line[i])) {
+					if (errors.Valid()) errors += "\n";
+					errors.printf("Character '%c' (at %u) is not a legal field start character (term %u)", line[i], i, list.Count() + 1);
+					break;
+				}
+
+				uint_t fieldstart = i++;
+				while (IsSymbolChar(line[i])) i++;
+				AString field = line.Mid(fieldstart, i - fieldstart).ToLower();
+
+				while (IsWhiteSpace(line[i])) i++;
+
+				if (field == "exclude") {
+					pattern.exclude = true;
+					continue;
+				}
+
+				const FIELD *fieldptr = (const FIELD *)ADVBProg::fieldhash.Read(field);
+				if (!fieldptr) {
+					uint_t nfields;
+					const FIELD *fields = ADVBProg::GetFields(nfields);
+
+					errors.printf("'%s' (at %u) is not a valid search field (term %u), valid search fields are: ", field.str(), fieldstart, list.Count() + 1);
+					for (i = 0; i < nfields; i++) {
+						const FIELD& field = fields[i];
+
+						if (i) errors.printf(", ");
+						errors.printf("'%s'", field.name);
+					}
+					break;
+				}
+
+				uint_t opstart = i;
+
+				const char *str = line.str() + i;
+				bool isassign = fieldptr->assignable;
+				uint_t j;
+				uint_t opindex = 0, opcode = Operator_EQ;
+				for (j = 0; j < NUMBEROF(operators); j++) {
+					if (((isassign == operators[j].assign) ||
+						 (isassign && !operators[j].assign)) &&
+						(operators[j].fieldtypes & (1U << fieldptr->type)) &&
+						(strncmp(str, operators[j].str, operators[j].len) == 0)) {
+						i      += operators[j].len;
+						opindex = j;
+						opcode  = operators[j].opcode;
+						break;
+					}
+				}
+
+				while (IsWhiteSpace(line[i])) i++;
+
+				AString value;
+				bool    implicitvalue = false;
+				if (j == NUMBEROF(operators)) {
+					if (!line[i] || IsSymbolStart(line[i])) {
+						if (fieldptr->assignable) {
+							switch (fieldptr->type) {
+								case FieldType_string:
+									break;
+
+								case FieldType_date:
+									value = "now";
+									break;
+
+								default:
+									value = "1";
+									break;
+							}
+
+							opcode = Operator_Assign;
+						}
+						else opcode = Operator_NE;
+
+						for (j = 0; j < NUMBEROF(operators); j++) {
+							if ((opcode == operators[j].opcode) &&
+								((isassign == operators[j].assign) ||
+								 (isassign && !operators[j].assign)) &&
+								(operators[j].fieldtypes & (1U << fieldptr->type))) {
+								opindex = j;
+								break;
+							}
+						}
+
+						implicitvalue = true;
+					}
+					else {
+						errors.printf("Symbols at %u do not represent a legal operator (term %u), legal operators for the field '%s' are: ", opstart, list.Count() + 1, field.str());
+
+						bool flag = false;
+						for (j = 0; j < NUMBEROF(operators); j++) {
+							if (((isassign == operators[j].assign) ||
+								 (isassign && !operators[j].assign)) &&
+								(operators[j].fieldtypes & (1U << fieldptr->type))) {
+								if (flag) errors.printf(", ");
+								errors.printf("'%s'", operators[j].str);
+								flag = true;
+							}
 						}
 						break;
 					}
+				}
 
-					default:
-						errors.printf("Unknown field '%s' type (%u) (term %u)", field.str(), (uint_t)term->field->type, list.Count() + 1);
+				if (!implicitvalue) {
+					char quote = 0;
+					if (IsQuoteChar(line[i])) quote = line[i++];
+
+					uint_t valuestart = i;
+					while (line[i] && ((!quote && !IsWhiteSpace(line[i])) || (quote && (line[i] != quote)))) {
+						if (line[i] == '\\') i++;
+						i++;
+					}
+
+					value = line.Mid(valuestart, i - valuestart).DeEscapify();
+
+					if (quote && (line[i] == quote)) i++;
+
+					while (IsWhiteSpace(line[i])) i++;
+				}
+
+				bool orflag;
+				i = CheckOrStatement(line, i, orflag);
+
+				if ((term = new TERM) != NULL) {
+					term->data.start   = fieldstart;
+					term->data.length  = i - fieldstart;
+					term->data.field   = fieldptr - ADVBProg::fields;
+					term->data.opcode  = opcode;
+					term->data.opindex = opindex;
+					term->data.value   = value;
+					term->data.orflag  = (orflag && !RANGE(opcode, Operator_First_Assignable, Operator_Last_Assignable));
+					term->field    	   = fieldptr;
+					term->datetype 	   = DateType_none;
+					term->pattern      = NULL;
+
+					switch (term->field->type) {
+						case FieldType_string:
+#if DVBDATVERSION > 1
+							if (fieldptr->offset == ADVBProg::GetTagsDataOffset()) {
+								value = "|" + value + "|";
+							}
+#endif
+
+							if ((opcode & ~Operator_Inverted) == Operator_Regex) {
+								AString regexerrors;
+								AString rvalue;
+
+								rvalue = ParseRegex(value, regexerrors);
+								if (regexerrors.Valid()) {
+									errors.printf("Regex error in value '%s' (term %u): %s", value.str(), list.Count() + 1, regexerrors.str());
+								}
+
+								value = rvalue;
+							}
+							term->value.str = value.Steal();
+							break;
+
+						case FieldType_date: {
+							ADateTime dt;
+							uint_t specified;
+
+							dt.StrToDate(value, ADateTime::Time_Relative_Local, &specified);
+
+							//debug("Value '%s', specified %u\n", value.str(), specified);
+
+							if (!specified) {
+								errors.printf("Failed to parse date '%s' (term %u)", value.str(), list.Count() + 1);
+								break;
+							}
+							else if (((specified == ADateTime::Specified_Day) && (stricmp(term->field->name, "on") == 0)) ||
+									 (stricmp(term->field->name, "day") == 0)) {
+								//debug("Date from '%s' is '%s' (week day only)\n", value.str(), dt.DateToStr().str());
+								term->value.u64 = dt.GetWeekDay();
+								term->datetype  = DateType_weekday;
+							}
+							else if (specified & ADateTime::Specified_Day) {
+								specified |= ADateTime::Specified_Date;
+							}
+
+							if (term->datetype == DateType_none) {
+								specified &= ADateTime::Specified_Date | ADateTime::Specified_Time;
+
+								if (specified == (ADateTime::Specified_Date | ADateTime::Specified_Time)) {
+									//debug("Date from '%s' is '%s' (full date and time)\n", value.str(), dt.DateToStr().str());
+									term->value.u64 = (uint64_t)dt;
+									term->datetype  = DateType_fulldate;
+								}
+								else if (specified == ADateTime::Specified_Date) {
+									//debug("Date from '%s' is '%s' (date only)\n", value.str(), dt.DateToStr().str());
+									term->value.u64 = dt.GetDays();
+									term->datetype  = DateType_date;
+								}
+								else if (specified == ADateTime::Specified_Time) {
+									//debug("Date from '%s' is '%s' (time only)\n", value.str(), dt.DateToStr().str());
+									term->value.u64 = dt.GetMS();
+									term->datetype  = DateType_time;
+								}
+								else {
+									errors.printf("Unknown date specifier '%s' (term %u)", value.str(), list.Count() + 1);
+								}
+							}
+							break;
+						}
+
+						case FieldType_span:
+						case FieldType_age: {
+							ADateTime dt;
+							//ADateTime::EnableDebugStrToDate(true);
+							term->value.u64 = (uint64_t)ADateTime(value, ADateTime::Time_Absolute);
+							//ADateTime::EnableDebugStrToDate(false);
+							break;
+						}
+
+						case FieldType_uint32_t:
+						case FieldType_external_uint32_t:
+							term->value.u32 = (uint32_t)value;
+							break;
+
+						case FieldType_sint32_t:
+						case FieldType_external_sint32_t:
+							term->value.s32 = (sint32_t)value;
+							break;
+
+						case FieldType_uint16_t:
+							term->value.u16 = (uint16_t)value;
+							break;
+
+						case FieldType_sint16_t:
+							term->value.s16 = (sint16_t)value;
+							break;
+
+						case FieldType_uint8_t:
+							term->value.u8 = (uint8_t)(uint16_t)value;
+							break;
+
+						case FieldType_sint8_t:
+							term->value.s8 = (sint8_t)(sint16_t)value;
+							break;
+
+						case FieldType_flag...FieldType_lastflag:
+							term->value.u8 = ((uint32_t)value != 0);
+							//debug("Setting test of flag to %u\n", (uint_t)term->value.u8);
+							break;
+
+						case FieldType_prog: {
+							ADVBProg *prog;
+
+							if ((prog = new ADVBProg) != NULL) {
+								if (prog->Base64Decode(value)) {
+									term->value.prog = prog;
+								}
+								else {
+									errors.printf("Failed to decode base64 programme ('%s') for %s at %u (term %u)", value.str(), field.str(), fieldstart, list.Count() + 1);
+									delete prog;
+								}
+							}
+							else {
+								errors.printf("Failed to allocate memory for base64 programme ('%s') for %s at %u (term %u)", value.str(), field.str(), fieldstart, list.Count() + 1);
+							}
+							break;
+						}
+
+						default:
+							errors.printf("Unknown field '%s' type (%u) (term %u)", field.str(), (uint_t)term->field->type, list.Count() + 1);
+							break;
+					}
+
+					//debug("term: field {name '%s', type %u, assignable %u, offset %u} type %u dateflags %u value '%s'\n", term->field->name, (uint_t)term->field->type, (uint_t)term->field->assignable, term->field->offset, (uint_t)term->data.opcode, (uint_t)term->dateflags, term->value.str);
+
+					if (errors.Empty()) {
+						pattern.scorebased |= (term->field->offset == ADVBProg::GetScoreDataOffset());
+						list.Add((uptr_t)term);
+					}
+					else {
+						__DeleteTerm((uptr_t)term, NULL);
 						break;
-				}
-
-				//debug("term: field {name '%s', type %u, assignable %u, offset %u} type %u dateflags %u value '%s'\n", term->field->name, (uint_t)term->field->type, (uint_t)term->field->assignable, term->field->offset, (uint_t)term->data.opcode, (uint_t)term->dateflags, term->value.str);
-
-				if (errors.Empty()) {
-					pattern.scorebased |= (term->field->offset == ADVBProg::GetScoreDataOffset());
-					list.Add((uptr_t)term);
-				}
-				else {
-					__DeleteTerm((uptr_t)term, NULL);
-					break;
+					}
 				}
 			}
 		}
@@ -1060,7 +1174,7 @@ bool ADVBPatterns::MatchString(const TERM& term, const char *str, bool ignoreinv
 {
 	uint_t opcode = term.data.opcode & ~Operator_Inverted;
 	bool   match  = false;
-	
+
 	switch (opcode) {
 		case Operator_Regex:
 			match = (IsRegexAnyPattern(term.value.str) || MatchRegex(str, term.value.str));
@@ -1089,7 +1203,7 @@ bool ADVBPatterns::MatchString(const TERM& term, const char *str, bool ignoreinv
 		case Operator_Ends:
 			match = (stristr(term.value.str, str) == (term.value.str + strlen(term.value.str) - strlen(str)));
 			break;
-			
+
 		default: {
 			const char *s1 = str;
 			const char *s2 = term.value.str;
@@ -1106,11 +1220,11 @@ bool ADVBPatterns::MatchString(const TERM& term, const char *str, bool ignoreinv
 				opcode -= Operator_EndsWithLT;
 				opcode += Operator_LT;
 			}
-			
+
 			int res = CompareNoCase(s1, s2);
 
 			//debug("Comparing '%s' and '%s': %d\n", str, term.value.str, res);
-			
+
 			switch (opcode) {
 				case Operator_EQ:
 					match = (res == 0);
@@ -1140,7 +1254,13 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 		const TERM&  term  = *(const TERM *)list[i];
 		const FIELD& field = *term.field;
 
-		if (!RANGE(term.data.opcode, Operator_First_Assignable, Operator_Last_Assignable)) {
+		if (term.pattern) {
+			bool newmatch = Match(prog, *term.pattern);
+
+			if (orflag) match |= newmatch;
+			else		match  = newmatch;
+		}
+		else if (!RANGE(term.data.opcode, Operator_First_Assignable, Operator_Last_Assignable)) {
 			const uint8_t *ptr = prog.GetDataPtr(field.offset);
 			int  res      = 0;
 			bool newmatch = false;
@@ -1380,7 +1500,8 @@ void ADVBPatterns::UpdateValues(ADVBProg& prog, const PATTERN& pattern)
 		const TERM&  term  = *(const TERM *)list[i];
 		const FIELD& field = *term.field;
 
-		if (RANGE(term.data.opcode, Operator_First_Assignable, Operator_Last_Assignable) && (field.offset != ADVBProg::GetUserDataOffset())) {
+		if		(term.pattern) UpdateValues(prog, *term.pattern);
+		else if (RANGE(term.data.opcode, Operator_First_Assignable, Operator_Last_Assignable) && (field.offset != ADVBProg::GetUserDataOffset())) {
 			AssignValue(prog, field, term.value, term.data.opcode);
 		}
 	}
@@ -1450,7 +1571,8 @@ AString ADVBPatterns::ToString(const TERM& val)
 {
 	AString str;
 
-	str.printf("%s, %s, %s", ToString(val.data).str(), ToString(*val.field).str(), ToString(val.value, val.field->type, val.datetype).str());
+	if		(val.pattern) str.printf("Sub-pattern:\n%s", ToString(*val.pattern).str());
+	else if (val.field)   str.printf("%s, %s, %s", ToString(val.data).str(), ToString(*val.field).str(), ToString(val.value, val.field->type, val.datetype).str());
 
 	return str;
 }

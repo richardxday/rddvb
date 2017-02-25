@@ -61,7 +61,7 @@ public:
 	} TERMDATA;
 
 	static const TERMDATA *GetTermData(const PATTERN& pattern, uint_t term) {return &(((const TERM *)pattern.list[term])->data);}
-
+	
 protected:
 	friend class ADVBProg;
 
@@ -111,7 +111,7 @@ protected:
 		Operator_Divide,
 		Operator_Maximum,
 		Operator_Minimum,
-
+		
 		Operator_NE 		 	  = Operator_Inverted | Operator_EQ,
 		Operator_LE 		 	  = Operator_Inverted | Operator_GT,
 		Operator_GE 		 	  = Operator_Inverted | Operator_LT,
@@ -187,6 +187,7 @@ protected:
 		const FIELD *field;
 		uint8_t 	datetype;
 		VALUE 		value;
+		PATTERN     *pattern;
 	} TERM;
 
 protected:
@@ -212,6 +213,9 @@ protected:
 	static AString ToString(const FIELD& 	val);
 	static AString ToString(const TERMDATA& val);
 
+	static uint_t Skip(const AString& line, uint_t i, char terminator = ')');
+	static uint_t CheckOrStatement(const AString& line, uint_t i, bool& orflag);
+	
 protected:
 	static OPERATOR operators[];
 };
