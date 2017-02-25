@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
 		printf("\t--find-with-file <pattern-file>\tFind programmes matching patterns in patterns file <pattern-file> (-F)\n");
 		printf("\t--find-repeats\t\t\tFor each programme in current list, list repeats (-R)\n");
 		printf("\t--find-similar <file>\t\tFor each programme in current list, find first similar programme in <file>\n");
+		printf("\t--describe-pattern <patterns>\t\tDescribe patterns as parsed\n");
 		printf("\t--delete-all\t\t\tDelete all programmes\n");
 		printf("\t--delete <patterns>\t\tDelete programmes matching <patterns>\n");
 		printf("\t--delete-with-file <pattern-file> Delete programmes matching patterns in patterns file <pattern-file>\n");
@@ -409,6 +410,19 @@ int main(int argc, char *argv[])
 					}
 				}
 				else printf("Failed to read programmes from '%s'\n", argv[i]);
+			}
+			else if (strcmp(argv[i], "--describe-pattern") == 0) {
+				ADataList patternlist;
+				AString   patterns = argv[++i];
+				AString   errors;
+				uint_t    i;
+				
+				ADVBPatterns::ParsePatterns(patternlist, patterns, errors, ';');
+
+				for (i = 0; i < patternlist.Count(); i++) {
+					const ADVBPatterns::PATTERN& pattern = *(const ADVBPatterns::PATTERN *)patternlist[i];
+					printf("%s", ADVBPatterns::ToString(pattern).str());
+				}
 			}
 			else if ((strcmp(argv[i], "--find-with-file") == 0) || (strcmp(argv[i], "-F") == 0)) {
 				ADVBProgList reslist;

@@ -379,7 +379,7 @@ const ADVBPatterns::OPERATOR *ADVBPatterns::FindOperator(const PATTERN& pattern,
 {
 	const TERM *pterm = (const TERM *)pattern.list[term];
 
-	if (pterm) {
+	if (pterm && pterm->field) {
 		uint_t  fieldtype = 1U << pterm->field->type;
 		uint8_t oper      = pterm->data.opcode;
 		uint_t  i;
@@ -412,7 +412,7 @@ bool ADVBPatterns::OperatorIsAssign(const PATTERN& pattern, uint_t term)
 {
 	const TERM *pterm = (const TERM *)pattern.list[term];
 
-	return pterm ? RANGE(pterm->data.opcode, Operator_First_Assignable, Operator_Last_Assignable) : false;
+	return (pterm && pterm->field) ? RANGE(pterm->data.opcode, Operator_First_Assignable, Operator_Last_Assignable) : false;
 }
 
 AString ADVBPatterns::GetPatternDefinitionsJSON()
@@ -603,6 +603,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 	pattern.exclude    = false;
 	pattern.enabled    = true;
 	pattern.scorebased = false;
+	pattern.pos        = 0;
 	pattern.pri        = 0;
 	pattern.user       = user;
 	pattern.pattern    = line;
@@ -656,6 +657,8 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 						if (suberrors.Empty()) {
 							TERM *term;
 
+							subpattern->pos = pattern.pos + i0;
+							
 							if ((term = new TERM) != NULL) {
 								term->data.start   = i0;
 								term->data.length  = i1 - i0;
@@ -665,6 +668,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 								term->data.orflag  = orflag;
 								term->field    	   = NULL;
 								term->datetype 	   = DateType_none;
+								term->value.str    = subline.Steal();
 								term->pattern      = subpattern;
 
 								list.Add((uptr_t)term);
@@ -1567,16 +1571,6 @@ AString ADVBPatterns::ToString(const VALUE& val, uint8_t fieldtype, uint8_t date
 	return str;
 }
 
-AString ADVBPatterns::ToString(const TERM& val)
-{
-	AString str;
-
-	if		(val.pattern) str.printf("Sub-pattern:\n%s", ToString(*val.pattern).str());
-	else if (val.field)   str.printf("%s, %s, %s", ToString(val.data).str(), ToString(*val.field).str(), ToString(val.value, val.field->type, val.datetype).str());
-
-	return str;
-}
-
 AString ADVBPatterns::ToString(const FIELD& val)
 {
 	AString str;
@@ -1590,12 +1584,23 @@ AString ADVBPatterns::ToString(const TERMDATA& val)
 {
 	AString str;
 
-	str.printf("Term [%u:%u] '%s' field %u opcode %u opindex %u orflag %u", val.start, val.length, val.value.str(), (uint_t)val.field, (uint_t)val.opcode, (uint_t)val.opindex, (uint_t)val.orflag);
+	str.printf("Term [%u:%u] '%s' field %u opcode %u opindex %u orflag %u",
+			   val.start, val.length, val.value.str(), (uint_t)val.field, (uint_t)val.opcode, (uint_t)val.opindex, (uint_t)val.orflag);
 
 	return str;
 }
 
-AString ADVBPatterns::ToString(const PATTERN& pattern)
+AString ADVBPatterns::ToString(const TERM& val, uint_t level)
+{
+	AString str;
+
+	if		(val.pattern) str.printf("Sub-pattern '%s' orflag %u:\n%s", val.value.str, (uint_t)val.data.orflag, ToString(*val.pattern, level + 1).str());
+	else if (val.field)   str.printf("%s, %s, %s", ToString(val.data).str(), ToString(*val.field).str(), ToString(val.value, val.field->type, val.datetype).str());
+
+	return str;
+}
+
+AString ADVBPatterns::ToString(const PATTERN& pattern, uint_t level)
 {
 	const ADataList& list = pattern.list;
 	uint_t i, n = list.Count();
@@ -1604,7 +1609,7 @@ AString ADVBPatterns::ToString(const PATTERN& pattern)
 	for (i = 0; i < n; i++) {
 		const TERM& term = *(const TERM *)list[i];
 
-		str.printf("Term %u/%u: %s\n", i, n, ToString(term).str());
+		str.printf("%sTerm %u/%u: %s\n", AString("  ").Copies(level).str(), i + 1, n, ToString(term, level).str());
 	}
 
 	return str;

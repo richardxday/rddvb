@@ -23,6 +23,7 @@ public:
 		bool      exclude;
 		bool	  enabled;
 		bool	  scorebased;
+		uint_t    pos;
 		sint_t	  pri;
 		AString   user;
 		AString   pattern;
@@ -48,7 +49,7 @@ public:
 	static const char *GetOperatorDescription(const PATTERN& pattern, uint_t term);
 	static bool       OperatorIsAssign(const PATTERN& pattern, uint_t term);
 
-	static AString    ToString(const PATTERN& pattern);
+	static AString    ToString(const PATTERN& pattern, uint_t level = 0);
 
 	typedef struct {
 		uint_t    start;
@@ -209,9 +210,9 @@ protected:
 	static void __DeleteTerm(uptr_t item, void *context);
 
 	static AString ToString(const VALUE& 	val, uint8_t fieldtype, uint8_t datetype);
-	static AString ToString(const TERM&  	val);
 	static AString ToString(const FIELD& 	val);
 	static AString ToString(const TERMDATA& val);
+	static AString ToString(const TERM&  	val, uint_t level);
 
 	static uint_t Skip(const AString& line, uint_t i, char terminator = ')');
 	static uint_t CheckOrStatement(const AString& line, uint_t i, bool& orflag);
