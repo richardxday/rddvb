@@ -162,7 +162,7 @@ protected:
 	uint_t FindIndex(uint_t timeindex, uint64_t t) const;
 	uint_t FindIndex(const ADVBProg& prog) const;
 
-	void AdjustRecordTimes();
+	void AdjustRecordTimes(uint64_t recstarttime);
 	uint_t ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& allscheduledlist, ADVBProgList& allrejectedlist, const ADateTime& starttime);
 
 	bool ReadFromBinaryFile(const AString& filename, bool sort = false, bool removeoverlaps = false);

@@ -5,6 +5,8 @@
 
 #include <sys/statvfs.h>
 
+#include <algorithm>
+
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
 #include <rdlib/XMLDecode.h>
@@ -1241,7 +1243,7 @@ ADVBProg *ADVBProgList::FindOverlap(const ADVBProg& prog1, const ADVBProg *prog2
 ADVBProg *ADVBProgList::FindRecordOverlap(const ADVBProg& prog1, const ADVBProg *prog2) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	const uint64_t mininterrectime = (uint64_t)config.GetConfigItem("mininterrectime", config.GetDefaultInterRecTime()) * 1000ULL;
+	const uint64_t mininterrectime = (uint64_t)config.GetConfigItem("mininterrectime", config.GetDefaultInterRecTime()) * 1000;
 	const uint64_t st1 = prog1.GetRecordStart();
 	const uint64_t et1 = prog1.GetRecordStop() + mininterrectime;
 	uint_t i = 0;
@@ -1261,10 +1263,10 @@ ADVBProg *ADVBProgList::FindRecordOverlap(const ADVBProg& prog1, const ADVBProg 
 	return (ADVBProg *)prog2;
 }
 
-void ADVBProgList::AdjustRecordTimes()
+void ADVBProgList::AdjustRecordTimes(uint64_t recstarttime)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	const uint64_t mininterrectime = (uint64_t)config.GetConfigItem("mininterrectime", config.GetDefaultInterRecTime()) * 1000ULL;
+	const uint64_t mininterrectime = (uint64_t)config.GetConfigItem("mininterrectime", config.GetDefaultInterRecTime()) * 1000;
 	uint_t i, j;
 
 	config.logit("Adjusting record times of any overlapping programmes");
@@ -1314,6 +1316,13 @@ void ADVBProgList::AdjustRecordTimes()
 							 secondprog->GetRecordStartDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
 							 secondprog->GetRecordStopDT().UTCToLocal().DateFormat("%h:%m:%s").str());
 			}
+		}
+
+		// ensure record start time is at least recstarttime
+		prog1->SetRecordStart(std::max(prog1->GetRecordStart(), recstarttime));
+
+		if ((prog1->GetRecordStart() % 60000) != 0) {
+			config.printf("Warning: programme '%s' set to start recording at %s", prog1->GetQuickDescription().str(), prog1->GetRecordStartDT().DateToStr().str());
 		}
 	}
 }
@@ -2074,15 +2083,14 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 			ADVBProgList& schedulelist = schedulelists[vcard];
 
 			// programme must start after list's rec start time and not overlap anything already on it
-			if ((prog.GetStart() >= recstarttimes[vcard]) &&
-				// run twice over the scheduling list for each card:
-				// once not allowing any overlapping of pre- and post- handles
-				(((j <  nlists) && !schedulelist.FindRecordOverlap(prog)) ||
-				 // and once allowing the overlapping of pre- and post- handles
-				 ((j >= nlists) && !schedulelist.FindOverlap(prog)))) {
+			// run twice over the scheduling list for each card:
+			// once not allowing any overlapping of pre- and post- handles
+			if (((j <  nlists) && (prog.GetRecordStart() >= recstarttimes[vcard]) && !schedulelist.FindRecordOverlap(prog)) ||
+				// and once allowing the overlapping of pre- and post- handles
+				((j >= nlists) && (prog.GetStart()       >= recstarttimes[vcard]) && !schedulelist.FindOverlap(prog))) {
 				// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
-				
-				if ((uptr_t)&prog == (*prog.GetList())[0]) nearliestscheduled++;
+
+				if (prog.GetList()->Find(&prog) == 0) nearliestscheduled++;
 				
 				// add to scheduling list
 				schedulelist.AddProg(prog);
@@ -2172,7 +2180,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 		scheduledlist.Sort();
 
 		// tweak record times to prevent pre/post handles overlapping
-		scheduledlist.AdjustRecordTimes();
+		scheduledlist.AdjustRecordTimes(recstarttimes[i]);
 	}
 }
 
@@ -2197,7 +2205,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 	}
 
 	// allow at least 30s before first schedule point
-	recstarttime += 30000ULL;
+	recstarttime += 30000;
 
 	schedulelists = new ADVBProgList[ncards];
 	recstarttimes = new uint64_t[ncards];
@@ -2213,8 +2221,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 			uint_t vcard = config.GetVirtualDVBCard(prog.GetDVBCard());
 
 			if (vcard < ncards) {
-				recstarttimes[vcard] = MAX(recstarttimes[vcard], prog.GetRecordStop() + 10000);
-				config.logit("Adjusting earliest record start time to %s for card %u (physical card %u)", ADateTime(recstarttimes[vcard]).DateToStr().str(), vcard, (uint_t)prog.GetDVBCard());
+				recstarttimes[vcard] = std::max(recstarttimes[vcard], (uint64_t)(prog.GetRecordStop() + 10000));
 			}
 		}
 	}
@@ -2223,9 +2230,11 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 	uint64_t minrecstarttime = 0;
 	for (i = 0; i < ncards; i++) {
 		// round up to the next minute
-		recstarttimes[i] += 60000ULL - (recstarttimes[i] % 60000ULL);
+		recstarttimes[i] += 60000 - (recstarttimes[i] % 60000);
 
 		if (!i || (recstarttimes[i] < minrecstarttime)) minrecstarttime = recstarttimes[i];
+
+		config.logit("Earliest record start time for card %u (physical card %u) is %s", i, config.GetPhysicalDVBCard(i), ADateTime(recstarttimes[i]).DateToStr().str());
 	}
 
 	// generate record data, clear disabled flag and clear owner list for each programme

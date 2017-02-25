@@ -468,7 +468,7 @@ bool ADVBProg::SetUUID()
 void ADVBProg::SetRecordingComplete()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	uint64_t maxreclag = (uint64_t)config.GetConfigItem("maxrecordlag", "20") * 1000ULL;
+	uint64_t maxreclag = (uint64_t)config.GetConfigItem("maxrecordlag", "20") * 1000;
 
 	SetFlag(Flag_incompleterecording, !((data->actstart <= (data->start + maxreclag)) && (data->actstop >= MIN(data->stop, data->recstop - 1000))));
 }
@@ -1380,7 +1380,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 			str1.printf("Set to record %s - %s (%um %us)",
 						GetRecordStartDT().UTCToLocal().DateFormat(dayformat + dateformat + fulltimeformat).str(),
 						GetRecordStopDT().UTCToLocal().DateFormat(fulltimeformat).str(),
-						(uint_t)(GetRecordLength() / 60000ULL), (uint_t)((GetRecordLength() % 60000ULL) / 1000ULL));
+						(uint_t)(GetRecordLength() / 60000), (uint_t)((GetRecordLength() % 60000) / 1000));
 
 			if (GetUser()[0]) str1.printf(" by user '%s'", GetUser());
 
@@ -1388,7 +1388,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 				str1.printf(", actual record time %s - %s (%um %us)%s",
 							GetActualStartDT().UTCToLocal().DateFormat(dayformat + dateformat + fulltimeformat).str(),
 							GetActualStopDT().UTCToLocal().DateFormat(fulltimeformat).str(),
-							(uint_t)(GetActualLength() / 60000ULL), (uint_t)((GetActualLength() % 60000ULL) / 1000ULL),
+							(uint_t)(GetActualLength() / 60000), (uint_t)((GetActualLength() % 60000) / 1000),
 							IsRecordingComplete() ? "" : " *not complete* ");
 			}
 
@@ -1520,7 +1520,7 @@ int ADVBProg::CompareExternal(uint_t id, sint32_t value) const
 
 bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 {
-	static const uint64_t hour = 3600ULL * 1000ULL;
+	static const uint64_t hour = 3600 * 1000;
 	bool same = false;
 
 	if (CompareNoCase(prog1.GetTitle(), prog2.GetTitle()) == 0) {
@@ -1784,10 +1784,10 @@ void ADVBProg::GenerateRecordData(uint64_t recstarttime)
 	AString filename;
 
 	if (!data->recstart) {
-		data->recstart = GetStart() - (uint64_t)data->prehandle  * 60000ULL;
+		data->recstart = GetStart() - (uint64_t)data->prehandle  * 60000;
 		data->recstart = MAX(data->recstart, recstarttime);
 	}
-	if (!data->recstop) data->recstop = GetStop() + (uint64_t)data->posthandle * 60000ULL;
+	if (!data->recstop) data->recstop = GetStop() + (uint64_t)data->posthandle * 60000;
 	if (!GetDVBChannel()[0]) {
 		config.logit("Warning: '%s' has no DVB channel, using main channel!\n", GetQuickDescription().str());
 	}
@@ -2176,10 +2176,10 @@ void ADVBProg::Record()
 			dt 	  = (uint64_t)ADateTime().TimeStamp(true);
 
 			st 	  = GetStart();
-			nmins = (dt >= st) ? (uint_t)((dt - st) / 60000ULL) : 0;
+			nmins = (dt >= st) ? (uint_t)((dt - st) / 60000) : 0;
 
 			et 	  = GetRecordStop();
-			nsecs = (et >= dt) ? (uint_t)((et - dt + 1000 - 1) / 1000ULL) : 0;
+			nsecs = (et >= dt) ? (uint_t)((et - dt + 1000 - 1) / 1000) : 0;
 
 			if (nmins >= config.GetLatestStart()) {
 				config.printf("'%s' started too long ago (%u minutes)!", GetTitleAndSubtitle().str(), nmins);

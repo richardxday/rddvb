@@ -1112,12 +1112,12 @@ void ADVBPatterns::Int64sToTermType(void *p, sint64_t val, uint_t termtype)
 		bool   	 issigned = ((type & 1) == 0);
 
 		if (issigned) {
-			maxval = (sint64_t)((1ULL << ((bytes << 3) - 1)) - 1);
+			maxval = (sint64_t)(((uint64_t)1 << ((bytes << 3) - 1)) - 1);
 			minval = -maxval - 1;
 		}
 		else {
 			minval = 0;
-			maxval = (sint64_t)((1ULL << (bytes << 3)) - 1);
+			maxval = (sint64_t)(((uint64_t)1 << (bytes << 3)) - 1);
 		}
 
 		// limit value to correct range for type
