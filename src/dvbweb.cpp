@@ -57,7 +57,7 @@ void printuserdetails(const AString& user)
 
 	struct statvfs fiData;
 	if (statvfs(rdir, &fiData) >= 0) {
-		double gb = (double)fiData.f_bavail * (double)fiData.f_bsize / (1024.0 * 1024.0 * 1024.0);
+		double gb = (double)fiData.f_bavail * (double)fiData.f_bsize / ((uint64_t)1024.0 * (uint64_t)1024.0 * (uint64_t)1024.0);
 
 		printf(",\"freespace\":\"%0.1lfG\"", gb);
 		printf(",\"level\":%u", (uint_t)(gb / lowlimit));

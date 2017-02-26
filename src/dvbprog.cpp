@@ -1403,7 +1403,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 
 			bool exists = AStdFile::exists(GetFilename());
 			str1.printf(" File %sexists",  exists ? "" : "does *not* ");
-			if (GetFileSize()) str1.printf(" and %s %sMB in size", exists ? "is" : "was", AValue(GetFileSize() / (1024 * 1024)).ToString().str());
+			if (GetFileSize()) str1.printf(" and %s %sMB in size", exists ? "is" : "was", AValue(GetFileSize() / ((uint64_t)1024 * (uint64_t)1024)).ToString().str());
 
 			uint_t rate = GetRate() / 1024;
 			if (rate) str1.printf(" (rate %ukbits/s)", rate);
@@ -1520,7 +1520,7 @@ int ADVBProg::CompareExternal(uint_t id, sint32_t value) const
 
 bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 {
-	static const uint64_t hour = 3600 * 1000;
+	static const uint64_t hour = (uint64_t)3600 * (uint64_t)1000;
 	bool same = false;
 
 	if (CompareNoCase(prog1.GetTitle(), prog2.GetTitle()) == 0) {
@@ -2072,11 +2072,11 @@ bool ADVBProg::UpdateFileSize(uint_t nsecs)
 
 	if (::GetFileInfo(filename, &info)) {
 		uint64_t oldfilesize = GetFileSize();
-		uint32_t rate        = (uint32_t)(info.FileSize / (1024 * (uint64_t)nsecs));
+		uint32_t rate        = (uint32_t)(info.FileSize / ((uint64_t)1024 * (uint64_t)nsecs));
 
 		config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s%s",
 					  GetFilename(),
-					  AValue(info.FileSize / (1024 * 1024)).ToString().str(),
+					  AValue(info.FileSize / ((uint64_t)1024 * (uint64_t)1024)).ToString().str(),
 					  AValue(nsecs).ToString().str(),
 					  AValue(rate).ToString().str(),
 					  oldfilesize ? AString(", file size ratio = %0.3;").Arg((double)info.FileSize / (double)oldfilesize).str() : "");

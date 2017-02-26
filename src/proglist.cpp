@@ -1545,7 +1545,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 
 			if (statvfs(rdir, &fiData) >= 0) {
 				AString str;
-				double  gb = (double)fiData.f_bavail * (double)fiData.f_bsize / (1024.0 * 1024.0 * 1024.0);
+				double  gb = (double)fiData.f_bavail * (double)fiData.f_bsize / ((uint64_t)1024.0 * (uint64_t)1024.0 * (uint64_t)1024.0);
 
 				if (report) {
 					AString *reportstr = new AString;

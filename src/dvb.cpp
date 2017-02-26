@@ -713,9 +713,9 @@ int main(int argc, char *argv[])
 					if (::GetFileInfo(filename, &info)) {
 						config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s",
 									  filename.str(),
-									  AValue(info.FileSize / (1024 * 1024)).ToString().str(),
+									  AValue(info.FileSize / ((uint64_t)1024 * (uint64_t)1024)).ToString().str(),
 									  AValue(nsecs).ToString().str(),
-									  AValue(info.FileSize / (1024 * (uint64_t)nsecs)).ToString().str());
+									  AValue(info.FileSize / ((uint64_t)1024 * (uint64_t)nsecs)).ToString().str());
 
 						prog.SetFileSize(info.FileSize);
 					}
