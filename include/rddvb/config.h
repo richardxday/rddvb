@@ -130,6 +130,7 @@ public:
 	uint_t  GetServerPort()                  const {return GetConfigItem("serverport", "1722");}
 	AString GetServerGetAndConvertCommand()  const {return GetConfigItem("servergetandconvertcommand", "dvbgetandconvertrecorded");}
 	AString GetServerUpdateRecordingsCommand() const {return GetConfigItem("serverupdaterecordingscommand", "dvbupdaterecordings");}
+	AString GetServerRescheduleCommand()     const {return GetConfigItem("serverreschedulecommand", "dvbreschedule");}
 
 	// NOTE: function cheats 'const'!
 	void Set(const AString& var, const AString& val) const;

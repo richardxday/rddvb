@@ -1627,96 +1627,103 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 	AString      filename = config.GetListingsFile();
 	uint_t       res = 0;
 
-	commit &= config.CommitScheduling();
-
-	if (!commit) config.logit("** Not committing scheduling **");
-
-	if (config.GetRecordingHost().Valid()) {
-		ADVBProgList list;
-		list.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add);
-		GetRecordingListFromRecordingSlave();
-		GetFileFromRecordingHost(config.GetDVBChannelsFile());
+	if (config.GetServerHost().Valid()) {
+		// push reschedule request up to server
+		config.printf("Triggering reschedule on server '%s'", config.GetServerHost().str());
+		TriggerServerCommand(config.GetServerRescheduleCommand());
 	}
+	else {
+		commit &= config.CommitScheduling();
 
-	config.logit("Loading listings from '%s'", filename.str());
+		if (!commit) config.logit("** Not committing scheduling **");
 
-	if (proglist.ReadFromFile(filename)) {
-		ADVBProgList reslist;
-
-		config.printf("Loaded %u programmes from '%s'", proglist.Count(), filename.str());
-
-		config.logit("Removing programmes that have already finished");
-
-		proglist.DeleteProgrammesBefore(starttime);
-
-		config.logit("List now contains %u programmes", proglist.Count());
-
-		ADataList patternlist;
-		AString   errors;
-		ReadPatterns(patternlist, errors, false);
-
-		if (errors.Valid()) {
-			uint_t i;
-
-			config.printf("Errors found during parsing:");
-
-			for (i = 0; i < patternlist.Count(); i++) {
-				const PATTERN& pattern = *(const PATTERN *)patternlist[i];
-
-				if (pattern.errors.Valid()) {
-					config.printf("Parsing '%s': %s", pattern.pattern.str(), pattern.errors.str());
-				}
-			}
+		if (config.GetRecordingHost().Valid()) {
+			ADVBProgList list;
+			list.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add);
+			GetRecordingListFromRecordingSlave();
+			GetFileFromRecordingHost(config.GetDVBChannelsFile());
 		}
 
-		config.printf("Checking disk space");
+		config.logit("Loading listings from '%s'", filename.str());
 
-		config.printf("Finding programmes using %u patterns", patternlist.Count());
+		if (proglist.ReadFromFile(filename)) {
+			ADVBProgList reslist;
 
-		proglist.FindProgrammes(reslist, patternlist);
+			config.printf("Loaded %u programmes from '%s'", proglist.Count(), filename.str());
 
-		config.logit("Found %u programmes from %u patterns", reslist.Count(), patternlist.Count());
+			config.logit("Removing programmes that have already finished");
 
-		if (AStdFile::exists(config.GetExtraRecordFile())) {
-			AString data;
+			proglist.DeleteProgrammesBefore(starttime);
 
-			if (data.ReadFromFile(config.GetExtraRecordFile())) {
-				AString str;
-				uint_t n = 0;
-				int p = 0, p1;
+			config.logit("List now contains %u programmes", proglist.Count());
 
-				while ((p1 = data.Pos("\n\n", p)) >= 0) {
-					ADVBProg prog;
+			ADataList patternlist;
+			AString   errors;
+			ReadPatterns(patternlist, errors, false);
 
-					str.Create(data.str() + p, p1 + 1 - p, false);
+			if (errors.Valid()) {
+				uint_t i;
 
-					if (str.CountWords() > 0) {
-						prog = str;
-						if (prog.Valid()) {
-							if (prog.GetStopDT() > starttime) {
-								if (reslist.AddProg(prog, true) >= 0) n++;
-								else config.printf("Failed to add extra prog");
+				config.printf("Errors found during parsing:");
+
+				for (i = 0; i < patternlist.Count(); i++) {
+					const PATTERN& pattern = *(const PATTERN *)patternlist[i];
+
+					if (pattern.errors.Valid()) {
+						config.printf("Parsing '%s': %s", pattern.pattern.str(), pattern.errors.str());
+					}
+				}
+			}
+
+			config.printf("Checking disk space");
+
+			config.printf("Finding programmes using %u patterns", patternlist.Count());
+
+			proglist.FindProgrammes(reslist, patternlist);
+
+			config.logit("Found %u programmes from %u patterns", reslist.Count(), patternlist.Count());
+
+			if (AStdFile::exists(config.GetExtraRecordFile())) {
+				AString data;
+
+				if (data.ReadFromFile(config.GetExtraRecordFile())) {
+					AString str;
+					uint_t n = 0;
+					int p = 0, p1;
+
+					while ((p1 = data.Pos("\n\n", p)) >= 0) {
+						ADVBProg prog;
+
+						str.Create(data.str() + p, p1 + 1 - p, false);
+
+						if (str.CountWords() > 0) {
+							prog = str;
+							if (prog.Valid()) {
+								if (prog.GetStopDT() > starttime) {
+									if (reslist.AddProg(prog, true) >= 0) n++;
+									else config.printf("Failed to add extra prog");
+								}
 							}
+							else config.printf("Extra prog is invalid!");
 						}
-						else config.printf("Extra prog is invalid!");
+
+						p = p1 + 1;
 					}
 
-					p = p1 + 1;
+					if (n) config.printf("Added %u extra programmes to record", n);
 				}
-
-				if (n) config.printf("Added %u extra programmes to record", n);
 			}
+
+			res = reslist.Schedule(starttime);
+
+			if (commit) WriteToJobList();
+
+			CreateCombinedFile();
+
+			ADVBProgList::CheckDiskSpace(true);
 		}
-
-		res = reslist.Schedule(starttime);
-
-		if (commit) WriteToJobList();
-
-		CreateCombinedFile();
-
-		ADVBProgList::CheckDiskSpace(true);
+		else config.logit("Failed to read listings file '%s'", filename.str());
 	}
-	else config.logit("Failed to read listings file '%s'", filename.str());
 
 	return res;
 }
