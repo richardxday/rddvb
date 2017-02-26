@@ -2119,8 +2119,7 @@ void ADVBProg::Record()
 {
 	if (Valid()) {
 		const ADVBConfig& config = ADVBConfig::Get();
-		uint64_t dt, st, et;
-		uint_t   nsecs, nmins;
+		uint_t   nsecs;
 		bool     record = true;
 
 		SetRunning();
@@ -2173,20 +2172,54 @@ void ADVBProg::Record()
 		}
 
 		if (record) {
+			uint64_t dt, st, et;
+			uint_t   nmins;
+
+			// get current time
 			dt 	  = (uint64_t)ADateTime().TimeStamp(true);
 
+			// work out how many minutes (if any) the programme has been running
 			st 	  = GetStart();
 			nmins = (dt >= st) ? (uint_t)((dt - st) / 60000) : 0;
 
+			// work out how many seconds till the recording should stop
 			et 	  = GetRecordStop();
 			nsecs = (et >= dt) ? (uint_t)((et - dt + 1000 - 1) / 1000) : 0;
 
+			// if programme has been running too long, abort recording
 			if (nmins >= config.GetLatestStart()) {
 				config.printf("'%s' started too long ago (%u minutes)!", GetTitleAndSubtitle().str(), nmins);
 				reschedule = true;
 				record = false;
 			}
-			else if (nsecs == 0) {
+		}
+
+		if (record) {
+			uint64_t dt, st, et;
+
+			// get current time
+			dt 	  = (uint64_t)ADateTime().TimeStamp(true);
+
+			// work out how many ms until recording should start
+			st    = GetRecordStart();
+
+			// if there is still some time before the recording should start, delay now
+			if (dt < st) {
+				uint_t delay = (uint_t)(st - dt);
+
+				config.logit("'%s' recording starts in %ums, sleeping...", GetTitleAndSubtitle().str(), delay);
+				Sleep(delay);
+			}
+			
+			// get [updated] current time
+			dt 	  = (uint64_t)ADateTime().TimeStamp(true);
+
+			// work out how many seconds till the recording should stop
+			et 	  = GetRecordStop();
+			nsecs = (et > dt) ? (uint_t)((et - dt + 1000 - 1) / 1000) : 0;
+
+			// if programme has already finished, abort recording
+			if (nsecs == 0) {
 				config.printf("'%s' already finished!", GetTitleAndSubtitle().str());
 				reschedule = true;
 				record = false;

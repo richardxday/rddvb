@@ -2229,12 +2229,9 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 	// round all earliest schedule times to minute boundaries
 	uint64_t minrecstarttime = 0;
 	for (i = 0; i < ncards; i++) {
-		// round up to the next minute
-		recstarttimes[i] += 60000 - (recstarttimes[i] % 60000);
-
 		if (!i || (recstarttimes[i] < minrecstarttime)) minrecstarttime = recstarttimes[i];
 
-		config.logit("Earliest record start time for card %u (physical card %u) is %s", i, config.GetPhysicalDVBCard(i), ADateTime(recstarttimes[i]).DateToStr().str());
+		config.printf("Earliest record start time for card %u (physical card %u) is %s", i, config.GetPhysicalDVBCard(i), ADateTime(recstarttimes[i]).DateToStr().str());
 	}
 
 	// generate record data, clear disabled flag and clear owner list for each programme
