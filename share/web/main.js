@@ -1,7 +1,8 @@
 var defaultuser = 'default';
 var defaulttimefilter = 'start>=midnight,yesterday';
 
-var showicons = false;
+var showchannelicons = true;
+var showprogicons = false;
 var iconimgstyle = 'max-width:60px;max-height:60px';
 var iconimgbigstyle = 'max-width:170px;max-height:170px';
 var daynames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -462,7 +463,7 @@ function populateprogs(id)
 					headerstr += find('start', prog.startdate, 'Search for programmes on this day');
 					headerstr += '</td><td>';
 					headerstr += findfilter('stop>"' + gettimesearchstring(prog.start) + '" start<"' + gettimesearchstring(prog.stop) + '"', prog.starttime + ' - ' + prog.stoptime, 'Search for programmes during these times');
-					if (showicons) {
+					if (showchannelicons) {
 						headerstr += '</td><td>';
 						if (typeof prog.channelicon != 'undefined') headerstr += '<a href="' + prog.channelicon + '"><img src="' + prog.channelicon + '" style="' + iconimgstyle + '" /></a>';
 						else headerstr += '&nbsp;';
@@ -525,7 +526,7 @@ function populateprogs(id)
 					}
 					else headerstr += '&nbsp;';
 
-					if (showicons) {
+					if (showprogicons) {
 						headerstr += '</td><td>';
 						if (typeof prog.icon != 'undefined') headerstr += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" style="' + iconimgstyle + '"/></a>';
 						else headerstr += '&nbsp;';
