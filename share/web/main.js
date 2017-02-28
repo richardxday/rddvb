@@ -1,6 +1,7 @@
 var defaultuser = 'default';
 var defaulttimefilter = 'start>=midnight,yesterday';
 
+var showicons = false;
 var iconimgstyle = 'max-width:60px;max-height:60px';
 var iconimgbigstyle = 'max-width:170px;max-height:170px';
 var daynames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -461,9 +462,11 @@ function populateprogs(id)
 					headerstr += find('start', prog.startdate, 'Search for programmes on this day');
 					headerstr += '</td><td>';
 					headerstr += findfilter('stop>"' + gettimesearchstring(prog.start) + '" start<"' + gettimesearchstring(prog.stop) + '"', prog.starttime + ' - ' + prog.stoptime, 'Search for programmes during these times');
-					headerstr += '</td><td>';
-					if (typeof prog.channelicon != 'undefined') headerstr += '<a href="' + prog.channelicon + '"><img src="' + prog.channelicon + '" style="' + iconimgstyle + '" /></a>';
-					else										headerstr += '&nbsp;';
+					if (showicons) {
+						headerstr += '</td><td>';
+						if (typeof prog.channelicon != 'undefined') headerstr += '<a href="' + prog.channelicon + '"><img src="' + prog.channelicon + '" style="' + iconimgstyle + '" /></a>';
+						else headerstr += '&nbsp;';
+					}
 					headerstr += '</td><td>';
 					headerstr += find('channel', prog.channel, 'Seach for programmes on this channel');
 
@@ -522,10 +525,12 @@ function populateprogs(id)
 					}
 					else headerstr += '&nbsp;';
 
-					headerstr += '</td><td>';
-					if (typeof prog.icon != 'undefined') headerstr += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" style="' + iconimgstyle + '"/></a>';
-					else								 headerstr += '&nbsp;';
-
+					if (showicons) {
+						headerstr += '</td><td>';
+						if (typeof prog.icon != 'undefined') headerstr += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" style="' + iconimgstyle + '"/></a>';
+						else headerstr += '&nbsp;';
+					}
+					
 					var downloadlink = '';
 					if (prog.flags.postprocessing || prog.flags.running) ;
 					else if ((typeof prog.recorded != 'undefined') &&
@@ -581,7 +586,9 @@ function populateprogs(id)
 						
 						if ((progvb > 1) && (typeof prog.icon != 'undefined')) {
 							detailsstr += '<table class="proglist" style="border:0px"><tr' + classname + '><td style="border:0px">';
-							detailsstr += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" style="' + iconimgbigstyle + '" /></a>';
+							detailsstr += '<a href="' + prog.icon + '">';
+							detailsstr += '<img src="' + prog.icon + '" style="' + iconimgbigstyle + '" />';
+							detailsstr += '</a>';
 							detailsstr += '</td><td class="desc" style="width:100%">';
 						}
 
