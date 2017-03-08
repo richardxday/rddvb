@@ -2646,7 +2646,8 @@ bool ADVBProgList::GetRecordingListFromRecordingSlave()
 
 	if (::GetFileInfo(config.GetRecordFailuresFile(), &info)) update |= (info.WriteTime > combinedwritetime);
 
-	if (!GetFileFromRecordingHost(config.GetRecordingFile())) {
+	if (GetFileFromRecordingHost(config.GetRecordingFile())) update = true;
+	else {
 		config.printf("Failed to get recording list");
 		success = false;
 	}
