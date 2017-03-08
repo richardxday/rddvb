@@ -2552,10 +2552,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 		
 		success = GetRecordingListFromRecordingSlave();
 		
-		if (reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
-			reclist.WriteToFile(config.GetRecordedFile());
-		}
-		else {
+		if (!reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
 			config.logit("Failed to read recorded list from recording slave");
 			success = false;
 		}
