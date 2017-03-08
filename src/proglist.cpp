@@ -2631,7 +2631,8 @@ bool ADVBProgList::GetRecordingListFromRecordingSlave()
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock     lock("dvbfiles");
 	ADVBProgList failurelist;
-	ADateTime 	 combinedwritetime = ADateTime::MinDateTime;
+	ADateTime    recordingwritetime = ADateTime::MinDateTime;
+	ADateTime 	 combinedwritetime  = ADateTime::MinDateTime;
 	FILE_INFO 	 info;
 	bool      	 success = true, update = false;
 
@@ -2646,12 +2647,19 @@ bool ADVBProgList::GetRecordingListFromRecordingSlave()
 
 	if (::GetFileInfo(config.GetRecordFailuresFile(), &info)) update |= (info.WriteTime > combinedwritetime);
 
-	if (GetFileFromRecordingHost(config.GetRecordingFile())) update = true;
+	// save writetime of existing recordings file
+	if (::GetFileInfo(config.GetRecordingFile(), &info)) recordingwritetime = info.WriteTime;
+
+	if (GetFileFromRecordingHost(config.GetRecordingFile())) {
+		// force update of combined if recordings file has been updated
+		update |= (::GetFileInfo(config.GetRecordingFile(), &info) && (info.WriteTime > recordingwritetime));
+	}
 	else {
 		config.printf("Failed to get recording list");
 		success = false;
 	}
 
+	// if recordings file is newer than combined file, update it
 	if (::GetFileInfo(config.GetRecordingFile(), &info)) update |= (info.WriteTime > combinedwritetime);
 
 	if (update) success &= ADVBProgList::CreateCombinedFile();
