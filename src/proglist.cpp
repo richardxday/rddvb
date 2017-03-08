@@ -2538,16 +2538,38 @@ void ADVBProgList::CheckRecordingFile()
 bool ADVBProgList::GetAndConvertRecordings()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
+	ADVBProgList reclist;
 	AString  cmd;
 	uint32_t tick;
+	bool     success = false;
+	
+	{
+		config.printf("Waiting for lock to update lists from record host '%s'", config.GetRecordingHost().str());
 
-	config.printf("Getting and converting recordings from record host '%s'", config.GetRecordingHost().str());
+		ADVBLock lock("dvbfiles");
+
+		config.printf("Update recording  and recorded lists from record host '%s'", config.GetRecordingHost().str());
+		
+		success = GetRecordingListFromRecordingSlave();
+		
+		if (reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
+			reclist.WriteToFile(config.GetRecordedFile());
+		}
+		else {
+			config.logit("Failed to read recorded list from recording slave");
+			success = false;
+		}
+	}
 
 	{
+		config.printf("Waiting for lock to get and convert recordings from record host '%s'", config.GetRecordingHost().str());
+
 		ADVBLock lock("copyfiles");
 
-		CreateDirectory(config.GetRecordingsStorageDir());
+		config.printf("Getting and converting recordings from record host '%s'", config.GetRecordingHost().str());
 
+		CreateDirectory(config.GetRecordingsStorageDir());
+		
 		tick = GetTickCount();
 		cmd.Delete();
 		cmd.printf("nice rsync -v --partial --remove-source-files --ignore-missing-args %s %s:%s/'*.mpg' %s",
@@ -2573,55 +2595,46 @@ bool ADVBProgList::GetAndConvertRecordings()
 		else					   config.printf("Warning: Failed to copy all DVB logs from recording host");
 	}
 
-	ADVBLock     lock("pullrecordings");
-	ADVBProgList reclist;
-	bool success = false;
+	ADVBLock lock("convertrecordings");
+	uint_t i, converted = 0;
+	bool   reschedule = false;
 
-	if (reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
-		uint_t i, converted = 0;
-		bool   reschedule = false;
+	ADVBProgList convertlist;
+	for (i = 0; i < reclist.Count(); i++) {
+		const ADVBProg& prog = reclist.GetProg(i);
 
-		GetRecordingListFromRecordingSlave();
+		if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
+			if (prog.IsOnceOnly() && prog.IsRecordingComplete() && !config.IsRecordingSlave()) {
+				if (ADVBPatterns::DeletePattern(prog.GetUser(), prog.GetPattern())) {
+					const bool rescheduleoption = config.RescheduleAfterDeletingPattern(prog.GetUser(), prog.GetCategory());
 
-		ADVBProgList convertlist;
-		for (i = 0; i < reclist.Count(); i++) {
-			const ADVBProg& prog = reclist.GetProg(i);
+					config.printf("Deleted pattern '%s', %srescheduling...", prog.GetPattern(), rescheduleoption ? "" : "NOT ");
 
-			if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
-				if (prog.IsOnceOnly() && prog.IsRecordingComplete() && !config.IsRecordingSlave()) {
-					if (ADVBPatterns::DeletePattern(prog.GetUser(), prog.GetPattern())) {
-						const bool rescheduleoption = config.RescheduleAfterDeletingPattern(prog.GetUser(), prog.GetCategory());
-
-						config.printf("Deleted pattern '%s', %srescheduling...", prog.GetPattern(), rescheduleoption ? "" : "NOT ");
-
-						reschedule |= rescheduleoption;
-					}
+					reschedule |= rescheduleoption;
 				}
-
-				convertlist.AddProg(prog);
 			}
+
+			convertlist.AddProg(prog);
 		}
-
-		if (reschedule) ADVBProgList::SchedulePatterns();
-
-		success = true;
-		for (i = 0; i < convertlist.Count(); i++) {
-			ADVBProg& prog = convertlist.GetProgWritable(i);
-
-			config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
-
-			if (prog.ConvertVideo(true)) {
-				converted++;
-			}
-			else {
-				success = false;
-				prog.OnRecordFailure();
-			}
-		}
-
-		if (converted) config.printf("%u programmes converted", converted);
 	}
-	else config.printf("Unable to retreive recordings from recording host");
+
+	if (reschedule) ADVBProgList::SchedulePatterns();
+
+	for (i = 0; i < convertlist.Count(); i++) {
+		ADVBProg& prog = convertlist.GetProgWritable(i);
+
+		config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
+
+		if (prog.ConvertVideo(true)) {
+			converted++;
+		}
+		else {
+			success = false;
+			prog.OnRecordFailure();
+		}
+	}
+
+	if (converted) config.printf("%u programmes converted", converted);
 
 	return success;
 }
