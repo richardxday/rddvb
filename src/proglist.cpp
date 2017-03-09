@@ -2538,20 +2538,20 @@ void ADVBProgList::CheckRecordingFile()
 bool ADVBProgList::GetAndConvertRecordings()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBProgList reclist;
 	AString  cmd;
 	uint32_t tick;
 	bool     success = false;
 	
 	{
-		config.printf("Waiting for lock to update lists from record host '%s'", config.GetRecordingHost().str());
+		//config.printf("Waiting for lock to update lists from record host '%s'", config.GetRecordingHost().str());
 
 		ADVBLock lock("dvbfiles");
 
-		config.printf("Update recording  and recorded lists from record host '%s'", config.GetRecordingHost().str());
+		config.printf("Update recording and recorded lists from record host '%s'", config.GetRecordingHost().str());
 		
 		success = GetRecordingListFromRecordingSlave();
 		
+		ADVBProgList reclist;
 		if (!reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
 			config.logit("Failed to read recorded list from recording slave");
 			success = false;
@@ -2559,7 +2559,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 	}
 
 	{
-		config.printf("Waiting for lock to get and convert recordings from record host '%s'", config.GetRecordingHost().str());
+		//config.printf("Waiting for lock to get and convert recordings from record host '%s'", config.GetRecordingHost().str());
 
 		ADVBLock lock("copyfiles");
 
@@ -2592,9 +2592,17 @@ bool ADVBProgList::GetAndConvertRecordings()
 		else					   config.printf("Warning: Failed to copy all DVB logs from recording host");
 	}
 
+	//config.printf("Waiting for lock to convert recordings");
+	
 	ADVBLock lock("convertrecordings");
 	uint_t i, converted = 0;
 	bool   reschedule = false;
+
+	// re-read recorded list in case it has been modified whilst files have been copying
+	ADVBProgList reclist;
+	reclist.ReadFromBinaryFile(config.GetRecordedFile());
+	
+	config.printf("Converting recordings...");
 
 	ADVBProgList convertlist;
 	for (i = 0; i < reclist.Count(); i++) {
@@ -2632,6 +2640,8 @@ bool ADVBProgList::GetAndConvertRecordings()
 	}
 
 	if (converted) config.printf("%u programmes converted", converted);
+
+	//config.printf("Converted recordings, releasing lock");
 
 	return success;
 }

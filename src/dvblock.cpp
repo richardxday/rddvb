@@ -70,13 +70,15 @@ bool ADVBLock::GetLock(uint_t n)
 			if ((lock->fd = open(lockfile, O_CREAT | O_RDWR, (S_IRUSR | S_IWUSR))) >= 0) {
 				if (flock(lock->fd, LOCK_EX) >= 0) {
 					//config.logit("Acquired lock '%s' (filename '%s')\n", name.str(), lockfile.str());
-					lock->refcount += n;
 					success = true;
 				}
 				else config.logit("Failed to lock file: %s\n", strerror(errno));
 			}
 			else config.logit("Failed to create lockfile '%s' (%s)!  All Hell could break loose!!\n", lockfile.str(), strerror(errno));
 		}
+		else success = true;
+
+		if (success) lock->refcount += n;
 	}
 	else config.logit("Failed to create lock '%s'!\n", name.str());
 
