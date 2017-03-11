@@ -6,10 +6,10 @@ FILENAME="graph-`date +%Y-%m-%d`.png"
 mkdir -p "$DIR"
 cd "$DIR"
 
-test -n "$TIME" || TIME=12
+test -n "$TIME" || TIME=6
 STARTDATE="`date --date="-$TIME month" +%d-%b-%Y`"
 
-dvb -r recorded --calc-trend "1-jan-2017" >trend.txt
+dvb -r recorded --calc-trend "`date --date="-6 month" +%d-%b-%Y`" | tee trend.txt
 
 TREND="`grep "Trend:" trend.txt | sed -E "s/Trend: //"`"
 PERDAY="`grep "Average:" trend.txt | sed -E "s/^.+ ([0-9\.]+) .+$/\1/"`"
