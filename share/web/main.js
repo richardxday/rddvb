@@ -78,7 +78,7 @@ var proglistelement = '';
 function loadpage()
 {
 	var i, str = '';
-
+		
 	for (i = 0; i < filters.length; i++) {
 		if (typeof filters[i].text != 'undefined') str += filters[i].text;
 		else {
@@ -87,6 +87,8 @@ function loadpage()
 			str += '>' + filters[i].title + '</button><br>';
 		}
 	}
+
+	str += '<p style="justify:centre"><a href="/dvbgraphs/graph.png" target=_blank><img src="/dvbgraphs/graph-preview.png" style="max-width:240px"></a></p>' + "\n";
 
 	document.getElementById("buttons").innerHTML = str;
 	
