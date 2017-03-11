@@ -132,10 +132,10 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_EXTERNAL(kbrate,   Compare_kbrate, 	uint32_t, "Encoded file bit rate (kbits/s)"),
 };
 
-AString ADVBProg::dayformat  	 = "%d";
-AString ADVBProg::dateformat 	 = "%D-%N-%Y";
-AString ADVBProg::timeformat 	 = "%h:%m";
-AString ADVBProg::fulltimeformat = "%h:%m:%s";
+AString ADVBProg::dayformat;
+AString ADVBProg::dateformat;
+AString ADVBProg::timeformat;
+AString ADVBProg::fulltimeformat;
 AString ADVBProg::tempfilesuffix;
 AString ADVBProg::recordedfilesuffix;
 AString ADVBProg::videofilesuffix;

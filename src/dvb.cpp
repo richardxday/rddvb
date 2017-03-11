@@ -160,6 +160,7 @@ int main(int argc, char *argv[])
 		printf("\t--force-convert-files\t\tconvert files in current list, even if they have already been converted\n");
 		printf("\t--update-recordings-list\tPull list of programmes being recorded\n");
 		printf("\t--check-recording-now\t\tCheck to see if programmes that should be being recording are recording\n");
+		printf("\t--calc-trend <start-date>\tCalculate average programmes per day and trend line based on programmes after <start-date> in current list\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -1256,6 +1257,48 @@ int main(int argc, char *argv[])
 			}
 			else if (stricmp(argv[i], "--check-recording-now") == 0) {
 				ADVBProgList::CheckRecordingNow();
+			}
+			else if (stricmp(argv[i], "--calc-trend") == 0) {
+				uint64_t start = (uint64_t)ADateTime(argv[++i]).LocalToUTC();
+				uint_t   i;
+
+				for (i = 0; (i < proglist.Count()) && (proglist.GetProg(i).GetStart() < start); i++ ) ;
+
+				if (i < proglist.Count()) {
+					const uint_t n1 = i;
+					const uint_t n2 = proglist.Count();
+					const double t0 = (double)proglist.GetProg(n1).GetStartDT().totime();
+					double sumx  = 0.0;
+					double sumy  = 0.0;
+					double sumxx = 0.0;
+					double sumxy = 0.0;
+					double n     = (double)(n2 - n1);
+					
+					for (i = 0; i < (n2 - n1); i++) {
+						double x = ((double)proglist.GetProg(n1 + i).GetStartDT().totime() - t0) / (3600.0 * 24.0);
+						double y = (double)i;
+
+						sumx  += x;
+						sumy  += y;
+						sumxx += x * x;
+						sumxy += x * y;
+					}
+
+					// m = (mean(x*y) - mean(x) * mean(y)) / (mean(x*x) - mean(x) * mean(x))
+					//   = (sum(x*y)/n - sum(x)/n * sum(y)/n) / (sum(x*x)/n - sum(x)/n * sum(x)/n)
+					//   = (sum(x*y)*n - sum(x) * sum(y)) / (sum(x*x)*n - sum(x) * sum(x))
+					// c = mean(y) - m * mean(x)
+					//   = sum(y)/n - m * sum(x)/n
+					//   = (sum(y) - m * sum(x)) / n
+					
+					double m  = (sumxy * n - sumx * sumy) / (sumxx * n - sumx * sumx);
+					double c  = (sumy - m * sumx) / n;
+					
+					printf("Average: %0.2lf per day\n", m);
+					printf("Trend: %0.8lf + %0.8lf * (x - %0.3lf) / (3600.0 * 24.0)\n",
+						   (double)n1 + c, m, t0);
+				}
+				else fprintf(stderr, "Cannot calculate rate on empty programme list!\n");
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
