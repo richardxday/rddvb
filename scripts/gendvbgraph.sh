@@ -9,7 +9,7 @@ cd "$DIR"
 test -n "$TIME" || TIME=12
 STARTDATE="`date --date="-$TIME month" +%d-%b-%Y`"
 
-dvb -r recorded --calc-trend "$STARTDATE" >trend.txt
+dvb -r recorded --calc-trend "1-jan-2017" >trend.txt
 
 TREND="`grep "Trend:" trend.txt | sed -E "s/Trend: //"`"
 PERDAY="`grep "Average:" trend.txt | sed -E "s/^.+ ([0-9\.]+) .+$/\1/"`"
