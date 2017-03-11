@@ -23,7 +23,7 @@ set autoscale xy
 set grid
 set xtics rotate by -90 format "%d-%b-%Y"
 set xrange ["$STARTDATE":*]
-set key outside
+set key inside bottom right
 plot \
 'list.dat' using 2:0 with lines title 'Recorded', \
 $TREND with lines title '$PERDAY Recordings/day'
