@@ -2417,8 +2417,6 @@ bool ADVBProg::OnRecordSuccess() const
 
 		success = RunCommand("nice " + cmd);
 	}
-
-	config.logit("recordsuccesscmd='%s'", cmd.str());
 	
 	if (IsNotifySet() && (cmd = config.GetUserConfigItem(user, "notifycmd")).Valid()) {
 		cmd = ReplaceTerms(cmd);

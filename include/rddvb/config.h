@@ -26,8 +26,8 @@ public:
 	AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name) const {return GetUserConfigItem(user, name + ":" + subitem, GetUserConfigItem(user, name, GetConfigItem(name + ":" + subitem, GetConfigItem(name))));}
 	AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name, const AString& defval) const {return GetUserConfigItem(user, name + ":" + subitem, GetUserConfigItem(user, name, GetConfigItem(name + ":" + subitem, GetConfigItem(name, defval))));}
 
-	AString GetHierarchicalConfigItem(const AString& str, const AString& name) const {return str.Valid() ? GetConfigItem(str + ":" + name) : GetConfigItem(name);}
-	AString GetHierarchicalConfigItem(const AString& str, const AString& name, const AString& defval) const {return str.Valid() ? GetConfigItem(str + ":" + name, defval) : GetConfigItem(name, defval);}
+	AString GetHierarchicalConfigItem(const AString& str, const AString& name) const {return str.Valid() ? GetConfigItem(str + ":" + name, GetConfigItem(name)) : GetConfigItem(name);}
+	AString GetHierarchicalConfigItem(const AString& str, const AString& name, const AString& defval) const {return str.Valid() ? GetConfigItem(str + ":" + name, GetConfigItem(name, defval)) : GetConfigItem(name, defval);}
 	
 	bool    ConfigItemExists(const AString& name) const {return config.Exists(name);}
 	bool    UserConfigItemExists(const AString& user, const AString& name) const {return ConfigItemExists(user + ":" + name);}
