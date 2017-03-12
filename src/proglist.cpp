@@ -2947,7 +2947,7 @@ bool ADVBProgList::CalculateTrend(const ADateTime& startdate, double& offset, do
 	if (Count() > 0) {
 		for (i = Count() - 1; (i > 0) && (GetProg(i).GetStart() >= start); i-- ) ;
 		if (GetProg(i).GetStart() < start) i++;
-	
+
 		if (i < Count()) {
 			const uint_t n1 = i;
 			const uint_t n2 = Count();

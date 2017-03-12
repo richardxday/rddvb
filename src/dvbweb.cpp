@@ -751,14 +751,17 @@ int main(int argc, char *argv[])
 			}
 
 			{
-				FILE_INFO info;
-
-				if (::GetFileInfo(config.GetRecordedFile(), &info) &&
-					(!Value(vars, val, "statsref") || ((uint64_t)info.WriteTime > (uint64_t)val))) {
+				FILE_INFO info1, info2;
+				uint64_t writetime;
+				
+				if ((::GetFileInfo(config.GetRecordedFile(), &info1) ||
+					 ::GetFileInfo(config.GetCombinedFile(), &info2)) &&
+					((writetime = std::max((uint64_t)info1.WriteTime, (uint64_t)info2.WriteTime)) > (uint64_t)ADateTime::MinDateTime) &&
+					(!Value(vars, val, "statsref") || (writetime > (uint64_t)val))) {
 					double offset, rate, timeoffset;
 				
 					printf(",\"stats\":{");
-					printf("\"ref\":%s", AValue((uint64_t)info.WriteTime).ToString().str());
+					printf("\"ref\":%s", AValue(writetime).ToString().str());
 					if (recordedlist.CalculateTrend(ADateTime("utc now-4w"), offset, rate, timeoffset)) {
 						printf(",\"last4weeks\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
 					}
@@ -770,6 +773,9 @@ int main(int argc, char *argv[])
 					}
 					if (recordedlist.CalculateTrend(ADateTime("utc now-1Y"), offset, rate, timeoffset)) {
 						printf(",\"lastyear\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
+					}
+					if (combinedlist.CalculateTrend(ADateTime("utc now"), offset, rate, timeoffset)) {
+						printf(",\"scheduled\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
 					}
 					printf("}");
 				}

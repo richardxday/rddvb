@@ -121,6 +121,9 @@ function updatestats()
 		if (typeof stats.last6months != 'undefined') {
 			str += '<tr><td style="text-align:left">Last 6 months</td><td>' + Number(stats.last6months.rate).toFixed(2) + '</td></tr>' + "\n";
 		}
+		if (typeof stats.scheduled != 'undefined') {
+			str += '<tr><td style="text-align:left">Scheduled</td><td>' + Number(stats.scheduled.rate).toFixed(2) + '</td></tr>' + "\n";
+		}
 		str += '</table>';
 	}
 	
