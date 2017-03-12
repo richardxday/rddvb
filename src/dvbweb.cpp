@@ -751,6 +751,38 @@ int main(int argc, char *argv[])
 			}
 
 			{
+				double offset, rate, timeoffset;
+				bool flag = false;
+				printf(",\"stats\":{");
+				if (recordedlist.CalculateTrend(ADateTime("utc now - 4w"), offset, rate, timeoffset)) {
+					if (!flag) flag = true;
+					else printf(",");
+					printf("\"last4weeks\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
+				}
+				if (recordedlist.CalculateTrend(ADateTime("utc now - 1w"), offset, rate, timeoffset)) {
+					if (!flag) flag = true;
+					else printf(",");
+					printf("\"lastweek\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
+				}
+				if (recordedlist.CalculateTrend(ADateTime("utc now - 1M"), offset, rate, timeoffset)) {
+					if (!flag) flag = true;
+					else printf(",");
+					printf("\"lastmonth\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
+				}
+				if (recordedlist.CalculateTrend(ADateTime("utc now - 6M"), offset, rate, timeoffset)) {
+					if (!flag) flag = true;
+					else printf(",");
+					printf("\"last6months\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
+				}
+				if (recordedlist.CalculateTrend(ADateTime("utc now - 1Y"), offset, rate, timeoffset)) {
+					if (!flag) flag = true;
+					else printf(",");
+					printf("\"lastyear\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
+				}
+				printf("}");
+			}
+
+			{
 				printf(",\"globals\":{");
 				printf("\"candelete\":%s", (uint_t)config.GetConfigItem("webcandelete", "0") ? "true" : "false");
 				printf("}");

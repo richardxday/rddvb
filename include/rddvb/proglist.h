@@ -120,6 +120,8 @@ public:
 
 	void EnhanceListings();
 
+	bool CalculateTrend(const ADateTime& startdate, double& offset, double& rate, double& timeoffset) const;
+		
 	static void UnscheduleAllProgrammes();
 	static uint_t SchedulePatterns(const ADateTime& starttime = ADateTime().TimeStamp(true), bool commit = true);
 	static bool WriteToJobList();

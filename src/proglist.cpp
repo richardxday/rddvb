@@ -2937,3 +2937,50 @@ void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& p
 	}
 #endif
 }
+
+bool ADVBProgList::CalculateTrend(const ADateTime& startdate, double& offset, double& rate, double& timeoffset) const
+{
+	uint64_t start = (uint64_t)startdate;
+	uint_t   i;
+	bool     valid = false;
+
+	if (Count() > 0) {
+		for (i = Count() - 1; (i > 0) && (GetProg(i).GetStart() >= start); i-- ) ;
+		if (GetProg(i).GetStart() < start) i++;
+	
+		if (i < Count()) {
+			const uint_t n1 = i;
+			const uint_t n2 = Count();
+			const double t0 = (double)GetProg(n1).GetStartDT().totime();
+			double sumx  = 0.0;
+			double sumy  = 0.0;
+			double sumxx = 0.0;
+			double sumxy = 0.0;
+			double n     = (double)(n2 - n1);
+					
+			for (i = 0; i < (n2 - n1); i++) {
+				double x = ((double)GetProg(n1 + i).GetStartDT().totime() - t0) / (3600.0 * 24.0);
+				double y = (double)i;
+
+				sumx  += x;
+				sumy  += y;
+				sumxx += x * x;
+				sumxy += x * y;
+			}
+		
+			// m = (mean(x*y) - mean(x) * mean(y)) / (mean(x*x) - mean(x) * mean(x))
+			//   = (sum(x*y)/n - sum(x)/n * sum(y)/n) / (sum(x*x)/n - sum(x)/n * sum(x)/n)
+			//   = (sum(x*y)*n - sum(x) * sum(y)) / (sum(x*x)*n - sum(x) * sum(x))
+			// c = mean(y) - m * mean(x)
+			//   = sum(y)/n - m * sum(x)/n
+			//   = (sum(y) - m * sum(x)) / n
+
+			rate   	   = (sumxy * n - sumx * sumy) / (sumxx * n - sumx * sumx);
+			offset 	   = (double)n1 + (sumy - rate * sumx) / n;
+			timeoffset = t0;
+			valid      = true;
+		}
+	}
+	
+	return valid;
+}
