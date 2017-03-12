@@ -1260,9 +1260,12 @@ int main(int argc, char *argv[])
 				ADVBProgList::CheckRecordingNow();
 			}
 			else if (stricmp(argv[i], "--calc-trend") == 0) {
+				ADateTime startdate(argv[++i]);
 				double offset, rate, timeoffset;
 
-				if (proglist.CalculateTrend(ADateTime(argv[++i]).LocalToUTC(), offset, rate, timeoffset)) {
+				printf("Calculating trend from %s\n", startdate.DateToStr().str());
+				
+				if (proglist.CalculateTrend(startdate.LocalToUTC(), offset, rate, timeoffset)) {
 					printf("Average: %0.2lf per day\n", rate);
 					printf("Trend: %0.8lf + %0.8lf * (x - %0.3lf) / (3600.0 * 24.0)\n",
 						   offset, rate, timeoffset);

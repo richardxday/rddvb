@@ -71,6 +71,7 @@ var filters = [
 	},
 ];
 var searches = null;
+var stats    = null;
 var link     = null;
 var globals  = null;
 var proglistelement = '';
@@ -88,8 +89,6 @@ function loadpage()
 		}
 	}
 
-	str += '<p style="justify:centre"><a href="/dvbgraphs/graph.png" target=_blank><img src="/dvbgraphs/graph-preview.png" style="max-width:240px"></a></p>' + "\n";
-
 	document.getElementById("buttons").innerHTML = str;
 	
 	filter = decodeurl();
@@ -102,6 +101,30 @@ function loadpage()
 	if (typeof filter.expanded    == 'undefined') filter.expanded    = -1;
 
 	dvbrequest(filter);
+}
+
+function updatestats()
+{
+	var str = '';
+	
+	str += '<p style="justify:centre"><a href="/dvbgraphs/graph.png" target=_blank><img src="/dvbgraphs/graph-preview.png" style="max-width:240px"></a></p>' + "\n";
+
+	if (stats != null) {
+		str += 'Recording Rate (programmes per day):<br>' + "\n";
+		str += '<table class="stats">'
+		if (typeof stats.lastweek != 'undefined') {
+			str += '<tr><td style="text-align:left">Last week</td><td>' + Number(stats.lastweek.rate).toFixed(2) + '</td></tr>' + "\n";
+		}
+		if (typeof stats.last4weeks != 'undefined') {
+			str += '<tr><td style="text-align:left">Last 4 weeks</td><td>' + Number(stats.last4weeks.rate).toFixed(2) + '</td></tr>' + "\n";
+		}
+		if (typeof stats.last6months != 'undefined') {
+			str += '<tr><td style="text-align:left">Last 6 months</td><td>' + Number(stats.last6months.rate).toFixed(2) + '</td></tr>' + "\n";
+		}
+		str += '</table>';
+	}
+	
+	document.getElementById("stats").innerHTML = str;
 }
 
 function getusername(user)
@@ -1730,6 +1753,11 @@ function dvbrequest(filter, postdata)
 							errors = '<br><div class="finderrors">' + response.errors + '</div>';
 						}
 						document.getElementById("finderrors").innerHTML = errors;
+
+						if (typeof response.stats != 'undefined') {
+							stats = response.stats;
+							updatestats();
+						}
 						
 						if (typeof response.searches != 'undefined') {
 							searches = {
@@ -1789,6 +1817,9 @@ function dvbrequest(filter, postdata)
 		data += "pagesize=" + filter.pagesize + "\n";
 		if (searches != null) {
 			data += "searchesref=" + searches.ref + "\n";
+		}
+		if (stats != null) {
+			data += "statsref=" + stats.ref + "\n";
 		}
 		if (patterndefs == null) {
 			data += "patterndefs=\n";

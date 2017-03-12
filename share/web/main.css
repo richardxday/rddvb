@@ -346,3 +346,15 @@ span.patternset:hover
 	padding-right:4px;
 	background-color:#eaa;
 }
+table.stats
+{
+	border:1px solid #aaa;
+	padding:2px;
+	border-spacing:0px;
+	width:100%;
+}
+table.stats td
+{
+	text-align:centre;
+	white-space:nowrap;
+}
