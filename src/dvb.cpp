@@ -161,6 +161,7 @@ int main(int argc, char *argv[])
 		printf("\t--update-recordings-list\tPull list of programmes being recorded\n");
 		printf("\t--check-recording-now\t\tCheck to see if programmes that should be being recording are recording\n");
 		printf("\t--calc-trend <start-date>\tCalculate average programmes per day and trend line based on programmes after <start-date> in current list\n");
+		printf("\t--count-hours\t\t\tCount total hours of programmes in current list\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -1299,6 +1300,22 @@ int main(int argc, char *argv[])
 						   (double)n1 + c, m, t0);
 				}
 				else fprintf(stderr, "Cannot calculate rate on empty programme list!\n");
+			}
+			else if (stricmp(argv[i], "--count-hours") == 0) {
+				uint64_t ms = 0;
+				uint_t   i;
+
+				for (i = 0; i < proglist.Count(); i++)
+				{
+					const ADVBProg& prog = proglist.GetProg(i);
+
+					if		(prog.GetActualLength()) ms += prog.GetActualLength();
+					else if (prog.GetRecordLength()) ms += prog.GetRecordLength();
+					else							 ms += prog.GetLength();
+				}
+
+				double hours = (double)ms / (1000.0 * 3600.0);
+				printf("%u programmes, %0.2lf hours, average %0.1lf minutes/programme\n", proglist.Count(), hours, (60.0 * hours) / (double)proglist.Count());
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
