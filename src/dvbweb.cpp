@@ -762,19 +762,19 @@ int main(int argc, char *argv[])
 				
 					printf(",\"stats\":{");
 					printf("\"ref\":%s", AValue(writetime).ToString().str());
-					if (recordedlist.CalculateTrend(ADateTime("utc now-4w"), offset, rate, timeoffset)) {
+					if (recordedlist.CalculateTrend(ADateTime("utc midnight-4w"), offset, rate, timeoffset)) {
 						printf(",\"last4weeks\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
 					}
-					if (recordedlist.CalculateTrend(ADateTime("utc now-1w"), offset, rate, timeoffset)) {
+					if (recordedlist.CalculateTrend(ADateTime("utc midnight-1w"), offset, rate, timeoffset)) {
 						printf(",\"lastweek\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
 					}
-					if (recordedlist.CalculateTrend(ADateTime("utc now-6M"), offset, rate, timeoffset)) {
+					if (recordedlist.CalculateTrend(ADateTime("utc midnight-6M"), offset, rate, timeoffset)) {
 						printf(",\"last6months\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
 					}
-					if (recordedlist.CalculateTrend(ADateTime("utc now-1Y"), offset, rate, timeoffset)) {
+					if (recordedlist.CalculateTrend(ADateTime("utc midnight-1Y"), offset, rate, timeoffset)) {
 						printf(",\"lastyear\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
 					}
-					if (combinedlist.CalculateTrend(ADateTime("utc now"), offset, rate, timeoffset)) {
+					if (combinedlist.CalculateTrend(ADateTime("utc midnight"), offset, rate, timeoffset)) {
 						printf(",\"scheduled\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", offset, rate, timeoffset);
 					}
 					printf("}");

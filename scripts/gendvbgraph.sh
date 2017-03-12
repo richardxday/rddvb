@@ -7,11 +7,11 @@ mkdir -p "$DIR"
 cd "$DIR"
 
 test -n "$TIME" || TIME=6
-STARTDATE="`date --date="-$TIME month" +%d-%b-%Y`"
-ENDDATE="`date --date="+2 weeks" +%d-%b-%Y`"
+STARTDATE="`date --date="-$TIME month 00:00:00" +%d-%b-%Y`"
+ENDDATE="`date --date="+2 weeks 00:00:00" +%d-%b-%Y`"
 SCHSTARTDATE="`date --date="-1 day 00:00:00" +%s`"
 
-dvb -r recorded --calc-trend "`date --date="-6 month" +%d-%b-%Y`" | tee recorded_trend.txt
+dvb -r recorded --calc-trend "`date --date="-6 month 00:00:00" +%d-%b-%Y`" | tee recorded_trend.txt
 dvb -r combined --calc-trend "now" >scheduled_trend.txt
 
 RECTREND="`grep "Trend:" recorded_trend.txt | sed -E "s/Trend: //"`"
@@ -41,6 +41,6 @@ replot
 unset output
 set terminal pngcairo size 640,480
 set output "graph-preview.png"
-set xrange ["`date --date='-1 month' +%d-%b-%Y`":"$ENDDATE"]
+set xrange ["`date --date='-1 month 00:00:00' +%d-%b-%Y`":"$ENDDATE"]
 replot
 EOF
