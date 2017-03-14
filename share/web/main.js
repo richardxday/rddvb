@@ -105,9 +105,11 @@ function loadpage()
 
 function updatestats()
 {
+	var date = new Date(Date.utc);
+	var datestr = date.getISOString().slice(0, 10);
 	var str = '';
 	
-	str += '<p style="justify:centre"><a href="/dvbgraphs/graph.png" target=_blank><img src="/dvbgraphs/graph-preview.png" style="max-width:240px"></a></p>' + "\n";
+	str += '<p style="justify:centre"><a href="/dvbgraphs/graph-' + datestr + '.png" target=_blank><img src="/dvbgraphs/graph-preview-' + datestr + '.png" style="max-width:240px"></a></p>' + "\n";
 
 	if (stats != null) {
 		str += 'Recording Rate (programmes per day):<br>' + "\n";
