@@ -161,6 +161,7 @@ int main(int argc, char *argv[])
 		printf("\t--update-recordings-list\tPull list of programmes being recorded\n");
 		printf("\t--check-recording-now\t\tCheck to see if programmes that should be being recording are recording\n");
 		printf("\t--calc-trend <start-date>\tCalculate average programmes per day and trend line based on programmes after <start-date> in current list\n");
+		printf("\t--gen-graphs\t\t\tGenerate graphs from recorded data\n");
 		printf("\t--count-hours\t\t\tCount total hours of programmes in current list\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
@@ -1261,16 +1262,19 @@ int main(int argc, char *argv[])
 			}
 			else if (stricmp(argv[i], "--calc-trend") == 0) {
 				ADateTime startdate(argv[++i]);
-				double offset, rate, timeoffset;
+				ADVBProgList::TREND trend;
 
 				printf("Calculating trend from %s\n", startdate.DateToStr().str());
 				
-				if (proglist.CalculateTrend(startdate.LocalToUTC(), offset, rate, timeoffset)) {
-					printf("Average: %0.2lf per day\n", rate);
+				if ((trend = proglist.CalculateTrend(startdate.LocalToUTC())).valid) {
+					printf("Average: %0.2lf per day\n", trend.rate);
 					printf("Trend: %0.8lf + %0.8lf * (x - %0.3lf) / (3600.0 * 24.0)\n",
-						   offset, rate, timeoffset);
+						   trend.offset, trend.rate, trend.timeoffset);
 				}
 				else fprintf(stderr, "Cannot calculate rate on empty programme list!\n");
+			}
+			else if (stricmp(argv[i], "--gen-graphs") == 0) {
+				ADVBProgList::CreateGraphs();
 			}
 			else if (stricmp(argv[i], "--count-hours") == 0) {
 				uint64_t ms = 0;

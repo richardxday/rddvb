@@ -678,6 +678,7 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 			CheckFile(filename, config.GetRecordFailuresFile(), fileinfo)  ||
 			CheckFile(filename, config.GetProcessingFile(),     fileinfo)) {
 			CreateCombinedFile();
+			CreateGraphs();
 		}
 		//else config.printf("No need to update combined file");
 	}
@@ -2464,6 +2465,82 @@ bool ADVBProgList::CreateCombinedFile()
 	return success;
 }
 
+void ADVBProgList::CreateGraphs()
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	ADVBProgList recordedlist, scheduledlist;
+
+	{
+		ADVBLock lock("dvbfiles");
+		recordedlist.ReadFromBinaryFile(config.GetRecordedFile());
+		scheduledlist.ReadFromBinaryFile(config.GetScheduledFile());
+	}
+	
+	AString datfile = config.GetTempFile("graph", ".dat");
+	AString gnpfile = config.GetTempFile("graph", ".gnp");
+
+	AStdFile fp;
+	if (fp.open(datfile, "w")) {
+		uint_t i;
+
+		for (i = 0; i < recordedlist.Count(); i++) {
+			const ADVBProg& prog = recordedlist.GetProg(i);
+			
+			fp.printf("%s %u -\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), i);
+		}
+		for (i = 0; i < scheduledlist.Count(); i++) {
+			const ADVBProg& prog = scheduledlist.GetProg(i);
+			
+			fp.printf("%s - %u\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), recordedlist.Count() + i);
+		}
+		
+		fp.close();
+	}
+
+	ADateTime dt;
+	AString graphfile  = config.GetDataDir().CatPath("graphs", "graph-" + dt.DateFormat("%Y-%M-%D") + ".png");
+	AString graphpfile = config.GetDataDir().CatPath("graphs", "graph-preview-" + dt.DateFormat("%Y-%M-%D") + ".png");
+	
+	if (fp.open(gnpfile, "w")) {
+		const ADateTime startdate("utc now-6M");
+		TREND rectrend = recordedlist.CalculateTrend(startdate);
+		TREND schtrend = scheduledlist.CalculateTrend(ADateTime::MinDateTime);
+
+		schtrend.offset += (double)recordedlist.Count();
+		
+		fp.printf("set terminal pngcairo size 1280,800\n");
+		fp.printf("set output '%s'\n", graphfile.str());
+		fp.printf("set xdata time\n");
+		fp.printf("set timefmt '%%d-%%b-%%Y %%H:%%M'\n");
+		fp.printf("set autoscale xy\n");
+		fp.printf("set grid\n");
+		fp.printf("set xtics rotate by -90 format '%%d-%%b-%%Y'\n");
+		fp.printf("set xrange ['%s':'%s']\n", startdate.DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
+		fp.printf("set key inside bottom right\n");
+		fp.printf("plot \\\n");
+		fp.printf("'%s' using 1:3 with lines lt 1 title 'Recorded', \\\n", datfile.str());
+		fp.printf("'%s' using 1:4 with lines lt 7 title 'Scheduled', \\\n", datfile.str());
+		fp.printf("%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0) with lines lt 2 title '%0.2lf Recorded/day', \\\n",
+				  rectrend.offset, rectrend.rate, rectrend.timeoffset, rectrend.rate);
+		fp.printf("(x>=%0.14le)?(%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0)):1/0 with lines lt 4 title '%0.2lf Scheduled/day'\n",
+				  schtrend.timeoffset - 4.0 * 3600.0 * 24.0, schtrend.offset, schtrend.rate, schtrend.timeoffset, schtrend.rate);
+		fp.printf("unset output\n");
+		fp.printf("set terminal pngcairo size 640,480\n");
+		fp.printf("set output '%s'\n", graphpfile.str());
+		fp.printf("set xrange ['%s':'%s']\n", ADateTime("utc now-1M").DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
+		fp.printf("replot\n");
+		fp.close();
+
+		if (system("gnuplot " + gnpfile) != 0) {
+			config.printf("gnuplot failed\n");
+		}
+
+		remove(datfile);
+		remove(gnpfile);
+	}
+}
+
+
 void ADVBProgList::EnhanceListings()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -2938,12 +3015,14 @@ void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& p
 #endif
 }
 
-bool ADVBProgList::CalculateTrend(const ADateTime& startdate, double& offset, double& rate, double& timeoffset) const
+ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate) const
 {
+	TREND    trend;
 	uint64_t start = (uint64_t)startdate;
 	uint_t   i;
-	bool     valid = false;
 
+	memset(&trend, 0, sizeof(trend));
+	
 	if (Count() > 0) {
 		for (i = Count() - 1; (i > 0) && (GetProg(i).GetStart() >= start); i-- ) ;
 		if (GetProg(i).GetStart() < start) i++;
@@ -2975,12 +3054,12 @@ bool ADVBProgList::CalculateTrend(const ADateTime& startdate, double& offset, do
 			//   = sum(y)/n - m * sum(x)/n
 			//   = (sum(y) - m * sum(x)) / n
 
-			rate   	   = (sumxy * n - sumx * sumy) / (sumxx * n - sumx * sumx);
-			offset 	   = (double)n1 + (sumy - rate * sumx) / n;
-			timeoffset = t0;
-			valid      = true;
+			trend.rate   	 = (sumxy * n - sumx * sumy) / (sumxx * n - sumx * sumx);
+			trend.offset 	 = (double)n1 + (sumy - trend.rate * sumx) / n;
+			trend.timeoffset = t0;
+			trend.valid      = true;
 		}
 	}
 	
-	return valid;
+	return trend;
 }

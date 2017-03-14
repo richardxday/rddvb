@@ -3174,7 +3174,10 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup, bool force)
 	const ADVBConfig& config = ADVBConfig::Get();
 	bool success = ConvertVideoEx(verbose, cleanup, force);
 
-	if (!success) {
+	if (success) {
+		OnRecordSuccess();
+	}
+	else {
 		OnRecordFailure();
 
 		ClearScheduled();

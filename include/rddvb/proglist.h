@@ -120,8 +120,14 @@ public:
 
 	void EnhanceListings();
 
-	bool CalculateTrend(const ADateTime& startdate, double& offset, double& rate, double& timeoffset) const;
-		
+	typedef struct {
+		bool   valid;
+		double offset;
+		double rate;
+		double timeoffset;
+	} TREND;
+	TREND CalculateTrend(const ADateTime& startdate) const;
+
 	static void UnscheduleAllProgrammes();
 	static uint_t SchedulePatterns(const ADateTime& starttime = ADateTime().TimeStamp(true), bool commit = true);
 	static bool WriteToJobList();
@@ -129,7 +135,8 @@ public:
 	static bool CheckFile(const AString& filename, const AString& targetfilename, const FILE_INFO& fileinfo);
 	static bool CreateCombinedFile();
 	static void CheckRecordingFile();
-
+	static void CreateGraphs();
+	
 	static bool GetAndConvertRecordings();
 	static bool GetRecordingListFromRecordingSlave();
 	static bool CheckRecordingNow();
