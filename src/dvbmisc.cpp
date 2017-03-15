@@ -146,3 +146,59 @@ bool SameFile(const AString& file1, const AString& file2)
 			 (stat1.st_dev == stat2.st_dev) &&
 			 (stat1.st_ino == stat2.st_ino)));
 }
+bool CopyFile(AStdData& fp1, AStdData& fp2)
+{
+	static uint8_t buffer[65536];
+	const ADVBConfig& config = ADVBConfig::Get();
+	slong_t sl = -1, dl = -1;
+
+	while ((sl = fp1.readbytes(buffer, sizeof(buffer))) > 0) {
+		if ((dl = fp2.writebytes(buffer, sl)) != sl) {
+			config.logit("Failed to write %ld bytes (%ld written)", sl, dl);
+			break;
+		}
+	}
+
+	return (sl <= 0);
+}
+
+bool CopyFile(const AString& src, const AString& dst, bool binary)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AStdFile fp1, fp2;
+	bool success = false;
+
+	if (SameFile(src, dst)) {
+		config.printf("File copy: '%s' and '%s' are the same file", src.str(), dst.str());
+		success = true;
+	}
+	else if (fp1.open(src, binary ? "rb" : "r")) {
+		if (fp2.open(dst, binary ? "wb" : "w")) {
+			success = CopyFile(fp1, fp2);
+			if (!success) config.logit("Failed to copy '%s' to '%s': transfer failed", src.str(), dst.str());
+		}
+		else config.logit("Failed to copy '%s' to '%s': failed to open '%s' for writing", src.str(), dst.str(), dst.str());
+	}
+	else config.logit("Failed to copy '%s' to '%s': failed to open '%s' for reading", src.str(), dst.str(), src.str());
+
+	return success;
+}
+
+bool MoveFile(const AString& src, const AString& dst, bool binary)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	bool success = false;
+
+	if (SameFile(src, dst)) {
+		config.printf("File move: '%s' and '%s' are the same file", src.str(), dst.str());
+		success = true;
+	}
+	else if	(rename(src, dst) == 0) success = true;
+	else if (CopyFile(src, dst, binary)) {
+		if (remove(src) == 0) success = true;
+		else config.logit("Failed to remove '%s' after copy", src.str());
+	}
+
+	return success;
+}
+

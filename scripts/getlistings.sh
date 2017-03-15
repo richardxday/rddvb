@@ -11,8 +11,6 @@ if [ ! -f "archives/episodes-`date +%Y-%m-%d`.txt.gz" ] ; then
   cp episodes.txt "archives/episodes-`date +%Y-%m-%d`.txt" && gzip "archives/episodes-`date +%Y-%m-%d`.txt"
 fi
 
-gendvbgraph.sh
-
 LISTINGSFILE="archives/listings-`date +%Y-%m-%d`.xmltv"
 if [ ! -f "$LISTINGSFILE.gz" ] ; then
   tv_grab_sd_json --days 14 >"$LISTINGSFILE"

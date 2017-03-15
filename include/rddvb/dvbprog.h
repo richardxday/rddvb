@@ -527,9 +527,6 @@ protected:
 	static uint64_t CalcTime(const char *str);
 	static AString GenTime(uint64_t t, const char *format = "%02u:%02u:%02u.%03u");
 	static AString GetParentheses(const AString& line, int p = 0);
-	static bool CopyFile(AStdData& fp1, AStdData& fp2);
-	static bool CopyFile(const AString& src, const AString& dst, bool binary = true);
-	static bool MoveFile(const AString& src, const AString& dst, bool binary = true);
 
 	typedef struct {
 		AString  aspect;

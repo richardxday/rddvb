@@ -25,5 +25,9 @@ extern bool RunRemoteCommandGetFile(const AString& cmd, const AString& filename)
 extern bool TriggerServerCommand(const AString& cmd);
 
 extern bool SameFile(const AString& file1, const AString& file2);
-	
+
+extern bool CopyFile(AStdData& fp1, AStdData& fp2);
+extern bool CopyFile(const AString& src, const AString& dst, bool binary = true);
+extern bool MoveFile(const AString& src, const AString& dst, bool binary = true);
+
 #endif

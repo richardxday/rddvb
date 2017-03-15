@@ -1720,7 +1720,8 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 			if (commit) WriteToJobList();
 
 			CreateCombinedFile();
-
+			CreateGraphs();
+			
 			ADVBProgList::CheckDiskSpace(true);
 		}
 		else config.logit("Failed to read listings file '%s'", filename.str());
@@ -2469,75 +2470,94 @@ void ADVBProgList::CreateGraphs()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProgList recordedlist, scheduledlist;
+	const ADateTime dt;
+	AString graphfile1  = config.GetDataDir().CatPath("graphs", "graph.png");
+	AString graphfile2  = config.GetDataDir().CatPath("graphs", "graph-" + dt.DateFormat("%Y-%M-%D") + ".png");
+	AString graphpfile1 = config.GetDataDir().CatPath("graphs", "graph-preview.png");
+	AString graphpfile2 = config.GetDataDir().CatPath("graphs", "graph-preview-" + dt.DateFormat("%Y-%M-%D") + ".png");
 
 	{
 		ADVBLock lock("dvbfiles");
-		recordedlist.ReadFromBinaryFile(config.GetRecordedFile());
-		scheduledlist.ReadFromBinaryFile(config.GetScheduledFile());
-	}
-	
-	AString datfile = config.GetTempFile("graph", ".dat");
-	AString gnpfile = config.GetTempFile("graph", ".gnp");
-
-	AStdFile fp;
-	if (fp.open(datfile, "w")) {
-		uint_t i;
-
-		for (i = 0; i < recordedlist.Count(); i++) {
-			const ADVBProg& prog = recordedlist.GetProg(i);
-			
-			fp.printf("%s %u -\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), i);
-		}
-		for (i = 0; i < scheduledlist.Count(); i++) {
-			const ADVBProg& prog = scheduledlist.GetProg(i);
-			
-			fp.printf("%s - %u\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), recordedlist.Count() + i);
-		}
+		FILE_INFO info1, info2;
+		ADateTime writetime;
 		
-		fp.close();
+		if (!::GetFileInfo(graphfile2, &info1) ||
+			!::GetFileInfo(graphpfile2, &info2) ||
+			(((writetime = std::min(info1.WriteTime, info2.WriteTime)) > ADateTime::MinDateTime) &&
+			 ((::GetFileInfo(config.GetRecordedFile(), &info1) && (info1.WriteTime > writetime)) ||
+			  (::GetFileInfo(config.GetScheduledFile(), &info1) && (info1.WriteTime > writetime))))) {
+			recordedlist.ReadFromBinaryFile(config.GetRecordedFile());
+			scheduledlist.ReadFromBinaryFile(config.GetScheduledFile());
+		}
 	}
 
-	ADateTime dt;
-	AString graphfile  = config.GetDataDir().CatPath("graphs", "graph-" + dt.DateFormat("%Y-%M-%D") + ".png");
-	AString graphpfile = config.GetDataDir().CatPath("graphs", "graph-preview-" + dt.DateFormat("%Y-%M-%D") + ".png");
-	
-	if (fp.open(gnpfile, "w")) {
-		const ADateTime startdate("utc now-6M");
-		TREND rectrend = recordedlist.CalculateTrend(startdate);
-		TREND schtrend = scheduledlist.CalculateTrend(ADateTime::MinDateTime);
+	if ((recordedlist.Count() > 0) || (scheduledlist.Count() > 0)) {
+		AString datfile = config.GetTempFile("graph", ".dat");
+		AString gnpfile = config.GetTempFile("graph", ".gnp");
 
-		schtrend.offset += (double)recordedlist.Count();
+		config.printf("Updating graphs...");
 		
-		fp.printf("set terminal pngcairo size 1280,800\n");
-		fp.printf("set output '%s'\n", graphfile.str());
-		fp.printf("set xdata time\n");
-		fp.printf("set timefmt '%%d-%%b-%%Y %%H:%%M'\n");
-		fp.printf("set autoscale xy\n");
-		fp.printf("set grid\n");
-		fp.printf("set xtics rotate by -90 format '%%d-%%b-%%Y'\n");
-		fp.printf("set xrange ['%s':'%s']\n", startdate.DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
-		fp.printf("set key inside bottom right\n");
-		fp.printf("plot \\\n");
-		fp.printf("'%s' using 1:3 with lines lt 1 title 'Recorded', \\\n", datfile.str());
-		fp.printf("'%s' using 1:4 with lines lt 7 title 'Scheduled', \\\n", datfile.str());
-		fp.printf("%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0) with lines lt 2 title '%0.2lf Recorded/day', \\\n",
-				  rectrend.offset, rectrend.rate, rectrend.timeoffset, rectrend.rate);
-		fp.printf("(x>=%0.14le)?(%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0)):1/0 with lines lt 4 title '%0.2lf Scheduled/day'\n",
-				  schtrend.timeoffset - 4.0 * 3600.0 * 24.0, schtrend.offset, schtrend.rate, schtrend.timeoffset, schtrend.rate);
-		fp.printf("unset output\n");
-		fp.printf("set terminal pngcairo size 640,480\n");
-		fp.printf("set output '%s'\n", graphpfile.str());
-		fp.printf("set xrange ['%s':'%s']\n", ADateTime("utc now-1M").DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
-		fp.printf("replot\n");
-		fp.close();
+		AStdFile fp;
+		if (fp.open(datfile, "w")) {
+			uint_t i;
 
-		if (system("gnuplot " + gnpfile) != 0) {
-			config.printf("gnuplot failed\n");
+			for (i = 0; i < recordedlist.Count(); i++) {
+				const ADVBProg& prog = recordedlist.GetProg(i);
+			
+				fp.printf("%s %u -\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), i);
+			}
+			for (i = 0; i < scheduledlist.Count(); i++) {
+				const ADVBProg& prog = scheduledlist.GetProg(i);
+			
+				fp.printf("%s - %u\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), recordedlist.Count() + i);
+			}
+		
+			fp.close();
 		}
 
-		remove(datfile);
-		remove(gnpfile);
+	
+		if (fp.open(gnpfile, "w")) {
+			const ADateTime startdate("utc now-6M");
+			TREND rectrend = recordedlist.CalculateTrend(startdate);
+			TREND schtrend = scheduledlist.CalculateTrend(ADateTime::MinDateTime);
+
+			schtrend.offset += (double)recordedlist.Count();
+		
+			fp.printf("set terminal pngcairo size 1280,800\n");
+			fp.printf("set output '%s'\n", graphfile1.str());
+			fp.printf("set title 'Recording Rate - %s'\n", dt.DateToStr().str());
+			fp.printf("set xdata time\n");
+			fp.printf("set timefmt '%%d-%%b-%%Y %%H:%%M'\n");
+			fp.printf("set autoscale xy\n");
+			fp.printf("set grid\n");
+			fp.printf("set xtics rotate by -90 format '%%d-%%b-%%Y'\n");
+			fp.printf("set xrange ['%s':'%s']\n", startdate.DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
+			fp.printf("set key inside bottom right\n");
+			fp.printf("plot \\\n");
+			fp.printf("'%s' using 1:3 with lines lt 1 title 'Recorded', \\\n", datfile.str());
+			fp.printf("'%s' using 1:4 with lines lt 7 title 'Scheduled', \\\n", datfile.str());
+			fp.printf("%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0) with lines lt 2 title '%0.2lf Recorded/day', \\\n",
+					  rectrend.offset, rectrend.rate, rectrend.timeoffset, rectrend.rate);
+			fp.printf("(x>=%0.14le)?(%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0)):1/0 with lines lt 4 title '%0.2lf Scheduled/day'\n",
+					  schtrend.timeoffset - 4.0 * 3600.0 * 24.0, schtrend.offset, schtrend.rate, schtrend.timeoffset, schtrend.rate);
+			fp.printf("unset output\n");
+			fp.printf("set terminal pngcairo size 640,480\n");
+			fp.printf("set output '%s'\n", graphpfile1.str());
+			fp.printf("set xrange ['%s':'%s']\n", ADateTime("utc now-1M").DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
+			fp.printf("replot\n");
+			fp.close();
+
+			if (system("gnuplot " + gnpfile) == 0) {
+				CopyFile(graphfile1, graphfile2);
+				CopyFile(graphpfile1, graphpfile2);
+			}
+			else config.printf("gnuplot failed");
+
+			remove(datfile);
+			remove(gnpfile);
+		}
 	}
+	else config.printf("Graph update not required");
 }
 
 
@@ -2759,7 +2779,11 @@ bool ADVBProgList::GetRecordingListFromRecordingSlave()
 	// if recordings file is newer than combined file, update it
 	if (::GetFileInfo(config.GetRecordingFile(), &info)) update |= (info.WriteTime > combinedwritetime);
 
-	if (update) success &= ADVBProgList::CreateCombinedFile();
+	if (update) {
+		config.printf("Updating combined listings because a contributory file has changed");
+		success &= ADVBProgList::CreateCombinedFile();
+		CreateGraphs();
+	}
 
 	return success;
 }
