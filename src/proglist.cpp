@@ -2551,16 +2551,15 @@ void ADVBProgList::CreateGraphs()
 			fp.close();
 
 			if (system("gnuplot " + gnpfile) == 0) {
-				const AString datestr = dt.DateFormat("-%Y-%M-%D.png");
+				const AString datesuffix = dt.DateFormat("-%Y-%M-%D.png");
 				const AString copyfiles[] = {
-					graphfile6months, graphfile6months.Prefix() + datestr,
-					graphfile1week,   graphfile1week.Prefix()   + datestr,
-					graphfilepreview, graphfilepreview.Prefix() + datestr,
+					graphfile6months,
+					graphfile1week,
 				};
 				uint_t i;
 
 				for (i = 0; i < NUMBEROF(copyfiles); i += 2) {
-					CopyFile(copyfiles[i], copyfiles[i + 1]);
+					CopyFile(copyfiles[i], copyfiles[i].Prefix() + datesuffix);
 				}
 			}
 			else config.printf("gnuplot failed");
