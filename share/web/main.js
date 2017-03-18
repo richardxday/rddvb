@@ -106,9 +106,14 @@ function loadpage()
 function updatestats()
 {
 	var str = '';
-	
-	str += '<p style="justify:centre"><a href="/dvbgraphs/graph.png" target=_blank><img src="/dvbgraphs/graph-preview.png" style="max-width:240px"></a></p>' + "\n";
 
+	str += '<p style="text-align:center"><a href="/dvbgraphs/graph.png" target=_blank><img src="/dvbgraphs/graph-preview.png" style="max-width:240px"></a>';
+	str += '</p>' + "\n";
+	str += '<p style="text-align:center">';
+	str += '<a href="/dvbgraphs/graph-preview.png" target=_blank>1 Week</a>&nbsp;&nbsp;&nbsp;';
+	str += '<a href="/dvbgraphs/graph.png" target=_blank>6 Months</a>' + "\n";
+	str += '</p>' + "\n";
+	
 	if (stats != null) {
 		str += 'Recording Rate (programmes per day):<br>' + "\n";
 		str += '<table class="stats">'
