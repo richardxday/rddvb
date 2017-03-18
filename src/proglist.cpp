@@ -2525,7 +2525,7 @@ void ADVBProgList::CreateGraphs()
 		
 			fp.printf("set terminal pngcairo size 1280,800\n");
 			fp.printf("set output '%s'\n", graphfile6months.str());
-			fp.printf("set title 'Recording Rate - %s'\n", dt.DateToStr().str());
+			fp.printf("set title 'Recording Rate (6 months) - %s'\n", dt.DateToStr().str());
 			fp.printf("set xdata time\n");
 			fp.printf("set timefmt '%%d-%%b-%%Y %%H:%%M'\n");
 			fp.printf("set autoscale xy\n");
@@ -2541,6 +2541,7 @@ void ADVBProgList::CreateGraphs()
 			fp.printf("(x>=%0.14le)?(%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0)):1/0 with lines lt 4 title '%0.2lf Scheduled/day'\n",
 					  schtrend.timeoffset - 4.0 * 3600.0 * 24.0, schtrend.offset, schtrend.rate, schtrend.timeoffset, schtrend.rate);
 			fp.printf("unset output\n");
+			fp.printf("set title 'Recording Rate (1 week) - %s'\n", dt.DateToStr().str());
 			fp.printf("set output '%s'\n", graphfile1week.str());
 			fp.printf("set xrange ['%s':'%s']\n", ADateTime("utc now-1M").DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
 			fp.printf("replot\n");
