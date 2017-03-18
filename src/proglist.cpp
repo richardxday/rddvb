@@ -2471,19 +2471,19 @@ void ADVBProgList::CreateGraphs()
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProgList recordedlist, scheduledlist;
 	const ADateTime dt;
-	AString graphfile1  = config.GetDataDir().CatPath("graphs", "graph.png");
-	AString graphfile2  = config.GetDataDir().CatPath("graphs", "graph-" + dt.DateFormat("%Y-%M-%D") + ".png");
-	AString graphpfile1 = config.GetDataDir().CatPath("graphs", "graph-preview.png");
-	AString graphpfile2 = config.GetDataDir().CatPath("graphs", "graph-preview-" + dt.DateFormat("%Y-%M-%D") + ".png");
-
+	const AString graphfile6months = config.GetDataDir().CatPath("graphs", "graph-6months.png");
+	const AString graphfile1week   = config.GetDataDir().CatPath("graphs", "graph-1week.png");
+	const AString graphfilepreview = config.GetDataDir().CatPath("graphs", "graph-preview.png");
+	
 	{
 		ADVBLock lock("dvbfiles");
-		FILE_INFO info1, info2;
+		FILE_INFO info1, info2, info3;
 		ADateTime writetime;
 		
-		if (!::GetFileInfo(graphfile2, &info1) ||
-			!::GetFileInfo(graphpfile2, &info2) ||
-			(((writetime = std::min(info1.WriteTime, info2.WriteTime)) > ADateTime::MinDateTime) &&
+		if (!::GetFileInfo(graphfile6months, &info1) ||
+			!::GetFileInfo(graphfile1week, &info2) ||
+			!::GetFileInfo(graphfilepreview, &info3) ||
+			(((writetime = std::min(std::min(info1.WriteTime, info2.WriteTime), info3.WriteTime)) > ADateTime::MinDateTime) &&
 			 ((::GetFileInfo(config.GetRecordedFile(), &info1) && (info1.WriteTime > writetime)) ||
 			  (::GetFileInfo(config.GetScheduledFile(), &info1) && (info1.WriteTime > writetime))))) {
 			recordedlist.ReadFromBinaryFile(config.GetRecordedFile());
@@ -2524,7 +2524,7 @@ void ADVBProgList::CreateGraphs()
 			schtrend.offset += (double)recordedlist.Count();
 		
 			fp.printf("set terminal pngcairo size 1280,800\n");
-			fp.printf("set output '%s'\n", graphfile1.str());
+			fp.printf("set output '%s'\n", graphfile6months.str());
 			fp.printf("set title 'Recording Rate - %s'\n", dt.DateToStr().str());
 			fp.printf("set xdata time\n");
 			fp.printf("set timefmt '%%d-%%b-%%Y %%H:%%M'\n");
@@ -2541,15 +2541,27 @@ void ADVBProgList::CreateGraphs()
 			fp.printf("(x>=%0.14le)?(%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0)):1/0 with lines lt 4 title '%0.2lf Scheduled/day'\n",
 					  schtrend.timeoffset - 4.0 * 3600.0 * 24.0, schtrend.offset, schtrend.rate, schtrend.timeoffset, schtrend.rate);
 			fp.printf("unset output\n");
-			fp.printf("set terminal pngcairo size 640,480\n");
-			fp.printf("set output '%s'\n", graphpfile1.str());
+			fp.printf("set output '%s'\n", graphfile1week.str());
 			fp.printf("set xrange ['%s':'%s']\n", ADateTime("utc now-1M").DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
+			fp.printf("replot\n");
+			fp.printf("unset output\n");
+			fp.printf("set terminal pngcairo size 640,480\n");
+			fp.printf("set output '%s'\n", graphfilepreview.str());
 			fp.printf("replot\n");
 			fp.close();
 
 			if (system("gnuplot " + gnpfile) == 0) {
-				CopyFile(graphfile1, graphfile2);
-				CopyFile(graphpfile1, graphpfile2);
+				const AString datestr = dt.DateFormat("-%Y-%M-%D.png");
+				const AString copyfiles[] = {
+					graphfile6months, graphfile6months.Prefix() + datestr,
+					graphfile1week,   graphfile1week.Prefix()   + datestr,
+					graphfilepreview, graphfilepreview.Prefix() + datestr,
+				};
+				uint_t i;
+
+				for (i = 0; i < NUMBEROF(copyfiles); i += 2) {
+					CopyFile(copyfiles[i], copyfiles[i + 1]);
+				}
 			}
 			else config.printf("gnuplot failed");
 
