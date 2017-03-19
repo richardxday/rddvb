@@ -2948,7 +2948,10 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 		mp2file = audiofiles[0].filename;
 		config.printf("Audio track %u of '%s' doesn't exists, using file '%s' instead", audiotrack, GetQuickDescription().str(), mp2file.str());
 	}
-	else config.printf("Warning: no audio file(s) associated with '%s'", GetQuickDescription().str());
+	else {
+		config.printf("Warning: no audio file(s) associated with '%s'", GetQuickDescription().str());
+		success = false;
+	}
 	
 	if (success) {
 		if (m2vfile.Empty() && mp2file.Valid()) {
