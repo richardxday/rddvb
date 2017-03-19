@@ -1765,7 +1765,11 @@ bool ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
 	bool		 removed = false;
 
 	if (list.ReadFromFile(filename)) {
-		if		(!list.DeleteProg(prog))	  config.logit("Failed to find programme '%s' in list to remove it!", prog.GetQuickDescription().str());
+		uint_t n;
+
+		for (n = 0; list.DeleteProg(prog); n++) ;
+		
+		if		(!n)						  config.logit("Failed to find programme '%s' in list to remove it!", prog.GetQuickDescription().str());
 		else if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after removing a programme", filename.str());
 		else removed = true;
 	}
@@ -1783,13 +1787,13 @@ bool ADVBProgList::RemoveFromList(const AString& filename, const AString& uuid)
 
 	if (list.ReadFromFile(filename)) {
 		const ADVBProg *pprog;
+		uint_t n;
 
-		if ((pprog = list.FindUUID(uuid)) != NULL) {
-			ADVBProg prog = *pprog;
-			if		(!list.DeleteProg(prog))	  config.logit("Failed to find programme '%s' in list to remove it!", prog.GetQuickDescription().str());
-			else if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after removing a programme", filename.str());
-			else removed = true;
-		}
+		for (n = 0; ((pprog = list.FindUUID(uuid)) != NULL) && list.DeleteProg(*pprog); n++) ;
+
+		if		(!n)						  config.logit("Failed to find programme '%s' in list to remove it!", uuid.str());
+		else if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after removing a programme", filename.str());
+		else removed = true;
 	}
 	else config.logit("Failed to read file '%s' for removing a programme", filename.str());
 
