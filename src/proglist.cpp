@@ -2502,26 +2502,38 @@ void ADVBProgList::CreateGraphs()
 		AString datfile = config.GetTempFile("graph", ".dat");
 		AString gnpfile = config.GetTempFile("graph", ".gnp");
 		ADateTime firstdate = ADateTime::MinDateTime;
+		uint_t noverlapped = 0;
 		
 		config.printf("Updating graphs...");
 		
 		AStdFile fp;
 		if (fp.open(datfile, "w")) {
-			uint_t i;
+			uint_t i, n;
 
-			for (i = 0; i < recordedlist.Count(); i++) {
+			recordedlist.CreateHash();
+			for (i = n = 0; i < recordedlist.Count(); i++, n++) {
 				const ADVBProg& prog = recordedlist.GetProg(i);
-
-				if (firstdate == ADateTime::MinDateTime) firstdate = prog.GetStartDT();
 				
-				fp.printf("%s %u -\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), i);
+				if (firstdate == ADateTime::MinDateTime) firstdate = prog.GetStartDT();
+
+				if (scheduledlist.FindUUID(prog)) {
+					fp.printf("%s %u %u\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), n, n);
+				}
+				else {
+					fp.printf("%s %u -\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), n);
+				}
 			}
-			for (i = 0; i < scheduledlist.Count(); i++) {
+			
+			for (i = 0; (i < scheduledlist.Count()) && recordedlist.FindUUID(scheduledlist.GetProg(i)); i++) ;
+
+			noverlapped = i;
+			
+			for (; i < scheduledlist.Count(); i++) {
 				const ADVBProg& prog = scheduledlist.GetProg(i);
 			
 				if (firstdate == ADateTime::MinDateTime) firstdate = prog.GetStartDT();
 
-				fp.printf("%s - %u\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), recordedlist.Count() + i);
+				fp.printf("%s - %u\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), n++);
 			}
 		
 			fp.close();
@@ -2533,7 +2545,7 @@ void ADVBProgList::CreateGraphs()
 			TREND rectrend = recordedlist.CalculateTrend(startdate);
 			TREND schtrend = scheduledlist.CalculateTrend(ADateTime::MinDateTime);
 
-			schtrend.offset += (double)recordedlist.Count();
+			schtrend.offset += (double)recordedlist.Count() - (double)noverlapped;
 		
 			fp.printf("set terminal pngcairo size 1280,800\n");
 			fp.printf("set xdata time\n");
