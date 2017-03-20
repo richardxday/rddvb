@@ -126,7 +126,7 @@ public:
 		double rate;
 		double timeoffset;
 	} TREND;
-	TREND CalculateTrend(const ADateTime& startdate) const;
+	TREND CalculateTrend(const ADateTime& startdate = ADateTime::MinDateTime, const ADateTime& enddate = ADateTime::MaxDateTime) const;
 
 	static void UnscheduleAllProgrammes();
 	static uint_t SchedulePatterns(const ADateTime& starttime = ADateTime().TimeStamp(true), bool commit = true);

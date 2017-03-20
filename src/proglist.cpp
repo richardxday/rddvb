@@ -2473,7 +2473,7 @@ bool ADVBProgList::CreateCombinedFile()
 void ADVBProgList::CreateGraphs()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBProgList recordedlist, scheduledlist;
+	ADVBProgList combinedlist, scheduledlist;
 	const ADateTime dt;
 	const AString graphfileall     = config.GetDataDir().CatPath("graphs", "graph-all.png");
 	const AString graphfile6months = config.GetDataDir().CatPath("graphs", "graph-6months.png");
@@ -2493,59 +2493,61 @@ void ADVBProgList::CreateGraphs()
 									std::min(info3.WriteTime, info4.WriteTime))) > ADateTime::MinDateTime) &&
 			 ((::GetFileInfo(config.GetRecordedFile(), &info1) && (info1.WriteTime > writetime)) ||
 			  (::GetFileInfo(config.GetScheduledFile(), &info1) && (info1.WriteTime > writetime))))) {
-			recordedlist.ReadFromBinaryFile(config.GetRecordedFile());
+			combinedlist.ReadFromBinaryFile(config.GetCombinedFile());
 			scheduledlist.ReadFromBinaryFile(config.GetScheduledFile());
 		}
 	}
 
-	if ((recordedlist.Count() > 0) || (scheduledlist.Count() > 0)) {
-		AString datfile = config.GetTempFile("graph", ".dat");
-		AString gnpfile = config.GetTempFile("graph", ".gnp");
+	if (combinedlist.Count() > 0) {
+		const AString datfile = config.GetTempFile("graph", ".dat");
+		const AString gnpfile = config.GetTempFile("graph", ".gnp");
 		ADateTime firstdate = ADateTime::MinDateTime;
-		uint_t noverlapped = 0;
+		ADateTime firstrecdate = ADateTime::MinDateTime;
+		ADateTime lastrecdate  = ADateTime::MinDateTime;
+		ADateTime firstschdate = ADateTime::MinDateTime;
+		ADateTime lastschdate  = ADateTime::MinDateTime;
 		
 		config.printf("Updating graphs...");
 		
 		AStdFile fp;
 		if (fp.open(datfile, "w")) {
-			uint_t i, n;
+			uint_t i;
 
-			recordedlist.CreateHash();
-			for (i = n = 0; i < recordedlist.Count(); i++, n++) {
-				const ADVBProg& prog = recordedlist.GetProg(i);
+			scheduledlist.CreateHash();
+			for (i = 0; i < combinedlist.Count(); i++) {
+				const ADVBProg& prog = combinedlist.GetProg(i);
 				
+				fp.printf("%s", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str());
+
 				if (firstdate == ADateTime::MinDateTime) firstdate = prog.GetStartDT();
 
-				if (scheduledlist.FindUUID(prog)) {
-					fp.printf("%s %u %u\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), n, n);
+				if (prog.IsRecorded()) {
+					if (firstrecdate == ADateTime::MinDateTime) firstrecdate = prog.GetStartDT();
+					lastrecdate = prog.GetStartDT();
+					fp.printf(" %u", i);
 				}
-				else {
-					fp.printf("%s %u -\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), n);
+				else fp.printf(" -");
+
+				if (prog.IsScheduled() || scheduledlist.FindUUID(prog)) {
+					if (firstschdate == ADateTime::MinDateTime) firstschdate = prog.GetStartDT();
+					lastschdate = prog.GetStartDT();
+					fp.printf(" %u", i);
 				}
-			}
-			
-			for (i = 0; (i < scheduledlist.Count()) && recordedlist.FindUUID(scheduledlist.GetProg(i)); i++) ;
+				else fp.printf(" -");
 
-			noverlapped = i;
-			
-			for (; i < scheduledlist.Count(); i++) {
-				const ADVBProg& prog = scheduledlist.GetProg(i);
-			
-				if (firstdate == ADateTime::MinDateTime) firstdate = prog.GetStartDT();
-
-				fp.printf("%s - %u\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), n++);
+				fp.printf("\n");
 			}
-		
+					
 			fp.close();
 		}
 	
 		if (fp.open(gnpfile, "w")) {
 			const ADateTime startdate("utc now-6M");
-			TREND allrectrend = recordedlist.CalculateTrend(ADateTime::MinDateTime);
-			TREND rectrend = recordedlist.CalculateTrend(startdate);
-			TREND schtrend = scheduledlist.CalculateTrend(ADateTime::MinDateTime);
-
-			schtrend.offset += (double)recordedlist.Count() - (double)noverlapped;
+			const ADateTime enddate("utc now+2w+3d");
+			const double    pretime = 2.0 * 24.0 * 3600.0;
+			TREND allrectrend = combinedlist.CalculateTrend(firstrecdate, lastrecdate);
+			TREND rectrend = combinedlist.CalculateTrend(startdate, lastrecdate);
+			TREND schtrend = combinedlist.CalculateTrend(firstschdate, lastschdate);
 		
 			fp.printf("set terminal pngcairo size 1280,800\n");
 			fp.printf("set xdata time\n");
@@ -2554,34 +2556,35 @@ void ADVBProgList::CreateGraphs()
 			fp.printf("set grid\n");
 			fp.printf("set xtics rotate by -90 format '%%d-%%b-%%Y'\n");
 			fp.printf("set key inside bottom right\n");
+			fp.printf("trend(x,a,b,offset,rate,timeoffset)=((x>=a)&&(x<=b))?(offset+rate*(x-timeoffset)/(3600.0*24.0)):1/0\n");
 
 			fp.printf("set output '%s'\n", graphfileall.str());
 			fp.printf("set title 'Recording Rate (all) - %s'\n", dt.DateToStr().str());
 			fp.printf("set yrange [0:*]\n");
-			fp.printf("set xrange ['%s':'%s']\n", firstdate.DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
+			fp.printf("set xrange ['%s':'%s']\n", firstdate.DateFormat("%D-%N-%Y").str(), enddate.DateFormat("%D-%N-%Y").str());
 			fp.printf("plot \\\n");
 			fp.printf("'%s' using 1:3 with lines lt 1 title 'Recorded', \\\n", datfile.str());
 			fp.printf("'%s' using 1:4 with lines lt 7 title 'Scheduled', \\\n", datfile.str());
-			fp.printf("%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0) with lines lt 5 title '%0.2lf Recorded/day', \\\n",
-					  allrectrend.offset, allrectrend.rate, allrectrend.timeoffset, allrectrend.rate);
-			fp.printf("(x>=%0.14le)?(%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0)):1/0 with lines lt 2 title '%0.2lf Recorded/day', \\\n",
-					  rectrend.timeoffset - 28.0 * 3600.0 * 24.0, rectrend.offset, rectrend.rate, rectrend.timeoffset, rectrend.rate);
-			fp.printf("(x>=%0.14le)?(%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0)):1/0 with lines lt 4 title '%0.2lf Scheduled/day'\n",
-					  schtrend.timeoffset - 4.0 * 3600.0 * 24.0, schtrend.offset, schtrend.rate, schtrend.timeoffset, schtrend.rate);
+			fp.printf("trend(x,%lf,%lf,%0.14le,%0.14le,%0.14le) with lines lt 2 title '%0.2lf Recorded/day', \\\n",
+					  (double)firstrecdate.totime(), (double)enddate.totime(), allrectrend.offset, allrectrend.rate, allrectrend.timeoffset, allrectrend.rate);
+			fp.printf("trend(x,%lf,%lf,%0.14le,%0.14le,%0.14le) with lines lt 3 title '%0.2lf Recorded/day', \\\n",
+					  (double)startdate.totime(), (double)enddate.totime(), rectrend.offset, rectrend.rate, rectrend.timeoffset, rectrend.rate);
+			fp.printf("trend(x,%lf,%lf,%0.14le,%0.14le,%0.14le) with lines lt 4 title '%0.2lf Scheduled/day'\n",
+					  (double)firstschdate.totime() - pretime, (double)enddate.totime(), schtrend.offset, schtrend.rate, schtrend.timeoffset, schtrend.rate);
 			fp.printf("unset output\n");
 
 			fp.printf("set output '%s'\n", graphfile6months.str());
 			fp.printf("set title 'Recording Rate (6 months) - %s'\n", dt.DateToStr().str());
 			fp.printf("set autoscale y\n");
-			fp.printf("set xrange ['%s':'%s']\n", startdate.DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
+			fp.printf("set xrange ['%s':'%s']\n", startdate.DateFormat("%D-%N-%Y").str(), enddate.DateFormat("%D-%N-%Y").str());
 			fp.printf("set key inside bottom right\n");
 			fp.printf("plot \\\n");
 			fp.printf("'%s' using 1:3 with lines lt 1 title 'Recorded', \\\n", datfile.str());
 			fp.printf("'%s' using 1:4 with lines lt 7 title 'Scheduled', \\\n", datfile.str());
-			fp.printf("%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0) with lines lt 2 title '%0.2lf Recorded/day', \\\n",
-					  rectrend.offset, rectrend.rate, rectrend.timeoffset, rectrend.rate);
-			fp.printf("(x>=%0.14le)?(%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0)):1/0 with lines lt 4 title '%0.2lf Scheduled/day'\n",
-					  schtrend.timeoffset - 4.0 * 3600.0 * 24.0, schtrend.offset, schtrend.rate, schtrend.timeoffset, schtrend.rate);
+			fp.printf("trend(x,%lf,%lf,%0.14le,%0.14le,%0.14le) with lines lt 3 title '%0.2lf Recorded/day', \\\n",
+					  (double)startdate.totime(), (double)enddate.totime(), rectrend.offset, rectrend.rate, rectrend.timeoffset, rectrend.rate);
+			fp.printf("trend(x,%lf,%lf,%0.14le,%0.14le,%0.14le) with lines lt 4 title '%0.2lf Scheduled/day'\n",
+					  (double)firstschdate.totime() - pretime, (double)enddate.totime(), schtrend.offset, schtrend.rate, schtrend.timeoffset, schtrend.rate);
 			fp.printf("unset output\n");
 
 			fp.printf("set title 'Recording Rate (1 week) - %s'\n", dt.DateToStr().str());
@@ -3100,10 +3103,11 @@ void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& p
 #endif
 }
 
-ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate) const
+ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate, const ADateTime& enddate) const
 {
 	TREND    trend;
 	uint64_t start = (uint64_t)startdate;
+	uint64_t end   = (uint64_t)enddate;
 	uint_t   i;
 
 	memset(&trend, 0, sizeof(trend));
@@ -3114,17 +3118,15 @@ ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate) con
 
 		if (i < Count()) {
 			const uint_t n1 = i;
-			const uint_t n2 = Count();
-			const double t0 = (double)GetProg(n1).GetStartDT().totime();
+			const double t0 = (double)GetProg(i).GetStartDT().totime();
 			double sumx  = 0.0;
 			double sumy  = 0.0;
 			double sumxx = 0.0;
 			double sumxy = 0.0;
-			double n     = (double)(n2 - n1);
 					
-			for (i = 0; i < (n2 - n1); i++) {
-				double x = ((double)GetProg(n1 + i).GetStartDT().totime() - t0) / (3600.0 * 24.0);
-				double y = (double)i;
+			for (; (i < Count()) && (GetProg(i).GetStart() <= end); i++) {
+				double x = ((double)GetProg(i).GetStartDT().totime() - t0) / (3600.0 * 24.0);
+				double y = (double)(i - n1);
 
 				sumx  += x;
 				sumy  += y;
@@ -3139,6 +3141,7 @@ ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate) con
 			//   = sum(y)/n - m * sum(x)/n
 			//   = (sum(y) - m * sum(x)) / n
 
+			const double n = (double)(i - n1);
 			trend.rate   	 = (sumxy * n - sumx * sumy) / (sumxx * n - sumx * sumx);
 			trend.offset 	 = (double)n1 + (sumy - trend.rate * sumx) / n;
 			trend.timeoffset = t0;
