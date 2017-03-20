@@ -2475,19 +2475,22 @@ void ADVBProgList::CreateGraphs()
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProgList recordedlist, scheduledlist;
 	const ADateTime dt;
+	const AString graphfileall     = config.GetDataDir().CatPath("graphs", "graph-all.png");
 	const AString graphfile6months = config.GetDataDir().CatPath("graphs", "graph-6months.png");
 	const AString graphfile1week   = config.GetDataDir().CatPath("graphs", "graph-1week.png");
 	const AString graphfilepreview = config.GetDataDir().CatPath("graphs", "graph-preview.png");
 	
 	{
 		ADVBLock lock("dvbfiles");
-		FILE_INFO info1, info2, info3;
+		FILE_INFO info1, info2, info3, info4;
 		ADateTime writetime;
 		
-		if (!::GetFileInfo(graphfile6months, &info1) ||
-			!::GetFileInfo(graphfile1week, &info2) ||
-			!::GetFileInfo(graphfilepreview, &info3) ||
-			(((writetime = std::min(std::min(info1.WriteTime, info2.WriteTime), info3.WriteTime)) > ADateTime::MinDateTime) &&
+		if (!::GetFileInfo(graphfileall, &info1) ||
+			!::GetFileInfo(graphfile6months, &info2) ||
+			!::GetFileInfo(graphfile1week, &info3) ||
+			!::GetFileInfo(graphfilepreview, &info4) ||
+			(((writetime = std::min(std::min(info1.WriteTime, info2.WriteTime),
+									std::min(info3.WriteTime, info4.WriteTime))) > ADateTime::MinDateTime) &&
 			 ((::GetFileInfo(config.GetRecordedFile(), &info1) && (info1.WriteTime > writetime)) ||
 			  (::GetFileInfo(config.GetScheduledFile(), &info1) && (info1.WriteTime > writetime))))) {
 			recordedlist.ReadFromBinaryFile(config.GetRecordedFile());
@@ -2498,7 +2501,8 @@ void ADVBProgList::CreateGraphs()
 	if ((recordedlist.Count() > 0) || (scheduledlist.Count() > 0)) {
 		AString datfile = config.GetTempFile("graph", ".dat");
 		AString gnpfile = config.GetTempFile("graph", ".gnp");
-
+		ADateTime firstdate = ADateTime::MinDateTime;
+		
 		config.printf("Updating graphs...");
 		
 		AStdFile fp;
@@ -2507,34 +2511,56 @@ void ADVBProgList::CreateGraphs()
 
 			for (i = 0; i < recordedlist.Count(); i++) {
 				const ADVBProg& prog = recordedlist.GetProg(i);
-			
+
+				if (firstdate == ADateTime::MinDateTime) firstdate = prog.GetStartDT();
+				
 				fp.printf("%s %u -\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), i);
 			}
 			for (i = 0; i < scheduledlist.Count(); i++) {
 				const ADVBProg& prog = scheduledlist.GetProg(i);
 			
+				if (firstdate == ADateTime::MinDateTime) firstdate = prog.GetStartDT();
+
 				fp.printf("%s - %u\n", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str(), recordedlist.Count() + i);
 			}
 		
 			fp.close();
 		}
-
 	
 		if (fp.open(gnpfile, "w")) {
 			const ADateTime startdate("utc now-6M");
+			TREND allrectrend = recordedlist.CalculateTrend(ADateTime::MinDateTime);
 			TREND rectrend = recordedlist.CalculateTrend(startdate);
 			TREND schtrend = scheduledlist.CalculateTrend(ADateTime::MinDateTime);
 
 			schtrend.offset += (double)recordedlist.Count();
 		
 			fp.printf("set terminal pngcairo size 1280,800\n");
-			fp.printf("set output '%s'\n", graphfile6months.str());
-			fp.printf("set title 'Recording Rate (6 months) - %s'\n", dt.DateToStr().str());
 			fp.printf("set xdata time\n");
 			fp.printf("set timefmt '%%d-%%b-%%Y %%H:%%M'\n");
 			fp.printf("set autoscale xy\n");
 			fp.printf("set grid\n");
 			fp.printf("set xtics rotate by -90 format '%%d-%%b-%%Y'\n");
+			fp.printf("set key inside bottom right\n");
+
+			fp.printf("set output '%s'\n", graphfileall.str());
+			fp.printf("set title 'Recording Rate (all) - %s'\n", dt.DateToStr().str());
+			fp.printf("set yrange [0:*]\n");
+			fp.printf("set xrange ['%s':'%s']\n", firstdate.DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
+			fp.printf("plot \\\n");
+			fp.printf("'%s' using 1:3 with lines lt 1 title 'Recorded', \\\n", datfile.str());
+			fp.printf("'%s' using 1:4 with lines lt 7 title 'Scheduled', \\\n", datfile.str());
+			fp.printf("%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0) with lines lt 5 title '%0.2lf Recorded/day', \\\n",
+					  allrectrend.offset, allrectrend.rate, allrectrend.timeoffset, allrectrend.rate);
+			fp.printf("(x>=%0.14le)?(%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0)):1/0 with lines lt 2 title '%0.2lf Recorded/day', \\\n",
+					  rectrend.timeoffset - 28.0 * 3600.0 * 24.0, rectrend.offset, rectrend.rate, rectrend.timeoffset, rectrend.rate);
+			fp.printf("(x>=%0.14le)?(%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0)):1/0 with lines lt 4 title '%0.2lf Scheduled/day'\n",
+					  schtrend.timeoffset - 4.0 * 3600.0 * 24.0, schtrend.offset, schtrend.rate, schtrend.timeoffset, schtrend.rate);
+			fp.printf("unset output\n");
+
+			fp.printf("set output '%s'\n", graphfile6months.str());
+			fp.printf("set title 'Recording Rate (6 months) - %s'\n", dt.DateToStr().str());
+			fp.printf("set autoscale y\n");
 			fp.printf("set xrange ['%s':'%s']\n", startdate.DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
 			fp.printf("set key inside bottom right\n");
 			fp.printf("plot \\\n");
@@ -2545,11 +2571,13 @@ void ADVBProgList::CreateGraphs()
 			fp.printf("(x>=%0.14le)?(%0.14le+%0.14le*(x-%0.14le)/(3600.0*24.0)):1/0 with lines lt 4 title '%0.2lf Scheduled/day'\n",
 					  schtrend.timeoffset - 4.0 * 3600.0 * 24.0, schtrend.offset, schtrend.rate, schtrend.timeoffset, schtrend.rate);
 			fp.printf("unset output\n");
+
 			fp.printf("set title 'Recording Rate (1 week) - %s'\n", dt.DateToStr().str());
 			fp.printf("set output '%s'\n", graphfile1week.str());
 			fp.printf("set xrange ['%s':'%s']\n", ADateTime("utc now-1M").DateFormat("%D-%N-%Y").str(), ADateTime("utc now+2w+3d").DateFormat("%D-%N-%Y").str());
 			fp.printf("replot\n");
 			fp.printf("unset output\n");
+
 			fp.printf("set terminal pngcairo size 640,480\n");
 			fp.printf("set output '%s'\n", graphfilepreview.str());
 			fp.printf("replot\n");
@@ -2558,13 +2586,18 @@ void ADVBProgList::CreateGraphs()
 			if (system("gnuplot " + gnpfile) == 0) {
 				const AString datesuffix = dt.DateFormat("-%Y-%M-%D.png");
 				const AString copyfiles[] = {
+					graphfileall,
 					graphfile6months,
 					graphfile1week,
 				};
 				uint_t i;
 
-				for (i = 0; i < NUMBEROF(copyfiles); i += 2) {
-					CopyFile(copyfiles[i], copyfiles[i].Prefix() + datesuffix);
+				for (i = 0; i < NUMBEROF(copyfiles); i++) {
+					AString destfilename = copyfiles[i].Prefix() + datesuffix;
+
+					if (!AStdFile::exists(destfilename)) {
+						CopyFile(copyfiles[i], destfilename);
+					}
 				}
 			}
 			else config.printf("gnuplot failed");

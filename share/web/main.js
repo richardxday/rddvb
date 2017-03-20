@@ -111,7 +111,8 @@ function updatestats()
 	str += '</p>' + "\n";
 	str += '<p style="text-align:center">';
 	str += '<a href="/dvbgraphs/graph-1week.png" target=_blank>1 Week</a>&nbsp;&nbsp;&nbsp;';
-	str += '<a href="/dvbgraphs/graph-6months.png" target=_blank>6 Months</a>' + "\n";
+	str += '<a href="/dvbgraphs/graph-6months.png" target=_blank>6 Months</a>&nbsp;&nbsp;&nbsp;';
+	str += '<a href="/dvbgraphs/graph-all.png" target=_blank>All</a>' + "\n";
 	str += '</p>' + "\n";
 	
 	if (stats != null) {
