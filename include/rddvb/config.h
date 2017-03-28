@@ -39,9 +39,9 @@ public:
 	AString GetLogDir()			   	  		 const;
 	AString GetShareDir()			   		 const;
 	AString GetSlaveLogDir()			  	 const {return GetConfigItem("slavelogdir", GetLogDir().CatPath(GetConfigItem("slavelogsubdir", "slave")));}
-	AString GetRecordingsDir()	   	  		 const {return CatPath(GetDataDir(), GetConfigItem("recdir", "recordings"));}
+	AString GetRecordingsDir()	   	  		 const {return CatPath(GetDataDir(), GetConfigItem("recdir", GetConfigItem("homedir").CatPath("Videos")));}
 	AString GetRecordingsStorageDir()		 const {return CatPath(GetRecordingsDir(), GetConfigItem("storagedir", "Temp"));}
-	AString GetRecordingsArchiveDir(const AString& user) const {return CatPath(GetRecordingsDir(), GetUserConfigItem(user, "achivedir", "Archive"));}
+	AString GetRecordingsArchiveDir()		 const {return CatPath(GetRecordingsDir(), GetConfigItem("achivedir", "Archive"));}
 	AString GetTempDir()              		 const {return GetConfigItem("tempdir", GetDataDir().CatPath("temp"));}
 	AString GetTempFile(const AString& name, const AString& suffix = "") const;
 	AString GetQueue()						 const {return GetConfigItem("queue", "d");}

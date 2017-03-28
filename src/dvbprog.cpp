@@ -2755,7 +2755,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	const AString audiofilesuffix    = config.GetAudioFileSuffix();
 	AString src  	   = GetFilename();
 	AString dst  	   = GenerateFilename(true);
-	AString archivedst = ReplaceFilenameTerms(config.GetRecordingsArchiveDir(GetUser()), false).CatPath(src.FilePart());
+	AString archivedst = ReplaceFilenameTerms(config.GetRecordingsArchiveDir(), false).CatPath(src.FilePart());
 
 	CreateDirectory(archivedst.PathPart());
 
@@ -3201,7 +3201,7 @@ AString ADVBProg::GetArchiveRecordingFilename() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString filename = GetFilename();
-	return ReplaceFilenameTerms(config.GetRecordingsArchiveDir(GetUser()), false).CatPath(filename.FilePart().Prefix() + "." + recordedfilesuffix);
+	return ReplaceFilenameTerms(config.GetRecordingsArchiveDir(), false).CatPath(filename.FilePart().Prefix() + "." + recordedfilesuffix);
 }
 
 AString ADVBProg::GetTempRecordingFilename() const

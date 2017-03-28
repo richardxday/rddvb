@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
 		printf("\t--confdir\t\t\tPrint conf directory\n");
 		printf("\t--datadir\t\t\tPrint data directory\n");
 		printf("\t--logdir\t\t\tPrint log directory\n");
+		printf("\t--dirs\t\t\tPrint important configuration directories\n");
 		printf("\t--dayformat <format>\t\tFormat string for day (default '%s')\n", ADVBProg::GetDayFormat().str());
 		printf("\t--dateformat <format>\t\tFormat string for date (default '%s')\n", ADVBProg::GetDateFormat().str());
 		printf("\t--timeformat <format>\t\tFormat string for time (default '%s')\n", ADVBProg::GetTimeFormat().str());
@@ -174,6 +175,26 @@ int main(int argc, char *argv[])
 			else if (strcmp(argv[i], "--confdir") == 0) printf("%s\n", config.GetConfigDir().str());
 			else if (strcmp(argv[i], "--datadir") == 0) printf("%s\n", config.GetDataDir().str());
 			else if (strcmp(argv[i], "--logdir") == 0)  printf("%s\n", config.GetLogDir().str());
+			else if (strcmp(argv[i], "--dirs") == 0) {
+				AList users;
+
+				config.ListUsers(users);
+				
+				printf("Configuration: %s\n", config.GetConfigDir().str());
+				printf("Data: %s\n", config.GetDataDir().str());
+				printf("Log files: %s\n", config.GetLogDir().str());
+				printf("Recordings: %s\n", config.GetRecordingsDir().str());
+
+				const AString *user = AString::Cast(users.First());
+				while (user) {
+					printf("Recordings for %s: %s\n", user->str(), config.GetRecordingsDir(*user).str());
+					user = user->Next();
+				}
+
+				printf("Recordings (Temp): %s\n", config.GetRecordingsStorageDir().str());
+				printf("Recordings (Archive): %s\n", config.GetRecordingsArchiveDir().str());
+				printf("Temp: %s\n", config.GetTempDir().str());
+			}
 			else if (strcmp(argv[i], "--dayformat") == 0) ADVBProg::SetDayFormat(argv[++i]);
 			else if (strcmp(argv[i], "--dateformat") == 0) ADVBProg::SetDateFormat(argv[++i]);
 			else if (strcmp(argv[i], "--timeformat") == 0) ADVBProg::SetTimeFormat(argv[++i]);

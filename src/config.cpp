@@ -25,10 +25,12 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		const char *name;
 		const char *value;
 	} __defaults[] = {
+		{"sysuser",				getenv("LOGNAME")},
+		{"homedir",				getenv("HOME")},
 		{"prehandle",  		 	"2"},
 		{"posthandle", 		 	"3"},
 		{"pri", 	   		 	"0"},
-		{"dir",              	""},
+		{"dir",              	"{titledir}"},
 		{"h264crf",      	 	"17"},
 		{"maxvideorate", 	 	"2000k"},
 		{"aacbitrate", 	 	 	"160k"},
@@ -73,8 +75,8 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 
 		const AString *user = AString::Cast(users.First());
 		while (user) {
-			if (((dir = GetRecordingsDir(*user)).Valid())        && (dir.Pos("{") < 0)) CreateDirectory(dir);
-			if (((dir = GetRecordingsArchiveDir(*user)).Valid()) && (dir.Pos("{") < 0)) CreateDirectory(dir);
+			if (((dir = GetRecordingsDir(*user)).Valid())   && (dir.Pos("{") < 0)) CreateDirectory(dir);
+			if (((dir = GetRecordingsArchiveDir()).Valid()) && (dir.Pos("{") < 0)) CreateDirectory(dir);
 
 			user = user->Next();
 		}

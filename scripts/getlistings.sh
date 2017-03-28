@@ -2,6 +2,7 @@
 DATADIR="`dvb --datadir`"
 CONFDIR="`dvb --confdir`"
 
+mkdir -p "$DATADIR/archives"
 cd "$DATADIR"
 
 if [ ! -f "archives/recorded-`date +%Y-%m-%d`.dat.gz" ] ; then
