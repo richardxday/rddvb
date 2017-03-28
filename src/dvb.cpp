@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 		printf("\t--find-with-file <pattern-file>\tFind programmes matching patterns in patterns file <pattern-file> (-F)\n");
 		printf("\t--find-repeats\t\t\tFor each programme in current list, list repeats (-R)\n");
 		printf("\t--find-similar <file>\t\tFor each programme in current list, find first similar programme in <file>\n");
-		printf("\t--describe-pattern <patterns>\t\tDescribe patterns as parsed\n");
+		printf("\t--describe-pattern <patterns>\tDescribe patterns as parsed\n");
 		printf("\t--delete-all\t\t\tDelete all programmes\n");
 		printf("\t--delete <patterns>\t\tDelete programmes matching <patterns>\n");
 		printf("\t--delete-with-file <pattern-file> Delete programmes matching patterns in patterns file <pattern-file>\n");
