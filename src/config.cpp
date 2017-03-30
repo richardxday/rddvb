@@ -4,6 +4,8 @@
 #include <string.h>
 
 #include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
@@ -21,12 +23,12 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 						   defaults(20, &AString::DeleteString),
 						   webresponse(false)
 {
+	const struct passwd *pw = getpwuid(getuid());
 	static const struct {
 		const char *name;
 		const char *value;
 	} __defaults[] = {
-		{"sysuser",				getenv("LOGNAME")},
-		{"homedir",				getenv("HOME")},
+		{"homedir",				pw->pw_dir},
 		{"prehandle",  		 	"2"},
 		{"posthandle", 		 	"3"},
 		{"pri", 	   		 	"0"},
