@@ -61,9 +61,17 @@ public:
 	AString GetRecordFailuresFile()			 const {return CatPath(GetDataDir(), GetConfigItem("recordfailuresfile", "recordfailures.dat"));}
 	AString GetCombinedFile()			 	 const {return CatPath(GetDataDir(), GetConfigItem("combinedfile", "combined.dat"));}
 
-	AString GetDVBReplacementsFile()		 const {return CatPath(GetShareDir(), GetConfigItem("dvbreplacementsfile",   "dvbchannelreplacements.txt"));}
-	AString GetXMLTVReplacementsFile()		 const {return CatPath(GetShareDir(), GetConfigItem("xmltvreplacementsfile", "xmltvchannelreplacements.txt"));}
+	AString GetDVBReplacementsFileShare()	 const {return CatPath(GetShareDir(), GetConfigItem("dvbreplacementsfile",   "dvbchannelreplacements.txt"));}
+	AString GetDVBReplacementsFileConfig()	 const {return CatPath(GetConfigDir(), GetConfigItem("dvbreplacementsfile",   "dvbchannelreplacements.txt"));}
+	AString GetDVBReplacementsFile()		 const {return AStdFile::exists(GetDVBReplacementsFileConfig()) ? GetDVBReplacementsFileConfig() : GetDVBReplacementsFileShare();}
 
+	AString GetXMLTVReplacementsFileShare()	 const {return CatPath(GetShareDir(), GetConfigItem("xmltvreplacementsfile", "xmltvchannelreplacements.txt"));}
+	AString GetXMLTVReplacementsFileConfig() const {return CatPath(GetConfigDir(), GetConfigItem("xmltvreplacementsfile", "xmltvchannelreplacements.txt"));}
+	AString GetXMLTVReplacementsFile()		 const {return AStdFile::exists(GetXMLTVReplacementsFileConfig()) ? GetXMLTVReplacementsFileConfig() : GetXMLTVReplacementsFileShare();}
+
+	AString GetXMLTVDownloadCommand()		 const {return GetConfigItem("xmltvcmd", "tv_grab_sd_json");}
+	AString GetXMLTVDownloadArguments(const AString& destfile) const {return GetConfigItem("xmltvargs", "--days 14 >\"{destfile}\"").SearchAndReplace("{destfile}", destfile);}
+	
 	AString GetExtraRecordFile()			 const {return CatPath(GetDataDir(), GetConfigItem("extrarecordfile", "extrarecordprogrammes.txt"));}
 	AString GetDVBCardsFile()                const {return CatPath(GetDataDir(), GetConfigItem("dvbcardsfile", "dvbcards.txt"));}
 	AString GetLogBase()				     const {return "dvblog-";}

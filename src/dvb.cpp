@@ -77,7 +77,8 @@ int main(int argc, char *argv[])
 		printf("\t--confdir\t\t\tPrint conf directory\n");
 		printf("\t--datadir\t\t\tPrint data directory\n");
 		printf("\t--logdir\t\t\tPrint log directory\n");
-		printf("\t--dirs\t\t\tPrint important configuration directories\n");
+		printf("\t--dirs\t\t\t\tPrint important configuration directories\n");
+		printf("\t--getxmltv <outputfile>\t\tDownload XMLTV listings\n");
 		printf("\t--dayformat <format>\t\tFormat string for day (default '%s')\n", ADVBProg::GetDayFormat().str());
 		printf("\t--dateformat <format>\t\tFormat string for date (default '%s')\n", ADVBProg::GetDateFormat().str());
 		printf("\t--timeformat <format>\t\tFormat string for time (default '%s')\n", ADVBProg::GetTimeFormat().str());
@@ -194,6 +195,15 @@ int main(int argc, char *argv[])
 				printf("Recordings (Temp): %s\n", config.GetRecordingsStorageDir().str());
 				printf("Recordings (Archive): %s\n", config.GetRecordingsArchiveDir().str());
 				printf("Temp: %s\n", config.GetTempDir().str());
+			}
+			else if (strcmp(argv[i], "--getxmltv") == 0) {
+				AString destfile = argv[++i];
+				AString cmd = config.GetXMLTVDownloadCommand() + " " + config.GetXMLTVDownloadArguments(destfile);
+
+				config.logit("Downloading XMLTV listings using '%s'", cmd.str());
+				if ((res = system(cmd.str())) != 0) {
+					config.logit("Downloading failed!");
+				}
 			}
 			else if (strcmp(argv[i], "--dayformat") == 0) ADVBProg::SetDayFormat(argv[++i]);
 			else if (strcmp(argv[i], "--dateformat") == 0) ADVBProg::SetDateFormat(argv[++i]);
