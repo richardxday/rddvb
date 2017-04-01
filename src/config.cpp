@@ -21,6 +21,7 @@ AQuitHandler quithandler;
 
 ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false),
 						   defaults(20, &AString::DeleteString),
+						   configrecorder(NULL),
 						   webresponse(false)
 {
 	const struct passwd *pw = getpwuid(getuid());
@@ -148,6 +149,8 @@ AString ADVBConfig::GetConfigItem(const AString& name) const
 	if (config.Exists(name)) res = config.Get(name);
 	else if ((def = (const AString *)defaults.Read(name)) != NULL) res = *def;
 
+	if (def && configrecorder) configrecorder->push_back(name + "=" + *def);
+	
 	//debug("Request for '%s' (def: '%s'): '%s'\n", name.str(), def ? def->str() : "<notset>", res.str());
 
 	return res;
@@ -161,6 +164,8 @@ AString ADVBConfig::GetConfigItem(const AString& name, const AString& defval) co
 
 	if (config.Exists(name)) res = config.Get(name);
 	else					 res = defval;
+
+	if (configrecorder) configrecorder->push_back(name + "=" + defval);
 
 	//debug("Request for '%s' (def: '%s'): '%s'\n", name.str(), defval.str(), res.str());
 
@@ -466,4 +471,12 @@ bool ADVBConfig::ExtractLogData(const ADateTime& start, const ADateTime& end, co
 	}
 
 	return success;
+}
+
+// NOTE: function cheats 'const'!
+void ADVBConfig::SetConfigRecorder(std::vector<AString> *recorder) const
+{
+	// must cheat const system
+	ADVBConfig *pconfig = const_cast<ADVBConfig *>(this);
+	pconfig->configrecorder = recorder;
 }

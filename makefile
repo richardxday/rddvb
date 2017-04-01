@@ -82,6 +82,34 @@ include $(MAKEFILEDIR)/makefile.app
 
 INSTALL_BINARIES:=0
 
+APPLICATION := extractconfig
+OBJECTS     := $(APPLICATION:%=%.o)
+include $(MAKEFILEDIR)/makefile.app
+
+DEFAULTCONFIG := share/default-config-values.txt
+
+$(HEADERSSRC)/config.extract.h: $(HEADERSSRC)/config.h
+	@echo "Generating $@"
+	@grep -h -E '^[[:blank:]]+[A-Za-z0-9_]+[ \t]+.+// extractconfig' $< | sed -E 's/^[ \t]+[A-Za-z0-9_]+[ \t]+([A-Za-z0-9_]+)\(.+\/\/ extractconfig\((.*)\).*$$/(void)config.\1(\2);/' >$@
+
+ifdef DEBUG
+$(DEBUG_OBJDIR)/$(APPLICATION).o: $(HEADERSSRC)/config.extract.h
+
+EXTRACTCONFIG := $(DEBUG_BINDIR)/$(DEBUG_APPLICATION)$(APPLICATION_SUFFIX)
+$(DEFAULTCONFIG): $(EXTRACTCONFIG)
+	@echo "Generating $@"
+	@LD_LIBRARY_PATH=$(DEBUG_LIBDIR) $(EXTRACTCONFIG) >$@
+else
+$(RELEASE_OBJDIR)/$(APPLICATION).o: $(HEADERSSRC)/config.extract.h
+
+EXTRACTCONFIG := $(RELEASE_BINDIR)/$(RELEASE_APPLICATION)$(APPLICATION_SUFFIX)
+$(DEFAULTCONFIG): $(EXTRACTCONFIG)
+	@echo "Generating $@"
+	@LD_LIBRARY_PATH=$(RELEASE_LIBDIR) $(EXTRACTCONFIG) >$@
+endif
+
+CLEANFILES  += $(HEADERSSRC)/config.extract.h $(DEFAULTCONFIG)
+
 APPLICATION := sdfetch
 OBJECTS     := $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
@@ -97,6 +125,8 @@ UNINSTALLFILES += $(LOCAL_INSTALLED_BINARIES)
 
 $(INSTALLBINDST)/%: scripts/%
 	@$(SUDO) $(MAKEFILEDIR)/copyifnewer "$<" "$@"
+
+all: $(DEFAULTCONFIG)
 
 include $(MAKEFILEDIR)/makefile.post
 
