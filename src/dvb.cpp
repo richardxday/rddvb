@@ -53,21 +53,6 @@ int main(int argc, char *argv[])
 	int  i;
 	int  res = 0;
 
-#if 0
-	{
-		ADVBLock lock("dvbfiles");
-		ADVBProgList reclist;
-		if (reclist.ReadFromFile(config.GetRecordedFile())) {
-			uint_t j;
-			for (j = 0; j < reclist.Count(); j++) {
-				ADVBProg& prog = reclist.GetProgWritable(j);
-				prog.ClearExistsOnMediaServer();
-			}
-			if (!HasQuit()) reclist.WriteToFile(config.GetRecordedFile());
-		}
-	}
-#endif
-
 	(void)prog;
 
 	if ((argc == 1) || ((argc > 1) && ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)))) {
