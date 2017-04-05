@@ -1543,11 +1543,17 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 		}
 		else if (prog1.IsFilm() && prog2.IsFilm()) {
 			// both programmes are films
-			// -> definitely the same programme
+			// -> same if (either director field is empty OR director fields match) AND
+			//		      (either year field is empty OR year fields match)
+			same = ((!prog1.GetDirector()[0] || !prog2.GetDirector()[0] || (CompareNoCase(prog1.GetDirector(), prog2.GetDirector()) == 0)) &&
+					(!prog1.GetYear() || !prog2.GetYear() || (prog1.GetYear() == prog2.GetYear())));
+
 #if DEBUG_SAMEPROGRAMME
-			if (debugsameprogramme) debug("'%s' / '%s': both films\n", prog1.GetDescription().str(), prog2.GetDescription().str());
+			if (debugsameprogramme) debug("Films '%s' (directed by %s, year %u) / '%s' (directed by %s, year %u): %s\n",
+										  prog1.GetDescription().str(), prog1.GetDirector(), prog1.GetYear(),
+										  prog2.GetDescription().str(), prog2.GetDirector(), prog2.GetYear(),
+										  same ? "same" : "different");
 #endif
-			same = (prog1.GetYear() == prog2.GetYear());
 		}
 		else if (ep1.valid && ep2.valid) {
 			same = ((ep1.series == ep2.series) && (ep1.episode == ep2.episode));
