@@ -2564,13 +2564,8 @@ void ADVBProgList::CreateGraphs()
 			fp.printf("set xrange ['%s':'%s']\n", firstdate.DateFormat("%D-%N-%Y").str(), enddate.DateFormat("%D-%N-%Y").str());
 			fp.printf("plot \\\n");
 			fp.printf("'%s' using 1:3 with lines lt 1 title 'Recorded', \\\n", datfile.str());
-			fp.printf("'%s' using 1:4 with lines lt 7 title 'Scheduled', \\\n", datfile.str());
-			fp.printf("trend(x,%lf,%lf,%0.14le,%0.14le,%0.14le) with lines lt 2 title '%0.2lf Recorded/day', \\\n",
+			fp.printf("trend(x,%lf,%lf,%0.14le,%0.14le,%0.14le) with lines lt 2 title '%0.2lf Recorded/day'\n",
 					  (double)firstrecdate.totime(), (double)enddate.totime(), allrectrend.offset, allrectrend.rate, allrectrend.timeoffset, allrectrend.rate);
-			fp.printf("trend(x,%lf,%lf,%0.14le,%0.14le,%0.14le) with lines lt 3 title '%0.2lf Recorded/day', \\\n",
-					  (double)startdate.totime(), (double)enddate.totime(), rectrend.offset, rectrend.rate, rectrend.timeoffset, rectrend.rate);
-			fp.printf("trend(x,%lf,%lf,%0.14le,%0.14le,%0.14le) with lines lt 4 title '%0.2lf Scheduled/day'\n",
-					  (double)firstschdate.totime() - pretime, (double)enddate.totime(), schtrend.offset, schtrend.rate, schtrend.timeoffset, schtrend.rate);
 			fp.printf("unset output\n");
 
 			fp.printf("set output '%s'\n", graphfile6months.str());
