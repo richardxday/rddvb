@@ -3116,6 +3116,12 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	return success;
 }
 
+bool ADVBProg::IsConverted() const
+{
+	AString suf = AString(GetFilename()).Suffix();
+	return (suf.Valid() && (suf != recordedfilesuffix));
+}
+
 bool ADVBProg::ConvertVideo(bool verbose, bool cleanup, bool force)
 {
 	const ADVBConfig& config = ADVBConfig::Get();

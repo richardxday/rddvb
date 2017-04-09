@@ -338,7 +338,7 @@ public:
 	bool PostProcess();
 	bool UpdateRecordedList();
 
-	bool IsConverted() const {return (AString(GetFilename()).Suffix() != recordedfilesuffix);}
+	bool IsConverted() const;
 	bool ConvertVideo(bool verbose = false, bool cleanup = true, bool force = false);
 	bool ForceConvertVideo(bool verbose = false, bool cleanup = true);
 	
