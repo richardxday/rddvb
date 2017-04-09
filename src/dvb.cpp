@@ -5,6 +5,8 @@
 #include <unistd.h>
 
 #include <map>
+#include <vector>
+#include <algorithm>
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
@@ -149,6 +151,7 @@ int main(int argc, char *argv[])
 		printf("\t--check-recording-now\t\tCheck to see if programmes that should be being recording are recording\n");
 		printf("\t--calc-trend <start-date>\tCalculate average programmes per day and trend line based on programmes after <start-date> in current list\n");
 		printf("\t--gen-graphs\t\t\tGenerate graphs from recorded data\n");
+		printf("\t--reset-assigned-episodes\t\tReset assign episode number for all programmes in the current list\n");
 		printf("\t--count-hours\t\t\tCount total hours of programmes in current list\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
@@ -165,7 +168,7 @@ int main(int argc, char *argv[])
 				AList users;
 
 				config.ListUsers(users);
-				
+
 				printf("Configuration: %s\n", config.GetConfigDir().str());
 				printf("Data: %s\n", config.GetDataDir().str());
 				printf("Log files: %s\n", config.GetLogDir().str());
@@ -228,9 +231,6 @@ int main(int argc, char *argv[])
 
 					config.printf("Updating DVB channels...");
 					proglist.UpdateDVBChannels();
-
-					config.printf("Assigning episode numbers where necessary...");
-					proglist.AssignEpisodes();
 
 					config.printf("Writing main listings file...");
 					if (!HasQuit() && proglist.WriteToFile(filename)) {
@@ -314,14 +314,6 @@ int main(int argc, char *argv[])
 				else {
 					printf("Failed to read programme list from job queue\n");
 				}
-			}
-			else if (strcmp(argv[i], "--assign-episodes") == 0) {
-				printf("Assigning episodes...\n");
-				proglist.AssignEpisodes();
-			}
-			else if (strcmp(argv[i], "--assign-rec-episodes") == 0) {
-				printf("Assigning episodes (reversed)...\n");
-				proglist.AssignEpisodes(true, true);
 			}
 			else if (strcmp(argv[i], "--fix-pound") == 0) {
 				AString filename = config.GetNamedFile(argv[++i]);
@@ -435,7 +427,7 @@ int main(int argc, char *argv[])
 				AString   patterns = argv[++i];
 				AString   errors;
 				uint_t    i;
-				
+
 				ADVBPatterns::ParsePatterns(patternlist, patterns, errors, ';');
 
 				for (i = 0; i < patternlist.Count(); i++) {
@@ -1210,21 +1202,23 @@ int main(int argc, char *argv[])
 					AString newfilename1 = newfilename.FilePart();
 
 					if (newfilename != oldfilename) {
+						printf("'%s' -> '%s'\n", oldfilename.str(), newfilename.str());
+						
 						prog.SetFilename(newfilename);
 
 						if (AStdFile::exists(oldfilename)) {
-							if (rename(oldfilename, newfilename) == 0) {
-								printf("Renamed '%s' to '%s'\n", oldfilename.str(), newfilename.str());
+							if (MoveFile(oldfilename, newfilename) == 0) {
+								printf("\tRenamed '%s' to '%s'\n", oldfilename.str(), newfilename.str());
 							}
 							else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename.str(), newfilename.str());
 						}
 						else if (AStdFile::exists(oldfilename1)) {
-							if (rename(oldfilename1, newfilename1) == 0) {
-								printf("Renamed '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
+							if (MoveFile(oldfilename1, newfilename1) == 0) {
+								printf("\tRenamed '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
 							}
 							else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
 						}
-						else printf("Neither '%s' nor '%s' exists\n", oldfilename.str(), oldfilename1.str());
+						else printf("\tNeither '%s' nor '%s' exists\n", oldfilename.str(), oldfilename1.str());
 					}
 				}
 			}
@@ -1281,7 +1275,7 @@ int main(int argc, char *argv[])
 				ADVBProgList::TREND trend;
 
 				printf("Calculating trend from %s\n", startdate.DateToStr().str());
-				
+
 				if ((trend = proglist.CalculateTrend(startdate.LocalToUTC())).valid) {
 					printf("Average: %0.2lf per day\n", trend.rate);
 					printf("Trend: %0.8lf + %0.8lf * (x - %0.3lf) / (3600.0 * 24.0)\n",
@@ -1291,6 +1285,13 @@ int main(int argc, char *argv[])
 			}
 			else if (stricmp(argv[i], "--gen-graphs") == 0) {
 				ADVBProgList::CreateGraphs();
+			}
+			else if (stricmp(argv[i], "--reset-assigned-episodes") == 0) {
+				uint_t i;
+
+				for (i = 0; i < proglist.Count(); i++) {
+					proglist.GetProgWritable(i).SetAssignedEpisode(0);
+				}
 			}
 			else if (stricmp(argv[i], "--count-hours") == 0) {
 				uint64_t ms = 0;

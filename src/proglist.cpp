@@ -222,18 +222,6 @@ AString ADVBProgList::LookupXMLTVChannel(const AString& id) const
 	return "";
 }
 
-void ADVBProgList::AssignEpisodes(bool reverse, bool ignorerepeats)
-{
-	ADVBEpisodeHandler handler;
-	uint_t i;
-
-	for (i = 0; i < Count(); i++) {
-		ADVBProg& prog = GetProgWritable(reverse ? (Count() - 1 - i) : i);
-
-		handler.AssignEpisode(prog, ignorerepeats);
-	}
-}
-
 bool ADVBProgList::ValidChannelID(const AString& channelid) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();

@@ -52,8 +52,6 @@ public:
 	int AddProg(const ADVBProg& prog, bool sort = true, bool removeoverlaps = false);
 	uint_t ModifyProg(const ADVBProg& prog, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
 
-	void AssignEpisodes(bool reverse = false, bool ignorerepeats = false);
-
 	void DeleteProgrammesBefore(const ADateTime& dt);
 
 	uint_t Count() const {return proglist.Count();}

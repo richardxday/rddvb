@@ -47,7 +47,7 @@ public:
 	AString GetQueue()						 const {return GetConfigItem("queue", "d");} // extractconfig()
 	AString GetRecordingsSubDir(const AString& user, const AString& category = "") const {return GetUserSubItemConfigItem(user, category, "dir", user.InitialCapitalCase());} // extractconfig("<name>", "<category>")
 	AString GetRecordingsDir(const AString& user, const AString& category = "")    const {return CatPath(GetRecordingsDir(), GetRecordingsSubDir(user, category));} // extractconfig("<name>", "<category>")
-	AString GetFilenameTemplate(const AString& user, const AString category)       const {return GetUserSubItemConfigItem(user, category, "filename", "{title}{sep}{episode}{sep}{date}{sep}{times}{sep}{subtitle}{sep}{suffix}");} // extractconfig("<name>", "<category>")
+	AString GetFilenameTemplate(const AString& user, const AString& title, const AString category) const {return GetUserSubItemConfigItem(user, category, "filename", GetUserSubItemConfigItem(user, title, "filename", "{conf:episodefirstfilenametemplate}")) + "{sep}{suffix}";} // extractconfig("<name>", "<title>", "<category>")
 	AString GetListingsFile()		   		 const {return CatPath(GetDataDir(), GetConfigItem("listingsfile", "dvblistings.dat"));} // extractconfig()
 	AString GetDVBChannelsFile()	   		 const {return CatPath(GetDataDir(), GetConfigItem("dvbchannelsfile", "channels.dat"));} // extractconfig()
 	AString GetPatternsFile()		   		 const {return CatPath(GetConfigDir(), GetConfigItem("patternsfile", "patterns.txt"));} // extractconfig()

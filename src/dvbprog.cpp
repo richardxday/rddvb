@@ -1213,14 +1213,13 @@ AString ADVBProg::GetEpisodeString(const EPISODE& ep)
 
 AString ADVBProg::GetEpisodeString() const
 {
-	AString res, _res;
+	return GetEpisodeString(GetEpisode());
+}
 
-	if ((res = GetEpisodeString(GetEpisode())).Empty())
-	{
-		if ((_res = GetString(data->strings.episodeid)).Valid() && (_res.Left(2) == "EP")) res = _res.Left(2) + _res.Right(4);
-	}
-
-	return res;
+AString ADVBProg::GetShortEpisodeID() const
+{
+	AString _epid = GetEpisodeID();
+	return ((_epid.Left(2) == "EP") && !GetEpisode().valid) ? _epid.Left(2) + _epid.Right(4) : "";
 }
 
 int ADVBProg::CompareEpisode(const EPISODE& ep1, const EPISODE& ep2)
@@ -1689,13 +1688,13 @@ AString ADVBProg::GetHierarchicalConfigItem(const AString& name, const AString& 
 																											  config.GetConfigItem(name, defval))));
 }
 	
-AString ADVBProg::ValidFilename(const AString& str, bool dir)
+AString ADVBProg::SanitizeString(const AString& str, bool filesystem, bool dir)
 {
 	AString res;
-	sint_t i;
 
-	{
+	if (filesystem) {
 		AStringUpdate updater(&res);
+		sint_t i;
 
 		for (i = 0; i < str.len(); i++) {
 			char c = str[i];
@@ -1704,7 +1703,8 @@ AString ADVBProg::ValidFilename(const AString& str, bool dir)
 			else if ((c == '/') || IsWhiteSpace(c)) updater.Update('_');
 		}
 	}
-
+	else res = str;
+	
 	return res;
 }
 
@@ -1718,57 +1718,68 @@ void ADVBProg::SearchAndReplace(const AString& search, const AString& replace)
 	}
 }
 
-AString ADVBProg::ReplaceDirectoryTerms(const AString& str) const
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	return config.ReplaceTerms(GetUser(),
-							   str.SearchAndReplace("{titledir}", ValidFilename(GetTitle(), true)));
-}
-
-AString ADVBProg::ReplaceFilenameTerms(const AString& str, bool converted) const
+AString ADVBProg::ReplaceTerms(const AString& str, bool filesystem) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString date  = GetStartDT().UTCToLocal().DateFormat("%Y-%M-%D");
 	AString times = GetStartDT().UTCToLocal().DateFormat("%h%m") + "-" + GetStopDT().UTCToLocal().DateFormat("%h%m");
-	AString res   = config.ReplaceTerms(GetUser(),
-										ReplaceDirectoryTerms(str)
-										.SearchAndReplace("{title}", ValidFilename(GetTitle()))
-										.SearchAndReplace("{subtitle}", ValidFilename(GetSubtitle()))
-										.SearchAndReplace("{episode}", ValidFilename(GetEpisodeString()))
-										.SearchAndReplace("{channel}", ValidFilename(GetChannel()))
-										.SearchAndReplace("{date}", ValidFilename(date))
-										.SearchAndReplace("{times}", ValidFilename(times))
-										.SearchAndReplace("{user}", ValidFilename(GetUser()))
-										.SearchAndReplace("{userdir}", ValidFilename(GetUser(), true))
-										.SearchAndReplace("{suffix}", converted ? config.GetConvertedFileSuffix(GetUser()) : recordedfilesuffix));
+	AString res   = (config.ReplaceTerms(GetUser(), str)
+					 .SearchAndReplace("{title}", SanitizeString(GetTitle(), filesystem))
+					 .SearchAndReplace("{titleandsubtitle}", SanitizeString(GetTitleAndSubtitle(), filesystem))
+					 .SearchAndReplace("{titlesubtitleandchannel}", SanitizeString(GetTitleSubtitleAndChannel(), filesystem))
+					 .SearchAndReplace("{subtitle}", SanitizeString(GetSubtitle(), filesystem))
+					 .SearchAndReplace("{episode}", SanitizeString(GetEpisodeString(), filesystem))
+					 .SearchAndReplace("{episodeid}", SanitizeString(GetShortEpisodeID(), filesystem))
+					 .SearchAndReplace("{channel}", SanitizeString(GetChannel(), filesystem))
+					 .SearchAndReplace("{category}", SanitizeString(GetCategory(), filesystem))
+					 .SearchAndReplace("{date}", SanitizeString(date, filesystem))
+					 .SearchAndReplace("{times}", SanitizeString(times, filesystem))
+					 .SearchAndReplace("{user}", SanitizeString(GetUser(), filesystem))
+					 .SearchAndReplace("{userdir}", SanitizeString(GetFilename(), filesystem, true))
+					 .SearchAndReplace("{titledir}", SanitizeString(GetTitle(), filesystem))
+					 .SearchAndReplace("{filename}", SanitizeString(GetFilename(), filesystem, true))
+					 .SearchAndReplace("{logfile}", SanitizeString(GetLogFile(), filesystem, true))
+					 .SearchAndReplace("{link}", SanitizeString(GetLinkToFile(), filesystem, true)));
 
 	while (res.Pos("{sep}{sep}") >= 0) {
 		res = res.SearchAndReplace("{sep}{sep}", "{sep}");
 	}
-
+	
 	res = res.SearchAndReplace("{sep}", ".");
 
 	return res;
 }
 
-AString ADVBProg::GetRecordingSubDir() const
+AString ADVBProg::ReplaceFilenameTerms(const AString& str, bool converted) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString subdir = GetDir();
-	return CatPath(config.GetRecordingsDir(), subdir.Valid() ? subdir : config.GetRecordingsSubDir(GetUser(), GetCategory()));
+	AString suffix = converted ? config.GetConvertedFileSuffix(GetUser()) : recordedfilesuffix;
+
+	return (ReplaceTerms(str, true)
+			.SearchAndReplace("{suffix}", SanitizeString(suffix, true)));
 }
 
 AString ADVBProg::GenerateFilename(bool converted) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString templ = config.GetFilenameTemplate(GetUser(), GetCategory());
-	AString dir   = converted ? GetRecordingSubDir() : config.GetRecordingsStorageDir();
+	AString templ = config.GetFilenameTemplate(GetUser(), GetTitle(), GetCategory());
+	AString dir;
+
+	if (converted) {
+		AString subdir = GetDir();
+
+		if (subdir.Empty()) subdir = config.GetRecordingsSubDir(GetUser(), GetCategory());
+
+		dir = CatPath(config.GetRecordingsDir(), subdir);
+	}
+	else dir = config.GetRecordingsStorageDir();
+
 	return ReplaceFilenameTerms(dir.CatPath(templ), converted);
 }
 
 AString ADVBProg::GetConvertedDestinationDirectory() const
 {
-	return ReplaceDirectoryTerms(GetRecordingSubDir());
+	return GenerateFilename(true).PathPart();
 }
 
 static bool __fileexists(const FILE_INFO *file, void *Context)
@@ -2383,26 +2394,6 @@ void ADVBProg::Record()
 AString ADVBProg::GetTempFilename() const
 {
 	return AString(GetFilename()).Prefix() + "." + tempfilesuffix;
-}
-
-AString ADVBProg::ReplaceTerms(const AString& str) const
-{
-	AString date  = GetStartDT().UTCToLocal().DateFormat("%Y-%M-%D");
-	AString times = GetStartDT().UTCToLocal().DateFormat("%h%m") + "-" + GetStopDT().UTCToLocal().DateFormat("%h%m");
-
-	return (str
-			.SearchAndReplace("{title}", GetTitle())
-			.SearchAndReplace("{titleandsubtitle}", GetTitleAndSubtitle())
-			.SearchAndReplace("{titlesubtitleandchannel}", GetTitleSubtitleAndChannel())
-			.SearchAndReplace("{subtitle}", GetSubtitle())
-			.SearchAndReplace("{episode}", GetEpisodeString())
-			.SearchAndReplace("{channel}", GetChannel())
-			.SearchAndReplace("{date}", date)
-			.SearchAndReplace("{times}", times)
-			.SearchAndReplace("{user}", GetUser())
-			.SearchAndReplace("{filename}", GetFilename())
-			.SearchAndReplace("{logfile}", GetLogFile())
-			.SearchAndReplace("{link}", GetLinkToFile()));
 }
 
 AString ADVBProg::GetLinkToFile() const

@@ -177,7 +177,8 @@ public:
 
 	const EPISODE& GetEpisode() 		 const {return data->episode;}
 	AString GetEpisodeString()  		 const;
-
+	AString GetShortEpisodeID()			 const;
+	
 	uint_t GetAssignedEpisode()          const {return data->assignedepisode;}
 	void SetAssignedEpisode(uint16_t ep) 	   {data->assignedepisode = ep;}
 
@@ -296,7 +297,6 @@ public:
 	AString GetTitleSubtitleAndChannel() const;
 	AString GetQuickDescription() const;
 
-	AString GetRecordingSubDir() const;
 	AString GenerateFilename(bool converted = false) const;
 	void    GenerateRecordData(uint64_t recstarttime);
 
@@ -486,7 +486,7 @@ protected:
 	static uint16_t GetTagsDataOffset();
 #endif
 
-	static AString ValidFilename(const AString& str, bool dir = false);
+	static AString SanitizeString(const AString& str, bool filesystem = false, bool dir = false);
 
 	static void SwapBytes(DVBPROG *prog);
 
@@ -514,9 +514,8 @@ protected:
 
 	bool ConvertVideoEx(bool verbose = false, bool cleanup = true, bool force = false);
 
-	AString ReplaceTerms(const AString& str) const;
+	AString ReplaceTerms(const AString& str, bool filesystem = false) const;
 	AString ReplaceFilenameTerms(const AString& str, bool converted) const;
-	AString ReplaceDirectoryTerms(const AString& str) const;
 
 	AString GetArchiveRecordingFilename() const;
 	AString GetTempRecordingFilename() const;
