@@ -275,15 +275,16 @@ function addtimesdata(prog)
 	if ((typeof prog.actstart != 'undefined') && (typeof prog.actstop != 'undefined') && (prog.actstop > prog.actstart)) {
 		if (str != '') str += '<br><br>';
 		str += 'Recorded as \'' + prog.filename + '\' ';
-		if (typeof prog.convertedfilename != 'undefined') str += '(will be converted as \'' + prog.convertedfilename + '\') ';
-		str += '(' + prog.actstartdate + ' ' + prog.actstarttime + ' - ' + prog.actstoptime + ': ' + calctime(prog.actstop - prog.actstart) + ')';
-		if (typeof prog.filesize != 'undefined') str += ' filesize ' + ((prog.filesize / (1024 * 1024)) | 0) + 'MB';
+		str += ' (' + prog.actstartdate + ' ' + prog.actstarttime + ' - ' + prog.actstoptime + ': ' + calctime(prog.actstop - prog.actstart);
+		if (typeof prog.filesize != 'undefined') str += ', filesize ' + ((prog.filesize / (1024 * 1024)) | 0) + 'MB';
 
+		str += ')';
 		str += addcarddetails(prog);
-		str += '.';
+
+		if (typeof prog.convertedfilename != 'undefined') str += '.<br>' + "\n" + 'Will be converted to \'' + prog.convertedfilename + '\'.';
 
 		if (typeof prog.exists != 'undefined') {
-			str += ' ';
+			str += '<br>' + "\n";
 			if (typeof prog.file != 'undefined') str += '<a href="/videos' + prog.file + '" download>';
 			str += 'Programme <b>' + (prog.exists ? 'Available' : 'Unavailable') + '</b>.';
 			if (typeof prog.file != 'undefined') str += '</a>';
@@ -295,10 +296,12 @@ function addtimesdata(prog)
 	}
 	else if ((typeof prog.recstart != 'undefined') && (typeof prog.recstop != 'undefined') && (prog.recstop > prog.recstart)) {
 		if (str != '') str += '<br><br>';
-		str += 'To be recorded as \'' + prog.filename + '\' (' + prog.recstartdate + ' ' + prog.recstarttime + ' - ' + prog.recstoptime + ': ' + calctime(prog.recstop - prog.recstart) + ')';
+		str += 'To be recorded as \'' + prog.filename + '\' ';
+		str += '(' + prog.recstartdate + ' ' + prog.recstarttime + ' - ' + prog.recstoptime + ': ' + calctime(prog.recstop - prog.recstart) + ')';
 
 		str += addcarddetails(prog);
-		str += '.';
+
+		if (typeof prog.convertedfilename != 'undefined') str += '.<br>' + "\n" + 'Will be converted to \'' + prog.convertedfilename + '\'.';
 	}
 
 	return str;
