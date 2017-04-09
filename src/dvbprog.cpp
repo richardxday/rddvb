@@ -127,7 +127,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 #if DVBDATVERSION>1
 	DEFINE_ASSIGN(tags,		  strings.tags, 	string,   "Programme tags"),
 #endif
-	
+
 	DEFINE_EXTERNAL(brate,	  Compare_brate,  	uint32_t, "Encoded file bit rate (bits/s)"),
 	DEFINE_EXTERNAL(kbrate,   Compare_kbrate, 	uint32_t, "Encoded file bit rate (kbits/s)"),
 };
@@ -771,7 +771,7 @@ AString ADVBProg::ExportToText() const
 		str.printf("tags=%s\n", p);
 	}
 #endif
-	
+
 	if (RecordDataValid()) {
 		str.printf("jobid=%u\n", data->jobid);
 		str.printf("dvbcard=%u\n", (uint_t)data->dvbcard);
@@ -821,6 +821,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	if ((p = GetString(data->strings.user))[0]) str.printf(",\"user\":\"%s\"", JSONFormat(p).str());
 	str.printf(",\"dir\":\"%s\"", JSONFormat(GetString(data->strings.dir)).str());
 	if ((p = GetString(data->strings.filename))[0]) str.printf(",\"filename\":\"%s\"", JSONFormat(p).str());
+	if (!IsConverted()) str.printf(",\"convertedfilename\":\"%s\"", JSONFormat(GenerateFilename(true)).str());
 	if ((p = GetString(data->strings.pattern))[0]) str.printf(",\"pattern\":\"%s\"", JSONFormat(p).str());
 	str.printf(",\"uuid\":\"%s\"", JSONFormat(GetString(data->strings.uuid)).str());
 	if ((p = GetString(data->strings.actors))[0]) {
@@ -868,7 +869,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 		str.printf("]");
 	}
 #endif
-	
+
 	if (data->episode.valid) {
 		str.printf(",\"episode\":{");
 
@@ -1351,7 +1352,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 		if ((verbosity > 3) && GetPattern()[0]) {
 			if (str1.Valid()) str1.printf("\n\n");
 			str1.printf("Found with pattern '%s', pri %d (score %d)", GetPattern(), (int)data->pri, (int)data->score);
-			
+
 #if DVBDATVERSION > 1
 			if ((verbosity > 4) && GetString(data->strings.tags)[0]) {
 				AString _tags = GetString(data->strings.tags);
@@ -1396,7 +1397,9 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 
 		if ((verbosity > 4) && GetFilename()[0]) {
 			if (str1.Valid()) str1.printf("\n\n");
-			str1.printf("%s as '%s'.", data->actstart ? "Recorded" : (data->recstart ? "To be recorded" : "Would be recorded"), GetFilename());
+			str1.printf("%s as '%s'", data->actstart ? "Recorded" : (data->recstart ? "To be recorded" : "Would be recorded"), GetFilename());
+			if (!IsConverted()) str1.printf(" (will be converted to '%s')", GenerateFilename(true).str());
+			str1.printf(".");
 
 			if (IsPostProcessing()) str1.printf(" Current being post-processed.");
 
@@ -1687,7 +1690,7 @@ AString ADVBProg::GetHierarchicalConfigItem(const AString& name, const AString& 
 																			 config.GetHierarchicalConfigItem(GetUser(), name,
 																											  config.GetConfigItem(name, defval))));
 }
-	
+
 AString ADVBProg::SanitizeString(const AString& str, bool filesystem, bool dir)
 {
 	AString res;
@@ -1704,7 +1707,7 @@ AString ADVBProg::SanitizeString(const AString& str, bool filesystem, bool dir)
 		}
 	}
 	else res = str;
-	
+
 	return res;
 }
 
@@ -1744,7 +1747,7 @@ AString ADVBProg::ReplaceTerms(const AString& str, bool filesystem) const
 	while (res.Pos("{sep}{sep}") >= 0) {
 		res = res.SearchAndReplace("{sep}{sep}", "{sep}");
 	}
-	
+
 	res = res.SearchAndReplace("{sep}", ".");
 
 	return res;
@@ -1965,7 +1968,7 @@ void ADVBProg::SetPriorityScore(const ADateTime& starttime)
 					  (double)GetHierarchicalConfigItem(overlapscalename, "-.2")  * (double)overlaps);
 
 	if (IsUrgent()) priority_score += (double)GetHierarchicalConfigItem(urgentscalename, "3.0");
-	
+
 	if (list) priority_score += (double)GetHierarchicalConfigItem(repeatsscalename, "-1.0") * (double)(list->Count() - 1);
 
 	priority_score += (double)GetHierarchicalConfigItem(delayscalename, "-.5") * (double)(GetStartDT().GetDays() - starttime.GetDays());
@@ -1974,7 +1977,7 @@ void ADVBProg::SetPriorityScore(const ADateTime& starttime)
 bool ADVBProg::BiasPriorityScore(const ADVBProg& prog)
 {
 	bool changed = false;
-						 
+
 	// if the specified programme overlaps this programme *just* in terms
 	// of pre- and post- handles, bias the priority score
 	if (RecordOverlaps(prog) && !Overlaps(prog)) {
@@ -1989,7 +1992,7 @@ bool ADVBProg::CountOverlaps(const ADVBProgList& proglist)
 {
 	uint_t i, newoverlaps = 0;
 	bool changed;
-	
+
 	for (i = 0; i < proglist.Count(); i++) {
 		const ADVBProg& prog = proglist.GetProg(i);
 
@@ -2009,7 +2012,7 @@ bool ADVBProg::CountOverlaps(const ADVBProgList& proglist)
 		overlaps = newoverlaps;
 		changed  = true;
 	}
-	
+
 	return changed;
 }
 
@@ -2022,7 +2025,7 @@ int ADVBProg::SortListByOverlaps(uptr_t item1, uptr_t item2, void *context)
 	int res = 0;
 
 	UNUSED(context);
-	
+
 	if		( prog1urg && !prog2urg) 		  		  		   		  res = -1;
 	else if (!prog1urg &&  prog2urg) 		  		  		   		  res =  1;
 	else if	(!prog1urg && (prog1.overlaps < prog2.overlaps))  		  res = -1;
@@ -2227,7 +2230,7 @@ void ADVBProg::Record()
 				config.logit("'%s' recording starts in %ums, sleeping...", GetTitleAndSubtitle().str(), delay);
 				Sleep(delay);
 			}
-			
+
 			// get [updated] current time
 			dt 	  = (uint64_t)ADateTime().TimeStamp(true);
 
@@ -2414,7 +2417,7 @@ bool ADVBProg::OnRecordSuccess() const
 
 		success = RunCommand("nice " + cmd);
 	}
-	
+
 	if (IsNotifySet() && (cmd = config.GetUserConfigItem(user, "notifycmd")).Valid()) {
 		cmd = ReplaceTerms(cmd);
 
@@ -2862,16 +2865,16 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 					((p = line.PosNoCase(pidmarker2, p + pidmarker.len())) >= 0)) {
 					pid = (uint16_t)line.Mid(p).Word(1);
 				}
-				
+
 				if ((p = line.PosNoCase(filemarker)) >= 0) {
 					p += filemarker.len();
 
 					AString filename = line.Mid(p).Words(0).DeQuotify();
 					config.printf("Created file: %s%s (PID %u)", filename.str(), AStdFile::exists(filename) ? "" : " (DOES NOT EXIST!)", pid);
-					
+
 					if (AStdFile::exists(filename)) {
 						MEDIAFILE file = {pid, filename};
-						
+
 						if (filename.Suffix() == videofilesuffix) {
 							videofiles.push_back(file);
 						}
@@ -2913,7 +2916,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	}
 	if (audiofiles.size() > 0) {
 		std::sort(audiofiles.begin(), audiofiles.end(), CompareMediaFiles);
-	
+
 		size_t i;
 		config.printf("Audio files:");
 		for (i = 0; i < audiofiles.size(); i++) {
@@ -2936,7 +2939,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	else config.printf("Warning: no video file(s) associated with '%s'", GetQuickDescription().str());
 
 	uint_t audiotrack = (uint_t)GetHierarchicalConfigItem(audiotrackname, "0");
-	
+
 	if (audiotrack < (uint_t)audiofiles.size()) {
 		mp2file = audiofiles[audiotrack].filename;
 		config.printf("Using audio track %u of '%s', file '%s'", audiotrack, GetQuickDescription().str(), mp2file.str());
@@ -2949,7 +2952,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 		config.printf("Warning: no audio file(s) associated with '%s'", GetQuickDescription().str());
 		success = false;
 	}
-	
+
 	if (success) {
 		if (m2vfile.Empty() && mp2file.Valid()) {
 			config.printf("No video: audio only");
@@ -3083,7 +3086,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
 	if (success && cleanup) {
 		AList delfiles;
-		
+
 		CollectFiles(basename.PathPart(), basename.FilePart() + ".sup.*", RECURSE_ALL_SUBDIRS, delfiles);
 		CollectFiles(basename.PathPart(), basename.FilePart() + "-*." + videofilesuffix, RECURSE_ALL_SUBDIRS, delfiles);
 		CollectFiles(basename.PathPart(), basename.FilePart() + "-*." + audiofilesuffix, RECURSE_ALL_SUBDIRS, delfiles);
@@ -3145,7 +3148,7 @@ bool ADVBProg::ForceConvertVideo(bool verbose, bool cleanup)
 	bool    success = false;
 
 	if (verbose) config.printf("Force converting '%s', source file '%s', intermediate file '%s'", GetQuickDescription().str(), src.str(), dst.str());
-	
+
 	if (!AStdFile::exists(dst)) {
 		if (AStdFile::exists(src)) {
 			if (verbose) config.printf("Copying file '%s' to '%s' to convert", src.str(), dst.str());

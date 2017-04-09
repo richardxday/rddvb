@@ -79,7 +79,7 @@ var proglistelement = '';
 function loadpage()
 {
 	var i, str = '';
-		
+
 	for (i = 0; i < filters.length; i++) {
 		if (typeof filters[i].text != 'undefined') str += filters[i].text;
 		else {
@@ -90,7 +90,7 @@ function loadpage()
 	}
 
 	document.getElementById("buttons").innerHTML = str;
-	
+
 	filter = decodeurl();
 
 	if (typeof filter.from        == 'undefined') filter.from        = document.getElementById("from").value;
@@ -114,7 +114,7 @@ function updatestats()
 	str += '<a href="/dvbgraphs/graph-6months.png" target=_blank>6 Months</a>&nbsp;&nbsp;&nbsp;';
 	str += '<a href="/dvbgraphs/graph-all.png" target=_blank>All</a>' + "\n";
 	str += '</p>' + "\n";
-	
+
 	if (stats != null) {
 		str += 'Recording Rate (programmes per day):<br>' + "\n";
 		str += '<table class="stats">'
@@ -132,7 +132,7 @@ function updatestats()
 		}
 		str += '</table>';
 	}
-	
+
 	document.getElementById("stats").innerHTML = str;
 }
 
@@ -184,7 +184,7 @@ function findfromfilter(from, titlefilter, timefilter, str, title, style)
 
 	return ('<a href="javascript:void(0);" onclick="dvbrequest({' +
 			'from:&quot;'        + from        + '&quot;,' +
-			'titlefilter:&quot;' + titlefilter + '&quot;,' + 
+			'titlefilter:&quot;' + titlefilter + '&quot;,' +
 			'timefilter:&quot;'  + timefilter  + '&quot;});" ' +
 			style + ' title="' + title + '">' + str + '</a>');
 }
@@ -226,7 +226,7 @@ function showstatus(type)
 
 			if (page < (maxpage - 1)) {
 				status += ' <a href="javascript:void(0);" onclick="dvbrequest({page:' + (page + 1) + '})">Next</a>';
-				
+
 				status += ' <a href="javascript:void(0);" onclick="dvbrequest({page:' + (maxpage - 1) + '})">Last</a>';
 			}
 
@@ -274,7 +274,9 @@ function addtimesdata(prog)
 
 	if ((typeof prog.actstart != 'undefined') && (typeof prog.actstop != 'undefined') && (prog.actstop > prog.actstart)) {
 		if (str != '') str += '<br><br>';
-		str += 'Recorded as \'' + prog.filename + '\' (' + prog.actstartdate + ' ' + prog.actstarttime + ' - ' + prog.actstoptime + ': ' + calctime(prog.actstop - prog.actstart) + ')';
+		str += 'Recorded as \'' + prog.filename + '\' ';
+		if (typeof prog.convertedfilename != 'undefined') str += '(will be converted as \'' + prog.convertedfilename + '\') ';
+		str += '(' + prog.actstartdate + ' ' + prog.actstarttime + ' - ' + prog.actstoptime + ': ' + calctime(prog.actstop - prog.actstart) + ')';
 		if (typeof prog.filesize != 'undefined') str += ' filesize ' + ((prog.filesize / (1024 * 1024)) | 0) + 'MB';
 
 		str += addcarddetails(prog);
@@ -400,14 +402,14 @@ function populatedates(prog)
 		prog.stoptime     = new Date(prog.stop).toTimeString().substr(0, 5);
 		prog.startdate    = getdatestring(prog.start);
 	}
-	
+
 	if ((typeof prog.recstart != 'undefined') &&
 		(typeof prog.recstop  != 'undefined')) {
 		prog.recstarttime = new Date(prog.recstart).toTimeString().substr(0, 5);
 		prog.recstoptime  = new Date(prog.recstop).toTimeString().substr(0, 5);
 		prog.recstartdate = getdatestring(prog.recstart);
 	}
-	
+
 	if ((typeof prog.actstart != 'undefined') &&
 		(typeof prog.actstop  != 'undefined')) {
 		prog.actstarttime = new Date(prog.actstart).toTimeString().substr(0, 5);
@@ -424,7 +426,7 @@ function gettimesearchstring(datems)
 function adddownloadlink(prog)
 {
 	var str = '';
-	
+
 	str += '<a href="' + prog.file + '" download title="Download ' + prog.title + ' to computer">Download</a>';
 	str += ' or <a href="' + '/dvb/video.php?prog=' + encodeURIComponent(prog.base64) + '" title="Watch ' + prog.title + ' in browser" target=_blank>Watch</a>';
 	if ((typeof prog.subfiles != 'undefined') && (prog.subfiles.length > 0)) {
@@ -436,7 +438,7 @@ function adddownloadlink(prog)
 		}
 		str += ')';
 	}
-	
+
 	return str;
 }
 
@@ -456,7 +458,7 @@ function populateprogs(id)
 
 		if (response.progs.length > 0) {
 			var changed = false;
-			
+
 			astr += '<table class="proglist">';
 
 			patterns = [];
@@ -478,7 +480,7 @@ function populateprogs(id)
 					var detailsstr = '';
 					var classname  = '';
 					var trstr      = '';
-					
+
 					if (typeof prog.recorded != 'undefined') prog1 = prog.recorded;
 
 					if		(prog.flags.postprocessing)  classname = ' class="processing"';
@@ -491,7 +493,7 @@ function populateprogs(id)
 
 					trstr += '<tr' + classname + ' id="prog' + i + 'header"></tr>';
 					trstr += '<tr' + classname + ' id="prog' + i + 'details"></tr>';
-					
+
 					headerstr += '<td style="width:20px;cursor:pointer;" onclick="dvbrequest({expanded:' + (selected ? -1 : i) + '});"><img src="' + (selected ? 'close.png' : 'open.png') + '" />';
 					headerstr += '<td>';
 					headerstr += find('start', prog.startdate, 'Search for programmes on this day');
@@ -521,7 +523,7 @@ function populateprogs(id)
 							str2 += 'T' + strpad(prog.episode.episodes, 2);
 						}
 
-						if (typeof prog.episode.series != 'undefined') {	
+						if (typeof prog.episode.series != 'undefined') {
 							str1 += findfromfilter('Combined', 'title="' + prog.title + '" series=' + prog.episode.series, '', str2, 'View series ' + prog.episode.series + ' scheduled/recorded of this programme');
 						}
 						else str1 += str2;
@@ -551,7 +553,7 @@ function populateprogs(id)
 
 					if (str1 != '') headerstr += str1;
 					else			headerstr += '<br>&nbsp;'
-					
+
 					headerstr += '</span>';
 
 					headerstr += '</td><td>';
@@ -565,7 +567,7 @@ function populateprogs(id)
 						if (typeof prog.icon != 'undefined') headerstr += '<a href="' + prog.icon + '"><img src="' + prog.icon + '" style="' + iconimgstyle + '"/></a>';
 						else headerstr += '&nbsp;';
 					}
-					
+
 					var downloadlink = '';
 					if (prog.flags.postprocessing || prog.flags.running) ;
 					else if ((typeof prog.recorded != 'undefined') &&
@@ -618,7 +620,7 @@ function populateprogs(id)
 							!prog.flags.rejected &&
 							!prog.flags.failed &&
 							!prog.flags.recordable) detailsstr += '<span style="font-size:150%;">-- Not Recordable --</span><br><br>';
-						
+
 						if ((progvb > 1) && (typeof prog.icon != 'undefined')) {
 							detailsstr += '<table class="proglist" style="border:0px"><tr' + classname + '><td style="border:0px">';
 							detailsstr += '<a href="' + prog.icon + '">';
@@ -712,7 +714,7 @@ function populateprogs(id)
 						if ((progvb > 2) && (typeof prog.dvbchannel != 'undefined')) {
 							str1 += ' DVB channel ' + find('dvbchannel', prog.dvbchannel) + '.';
 						}
-						
+
 						if (str1 != '') {
 							detailsstr += '<br><br>';
 							detailsstr += str1;
@@ -808,7 +810,7 @@ function populateprogs(id)
 											else if (prog.series[j].episodes[k] == '-') alttext += ' (Unknown)';
 
 											str1 += findfromfilter('Combined', 'title="' + prog.title + '" ' + pattern, '', prog.series[j].episodes[k], alttext);
-											
+
 											if ((k % 10) == 9) str1 += ' ';
 										}
 										str1 += '</span><br>';
@@ -926,7 +928,7 @@ function populateprogs(id)
 							}
 							str1 += '<button class="delrecord" onclick="deleteprogramme(' + i + ')">Delete Programme</button>';
 						}
-						
+
 						if (str1 != '') {
 							detailsstr += '<br><br>';
 							detailsstr += str1;
@@ -940,7 +942,7 @@ function populateprogs(id)
 					if (typeof response.progs[i].html == 'undefined') response.progs[i].html = {};
 					response.progs[i].html.selected  = selected;
 					response.progs[i].html.headerstr = headerstr;
-					
+
 					if		(typeof response.progs[i].html.trstr == 'undefined') changed = true;
 					else if (trstr != response.progs[i].html.trstr)				 changed = true;
 					response.progs[i].html.trstr = trstr;
@@ -1011,7 +1013,7 @@ function populateprogs(id)
 				}
 
 				var headerstr2 = response.progs[i].html.headerstr.replace('{reltime}', reltimestr);
-			
+
 				response.progs[i].html.headerchanged = false;
 				if (document.getElementById("prog" + i + "header") == null) {
 					response.progs[i].html.headerchanged = true;
@@ -1024,7 +1026,7 @@ function populateprogs(id)
 				}
 				response.progs[i].html.headerstr2 = headerstr2;
 			}
-			
+
 			astr += '</table>';
 
 			if (changed || (astr != proglistelement)) {
@@ -1057,14 +1059,14 @@ function populatetitles(id)
 	if ((typeof response.titles != 'undefined') && (response.for > 0)) {
 		var status = showstatus('titles');
 		var pattern = '';
-		
+
 		proglistelement = '';
-		
+
 		document.getElementById("status").innerHTML = status;
 		document.getElementById("statusbottom").innerHTML = status;
 
 		if (typeof response.parsedpattern.pattern != 'undefined') pattern = response.parsedpattern.pattern + ' ';
-		
+
 		if (response.titles.length > 0) {
 			var i;
 
@@ -1082,7 +1084,7 @@ function populatetitles(id)
 				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" available', '', title.available + ' Available', 'Find recorded versions of this title that are available') + '</td>';
 				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" scheduled', '', title.scheduled + ' Scheduled', 'Find scheduled versions of this title') + '</td>';
 				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" failed', '', title.failed + ' Failed', 'Find failed versions of this title') + '</td>';
-				
+
 				str += '</tr>';
 			}
 
@@ -1108,9 +1110,9 @@ function recordprogramme(id)
 		if (user == defaultuser) user = '';
 
 		if ((typeof prog.flags.film != 'undefined') && prog.flags.film)  pattern += ' film=1 dir:="Films" onceonly:=1 pri:=-3';
-		
+
 		if (typeof prog.subtitle != 'undefined') pattern += ' subtitle="' + prog.subtitle + '"';
-		
+
 		postdata += "editpattern=add\n";
 		postdata += "newuser=" + user + "\n";
 		postdata += "newpattern=" + pattern + "\n";
@@ -1152,7 +1154,7 @@ function deletevideo(id)
 		if (typeof prog.subtitle != 'undefined') {
 			progname += ' / ' + prog.subtitle;
 		}
-		
+
 		if (confirm("Delete video for '" + progname + "'?")) {
 			dvbrequest({expanded:-1}, postdata);
 		}
@@ -1172,7 +1174,7 @@ function deleteprogramme(id)
 		if (typeof prog.subtitle != 'undefined') {
 			progname += ' / ' + prog.subtitle;
 		}
-		
+
 		if (confirm("Delete '" + progname + "' from list of recordings?")) {
 			if (confirm("Are you really sure you want to delete '" + progname + "' from list of recordings?")) {
 				dvbrequest({expanded:-1}, postdata);
@@ -1188,7 +1190,7 @@ function addrecfromlisting(id)
 		var prog = response.progs[id];
 		var pattern = 'title="' + prog.title + '"';
 		var postdata = '';
-		
+
 		if (user == defaultuser) user = '';
 
 		postdata += "editpattern=add\n";
@@ -1535,7 +1537,7 @@ function patternprichanged(index)
 		var user = patterns[index].user;
 
 		if (user == defaultuser) user = '';
-		
+
 		parserequest(index, user, patterns[index].pattern + " pri:=" + (document.getElementById("pattern" + index + "pri").value * 1));
 	}
 }
@@ -1569,9 +1571,9 @@ function updatepattern(index)
 				postdata += "newuser=" + user + "\n";
 				postdata += "newpattern=" + pattern + "\n";
 			}
-			
+
 			dvbrequest(filterlist.current, postdata);
-		}		
+		}
 	}
 }
 
@@ -1584,9 +1586,9 @@ function enablepattern(index)
 			postdata += "editpattern=enable\n";
 			postdata += "user=" + patterns[index].user + "\n";
 			postdata += "pattern=" + patterns[index].pattern + "\n";
-			
+
 			dvbrequest(filterlist.current, postdata);
-		}		
+		}
 	}
 }
 
@@ -1599,9 +1601,9 @@ function disablepattern(index)
 			postdata += "editpattern=disable\n";
 			postdata += "user=" + patterns[index].user + "\n";
 			postdata += "pattern=" + patterns[index].pattern + "\n";
-			
+
 			dvbrequest(filterlist.current, postdata);
-		}		
+		}
 	}
 }
 
@@ -1614,7 +1616,7 @@ function deletepattern(index)
 			postdata += "editpattern=delete\n";
 			postdata += "user=" + patterns[index].user + "\n";
 			postdata += "pattern=" + patterns[index].pattern + "\n";
-			
+
 			dvbrequest(filterlist.current, postdata);
 		}
 	}
@@ -1741,7 +1743,7 @@ function dvbrequest(filter, postdata)
 		 (filter.pagesize    != filterlist.current.pagesize)) &&
 		!((typeof filter.fetch != 'undefined') && !filter.fetch)) {
 		document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
-		
+
 		if ((xmlhttp != null) && (xmlhttp.readState < 4)) {
 			xmlhttp.abort();
 		}
@@ -1749,7 +1751,7 @@ function dvbrequest(filter, postdata)
 		if (window.XMLHttpRequest) {
 			// code for IE7+, Firefox, Chrome, Opera, Safari
 			xmlhttp = new XMLHttpRequest();
-			
+
 			xmlhttp.onreadystatechange = function() {
 				if (xmlhttp.readyState == 4) {
 					if (xmlhttp.status == 200) {
@@ -1767,7 +1769,7 @@ function dvbrequest(filter, postdata)
 							stats = response.stats;
 							updatestats();
 						}
-						
+
 						if (typeof response.searches != 'undefined') {
 							searches = {
 								ref:response.searchesref,
@@ -1781,7 +1783,7 @@ function dvbrequest(filter, postdata)
 								searches.view[i] = search.search;
 								searches.view[i].timefilter = "";
 								searches.view[i].fetch = true;
-								
+
 								str += '<button onclick="dvbrequest(searches.view[' + i + '])">' + search.title + '</button><br>';
 							}
 
@@ -1814,7 +1816,7 @@ function dvbrequest(filter, postdata)
 				}
 			}
 		}
-		
+
 		xmlhttp.open("POST", "dvb.php", true);
 
 		var data = "";
@@ -1855,7 +1857,7 @@ function parserequest(index, user, pattern)
 	if (window.XMLHttpRequest) {
 		// code for IE7+, Firefox, Chrome, Opera, Safari
 		xmlhttp = new XMLHttpRequest();
-		
+
 		xmlhttp.onreadystatechange = function() {
 			if (xmlhttp.readyState == 4) {
 				if (xmlhttp.status == 200) {
@@ -1872,7 +1874,7 @@ function parserequest(index, user, pattern)
 			}
 		}
 	}
-	
+
 	xmlhttp.open("POST", "dvb.php", true);
 
 	var data = "";
@@ -1967,7 +1969,7 @@ function updatefilterlist(filter)
 		filterlist.index++;
 		filterlist.list[filterlist.index] = filter;
 	}
-	
+
 	while (filterlist.list.length >= 100) {
 		filterlist.list.shift();
 		if (filterlist.index >= 0) filterlist.index--;
@@ -2000,7 +2002,7 @@ function updatefilterlist(filter)
 		str += '&nbsp;&nbsp;<a href="' + link.replace(/&/g, '&amp;') + '" target=_blank>Link</a>';
 	}
 	else link = null;
-	
+
 	document.getElementById("filterlist").innerHTML = str;
 }
 
