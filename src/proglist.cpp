@@ -257,6 +257,18 @@ bool ADVBProgList::ValidChannelID(const AString& channelid) const
 	return valid;
 }
 
+void ADVBProgList::AssignEpisodes(bool ignorerepeats)
+{
+	ADVBEpisodeHandler handler;
+	uint_t i;
+
+	for (i = 0; i < Count(); i++) {
+		ADVBProg& prog = GetProgWritable(i);
+
+		handler.AssignEpisode(prog, ignorerepeats);
+	}
+}
+
 void ADVBProgList::GetProgrammeValues(AString& str, const AStructuredNode *pNode, const AString& prefix) const
 {
 	const AKeyValuePair *pAttr;
@@ -1709,7 +1721,7 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 
 			CreateCombinedFile();
 			CreateGraphs();
-			
+
 			ADVBProgList::CheckDiskSpace(true);
 		}
 		else config.logit("Failed to read listings file '%s'", filename.str());
@@ -1756,7 +1768,7 @@ bool ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
 		uint_t n;
 
 		for (n = 0; list.DeleteProg(prog); n++) ;
-		
+
 		if		(!n)						  config.logit("Failed to find programme '%s' in list to remove it!", prog.GetQuickDescription().str());
 		else if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after removing a programme", filename.str());
 		else removed = true;
@@ -2066,7 +2078,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 	config.logit("--------------------------------------------------------------------------------");
 	for (i = 0; i < Count(); i++) {
 		const ADVBProg& prog = GetProg(i);
-		
+
 		config.logit("%s (%d overlaps, %u repeats, score %0.1lf)", prog.GetDescription(1).str(), prog.GetOverlaps(), prog.GetList()->Count() - 1, prog.GetPriorityScore());
 	}
 	config.logit("--------------------------------------------------------------------------------");
@@ -2077,7 +2089,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 		ADVBProg& prog = GetProgWritable(0);
 		uint_t j, k;
 		bool   scheduled = false;
-					 
+
 		// find a list to schedule this programme on
 		for (j = 0; j < nchecks; j++) {
 			uint_t vcard = (i + j) % nlists;
@@ -2092,11 +2104,11 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 				// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
 
 				if (prog.GetList()->Find(&prog) == 0) nearliestscheduled++;
-				
+
 				// add to scheduling list
 				schedulelist.AddProg(prog);
 				deletelist.Add((uptr_t)&prog);
-					
+
 				config.logit("'%s' can be recorded (card %u, entry %d/%u)",
 							 prog.GetQuickDescription().str(),
 							 vcard,
@@ -2111,11 +2123,11 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 				uint64_t start   = prog.GetStart() - (plus1 ? hour : 0);
 				uint64_t start1  = start + hour;
 				bool     resort  = false;
-				
+
 				for (k = 0; k < Count(); k++) {
 					ADVBProg& prog2 = GetProgWritable(k);
 					bool removed = false;
-					
+
 					if ((prog2 != prog) && (prog2.GetList() == prog.GetList())) {
 						if (!prog2.AllowRepeats()) {
 							deletelist.Add((uptr_t)&prog2);	// add to delete list that is used later to delete programme from this object
@@ -2154,7 +2166,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 			if (repeatlist->Count() == 1) {
 				// the last repeat overlaps something so cannot be recorded -> the programme is *rejected*
 				config.logit("No repeats of '%s' can be recorded!", prog.GetQuickDescription().str());
-					
+
 				// add programme to rejected list
 				rejectedlist.AddProg(prog);
 			}
@@ -2162,11 +2174,11 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 				config.logit("'%s' cannot be recorded, %u repeats to go", prog.GetQuickDescription().str(), prog.GetList()->Count() - 1);
 				nscheduledmissed++;
 			}
-			
+
 			// remove programme from list to check
 			deletelist.Add((uptr_t)&prog);
 		}
-			
+
 		for (j = 0; j < deletelist.Count(); j++) {
 			DeleteProg(*(const ADVBProg *)deletelist[j]);
 		}
@@ -2467,12 +2479,12 @@ void ADVBProgList::CreateGraphs()
 	const AString graphfile6months = config.GetDataDir().CatPath("graphs", "graph-6months.png");
 	const AString graphfile1week   = config.GetDataDir().CatPath("graphs", "graph-1week.png");
 	const AString graphfilepreview = config.GetDataDir().CatPath("graphs", "graph-preview.png");
-	
+
 	{
 		ADVBLock lock("dvbfiles");
 		FILE_INFO info1, info2, info3, info4;
 		ADateTime writetime;
-		
+
 		if (!::GetFileInfo(graphfileall, &info1) ||
 			!::GetFileInfo(graphfile6months, &info2) ||
 			!::GetFileInfo(graphfile1week, &info3) ||
@@ -2494,9 +2506,9 @@ void ADVBProgList::CreateGraphs()
 		ADateTime lastrecdate  = ADateTime::MinDateTime;
 		ADateTime firstschdate = ADateTime::MinDateTime;
 		ADateTime lastschdate  = ADateTime::MinDateTime;
-		
+
 		config.printf("Updating graphs...");
-		
+
 		AStdFile fp;
 		if (fp.open(datfile, "w")) {
 			uint_t i;
@@ -2504,7 +2516,7 @@ void ADVBProgList::CreateGraphs()
 			scheduledlist.CreateHash();
 			for (i = 0; i < combinedlist.Count(); i++) {
 				const ADVBProg& prog = combinedlist.GetProg(i);
-				
+
 				fp.printf("%s", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str());
 
 				if (firstdate == ADateTime::MinDateTime) firstdate = prog.GetStartDT();
@@ -2525,10 +2537,10 @@ void ADVBProgList::CreateGraphs()
 
 				fp.printf("\n");
 			}
-					
+
 			fp.close();
 		}
-	
+
 		if (fp.open(gnpfile, "w")) {
 			const ADateTime startdate("utc now-6M");
 			const ADateTime enddate("utc now+2w+3d");
@@ -2536,7 +2548,7 @@ void ADVBProgList::CreateGraphs()
 			TREND allrectrend = combinedlist.CalculateTrend(firstrecdate, lastrecdate);
 			TREND rectrend = combinedlist.CalculateTrend(startdate, lastrecdate);
 			TREND schtrend = combinedlist.CalculateTrend(firstschdate, lastschdate);
-		
+
 			fp.printf("set terminal pngcairo size 1280,800\n");
 			fp.printf("set xdata time\n");
 			fp.printf("set timefmt '%%d-%%b-%%Y %%H:%%M'\n");
@@ -2685,16 +2697,16 @@ bool ADVBProgList::GetAndConvertRecordings()
 	AString  cmd;
 	uint32_t tick;
 	bool     success = false;
-	
+
 	{
 		//config.printf("Waiting for lock to update lists from record host '%s'", config.GetRecordingHost().str());
 
 		ADVBLock lock("dvbfiles");
 
 		config.printf("Update recording and recorded lists from record host '%s'", config.GetRecordingHost().str());
-		
+
 		success = GetRecordingListFromRecordingSlave();
-		
+
 		ADVBProgList reclist;
 		if (!reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
 			config.logit("Failed to read recorded list from recording slave");
@@ -2710,7 +2722,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 		config.printf("Getting and converting recordings from record host '%s'", config.GetRecordingHost().str());
 
 		CreateDirectory(config.GetRecordingsStorageDir());
-		
+
 		tick = GetTickCount();
 		cmd.Delete();
 		cmd.printf("nice rsync -v --partial --remove-source-files --ignore-missing-args %s %s:%s/'*.mpg' %s",
@@ -2737,7 +2749,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 	}
 
 	//config.printf("Waiting for lock to convert recordings");
-	
+
 	ADVBLock lock("convertrecordings");
 	uint_t i, converted = 0;
 	bool   reschedule = false;
@@ -2745,7 +2757,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 	// re-read recorded list in case it has been modified whilst files have been copying
 	ADVBProgList reclist;
 	reclist.ReadFromBinaryFile(config.GetRecordedFile());
-	
+
 	config.printf("Converting recordings...");
 
 	ADVBProgList convertlist;
@@ -3094,7 +3106,7 @@ ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate, con
 	uint_t   i;
 
 	memset(&trend, 0, sizeof(trend));
-	
+
 	if (Count() > 0) {
 		for (i = Count() - 1; (i > 0) && (GetProg(i).GetStart() >= start); i-- ) ;
 		if (GetProg(i).GetStart() < start) i++;
@@ -3106,7 +3118,7 @@ ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate, con
 			double sumy  = 0.0;
 			double sumxx = 0.0;
 			double sumxy = 0.0;
-					
+
 			for (; (i < Count()) && (GetProg(i).GetStart() <= end); i++) {
 				double x = ((double)GetProg(i).GetStartDT().totime() - t0) / (3600.0 * 24.0);
 				double y = (double)(i - n1);
@@ -3116,7 +3128,7 @@ ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate, con
 				sumxx += x * x;
 				sumxy += x * y;
 			}
-		
+
 			// m = (mean(x*y) - mean(x) * mean(y)) / (mean(x*x) - mean(x) * mean(x))
 			//   = (sum(x*y)/n - sum(x)/n * sum(y)/n) / (sum(x*x)/n - sum(x)/n * sum(x)/n)
 			//   = (sum(x*y)*n - sum(x) * sum(y)) / (sum(x*x)*n - sum(x) * sum(x))
@@ -3131,6 +3143,6 @@ ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate, con
 			trend.valid      = true;
 		}
 	}
-	
+
 	return trend;
 }

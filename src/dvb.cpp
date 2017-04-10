@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 		printf("\t--check-recording-now\t\tCheck to see if programmes that should be being recording are recording\n");
 		printf("\t--calc-trend <start-date>\tCalculate average programmes per day and trend line based on programmes after <start-date> in current list\n");
 		printf("\t--gen-graphs\t\t\tGenerate graphs from recorded data\n");
-		printf("\t--reset-assigned-episodes\t\tReset assign episode number for all programmes in the current list\n");
+		printf("\t--assign-episodes\t\tAssign episodes to current list\n");
 		printf("\t--count-hours\t\t\tCount total hours of programmes in current list\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
@@ -232,6 +232,9 @@ int main(int argc, char *argv[])
 					config.printf("Updating DVB channels...");
 					proglist.UpdateDVBChannels();
 
+					config.printf("Assigning episode numbers where necessary...");
+					proglist.AssignEpisodes();
+					
 					config.printf("Writing main listings file...");
 					if (!HasQuit() && proglist.WriteToFile(filename)) {
 						config.printf("Wrote %u programmes to '%s'", proglist.Count(), filename.str());
@@ -1286,12 +1289,9 @@ int main(int argc, char *argv[])
 			else if (stricmp(argv[i], "--gen-graphs") == 0) {
 				ADVBProgList::CreateGraphs();
 			}
-			else if (stricmp(argv[i], "--reset-assigned-episodes") == 0) {
-				uint_t i;
-
-				for (i = 0; i < proglist.Count(); i++) {
-					proglist.GetProgWritable(i).SetAssignedEpisode(0);
-				}
+			else if (stricmp(argv[i], "--assign-episodes") == 0) {
+				printf("Assigning episodes...\n");
+				proglist.AssignEpisodes();
 			}
 			else if (stricmp(argv[i], "--count-hours") == 0) {
 				uint64_t ms = 0;

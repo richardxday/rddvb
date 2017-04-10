@@ -39,6 +39,8 @@ public:
 	void Modify(const ADVBProgList& list, uint_t& added, uint_t& modified, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
 	bool ModifyFromRecordingHost(const AString& filename, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
 
+	void AssignEpisodes(bool ignorerepeats = false);
+
 	void UpdateDVBChannels();
 
 	bool WriteToFile(const AString& filename, bool updatedependantfiles = true) const;
