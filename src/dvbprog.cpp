@@ -1564,8 +1564,8 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 #endif
 		}
 #if DVBDATVERSION > 1
-		else if (prog1.GetEpisodeID()[0] && prog2.GetEpisodeID()[0]) {
-			// episodeid is valid in both -> sameness can be determined
+		else if (prog1.GetEpisodeID()[0] || prog2.GetEpisodeID()[0]) {
+			// episodeid is in one or both -> sameness can be determined (assume when episode ID is missing from a programme, it is different from one which has an episode ID)
 			same = (CompareNoCase(prog1.GetEpisodeID(), prog2.GetEpisodeID()) == 0);
 #if DEBUG_SAMEPROGRAMME
 			if (debugsameprogramme) debug("'%s' / '%s': episodeid '%s' / '%s': %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), prog1.GetEpisodeID(), prog2.GetEpisodeID(), same ? "same" : "different");

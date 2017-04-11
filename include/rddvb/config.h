@@ -108,6 +108,8 @@ public:
 	double  GetLowSpaceWarningLimit()		 const {return (double)GetConfigItem("lowdisklimit", "10.0");} // extractconfig()
 	bool    CommitScheduling()				 const {return ((uint_t)GetConfigItem("commitscheduling", "0") != 0);} // extractconfig()
 
+	bool	AssignEpisodes()				 const {return ((uint_t)GetConfigItem("assignepisodes", "0") != 0);} // extractconfig()
+	
 	bool    RescheduleAfterDeletingPattern(const AString& user, const AString& category) const {return ((uint_t)GetUserSubItemConfigItem(user, category, "rescheduleafterdeletingpattern", "0") != 0);} // extractconfig("<user>", "<category>")
 
 	bool    IsRecordingSlave()				 const {return ((uint_t)GetConfigItem("isrecordingslave", "0"));} // extractconfig()
