@@ -1197,22 +1197,25 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
-			else if (stricmp(argv[i], "--regenerate-filename") == 0) {
-				uint_t j;
+			else if ((stricmp(argv[i], "--regenerate-filename") == 0) ||
+					 (stricmp(argv[i], "--regenerate-filename-test") == 0)) {
+				const bool test = (stricmp(argv[i], "--regenerate-filename-test") == 0);
+				uint_t j, nmatches = 0;
 
 				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
 					ADVBProg& prog = proglist.GetProgWritable(j);
 
-					if (prog.IsFilm()) prog.SetDir("Films");
-					
 					AString oldfilename  = prog.GetFilename();
 					AString subdir       = oldfilename.PathPart().PathPart().FilePart();
 
-					if (oldfilename.PathPart().FilePart() == "Films") {
-						prog.SetDir("Films");
+					if (prog.IsFilm()) {
+						prog.SetDir("");
 					}
 					else if (subdir.StartsWith("Shows")) {
 						prog.SetDir(subdir + "/{titledir}");
+					}
+					else if (CompareCase(prog.GetDir(), AString(prog.GetUser()).InitialCapitalCase() + "/{titledir}") == 0) {
+						prog.SetDir("");
 					}
 
 					AString newfilename  = prog.GenerateFilename(prog.IsConverted());
@@ -1224,22 +1227,27 @@ int main(int argc, char *argv[])
 
 						prog.SetFilename(newfilename);
 
-						if (AStdFile::exists(oldfilename)) {
-							CreateDirectory(newfilename.PathPart());
-							if (MoveFile(oldfilename, newfilename)) {
-								printf("\tRenamed '%s' to '%s'\n", oldfilename.str(), newfilename.str());
+						if (!test) {
+							if (AStdFile::exists(oldfilename)) {
+								CreateDirectory(newfilename.PathPart());
+								if (MoveFile(oldfilename, newfilename)) {
+									printf("\tRenamed '%s' to '%s'\n", oldfilename.str(), newfilename.str());
+								}
+								else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename.str(), newfilename.str());
 							}
-							else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename.str(), newfilename.str());
-						}
-						else if (AStdFile::exists(oldfilename1)) {
-							if (MoveFile(oldfilename1, newfilename1)) {
-								printf("\tRenamed '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
+							else if (AStdFile::exists(oldfilename1)) {
+								if (MoveFile(oldfilename1, newfilename1)) {
+									printf("\tRenamed '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
+								}
+								else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
 							}
-							else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
+							else printf("\tNeither '%s' nor '%s' exists\n", oldfilename.str(), oldfilename1.str());
 						}
-						else printf("\tNeither '%s' nor '%s' exists\n", oldfilename.str(), oldfilename1.str());
 					}
+					else nmatches++;
 				}
+
+				if (nmatches) printf("%u filenames unchanged\n", nmatches);
 			}
 			else if (stricmp(argv[i], "--delete-files") == 0) {
 				uint_t j;

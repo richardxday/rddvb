@@ -55,11 +55,14 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		{"encodeaudioonlyargs", 		 "{conf:mp3audio}"},
 		{"episodefirstfilenametemplate", "{title}{sep}{episode}{episodeid}{sep}{date}{sep}{times}{sep}{subtitle}"},
 		{"episodelastfilenametemplate",  "{title}{sep}{episode}{sep}{date}{sep}{times}{sep}{episodeid}{sep}{subtitle}"},
+		{"dir",							 "{capitaluser}/{titledir}"},
+		{"dir:film",					 "Films"},
 	};
 	uint_t i;
 
 	for (i = 0; i < NUMBEROF(__defaults); i++) {
-		defaults.Insert(__defaults[i].name, (uptr_t)new AString(__defaults[i].value));
+		AString *str = new AString(__defaults[i].value);
+		defaults.Insert(__defaults[i].name, (uptr_t)str);
 	}
 
 	// ensure no changes are saved
@@ -153,9 +156,15 @@ AString ADVBConfig::GetConfigItem(const AString& name) const
 
 	if (def && configrecorder) configrecorder->push_back(name + "=" + *def);
 	
-	//debug("Request for '%s' (def: '%s'): '%s'\n", name.str(), def ? def->str() : "<notset>", res.str());
+	//debug("Request for '%s' (implicit default: '%s'): '%s'\n", name.str(), def ? def->str() : "<notset>", res.str());
 
 	return res;
+}
+
+AString ADVBConfig::GetDefaultItem(const AString& name) const
+{
+	const AString *str;
+	return ((str = (const AString *)defaults.Read(name)) != NULL) ? *str : "";
 }
 
 AString ADVBConfig::GetConfigItem(const AString& name, const AString& defval) const
@@ -169,9 +178,77 @@ AString ADVBConfig::GetConfigItem(const AString& name, const AString& defval) co
 
 	if (configrecorder) configrecorder->push_back(name + "=" + defval);
 
-	//debug("Request for '%s' (def: '%s'): '%s'\n", name.str(), defval.str(), res.str());
+	//debug("Request for '%s' (with default: '%s'): '%s'\n", name.str(), defval.str(), res.str());
 
 	return res;
+}
+
+AString ADVBConfig::GetConfigItem(const std::vector<AString>& list, const AString& defval, bool defvalid) const
+{
+	const AString *def;
+	AString res = defval;
+	size_t  i;
+
+	for (i = 0; i < list.size(); i++) {
+		const AString& name = list[i];
+		
+		if (config.Exists(name)) {
+			res = config.Get(name);
+			break;
+		}
+		else if (!defvalid && ((def = (const AString *)defaults.Read(name)) != NULL)) {
+			res = *def;
+			break;
+		}
+	}
+
+	return res;
+}
+
+void ADVBConfig::GetCombinations(std::vector<AString>& list, const AString& pre, const AString& name, const AString& post) const
+{
+	if (pre.Valid() && name.Valid() && post.Valid()) list.push_back(Combine(Combine(pre, name), post));
+	if (pre.Valid() && name.Valid())				 list.push_back(Combine(pre, name));
+	if (			   name.Valid() && post.Valid()) list.push_back(Combine(name, post));
+	list.push_back(name);
+}
+
+AString ADVBConfig::GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post) const
+{
+	std::vector<AString> list;
+	
+	GetCombinations(list, pre, name, post);
+
+	return GetConfigItem(list);
+}
+
+AString ADVBConfig::GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post, const AString& defval) const
+{
+	std::vector<AString> list;
+	
+	GetCombinations(list, pre, name, post);
+
+	return GetConfigItem(list, defval, true);
+}
+
+AString ADVBConfig::GetUserConfigItem(const AString& user, const AString& name) const
+{
+	return GetHierarchicalConfigItem(user, name, "");
+}
+
+AString ADVBConfig::GetUserConfigItem(const AString& user, const AString& name, const AString& defval) const
+{
+	return GetHierarchicalConfigItem(user, name, "", defval);
+}
+
+AString ADVBConfig::GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name) const
+{
+	return GetHierarchicalConfigItem(user, name, subitem);
+}
+
+AString ADVBConfig::GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name, const AString& defval) const
+{
+	return GetHierarchicalConfigItem(user, name, subitem, defval);
 }
 
 AString ADVBConfig::GetNamedFile(const AString& name) const

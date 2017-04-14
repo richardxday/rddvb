@@ -365,7 +365,7 @@ protected:
 	static bool    	FieldExists(const AString& str, const AString& field, int p = 0, int *pos = NULL);
 	static AString 	GetField(const AString& str, const AString& field, int p = 0, int *pos = NULL);
 
-	AString GetHierarchicalConfigItem(const AString& name, const AString& defval = "") const;
+	AString GetAttributedConfigItem(const AString& name, const AString& defval = "", bool defvalid = true) const;
 
 	AString GetProgrammeKey() const;
 

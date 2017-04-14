@@ -1682,13 +1682,17 @@ AString ADVBProg::GetPrefItem(const AString& name, const AString& defval) const
 	return res;
 }
 
-AString ADVBProg::GetHierarchicalConfigItem(const AString& name, const AString& defval) const
+AString ADVBProg::GetAttributedConfigItem(const AString& name, const AString& defval, bool defvalid) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	return config.GetHierarchicalConfigItem(GetUUID(), name,
-											config.GetHierarchicalConfigItem(GetTitle(), name,
-																			 config.GetHierarchicalConfigItem(GetUser(), name,
-																											  config.GetConfigItem(name, defval))));
+	std::vector<AString> list;
+	
+	list.push_back(ADVBConfig::Combine(name, GetUUID()));
+	list.push_back(ADVBConfig::Combine(name, GetTitle()));
+	list.push_back(ADVBConfig::Combine(GetUser(), name));
+	list.push_back(name);
+
+	return config.GetConfigItem(list, defval, defvalid);
 }
 
 AString ADVBProg::SanitizeString(const AString& str, bool filesystem, bool dir)
@@ -1738,7 +1742,8 @@ AString ADVBProg::ReplaceTerms(const AString& str, bool filesystem) const
 					 .SearchAndReplace("{date}", SanitizeString(date, filesystem))
 					 .SearchAndReplace("{times}", SanitizeString(times, filesystem))
 					 .SearchAndReplace("{user}", SanitizeString(GetUser(), filesystem))
-					 .SearchAndReplace("{userdir}", SanitizeString(GetFilename(), filesystem, true))
+					 .SearchAndReplace("{capitaluser}", SanitizeString(AString(GetUser()).InitialCapitalCase(), filesystem))
+					 .SearchAndReplace("{userdir}", SanitizeString(AString(GetUser()).InitialCapitalCase(), filesystem, true))
 					 .SearchAndReplace("{titledir}", SanitizeString(GetTitle(), filesystem, true))
 					 .SearchAndReplace("{filename}", SanitizeString(GetFilename(), filesystem, true))
 					 .SearchAndReplace("{logfile}", SanitizeString(GetLogFile(), filesystem, true))
@@ -1765,14 +1770,14 @@ AString ADVBProg::ReplaceFilenameTerms(const AString& str, bool converted) const
 AString ADVBProg::GenerateFilename(bool converted) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString templ = config.GetFilenameTemplate(GetUser(), GetTitle(), GetCategory());
+	AString templ = config.GetFilenameTemplate(GetUser(), GetTitle(), IsFilm() ? "film" : GetCategory());
 	AString dir;
 
 	if (converted) {
 		AString subdir = GetDir();
 
 		if (subdir.Empty()) {
-			subdir = config.GetRecordingsSubDir(GetUser(), GetCategory());
+			subdir = config.GetRecordingsSubDir(GetUser(), IsFilm() ? "film" : GetCategory());
 		}
 		
 		dir = CatPath(config.GetRecordingsDir(), subdir);
@@ -1967,14 +1972,14 @@ int ADVBProg::CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context)
 
 void ADVBProg::SetPriorityScore(const ADateTime& starttime)
 {
-	priority_score = ((double)GetHierarchicalConfigItem(priorityscalename, "2.0") * (double)data->pri +
-					  (double)GetHierarchicalConfigItem(overlapscalename, "-.2")  * (double)overlaps);
+	priority_score = ((double)GetAttributedConfigItem(priorityscalename, "2.0") * (double)data->pri +
+					  (double)GetAttributedConfigItem(overlapscalename, "-.2")  * (double)overlaps);
 
-	if (IsUrgent()) priority_score += (double)GetHierarchicalConfigItem(urgentscalename, "3.0");
+	if (IsUrgent()) priority_score += (double)GetAttributedConfigItem(urgentscalename, "3.0");
 
-	if (list) priority_score += (double)GetHierarchicalConfigItem(repeatsscalename, "-1.0") * (double)(list->Count() - 1);
+	if (list) priority_score += (double)GetAttributedConfigItem(repeatsscalename, "-1.0") * (double)(list->Count() - 1);
 
-	priority_score += (double)GetHierarchicalConfigItem(delayscalename, "-.5") * (double)(GetStartDT().GetDays() - starttime.GetDays());
+	priority_score += (double)GetAttributedConfigItem(delayscalename, "-.5") * (double)(GetStartDT().GetDays() - starttime.GetDays());
 }
 
 bool ADVBProg::BiasPriorityScore(const ADVBProg& prog)
@@ -1984,7 +1989,7 @@ bool ADVBProg::BiasPriorityScore(const ADVBProg& prog)
 	// if the specified programme overlaps this programme *just* in terms
 	// of pre- and post- handles, bias the priority score
 	if (RecordOverlaps(prog) && !Overlaps(prog)) {
-		priority_score += (double)GetHierarchicalConfigItem(recordoverlapscalename, "-2.0");
+		priority_score += (double)GetAttributedConfigItem(recordoverlapscalename, "-2.0");
 		changed = true;
 	}
 
@@ -2342,7 +2347,7 @@ void ADVBProg::Record()
 						if (IsOnceOnly() && IsRecordingComplete() && !config.IsRecordingSlave()) {
 							ADVBPatterns::DeletePattern(user, GetPattern());
 
-							reschedule |= config.RescheduleAfterDeletingPattern(GetUser(), GetCategory());
+							reschedule |= config.RescheduleAfterDeletingPattern(GetUser(), IsFilm() ? "film" : GetCategory());
 						}
 
 						bool success = PostRecord();
@@ -2713,8 +2718,8 @@ bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
 bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString proccmd = config.GetEncodeCommand(GetUser(), GetCategory());
-	AString args    = config.GetEncodeArgs(GetUser(), GetCategory());
+	AString proccmd = config.GetEncodeCommand(GetUser(), IsFilm() ? "film" : GetCategory());
+	AString args    = config.GetEncodeArgs(GetUser(), IsFilm() ? "film" : GetCategory());
 	AString tempdst = config.GetRecordingsStorageDir().CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
 	uint_t  i, n = args.CountLines(";");
 	bool    success = true;
@@ -2789,8 +2794,8 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	ADateTime now;
 	AString   basename = src.Prefix();
 	AString   logfile  = basename + "_log.txt";
-	AString   proccmd  = config.GetEncodeCommand(GetUser(), GetCategory());
-	AString   args     = config.GetEncodeArgs(GetUser(), GetCategory());
+	AString   proccmd  = config.GetEncodeCommand(GetUser(), IsFilm() ? "film" : GetCategory());
+	AString   args     = config.GetEncodeArgs(GetUser(), IsFilm() ? "film" : GetCategory());
 	bool      success  = true;
 
 	CreateDirectory(dst.PathPart());
@@ -2929,7 +2934,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
 	AString m2vfile;
 	AString mp2file;
-	uint_t  videotrack = (uint_t)GetHierarchicalConfigItem(videotrackname, "0");
+	uint_t  videotrack = (uint_t)GetAttributedConfigItem(videotrackname, "0");
 
 	if (videotrack < (uint_t)videofiles.size()) {
 		m2vfile = videofiles[videotrack].filename;
@@ -2941,7 +2946,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	}
 	else config.printf("Warning: no video file(s) associated with '%s'", GetQuickDescription().str());
 
-	uint_t audiotrack = (uint_t)GetHierarchicalConfigItem(audiotrackname, "0");
+	uint_t audiotrack = (uint_t)GetAttributedConfigItem(audiotrackname, "0");
 
 	if (audiotrack < (uint_t)audiofiles.size()) {
 		mp2file = audiofiles[audiotrack].filename;
@@ -2965,10 +2970,10 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
 			AString cmd;
 			cmd.printf("nice %s -i \"%s\" -v %s %s -y \"%s\"",
-					   config.GetEncodeCommand(GetUser(), GetCategory()).str(),
+					   config.GetEncodeCommand(GetUser(), IsFilm() ? "film" : GetCategory()).str(),
 					   mp2file.str(),
 					   config.GetEncodeLogLevel(GetUser(), verbose).str(),
-					   config.GetEncodeAudioOnlyArgs(GetUser(), GetCategory()).str(),
+					   config.GetEncodeAudioOnlyArgs(GetUser(), IsFilm() ? "film" : GetCategory()).str(),
 					   tempdst.str());
 
 			if (RunCommand(cmd, !verbose)) {

@@ -20,17 +20,19 @@ public:
 	bool IsWebResponse() const {return webresponse;}
 
 	AString GetConfigItem(const AString& name) const;
+	AString GetDefaultItem(const AString& name) const;
 	AString GetConfigItem(const AString& name, const AString& defval) const;
-	AString GetUserConfigItem(const AString& user, const AString& name) const {return GetHierarchicalConfigItem(user, name);}
-	AString GetUserConfigItem(const AString& user, const AString& name, const AString& defval) const {return GetHierarchicalConfigItem(user, name, defval);}
-	AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name) const {return GetUserConfigItem(user, name + ":" + subitem, GetUserConfigItem(user, name, GetConfigItem(name + ":" + subitem, GetConfigItem(name))));}
-	AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name, const AString& defval) const {return GetUserConfigItem(user, name + ":" + subitem, GetUserConfigItem(user, name, GetConfigItem(name + ":" + subitem, GetConfigItem(name, defval))));}
+	AString GetUserConfigItem(const AString& user, const AString& name) const;
+	AString GetUserConfigItem(const AString& user, const AString& name, const AString& defval) const;
+	AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name) const;
+	AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name, const AString& defval) const;
 
-	AString GetHierarchicalConfigItem(const AString& str, const AString& name) const {return str.Valid() ? GetConfigItem(str + ":" + name, GetConfigItem(name)) : GetConfigItem(name);}
-	AString GetHierarchicalConfigItem(const AString& str, const AString& name, const AString& defval) const {return str.Valid() ? GetConfigItem(str + ":" + name, GetConfigItem(name, defval)) : GetConfigItem(name, defval);}
-	
+	AString GetConfigItem(const std::vector<AString>& list, const AString& defval = "", bool defvalid = false) const;
+	AString GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post) const;
+	AString GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post, const AString& defval) const;
+
 	bool    ConfigItemExists(const AString& name) const {return config.Exists(name);}
-	bool    UserConfigItemExists(const AString& user, const AString& name) const {return ConfigItemExists(user + ":" + name);}
+	bool    DefaultItemExists(const AString& name) const {return defaults.Exists(name);}
 
 	void    ListUsers(AList& list) const;
 
@@ -45,9 +47,9 @@ public:
 	AString GetTempDir()              		 const {return GetConfigItem("tempdir", GetDataDir().CatPath("temp"));}	// extractconfig()
 	AString GetTempFile(const AString& name, const AString& suffix = "") const;
 	AString GetQueue()						 const {return GetConfigItem("queue", "d");} // extractconfig()
-	AString GetRecordingsSubDir(const AString& user, const AString& category = "") const {return GetUserSubItemConfigItem(user, category, "dir", user.InitialCapitalCase());} // extractconfig("<name>", "<category>")
+	AString GetRecordingsSubDir(const AString& user, const AString& category = "") const {return GetUserSubItemConfigItem(user, category, "dir");} // extractconfig("<name>", "<category>")
 	AString GetRecordingsDir(const AString& user, const AString& category = "")    const {return CatPath(GetRecordingsDir(), GetRecordingsSubDir(user, category));} // extractconfig("<name>", "<category>")
-	AString GetFilenameTemplate(const AString& user, const AString& title, const AString category) const {return GetUserSubItemConfigItem(user, category, "filename", GetUserSubItemConfigItem(user, title, "filename", "{conf:episodefirstfilenametemplate}")) + "{sep}{suffix}";} // extractconfig("<name>", "<title>", "<category>")
+	AString GetFilenameTemplate(const AString& user, const AString& title, const AString category) const {return GetHierarchicalConfigItem(user, category, "filename", GetUserSubItemConfigItem(user, title, "filename", "{conf:episodefirstfilenametemplate}")) + "{sep}{suffix}";} // extractconfig("<name>", "<title>", "<category>")
 	AString GetListingsFile()		   		 const {return CatPath(GetDataDir(), GetConfigItem("listingsfile", "dvblistings.dat"));} // extractconfig()
 	AString GetDVBChannelsFile()	   		 const {return CatPath(GetDataDir(), GetConfigItem("dvbchannelsfile", "channels.dat"));} // extractconfig()
 	AString GetPatternsFile()		   		 const {return CatPath(GetConfigDir(), GetConfigItem("patternsfile", "patterns.txt"));} // extractconfig()
@@ -163,6 +165,11 @@ public:
 
 	// NOTE: function cheats 'const'!
 	void SetConfigRecorder(std::vector<AString> *recorder) const;
+
+	static AString Combine(const char     *str1, const char     *str2) {return AString(str1) + ":" + AString(str2);}
+	static AString Combine(const char     *str1, const AString&  str2) {return AString(str1) + ":" + str2;}
+	static AString Combine(const AString&  str1, const char     *str2) {return str1 + ":" + AString(str2);}
+	static AString Combine(const AString&  str1, const AString&  str2) {return str1 + ":" + str2;}
 	
 protected:
 	void MapDVBCards();
@@ -172,6 +179,8 @@ private:
 	ADVBConfig();
 	~ADVBConfig();
 
+	void GetCombinations(std::vector<AString>& list, const AString& pre, const AString& name, const AString& post = "") const;
+	
 protected:
 	ASettingsHandler 	 config;
 	AHash			 	 defaults;
