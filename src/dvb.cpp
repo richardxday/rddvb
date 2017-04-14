@@ -1202,8 +1202,20 @@ int main(int argc, char *argv[])
 
 				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
 					ADVBProg& prog = proglist.GetProgWritable(j);
+
+					if (prog.IsFilm()) prog.SetDir("Films");
+					
 					AString oldfilename  = prog.GetFilename();
-					AString newfilename  = oldfilename.PathPart().CatPath(prog.GenerateFilename(prog.IsConverted()).FilePart());
+					AString subdir       = oldfilename.PathPart().PathPart().FilePart();
+
+					if (oldfilename.PathPart().FilePart() == "Films") {
+						prog.SetDir("Films");
+					}
+					else if (subdir.StartsWith("Shows")) {
+						prog.SetDir(subdir + "/{titledir}");
+					}
+
+					AString newfilename  = prog.GenerateFilename(prog.IsConverted());
 					AString oldfilename1 = oldfilename.FilePart();
 					AString newfilename1 = newfilename.FilePart();
 
@@ -1213,13 +1225,14 @@ int main(int argc, char *argv[])
 						prog.SetFilename(newfilename);
 
 						if (AStdFile::exists(oldfilename)) {
-							if (MoveFile(oldfilename, newfilename) == 0) {
+							CreateDirectory(newfilename.PathPart());
+							if (MoveFile(oldfilename, newfilename)) {
 								printf("\tRenamed '%s' to '%s'\n", oldfilename.str(), newfilename.str());
 							}
 							else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename.str(), newfilename.str());
 						}
 						else if (AStdFile::exists(oldfilename1)) {
-							if (MoveFile(oldfilename1, newfilename1) == 0) {
+							if (MoveFile(oldfilename1, newfilename1)) {
 								printf("\tRenamed '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
 							}
 							else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());

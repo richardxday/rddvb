@@ -1707,7 +1707,7 @@ AString ADVBProg::SanitizeString(const AString& str, bool filesystem, bool dir)
 		}
 	}
 	else res = str;
-
+	
 	return res;
 }
 
@@ -1771,13 +1771,16 @@ AString ADVBProg::GenerateFilename(bool converted) const
 	if (converted) {
 		AString subdir = GetDir();
 
-		if (subdir.Empty()) subdir = config.GetRecordingsSubDir(GetUser(), GetCategory());
-
+		if (subdir.Empty()) {
+			subdir = config.GetRecordingsSubDir(GetUser(), GetCategory());
+		}
+		
 		dir = CatPath(config.GetRecordingsDir(), subdir);
 	}
 	else dir = config.GetRecordingsStorageDir();
 
-	return ReplaceFilenameTerms(dir.CatPath(templ), converted);
+	AString src = dir.CatPath(templ);
+	return ReplaceFilenameTerms(src, converted);
 }
 
 AString ADVBProg::GetConvertedDestinationDirectory() const
