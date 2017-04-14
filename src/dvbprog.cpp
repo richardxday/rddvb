@@ -1739,7 +1739,7 @@ AString ADVBProg::ReplaceTerms(const AString& str, bool filesystem) const
 					 .SearchAndReplace("{times}", SanitizeString(times, filesystem))
 					 .SearchAndReplace("{user}", SanitizeString(GetUser(), filesystem))
 					 .SearchAndReplace("{userdir}", SanitizeString(GetFilename(), filesystem, true))
-					 .SearchAndReplace("{titledir}", SanitizeString(GetTitle(), filesystem))
+					 .SearchAndReplace("{titledir}", SanitizeString(GetTitle(), filesystem, true))
 					 .SearchAndReplace("{filename}", SanitizeString(GetFilename(), filesystem, true))
 					 .SearchAndReplace("{logfile}", SanitizeString(GetLogFile(), filesystem, true))
 					 .SearchAndReplace("{link}", SanitizeString(GetLinkToFile(), filesystem, true)));

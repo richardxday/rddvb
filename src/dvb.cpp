@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 						config.printf("Assigning episode numbers where necessary...");
 						proglist.AssignEpisodes();
 					}
-					
+
 					config.printf("Writing main listings file...");
 					if (!HasQuit() && proglist.WriteToFile(filename)) {
 						config.printf("Wrote %u programmes to '%s'", proglist.Count(), filename.str());
@@ -1209,7 +1209,7 @@ int main(int argc, char *argv[])
 
 					if (newfilename != oldfilename) {
 						printf("'%s' -> '%s'\n", oldfilename.str(), newfilename.str());
-						
+
 						prog.SetFilename(newfilename);
 
 						if (AStdFile::exists(oldfilename)) {
@@ -1304,6 +1304,68 @@ int main(int argc, char *argv[])
 					proglist.GetProgWritable(i).SetAssignedEpisode(0);
 				}
 			}
+			else if (stricmp(argv[i], "--find-episode-sequences") == 0) {
+				std::map<AString, std::map<AString, std::vector<AString> > > programmes;
+				std::map<AString, const std::vector<AString> *> bestlist;
+				std::map<AString, uint16_t> episodeids;
+				uint_t i;
+
+				for (i = 0; i < proglist.Count(); i++) {
+					const ADVBProg& prog = proglist.GetProg(i);
+					AString epid = prog.GetEpisodeID();
+
+					if ((epid.Left(2) == "EP") && !prog.GetEpisode().valid) {
+						std::vector<AString>& list = programmes[prog.GetTitle()][prog.GetChannel()];
+
+						if (std::find(list.begin(), list.end(), epid) == list.end()) {
+							list.push_back(epid);
+
+							if (!bestlist[prog.GetTitle()] || (list.size() > bestlist[prog.GetTitle()]->size())) {
+								bestlist[prog.GetTitle()] = &list;
+							}
+
+							if (prog.GetAssignedEpisode() != 0) {
+								episodeids[epid] = prog.GetAssignedEpisode();
+							}
+						}
+					}
+				}
+
+				std::map<AString, const std::vector<AString> *>::iterator it;
+				for (it = bestlist.begin(); it != bestlist.end(); ++it) {
+					if (it->second) {
+						const std::vector<AString>& list = *it->second;
+
+						printf("Episode list for '%s':\n", it->first.str());
+
+						size_t i;
+						uint16_t epn = 1;
+						for (i = 0; i < list.size(); i++, epn++) {
+							const AString& epid = list[i];
+
+							if (episodeids.find(epid) != episodeids.end()) {
+								if (episodeids[epid] > epn) epn = episodeids[epid];
+							}
+							else episodeids[epid] = epn;
+
+							printf("\t%s: %u\n", epid.str(), epn);
+						}
+
+						printf("\n");
+					}
+					else printf("No list for '%s'!\n", it->first.str());
+				}
+
+				for (i = 0; i < proglist.Count(); i++) {
+					ADVBProg& prog = proglist.GetProgWritable(i);
+					AString   epid = prog.GetEpisodeID();
+					std::map<AString, uint16_t>::iterator it;
+
+					if ((it = episodeids.find(epid)) != episodeids.end()) {
+						prog.SetAssignedEpisode(it->second);
+					}
+				}
+			}
 			else if (stricmp(argv[i], "--count-hours") == 0) {
 				uint64_t ms = 0;
 				uint_t   i;
@@ -1329,6 +1391,6 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	
+
 	return res;
 }
