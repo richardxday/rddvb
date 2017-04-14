@@ -1112,7 +1112,7 @@ function recordprogramme(id)
 
 		if (user == defaultuser) user = '';
 
-		if ((typeof prog.flags.film != 'undefined') && prog.flags.film)  pattern += ' film=1 dir:="Films" onceonly:=1 pri:=-3';
+		if ((typeof prog.flags.film != 'undefined') && prog.flags.film)  pattern += ' film=1 onceonly:=1 pri:=-3';
 
 		if (typeof prog.subtitle != 'undefined') pattern += ' subtitle="' + prog.subtitle + '"';
 
