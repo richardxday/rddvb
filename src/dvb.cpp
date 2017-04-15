@@ -140,7 +140,9 @@ int main(int argc, char *argv[])
 		printf("\t--show-encoding-args\t\tShow encoding arguments for programmes in current list\n");
 		printf("\t--show-file-format\t\tShow file format of encoded programme\n");
 		printf("\t--use-converted-filename\tChange filename to that of converted file, without actually converting file\n");
+		printf("\t--set-dir <patterns> <newdir>\tChange directory for programmes in current list that match <patterns> to <newdir>\n");
 		printf("\t--regenerate-filename\t\tChange filename of current list of programmes (dependant on converted state), renaming files (in original directory OR current directory)\n");
+		printf("\t--regenerate-filename-test\tTest version of the above, will make no changes to programme list or move files\n");
 		printf("\t--delete-files\t\t\tDelete encoded files from programmes in current list\n");
 		printf("\t--delete-from-record-lists <uuid> Delete programme with UUID <uuid> from record lists (recorded and record failues)\n");
 		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
@@ -1197,6 +1199,32 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
+			else if (stricmp(argv[i], "--set-dir") == 0) {
+				ADVBProgList reslist;
+				AString      patterns = argv[++i], newdir = argv[++i], errors;
+				uint_t       j;
+
+				proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
+
+				printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
+
+				if (errors.Valid()) {
+					printf("Errors:\n");
+
+					uint_t j, n = errors.CountLines();
+					for (j = 0; j < n; j++) printf("%s", errors.Line(j).str());
+				}
+
+				proglist.CreateHash();
+				for (j = 0; j < reslist.Count(); j++) {
+					ADVBProg *prog;
+
+					if ((prog = proglist.FindUUIDWritable(reslist[j])) != NULL) {
+						printf("Set directory of '%s' to '%s'\n", prog->GetQuickDescription().str(), newdir.str());
+						prog->SetDir(newdir);
+					}
+				}
+			}
 			else if ((stricmp(argv[i], "--regenerate-filename") == 0) ||
 					 (stricmp(argv[i], "--regenerate-filename-test") == 0)) {
 				const bool test = (stricmp(argv[i], "--regenerate-filename-test") == 0);
@@ -1205,17 +1233,20 @@ int main(int argc, char *argv[])
 				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
 					ADVBProg& prog = proglist.GetProgWritable(j);
 
-					AString oldfilename  = prog.GetFilename();
-					AString subdir       = oldfilename.PathPart().PathPart().FilePart();
+					AString oldfilename = prog.GetFilename();
 
-					if (prog.IsFilm()) {
-						prog.SetDir("");
-					}
-					else if (subdir.StartsWith("Shows")) {
-						prog.SetDir(subdir + "/{titledir}");
-					}
-					else if (CompareCase(prog.GetDir(), AString(prog.GetUser()).InitialCapitalCase() + "/{titledir}") == 0) {
-						prog.SetDir("");
+					if (prog.IsConverted()) {
+						AString subdir = oldfilename.PathPart().PathPart().FilePart();
+
+						if (prog.IsFilm()) {
+							if (!test) prog.SetDir("");
+						}
+						else if (subdir.StartsWith("Shows")) {
+							if (!test) prog.SetDir(subdir + "/{titledir}");
+						}
+						else if (CompareCase(prog.GetDir(), AString(prog.GetUser()).InitialCapitalCase() + "/{titledir}") == 0) {
+							if (!test) prog.SetDir("");
+						}
 					}
 
 					AString newfilename  = prog.GenerateFilename(prog.IsConverted());
@@ -1225,9 +1256,9 @@ int main(int argc, char *argv[])
 					if (newfilename != oldfilename) {
 						printf("'%s' -> '%s'\n", oldfilename.str(), newfilename.str());
 
-						prog.SetFilename(newfilename);
-
 						if (!test) {
+							prog.SetFilename(newfilename);
+						
 							if (AStdFile::exists(oldfilename)) {
 								CreateDirectory(newfilename.PathPart());
 								if (MoveFile(oldfilename, newfilename)) {

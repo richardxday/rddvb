@@ -1767,6 +1767,12 @@ AString ADVBProg::ReplaceFilenameTerms(const AString& str, bool converted) const
 			.SearchAndReplace("{suffix}", SanitizeString(suffix, true)));
 }
 
+AString ADVBProg::GetRecordingsSubDir() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	return config.GetRecordingsSubDir(GetUser(), IsFilm() ? "film" : GetCategory());
+}
+
 AString ADVBProg::GenerateFilename(bool converted) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -1776,9 +1782,7 @@ AString ADVBProg::GenerateFilename(bool converted) const
 	if (converted) {
 		AString subdir = GetDir();
 
-		if (subdir.Empty()) {
-			subdir = config.GetRecordingsSubDir(GetUser(), IsFilm() ? "film" : GetCategory());
-		}
+		if (subdir.Empty()) subdir = GetRecordingsSubDir();
 		
 		dir = CatPath(config.GetRecordingsDir(), subdir);
 	}

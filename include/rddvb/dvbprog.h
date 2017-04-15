@@ -297,6 +297,7 @@ public:
 	AString GetTitleSubtitleAndChannel() const;
 	AString GetQuickDescription() const;
 
+	AString GetRecordingsSubDir() const;
 	AString GenerateFilename(bool converted = false) const;
 	void    GenerateRecordData(uint64_t recstarttime);
 
