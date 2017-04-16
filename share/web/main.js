@@ -76,6 +76,15 @@ var link     = null;
 var globals  = null;
 var proglistelement = '';
 
+window.onpopstate = function(event)
+{
+	var filter = event.state;
+
+	if (filter != null) {
+		dvbrequest(filter.filter, filter.postdata);
+	}
+};
+
 function loadpage()
 {
 	var i, str = '';
@@ -1745,6 +1754,11 @@ function dvbrequest(filter, postdata)
 		 (filter.page        != filterlist.current.page) ||
 		 (filter.pagesize    != filterlist.current.pagesize)) &&
 		!((typeof filter.fetch != 'undefined') && !filter.fetch)) {
+
+		if (filterlist.current != null) {
+			history.pushState({filter : filterlist.current, postdata : postdata}, "", window.location);
+		}
+		
 		document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
 
 		if ((xmlhttp != null) && (xmlhttp.readState < 4)) {
