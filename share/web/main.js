@@ -1742,6 +1742,12 @@ function dvbrequest(filter, postdata, stackrequest)
 	filter.page     = filter.page     | 0;
 	filter.pagesize = filter.pagesize | 0;
 
+	if ((typeof stackrequest == 'undefined') || stackrequest) {
+		var newfilter = {filter:filter, postdata:postdata};
+		//console.log("Pushing " + JSON.stringify(newfilter) + " on to stack at position " + window.history.length);
+		window.history.pushState(newfilter, "", window.location);
+	}
+
 	if (((currentfilter == null) ||
 		 (typeof postdata    != 'undefined') ||
 		 ((typeof filter.fetch != 'undefined') && filter.fetch) ||
@@ -1751,12 +1757,6 @@ function dvbrequest(filter, postdata, stackrequest)
 		 (filter.page        != currentfilter.page) ||
 		 (filter.pagesize    != currentfilter.pagesize)) &&
 		!((typeof filter.fetch != 'undefined') && !filter.fetch)) {
-
-		if ((typeof stackrequest == 'undefined') || stackrequest) {
-			var newfilter = {filter:filter, postdata:postdata};
-			//console.log("Pushing " + JSON.stringify(newfilter) + " on to stack at position " + window.history.length);
-			window.history.pushState(newfilter, "", window.location);
-		}
 		
 		document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
 
