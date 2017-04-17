@@ -12,12 +12,8 @@ var patterns = [];
 var editingpattern = -1;
 var searchpattern = null;
 var patterndefs = null;
-var xmlhttp  = null;
-var filterlist = {
-	index:0,
-	current:null,
-	list:[]
-};
+var xmlhttp = null;
+var currentfilter = null;
 var filters = [
 	{text:"Sources:<br>"},
 	{
@@ -81,7 +77,8 @@ window.onpopstate = function(event)
 	var filter = event.state;
 
 	if (filter != null) {
-		dvbrequest(filter.filter, filter.postdata);
+		//console.log("Popped filter " + JSON.stringify(filter) + ", stack length " + window.history.length);
+		dvbrequest(filter.filter, filter.postdata, false);
 	}
 };
 
@@ -1584,7 +1581,7 @@ function updatepattern(index)
 				postdata += "newpattern=" + pattern + "\n";
 			}
 
-			dvbrequest(filterlist.current, postdata);
+			dvbrequest(currentfilter, postdata);
 		}
 	}
 }
@@ -1599,7 +1596,7 @@ function enablepattern(index)
 			postdata += "user=" + patterns[index].user + "\n";
 			postdata += "pattern=" + patterns[index].pattern + "\n";
 
-			dvbrequest(filterlist.current, postdata);
+			dvbrequest(currentfilter, postdata);
 		}
 	}
 }
@@ -1614,7 +1611,7 @@ function disablepattern(index)
 			postdata += "user=" + patterns[index].user + "\n";
 			postdata += "pattern=" + patterns[index].pattern + "\n";
 
-			dvbrequest(filterlist.current, postdata);
+			dvbrequest(currentfilter, postdata);
 		}
 	}
 }
@@ -1629,7 +1626,7 @@ function deletepattern(index)
 			postdata += "user=" + patterns[index].user + "\n";
 			postdata += "pattern=" + patterns[index].pattern + "\n";
 
-			dvbrequest(filterlist.current, postdata);
+			dvbrequest(currentfilter, postdata);
 		}
 	}
 }
@@ -1658,7 +1655,7 @@ function addpattern(srcobject)
 		postdata += "newuser=" + user + "\n";
 		postdata += "newpattern=" + pattern + "\n";
 
-		dvbrequest(filterlist.current, postdata);
+		dvbrequest(currentfilter, postdata);
 	}
 }
 
@@ -1711,52 +1708,54 @@ function populate(id)
 	displayfilter(0, -1, '');
 }
 
-function dvbrequest(filter, postdata)
+function dvbrequest(filter, postdata, stackrequest)
 {
 	if (typeof filter != 'undefined') {
-		if (typeof filter.from 	      == 'undefined') filter.from 		 = filterlist.current.from;
+		if (typeof filter.from 	      == 'undefined') filter.from 		 = currentfilter.from;
 		else										  document.getElementById("from").value = filter.from;
-		if (typeof filter.titlefilter == 'undefined') filter.titlefilter = filterlist.current.titlefilter;
+		if (typeof filter.titlefilter == 'undefined') filter.titlefilter = currentfilter.titlefilter;
 		else										  document.getElementById("titlefilter").value = filter.titlefilter;
-		if (typeof filter.timefilter  == 'undefined') filter.timefilter  = filterlist.current.timefilter;
+		if (typeof filter.timefilter  == 'undefined') filter.timefilter  = currentfilter.timefilter;
 		else										  document.getElementById("timefilter").value = filter.timefilter;
 		if (typeof filter.page 	      == 'undefined') {
-			if ((filter.from        != filterlist.current.from) ||
-				(filter.titlefilter != filterlist.current.titlefilter) ||
-				(filter.timefilter  != filterlist.current.timefilter)) {
+			if ((filter.from        != currentfilter.from) ||
+				(filter.titlefilter != currentfilter.titlefilter) ||
+				(filter.timefilter  != currentfilter.timefilter)) {
 				filter.page = 0;
 			}
-			else filter.page = filterlist.current.page;
+			else filter.page = currentfilter.page;
 		}
-		if (typeof filter.pagesize    == 'undefined') filter.pagesize    = filterlist.current.pagesize;
+		if (typeof filter.pagesize    == 'undefined') filter.pagesize    = currentfilter.pagesize;
 		else										  document.getElementById("pagesize").value = filter.pagesize;
  		if (typeof filter.expanded    == 'undefined') {
-			if ((filter.from        != filterlist.current.from) ||
-				(filter.titlefilter != filterlist.current.titlefilter) ||
-				(filter.timefilter  != filterlist.current.timefilter) ||
-				(filter.page        != filterlist.current.page)) {
+			if ((filter.from        != currentfilter.from) ||
+				(filter.titlefilter != currentfilter.titlefilter) ||
+				(filter.timefilter  != currentfilter.timefilter) ||
+				(filter.page        != currentfilter.page)) {
 				filter.expanded = -1;
 			}
-			else filter.expanded = filterlist.current.expanded;
+			else filter.expanded = currentfilter.expanded;
 		}
 	}
-	else filter = filterlist.current;
+	else filter = currentfilter;
 
 	filter.page     = filter.page     | 0;
 	filter.pagesize = filter.pagesize | 0;
 
-	if (((filterlist.current == null) ||
+	if (((currentfilter == null) ||
 		 (typeof postdata    != 'undefined') ||
 		 ((typeof filter.fetch != 'undefined') && filter.fetch) ||
-		 (filter.from        != filterlist.current.from) ||
-		 (filter.titlefilter != filterlist.current.titlefilter) ||
-		 (filter.timefilter  != filterlist.current.timefilter) ||
-		 (filter.page        != filterlist.current.page) ||
-		 (filter.pagesize    != filterlist.current.pagesize)) &&
+		 (filter.from        != currentfilter.from) ||
+		 (filter.titlefilter != currentfilter.titlefilter) ||
+		 (filter.timefilter  != currentfilter.timefilter) ||
+		 (filter.page        != currentfilter.page) ||
+		 (filter.pagesize    != currentfilter.pagesize)) &&
 		!((typeof filter.fetch != 'undefined') && !filter.fetch)) {
 
-		if (filterlist.current != null) {
-			history.pushState({filter : filterlist.current, postdata : postdata}, "", window.location);
+		if ((typeof stackrequest == 'undefined') || stackrequest) {
+			var newfilter = {filter:filter, postdata:postdata};
+			//console.log("Pushing " + JSON.stringify(newfilter) + " on to stack at position " + window.history.length);
+			window.history.pushState(newfilter, "", window.location);
 		}
 		
 		document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
@@ -1827,7 +1826,7 @@ function dvbrequest(filter, postdata)
 
 						populate(filter.expanded);
 
-						updatefilterlist(filter);
+						updatecurrentfilter(filter);
 					}
 					else document.getElementById("status").innerHTML = "<h1>Server returned error " + xmlhttp.status + "</h1>";
 				}
@@ -1861,7 +1860,7 @@ function dvbrequest(filter, postdata)
 	else {
 		populate(filter.expanded);
 
-		updatefilterlist(filter);
+		updatecurrentfilter(filter);
 	}
 }
 
@@ -1915,118 +1914,9 @@ function getfullfilter(filter)
 	return str;
 }
 
-function comparefilter(filter, index)
+function updatecurrentfilter(filter)
 {
-	var filter2 = filterlist.list[index];
-
-	return ((filter2.from     	 == filter.from)   	    &&
-			(filter2.titlefilter == filter.titlefilter) &&
-			(filter2.timefilter  == filter.timefilter)  &&
-			(filter2.page     	 == filter.page)		&&
-			(filter2.pagesize 	 == filter.pagesize)    &&
-			(filter2.expanded    == filter.expanded));
-}
-
-function generatefilterdescription(filter)
-{
-	var str, fullfilter = getfullfilter(filter);
-	var title;
-
-	str = 'Page ' + (filter.page + 1) + ' of ' + filter.from;
-	if (fullfilter != '') {
-		str += '\nFiltered using \'' + limitstring(fullfilter) + '\'';
-	}
-	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined') && (filter.expanded < response.progs.length)) {
-		var prog = response.progs[filter.expanded];
-		title = prog.title;
-
-		if (typeof prog.subtitle != 'undefined') title += ' / ' + prog.subtitle;
-		if (typeof prog.episode != 'undefined') {
-			title += ' (';
-			if (typeof prog.episode.series != 'undefined') {
-				title += 'S' + prog.episode.series;
-			}
-			if (typeof prog.episode.episode != 'undefined') {
-				title += 'E' + strpad(prog.episode.episode, 2);
-			}
-			if (typeof prog.episode.episodes != 'undefined') {
-				title += 'T' + strpad(prog.episode.episodes, 2);
-			}
-			title += ')';
-		}
-		else if (typeof prog.assignedepisode != 'undefined') {
-			title += ' (F' + prog.assignedepisode + ')';
-		}
-
-		str += '\nViewing \'' + title + '\'';
-	}
-	filter.longdesc = str;
-
-	str = 'Page ' + (filter.page + 1) + ' of ' + filter.from;
-	if (filter.titlefilter != '') str += ' \'' + limitstring(filter.titlefilter) + '\'';
-	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined')) {
-		str += ' (' + title + ')';
-	}
-	filter.shortdesc = str;
-
-	return str;
-}
-
-function updatefilterlist(filter)
-{
-	var i, str = '';
-
-	generatefilterdescription(filter);
-	filterlist.current = filter;
-
-	if (filterlist.index >= filterlist.list.length) {
-		filterlist.list[filterlist.index] = filter;
-	}
-	else if (!comparefilter(filterlist.current, filterlist.index)) {
-		filterlist.index++;
-		filterlist.list[filterlist.index] = filter;
-	}
-
-	while (filterlist.list.length >= 100) {
-		filterlist.list.shift();
-		if (filterlist.index >= 0) filterlist.index--;
-	}
-
-	str += '<button ';
-	if (filterlist.index > 0) {
-		str += 'onclick="filterlist.index = ' + (filterlist.index - 1) + '; dvbrequest(filterlist.list[filterlist.index])"';
-	}
-	else str += 'disabled';
-	str += '>Back</button>&nbsp;&nbsp;<button ';
-
-	if ((filterlist.index + 1) < filterlist.list.length) {
-		str += 'onclick="filterlist.index = ' + (filterlist.index + 1) + '; dvbrequest(filterlist.list[filterlist.index])"';
-	}
-	else str += 'disabled';
-	str += '>Forward</button>&nbsp;&nbsp;';
-
-	str += '<select id="filterlist_select" onchange="selectfilter()">';
-	for (i = 0; i < filterlist.list.length; i++) {
-		var filter = filterlist.list[i];
-		str += '<option';
-		if (filterlist.index == (i)) str += ' selected';
-		str += ' value="' + i + '" title="' + filter.longdesc.replace(/"/g, '&quot;') + '">' + filter.shortdesc + '</option>';
-	}
-	str += '</select>';
-
-	if (filterlist.current != null) {
-		link = '?from=' + filterlist.current.from + '&titlefilter=' + encodeURIComponent(filterlist.current.titlefilter) + '&timefilter=' + encodeURIComponent(filterlist.current.timefilter) + '&page=' + filterlist.current.page + '&pagesize=' + filterlist.current.pagesize;
-		str += '&nbsp;&nbsp;<a href="' + link.replace(/&/g, '&amp;') + '" target=_blank>Link</a>';
-	}
-	else link = null;
-
-	document.getElementById("filterlist").innerHTML = str;
-}
-
-function selectfilter()
-{
-	filterlist.index = document.getElementById("filterlist_select").value | 0;
-	dvbrequest(filterlist.list[filterlist.index]);
+	currentfilter = filter;
 }
 
 function decodeurl()
