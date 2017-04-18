@@ -2223,6 +2223,7 @@ void ADVBProg::Record()
 				config.printf("'%s' started too long ago (%u minutes)!", GetTitleAndSubtitle().str(), nmins);
 				reschedule = true;
 				record = false;
+				failed = true;
 			}
 		}
 

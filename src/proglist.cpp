@@ -1322,8 +1322,11 @@ void ADVBProgList::AdjustRecordTimes(uint64_t recstarttime)
 		// ensure record start time is at least recstarttime
 		prog1->SetRecordStart(std::max(prog1->GetRecordStart(), recstarttime));
 
-		if ((prog1->GetRecordStart() % 60000) != 0) {
-			config.printf("Warning: programme '%s' set to start recording at %s", prog1->GetQuickDescription().str(), prog1->GetRecordStartDT().DateToStr().str());
+		uint64_t recstart;
+		if ((recstart = (prog1->GetRecordStart() % 60000)) != 0) {
+			config.printf("Warning: programme '%s' set to start recording at %s, rounding up to next minute", prog1->GetQuickDescription().str(), prog1->GetRecordStartDT().UTCToLocal().DateToStr().str());
+			// round up to next minute
+			prog1->SetRecordStart(prog1->GetRecordStart() + (60000 - recstart));
 		}
 	}
 }
@@ -2244,7 +2247,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 	for (i = 0; i < ncards; i++) {
 		if (!i || (recstarttimes[i] < minrecstarttime)) minrecstarttime = recstarttimes[i];
 
-		config.printf("Earliest record start time for card %u (physical card %u) is %s", i, config.GetPhysicalDVBCard(i), ADateTime(recstarttimes[i]).DateToStr().str());
+		config.printf("Earliest record start time for card %u (physical card %u) is %s", i, config.GetPhysicalDVBCard(i), ADateTime(recstarttimes[i]).UTCToLocal().DateToStr().str());
 	}
 
 	// generate record data, clear disabled flag and clear owner list for each programme
