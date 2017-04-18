@@ -149,6 +149,7 @@ const AString ADVBProg::overlapscalename 	   = "overlapscale";
 const AString ADVBProg::urgentscalename  	   = "urgentscale";
 const AString ADVBProg::repeatsscalename 	   = "repeatsscale";
 const AString ADVBProg::delayscalename   	   = "delayscale";
+const AString ADVBProg::latescalename   	   = "latescale";
 const AString ADVBProg::recordoverlapscalename = "recordoverlapscale";
 
 ADVBProg::ADVBProg()
@@ -1977,13 +1978,18 @@ int ADVBProg::CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context)
 void ADVBProg::SetPriorityScore(const ADateTime& starttime)
 {
 	priority_score = ((double)GetAttributedConfigItem(priorityscalename, "2.0") * (double)data->pri +
-					  (double)GetAttributedConfigItem(overlapscalename, "-.2")  * (double)overlaps);
+					  (double)GetAttributedConfigItem(overlapscalename,  "-.2") * (double)overlaps);
 
 	if (IsUrgent()) priority_score += (double)GetAttributedConfigItem(urgentscalename, "3.0");
 
 	if (list) priority_score += (double)GetAttributedConfigItem(repeatsscalename, "-1.0") * (double)(list->Count() - 1);
 
 	priority_score += (double)GetAttributedConfigItem(delayscalename, "-.5") * (double)(GetStartDT().GetDays() - starttime.GetDays());
+	
+	if (GetRecordStart() > GetStart()) {
+		// for each minute the recording is *late* starting, drop the priority by 2
+		priority_score += (double)GetAttributedConfigItem(latescalename, "-2.0") * (double)(GetRecordStart() - GetStart()) / 60000.0;
+	}
 }
 
 bool ADVBProg::BiasPriorityScore(const ADVBProg& prog)

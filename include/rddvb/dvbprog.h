@@ -584,6 +584,7 @@ protected:
 	static const AString urgentscalename;
 	static const AString repeatsscalename;
 	static const AString delayscalename;
+	static const AString latescalename;
 	static const AString recordoverlapscalename;
 };
 
