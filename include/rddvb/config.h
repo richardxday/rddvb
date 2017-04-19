@@ -104,7 +104,7 @@ public:
 	uint_t  GetMaxDVBCards()				 const {return dvbcards.Count();}
 	AString GetDVBFrequencyRange()           const {return GetConfigItem("dvbfreqrange", "474,530,8");} // extractconfig()
 
-	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "15");} // extractconfig()
+	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "5");} // extractconfig()
 	uint_t  GetDaysToKeep()					 const {return (uint_t)GetConfigItem("daystokeep", "7");} // extractconfig()
 	sint_t  GetScoreThreshold()				 const {return (sint_t)GetConfigItem("scorethreshold", "100");} // extractconfig()
 	double  GetLowSpaceWarningLimit()		 const {return (double)GetConfigItem("lowdisklimit", "10.0");} // extractconfig()

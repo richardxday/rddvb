@@ -1679,8 +1679,6 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 				}
 			}
 
-			config.printf("Checking disk space");
-
 			config.printf("Finding programmes using %u patterns", patternlist.Count());
 
 			proglist.FindProgrammes(reslist, patternlist);
@@ -1839,6 +1837,8 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	ADVBProgList rejectedlist;
 	ADVBProgList runninglist;
 	ADVBProgList newrejectedlist;
+	const uint64_t starttimems   = (uint64_t)starttime;
+	const uint64_t lateststartms = (uint64_t)SUBZ(config.GetLatestStart(), 2) * (uint64_t)60000;
 	uint_t i, n, reccount;
 
 	oldrejectedlist.ReadFromFile(config.GetRejectedFile());
@@ -1909,6 +1909,11 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		}
 		else if (!prog.AllowRepeats() && ((otherprog = runninglist.FindSimilar(prog)) != NULL)) {
 			config.logit("'%s' is being recorded now ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
+
+			DeleteProg(i);
+		}
+		else if ((starttimems >= lateststartms) && ((starttimems - lateststartms) >= prog.GetStart())) {
+			config.logit("'%s' started too long ago (%u minutes)", prog.GetQuickDescription().str(), (uint_t)((starttimems - prog.GetStart() + 59999) / 60000));
 
 			DeleteProg(i);
 		}
