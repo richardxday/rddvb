@@ -78,7 +78,7 @@ window.onpopstate = function(event)
 
 	if (filter != null) {
 		//console.log("Popped filter " + JSON.stringify(filter) + ", stack length " + window.history.length);
-		dvbrequest(filter.filter, filter.postdata, false);
+		dvbrequest(filter, '', false);
 	}
 };
 
@@ -1743,9 +1743,8 @@ function dvbrequest(filter, postdata, stackrequest)
 	filter.pagesize = filter.pagesize | 0;
 
 	if ((typeof stackrequest == 'undefined') || stackrequest) {
-		var newfilter = {filter:filter, postdata:postdata};
-		//console.log("Pushing " + JSON.stringify(newfilter) + " on to stack at position " + window.history.length);
-		window.history.pushState(newfilter, "", window.location);
+		//console.log("Pushing " + JSON.stringify(filter) + " on to stack at position " + window.history.length);
+		window.history.pushState(filter, "", window.location);
 	}
 
 	if (((currentfilter == null) ||
