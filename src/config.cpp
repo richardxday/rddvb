@@ -191,13 +191,16 @@ AString ADVBConfig::GetConfigItem(const std::vector<AString>& list, const AStrin
 
 	for (i = 0; i < list.size(); i++) {
 		const AString& name = list[i];
-		
+
+		//debug("Checking config for '%s'\n", name.str());
 		if (config.Exists(name)) {
 			res = config.Get(name);
+			//debug("Config for '%s' exists: '%s'\n", name.str(), res.str());
 			break;
 		}
 		else if (!defvalid && ((def = (const AString *)defaults.Read(name)) != NULL)) {
 			res = *def;
+			//debug("Config for '%s' missing, using default: '%s'\n", name.str(), res.str());
 			break;
 		}
 	}

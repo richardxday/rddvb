@@ -108,6 +108,7 @@ public:
 	const char *GetSubtitle()		 	 const {return GetString(data->strings.subtitle);}
 	const char *GetDesc()			 	 const {return GetString(data->strings.desc);}
 	const char *GetCategory()		 	 const {return GetString(data->strings.category);}
+	const char *GetModifiedCategory()    const {return IsFilm() ? "film" : GetCategory();}
 	const char *GetDirector()		 	 const {return GetString(data->strings.director);}
 	const char *GetEpisodeNum()		 	 const {return GetString(data->strings.episodenum);}
 #if DVBDATVERSION > 1
@@ -476,6 +477,7 @@ protected:
 
 	uint8_t *GetDataPtr(uint16_t offset) const {return (uint8_t *)((uptr_t)data + offset);}
 
+	static uint16_t GetDirDataOffset();
 	static uint16_t GetUserDataOffset();
 	static uint16_t GetActorsDataOffset();
 #if DVBDATVERSION > 1

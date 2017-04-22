@@ -218,6 +218,11 @@ const ADVBProg::FIELD *ADVBProg::GetFields(uint_t& nfields)
 	return fields;
 }
 
+uint16_t ADVBProg::GetDirDataOffset()
+{
+	return DVBPROG_OFFSET(strings.dir);
+}
+
 uint16_t ADVBProg::GetUserDataOffset()
 {
 	return DVBPROG_OFFSET(strings.user);
@@ -597,7 +602,6 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 
 	SetUser(GetField(str, "user"));
 	if (FieldExists(str, "dir")) SetDir(GetField(str, "dir"));
-	else						 SetDir(config.GetUserConfigItem(GetUser(), "dir"));
 	SetFilename(GetField(str, "filename"));
 	SetPattern(GetField(str, "pattern"));
 
@@ -1771,19 +1775,21 @@ AString ADVBProg::ReplaceFilenameTerms(const AString& str, bool converted) const
 AString ADVBProg::GetRecordingsSubDir() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	return config.GetRecordingsSubDir(GetUser(), IsFilm() ? "film" : GetCategory());
+	return config.GetRecordingsSubDir(GetUser(), GetModifiedCategory());
 }
 
 AString ADVBProg::GenerateFilename(bool converted) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString templ = config.GetFilenameTemplate(GetUser(), GetTitle(), IsFilm() ? "film" : GetCategory());
+	AString templ = config.GetFilenameTemplate(GetUser(), GetTitle(), GetModifiedCategory());
 	AString dir;
 
 	if (converted) {
 		AString subdir = GetDir();
 
-		if (subdir.Empty()) subdir = GetRecordingsSubDir();
+		if (subdir.Empty()) {
+			subdir = GetRecordingsSubDir();
+		}
 		
 		dir = CatPath(config.GetRecordingsDir(), subdir);
 	}
@@ -2358,7 +2364,7 @@ void ADVBProg::Record()
 						if (IsOnceOnly() && IsRecordingComplete() && !config.IsRecordingSlave()) {
 							ADVBPatterns::DeletePattern(user, GetPattern());
 
-							reschedule |= config.RescheduleAfterDeletingPattern(GetUser(), IsFilm() ? "film" : GetCategory());
+							reschedule |= config.RescheduleAfterDeletingPattern(GetUser(), GetModifiedCategory());
 						}
 
 						bool success = PostRecord();
@@ -2729,8 +2735,8 @@ bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
 bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString proccmd = config.GetEncodeCommand(GetUser(), IsFilm() ? "film" : GetCategory());
-	AString args    = config.GetEncodeArgs(GetUser(), IsFilm() ? "film" : GetCategory());
+	AString proccmd = config.GetEncodeCommand(GetUser(), GetModifiedCategory());
+	AString args    = config.GetEncodeArgs(GetUser(), GetModifiedCategory());
 	AString tempdst = config.GetRecordingsStorageDir().CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
 	uint_t  i, n = args.CountLines(";");
 	bool    success = true;
@@ -2805,8 +2811,8 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	ADateTime now;
 	AString   basename = src.Prefix();
 	AString   logfile  = basename + "_log.txt";
-	AString   proccmd  = config.GetEncodeCommand(GetUser(), IsFilm() ? "film" : GetCategory());
-	AString   args     = config.GetEncodeArgs(GetUser(), IsFilm() ? "film" : GetCategory());
+	AString   proccmd  = config.GetEncodeCommand(GetUser(), GetModifiedCategory());
+	AString   args     = config.GetEncodeArgs(GetUser(), GetModifiedCategory());
 	bool      success  = true;
 
 	CreateDirectory(dst.PathPart());
@@ -2981,10 +2987,10 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
 			AString cmd;
 			cmd.printf("nice %s -i \"%s\" -v %s %s -y \"%s\"",
-					   config.GetEncodeCommand(GetUser(), IsFilm() ? "film" : GetCategory()).str(),
+					   config.GetEncodeCommand(GetUser(), GetModifiedCategory()).str(),
 					   mp2file.str(),
 					   config.GetEncodeLogLevel(GetUser(), verbose).str(),
-					   config.GetEncodeAudioOnlyArgs(GetUser(), IsFilm() ? "film" : GetCategory()).str(),
+					   config.GetEncodeAudioOnlyArgs(GetUser(), GetModifiedCategory()).str(),
 					   tempdst.str());
 
 			if (RunCommand(cmd, !verbose)) {

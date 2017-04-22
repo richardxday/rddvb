@@ -1239,7 +1239,7 @@ int main(int argc, char *argv[])
 						AString subdir = oldfilename.PathPart().PathPart().FilePart();
 
 						if (prog.IsFilm()) {
-							if (!test) prog.SetDir("");
+							if (!test) prog.SetDir("Films");
 						}
 						else if (subdir.StartsWith("Shows")) {
 							if (!test) prog.SetDir(subdir + "/{titledir}");

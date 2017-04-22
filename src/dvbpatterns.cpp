@@ -369,7 +369,7 @@ void ADVBPatterns::__DeleteTerm(uptr_t item, void *context)
 			if (term->value.prog) delete term->value.prog;
 		}
 	}
-	
+
 	if (term->pattern) delete term->pattern;
 
 	delete term;
@@ -658,7 +658,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 							TERM *term;
 
 							subpattern->pos = pattern.pos + i0;
-							
+
 							if ((term = new TERM) != NULL) {
 								term->data.start   = i0;
 								term->data.length  = i1 - i0;
@@ -1478,8 +1478,10 @@ void ADVBPatterns::AssignValues(ADVBProg& prog, const PATTERN& pattern)
 		for (i = 0; i < nfields; i++) {
 			const FIELD& field = fields[i];
 
-			if (field.assignable && (field.offset != ADVBProg::GetUserDataOffset())) {
-				AString val = config.GetUserConfigItem(user, field.name);
+			if (field.assignable &&
+				(field.offset != ADVBProg::GetUserDataOffset()) &&
+				(field.offset != ADVBProg::GetDirDataOffset())) {
+				AString val = config.GetUserSubItemConfigItem(user, prog.GetModifiedCategory(), field.name);
 
 				if (val.Valid()) {
 					VALUE value;
