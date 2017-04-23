@@ -1747,6 +1747,14 @@ function dvbrequest(filter, postdata, stackrequest)
 		window.history.pushState(filter, "", window.location);
 	}
 
+	{
+		var title = 'DVB Programmes: ' + generatefilterdescription(filter);
+		if (title != document.title) {
+			document.title = title;
+		}
+		//document.getElementById("title").innerHTML = title;
+	}
+	
 	if (((currentfilter == null) ||
 		 (typeof postdata    != 'undefined') ||
 		 ((typeof filter.fetch != 'undefined') && filter.fetch) ||
@@ -1861,6 +1869,51 @@ function dvbrequest(filter, postdata, stackrequest)
 
 		updatecurrentfilter(filter);
 	}
+}
+
+function generatefilterdescription(filter)
+{
+	var str, fullfilter = getfullfilter(filter);
+	var title;
+
+	str = 'Page ' + (filter.page + 1) + ' of ' + filter.from;
+	if (fullfilter != '') {
+		str += '\nFiltered using \'' + limitstring(fullfilter) + '\'';
+	}
+	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined') && (filter.expanded < response.progs.length)) {
+		var prog = response.progs[filter.expanded];
+		title = prog.title;
+
+		if (typeof prog.subtitle != 'undefined') title += ' / ' + prog.subtitle;
+		if (typeof prog.episode != 'undefined') {
+			title += ' (';
+			if (typeof prog.episode.series != 'undefined') {
+				title += 'S' + prog.episode.series;
+			}
+			if (typeof prog.episode.episode != 'undefined') {
+				title += 'E' + strpad(prog.episode.episode, 2);
+			}
+			if (typeof prog.episode.episodes != 'undefined') {
+				title += 'T' + strpad(prog.episode.episodes, 2);
+			}
+			title += ')';
+		}
+		else if (typeof prog.assignedepisode != 'undefined') {
+			title += ' (F' + prog.assignedepisode + ')';
+		}
+
+		str += '\nViewing \'' + title + '\'';
+	}
+	filter.longdesc = str;
+
+	str = 'Page ' + (filter.page + 1) + ' of ' + filter.from;
+	if (filter.titlefilter != '') str += ' \'' + limitstring(filter.titlefilter) + '\'';
+	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined')) {
+		str += ' (' + title + ')';
+	}
+	filter.shortdesc = str;
+
+	return str;
 }
 
 function parserequest(index, user, pattern)
