@@ -712,6 +712,7 @@ bool ADVBProg::WriteToFile(AStdData& fp) const
 
 AString ADVBProg::ExportToText() const
 {
+	const ADVBConfig& config = ADVBConfig::Get();
 	AString str;
 	const char *p;
 
@@ -754,11 +755,16 @@ AString ADVBProg::ExportToText() const
 
 #if DVBDATVERSION > 1
 	if ((p = GetString(data->strings.episodeid))[0]) str.printf("episodeid=%s\n", p);
-	if ((p = GetString(data->strings.rating))[0])	 str.printf("rating=%s\n", p);
 
 	AString icon = GetString(data->strings.icon);
-	if (icon.Empty()) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
+	if (icon.Empty() && config.UseOldProgrammeIcon(GetTitle(), GetModifiedCategory())) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
 	if (icon.Valid()) str.printf("icon=%s\n", icon.str());
+
+	icon = ADVBIconCache::Get().GetIcon("channel", GetChannel());
+	if (icon.Empty() && config.UseOldChannelIcon(GetTitle(), GetModifiedCategory())) icon = ADVBIconCache::Get().GetIcon("channel", GetDVBChannel());
+	if (icon.Valid()) str.printf("channelicon=%s", icon.str());
+
+	if ((p = GetString(data->strings.rating))[0])	 str.printf("rating=%s\n", p);
 #endif
 
 	if (data->assignedepisode) str.printf("assignedepisode=%u\n", data->assignedepisode);
@@ -897,11 +903,11 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	if (GetString(data->strings.episodeid)[0]) str.printf(",\"episodeid\":\"%s\"", GetString(data->strings.episodeid));
 
 	AString icon = GetString(data->strings.icon);
-	if (icon.Empty()) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
+	if (icon.Empty() && config.UseOldProgrammeIcon(GetTitle(), GetModifiedCategory())) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
 	if (icon.Valid()) str.printf(",\"icon\":\"%s\"", JSONFormat(icon).str());
 
 	icon = ADVBIconCache::Get().GetIcon("channel", GetChannel());
-	if (icon.Empty()) icon = ADVBIconCache::Get().GetIcon("channel", GetDVBChannel());
+	if (icon.Empty() && config.UseOldChannelIcon(GetTitle(), GetModifiedCategory())) icon = ADVBIconCache::Get().GetIcon("channel", GetDVBChannel());
 	if (icon.Valid()) str.printf(",\"channelicon\":\"%s\"", JSONFormat(icon).str());
 
 	if ((p = GetString(data->strings.rating))[0]) str.printf(",\"rating\":\"%s\"", JSONFormat(p).str());

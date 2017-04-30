@@ -117,6 +117,9 @@ public:
 	bool    IsRecordingSlave()				 const {return ((uint_t)GetConfigItem("isrecordingslave", "0"));} // extractconfig()
 	bool    ConvertVideos()					 const {return ((uint_t)GetConfigItem("convertvideos", AString("%").Arg(!IsRecordingSlave())));} // extractconfig()
 	bool    EnableCombined()				 const {return ((uint_t)GetConfigItem("enablecombined", AString("%").Arg(!IsRecordingSlave())));} // extractconfig()
+
+	bool    UseOldChannelIcon(const AString& user, const AString& category)   const {return ((uint_t)GetUserSubItemConfigItem(user, category.ToLower(), "useoldchannelicon",   "1") != 0);}	// extractconfig("<user>", "<category>")
+	bool    UseOldProgrammeIcon(const AString& user, const AString& category) const {return ((uint_t)GetUserSubItemConfigItem(user, category.ToLower(), "useoldprogrammeicon", "0") != 0);}	// extractconfig("<user>", "<category>")
 	
 	AString GetPriorityDVBPIDs()			 const {return GetConfigItem("prioritypids", "");} // extractconfig()
 	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");} // extractconfig()
