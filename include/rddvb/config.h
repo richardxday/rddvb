@@ -120,6 +120,8 @@ public:
 
 	bool    UseOldChannelIcon(const AString& user, const AString& category)   const {return ((uint_t)GetUserSubItemConfigItem(user, category.ToLower(), "useoldchannelicon",   "1") != 0);}	// extractconfig("<user>", "<category>")
 	bool    UseOldProgrammeIcon(const AString& user, const AString& category) const {return ((uint_t)GetUserSubItemConfigItem(user, category.ToLower(), "useoldprogrammeicon", "0") != 0);}	// extractconfig("<user>", "<category>")
+
+	bool    MonitorDVBSignal()			     const {return ((uint_t)GetConfigItem("monitordvbsignal", "0") != 0);}
 	
 	AString GetPriorityDVBPIDs()			 const {return GetConfigItem("prioritypids", "");} // extractconfig()
 	AString GetExtraDVBPIDs()				 const {return GetConfigItem("extrapids", "");} // extractconfig()

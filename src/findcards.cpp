@@ -30,7 +30,7 @@ void findcards(void)
 		AString oldcards, newcards;
 		uint_t i;
 
-		if (system("killall dvbfemon") != 0) {
+		if (config.MonitorDVBSignal() && (system("killall dvbfemon") != 0)) {
 			config.logit("Failed to kill running dvbfemon processes");
 		}
 
@@ -92,10 +92,12 @@ void findcards(void)
 					config.printf("%u: %s", i, cardname.str());
 					newcards.printf("%u %s\n", i, cardname.str());
 
-					AString cmd;
-					cmd.printf("femon -a %u 2>/dev/null | dvbfemon --card %u >/dev/null &", i, i);
-					if (system(cmd) != 0) {
-						config.logit("Command '%s' failed", cmd.str());
+					if (config.MonitorDVBSignal()) {
+						AString cmd;
+						cmd.printf("femon -a %u 2>/dev/null | dvbfemon --card %u >/dev/null &", i, i);
+						if (system(cmd) != 0) {
+							config.logit("Command '%s' failed", cmd.str());
+						}
 					}
 				}
 				else if (cardname.Valid()) config.printf("%u: %s **NO SIGNAL**", i, cardname.str());
