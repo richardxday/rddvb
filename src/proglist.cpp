@@ -579,6 +579,8 @@ bool ADVBProgList::ReadFromJobQueue(int queue, bool runningonly)
 						ADVBProg prog;
 
 						if (prog.ReadFromJob(scriptname)) {
+							prog.SetJobID(jobid);
+							
 							if (queue == '=') prog.SetRunning();
 
 							if (AddProg(prog) < 0) {
@@ -2862,8 +2864,28 @@ bool ADVBProgList::CheckRecordingNow()
 	ADVBProgList scheduledlist, recordinglist;
 	bool         success = false;
 
-	if (config.GetRecordingHost().Valid() && !GetRecordingListFromRecordingSlave()) return false;
+	if (config.GetRecordingHost().Valid() && !GetRecordingListFromRecordingSlave()) {
+		AString cmd;
 
+		if ((cmd = config.GetConfigItem("recordingcheckcmd", "")).Valid()) {
+			AStdFile fp;
+			AString  filename = config.GetTempFile("recordingcheck", ".txt");
+
+			if (fp.open(filename, "w")) {
+				fp.printf("Recording check failed: host '%s' inaccessible\n", config.GetRecordingHost().str());
+				fp.close();
+
+				cmd = cmd.SearchAndReplace("{logfile}", filename);
+				RunAndLogCommand(cmd);
+
+				remove(filename);
+			}
+			else config.printf("Failed to open text file for logging recording errors!");
+		}
+		
+		return false;
+	}
+	
 	if (recordinglist.ReadFromFile(config.GetRecordingFile())) {
 		recordinglist.CreateHash();
 
