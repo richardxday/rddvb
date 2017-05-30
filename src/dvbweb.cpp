@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 	const ADVBConfig& config = ADVBConfig::Get(true);
 	ADVBProg		  prog;	// ensure ADVBProg initialisation takes place
 	AStdFile          log; //("/home/richard/dvbweb.log", "w");
-	AHash 			  vars(20, &AString::DeleteString);
+	AHash 			  vars(&AString::DeleteString);
 	AString   		  val, logdata, errors;
 	bool 			  base64encoded = true;
 	int i;
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
 		ADataList 		  titleslist;
 		ADataList	      patternlist;
 		ADVBPatterns::PATTERN filterpattern;
-		AHash 			  patterns(50, &ADVBPatterns::__DeletePattern);
+		AHash 			  patterns(&ADVBPatterns::__DeletePattern);
 		AHash 			  fullseries;
 		AString           from;
 		uint_t 			  pagesize = (uint_t)config.GetConfigItem("pagesize", "20"), page = 0;
@@ -532,7 +532,7 @@ int main(int argc, char *argv[])
 					break;
 
 				case DataSource_Titles:
-					titleshash.Create(50, &deletetitle);
+					titleshash.SetDestructor(&deletetitle);
 					titleshash.EnableCaseInSensitive(true);
 
 					for (i = 0; i < proglist->Count(); i++) {

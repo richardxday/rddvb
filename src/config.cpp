@@ -20,7 +20,7 @@
 AQuitHandler quithandler;
 
 ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false),
-						   defaults(20, &AString::DeleteString),
+						   defaults(&AString::DeleteString),
 						   configrecorder(NULL),
 						   webresponse(false)
 {
@@ -421,7 +421,7 @@ void ADVBConfig::writetorecordlog(const char *fmt, ...) const
 
 void ADVBConfig::ListUsers(AList& list) const
 {
-	AHash 	 users(10);
+	AHash 	 users;
 	AList 	 userpatterns;
 	AString  filepattern 	   = GetUserPatternsPattern();
 	AString  filepattern_parsed = ParseRegex(filepattern);

@@ -5,8 +5,8 @@
 
 #include "episodehandler.h"
 
-ADVBEpisodeHandler::ADVBEpisodeHandler() : dayoffsethash(200),
-										   episodehash(200),
+ADVBEpisodeHandler::ADVBEpisodeHandler() : dayoffsethash(),
+										   episodehash(),
 										   changed(false)
 {
 	AStdFile fp;
@@ -36,11 +36,11 @@ ADVBEpisodeHandler::~ADVBEpisodeHandler()
 	}
 }
 
-bool ADVBEpisodeHandler::__WriteString(const char *key, uptr_t value, void *context)
+bool ADVBEpisodeHandler::__WriteString(const AString& key, uptr_t value, void *context)
 {
 	AStdData *fp = (AStdData *)context;
 
-	fp->printf("%s=%s\n", key, AValue(value).ToString().str());
+	fp->printf("%s=%s\n", key.str(), AValue(value).ToString().str());
 
 	return true;
 }

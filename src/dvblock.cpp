@@ -12,7 +12,7 @@
 #include "dvblock.h"
 #include "config.h"
 
-AHash ADVBLock::lockhash(10, &ADVBLock::__DeleteLock);
+AHash ADVBLock::lockhash(&ADVBLock::__DeleteLock);
 
 ADVBLock::ADVBLock(const AString& iname) : name(iname)
 {

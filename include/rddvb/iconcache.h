@@ -32,7 +32,7 @@ protected:
 	const ENTRY *GetEntry(const AString& type, const AString& name) const;
 	ENTRY *GetWritableEntry(const AString& type, const AString& name, bool create = true);
 
-	static bool __WriteEntry(const char *key, uptr_t item, void *context);
+	static bool __WriteEntry(const AString& key, uptr_t item, void *context);
 
 protected:
 	AHash cache;

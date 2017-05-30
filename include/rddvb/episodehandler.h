@@ -14,7 +14,7 @@ public:
 	void AssignEpisode(ADVBProg& prog, bool ignorerepeats = false);
 
 protected:
-	static bool __WriteString(const char *key, uptr_t value, void *context);
+	static bool __WriteString(const AString& key, uptr_t value, void *context);
 
 	uint32_t GetDayOffset(const AString& key) const;
 	void   	 SetDayOffset(const AString& key, uint32_t value);

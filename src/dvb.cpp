@@ -25,7 +25,7 @@ typedef struct {
 
 bool forcelogging = false;
 
-static bool __DisplaySeries(const char *key, uptr_t value, void *context)
+static bool __DisplaySeries(const AString& key, uptr_t value, void *context)
 {
 	UNUSED(context);
 
@@ -37,7 +37,7 @@ static bool __DisplaySeries(const char *key, uptr_t value, void *context)
 		for (j = 0; j < serieslist.Count(); j++) {
 			const AString *str = (const AString *)serieslist[j];
 
-			if (str) printf("Programme '%s' series %u: %s\n", key, j, str->str());
+			if (str) printf("Programme '%s' series %u: %s\n", key.str(), j, str->str());
 		}
 	}
 

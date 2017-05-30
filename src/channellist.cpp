@@ -5,7 +5,7 @@
 
 #include "channellist.h"
 
-ADVBChannelList::ADVBChannelList() : hash(40),
+ADVBChannelList::ADVBChannelList() : hash(),
 									 changed(false)
 {
 	list.SetDestructor(&__DeleteChannel);
@@ -179,7 +179,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 						CHANNEL *chan = GetChannelByName(servname, true);
 
 						if (chan) {
-							AHash     pidhash(10);
+							AHash     pidhash;
 							ADataList pidlist;
 							uint_t i, n = service.CountLines("\n", 0);
 

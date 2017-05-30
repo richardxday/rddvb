@@ -22,14 +22,14 @@
 
 /*--------------------------------------------------------------------------------*/
 
-ADVBProgList::ADVBProgList()
+ADVBProgList::ADVBProgList() : useproghash(false)
 {
 	channellist.SetDestructor(&DeleteChannel);
 	proglist.SetDestructor(&DeleteProg);
 	proglist.EnableDuplication(true);
 }
 
-ADVBProgList::ADVBProgList(const ADVBProgList& list)
+ADVBProgList::ADVBProgList(const ADVBProgList& list) : useproghash(false)
 {
 	channellist.SetDestructor(&DeleteChannel);
 	proglist.SetDestructor(&DeleteProg);
@@ -75,7 +75,7 @@ void ADVBProgList::Modify(const ADVBProgList& list, uint_t& added, uint_t& modif
 {
 	uint_t i;
 
-	if (!proghash.Valid()) CreateHash();
+	if (!proghash.GetItems()) CreateHash();
 
 	added = modified = 0;
 
@@ -182,8 +182,6 @@ void ADVBProgList::AddChannel(const AString& id, const AString& name)
 	CHANNEL *channel = NULL;
 
 	if (id.Valid() && ((channel = GetChannelWritable(id)) == NULL)) {
-		if (!channelhash.Valid()) channelhash.Create(40);
-
 		if ((channel = new CHANNEL) != NULL) {
 			channel->id   = id;
 			channel->name = name;
@@ -295,7 +293,7 @@ void ADVBProgList::GetProgrammeValues(AString& str, const AStructuredNode *pNode
 bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AHash     channelidvalidhash(100);
+	AHash     channelidvalidhash;
 	AString   data;
 	FILE_INFO info;
 	bool      success = false;
@@ -622,7 +620,7 @@ void ADVBProgList::UpdateDVBChannels()
 {
 	const ADVBConfig&      config = ADVBConfig::Get();
 	const ADVBChannelList& clist  = ADVBChannelList::Get();
-	AHash hash(20);
+	AHash hash;
 	uint_t  i;
 
 	for (i = 0; i < Count(); i++) {
@@ -717,7 +715,7 @@ bool ADVBProgList::WriteToGNUPlotFile(const AString& filename) const
 	bool success = false;
 
 	if (fp.open(filename, "w")) {
-		AHash channels(20);
+		AHash channels;
 		uint_t i, j, n = 0;
 
 		fp.printf("#time channel-index dvb-card length(hours) recorded scheduled rejected desc\n");
@@ -969,7 +967,7 @@ int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps)
 	}
 	else index = proglist.Add((uptr_t)prog);
 
-	if ((index >= 0) && proghash.Valid()) proghash.Insert(prog->GetUUID(), (uptr_t)prog);
+	if ((index >= 0) && useproghash) proghash.Insert(prog->GetUUID(), (uptr_t)prog);
 
 	return index;
 }
@@ -993,7 +991,7 @@ bool ADVBProgList::DeleteProg(uint_t n)
 
 	if (prog) {
 		proglist.RemoveIndex(n);
-		if (proghash.Valid()) proghash.Remove(prog->GetUUID());
+		proghash.Remove(prog->GetUUID());
 		delete prog;
 		success = true;
 	}
@@ -1034,8 +1032,8 @@ void ADVBProgList::CreateHash()
 	uint_t i, n = Count();
 
 	proghash.Delete();
-	proghash.Create(200);
-
+	useproghash = true;
+	
 	for (i = 0; i < n; i++) {
 		const ADVBProg& prog = GetProg(i);
 
@@ -1048,7 +1046,7 @@ const ADVBProg *ADVBProgList::FindUUID(const AString& uuid) const
 	const ADVBProg *prog = NULL;
 	int p;
 
-	if		(proghash.Valid())				 prog = (const ADVBProg *)proghash.Read(uuid);
+	if		(proghash.GetItems())			 prog = (const ADVBProg *)proghash.Read(uuid);
 	else if ((p = FindUUIDIndex(uuid)) >= 0) prog = &GetProg(p);
 
 	return prog;
@@ -1058,9 +1056,7 @@ int ADVBProgList::FindUUIDIndex(const AString& uuid) const
 {
 	int res = -1;
 
-	if (proghash.Valid()) {
-		res = proglist.Find(proghash.Read(uuid));
-	}
+	if (proghash.GetItems()) res = proglist.Find(proghash.Read(uuid));
 	else {
 		uint_t i, n = Count();
 
@@ -1081,7 +1077,7 @@ ADVBProg *ADVBProgList::FindUUIDWritable(const AString& uuid) const
 	ADVBProg *prog = NULL;
 	int p;
 
-	if		(proghash.Valid())				 prog = (ADVBProg *)proghash.Read(uuid);
+	if		(proghash.GetItems())			 prog = (ADVBProg *)proghash.Read(uuid);
 	else if ((p = FindUUIDIndex(uuid)) >= 0) prog = &GetProgWritable(p);
 
 	return prog;
@@ -1511,7 +1507,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
-	AHash    hash(30);
+	AHash    hash;
 	AString  filename;
 	double   lowlimit = config.GetLowSpaceWarningLimit();
 	uint_t   i, userlen = 0;
@@ -2970,7 +2966,7 @@ void ADVBProgList::FindSeries(AHash& hash) const
 	uint_t i;
 
 	hash.Delete();
-	hash.Create(50, &DeleteSeries);
+	hash.SetDestructor(&DeleteSeries);
 	hash.EnableCaseInSensitive(true);
 
 	for (i = 0; i < Count(); i++) {
@@ -3063,7 +3059,7 @@ double ADVBProgList::ScoreProgrammeByPopularityFactors(const ADVBProg& prog, voi
 	return score;
 }
 
-bool ADVBProgList::__CollectPopularity(const char *key, uptr_t item, void *context)
+bool ADVBProgList::__CollectPopularity(const AString& key, uptr_t item, void *context)
 {
 	AList& list = *(AList *)context;
 
@@ -3093,7 +3089,7 @@ int  ADVBProgList::__ComparePopularity(const AListNode *pNode1, const AListNode 
 
 void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& prog, void *context), void *context) const
 {
-	AHash hash(100, &__DeletePopularity);
+	AHash hash(&__DeletePopularity);
 	uint_t i;
 
 	for (i = 0; i < Count(); i++) {

@@ -187,11 +187,10 @@ ADVBProg::~ADVBProg()
 
 void ADVBProg::StaticInit()
 {
-	if (!fieldhash.Valid()) {
+	if (!fieldhash.GetItems()) {
 		const ADVBConfig& config = ADVBConfig::Get();
 		uint_t i;
 
-		fieldhash.Create(20);
 		for (i = 0; i < NUMBEROF(fields); i++) {
 			fieldhash.Insert(fields[i].name, (uptr_t)(fields + i));
 		}
@@ -917,7 +916,7 @@ AString ADVBProg::ExportToJSON(bool includebase64) const
 	str.printf("\"bitmap\":%s", AValue(data->flags).ToString().str());
 	{
 		uint_t i;
-		AHash hash(20);
+		AHash hash;
 		for (i = 0; i < NUMBEROF(fields); i++) {
 			if (RANGE(fields[i].type, ADVBPatterns::FieldType_flag, ADVBPatterns::FieldType_lastflag) && !hash.Exists(fields[i].name)) {
 				hash.Insert(fields[i].name, 0);

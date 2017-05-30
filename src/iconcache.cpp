@@ -8,7 +8,7 @@
 
 #include "iconcache.h"
 
-ADVBIconCache::ADVBIconCache() : cache(300, &__DeleteEntry),
+ADVBIconCache::ADVBIconCache() : cache(&__DeleteEntry),
 								 changed(false)
 {
 	AStdFile fp;
@@ -55,7 +55,7 @@ ADVBIconCache& ADVBIconCache::Get()
 	return cache;
 }
 
-bool ADVBIconCache::__WriteEntry(const char *key, uptr_t item, void *context)
+bool ADVBIconCache::__WriteEntry(const AString& key, uptr_t item, void *context)
 {
 	const ENTRY *entry = (const ENTRY *)item;
 	AStdFile& fp = *(AStdFile *)context;

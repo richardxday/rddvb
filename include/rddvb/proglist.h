@@ -215,7 +215,7 @@ protected:
 		UNUSED(context);
 		delete (POPULARITY *)item;
 	}
-	static bool __CollectPopularity(const char *key, uptr_t item, void *context);
+	static bool __CollectPopularity(const AString& key, uptr_t item, void *context);
 	static int  __ComparePopularity(const AListNode *pNode1, const AListNode *pNode2, void *pContext);
 
 protected:
@@ -223,6 +223,7 @@ protected:
 	AHash	  proghash;
 	ADataList proglist;
 	ADataList channellist;
+	bool	  useproghash;
 };
 
 #endif
