@@ -1967,15 +1967,16 @@ bool ADVBProg::ReadFromJob(const AString& filename)
 	return success;
 }
 
-void ADVBProg::AddToList(ADataList *list)
+void ADVBProg::AddToList(PROGLIST *list)
 {
 	this->list = list;
-	list->Add((uptr_t)this);
+	list->push_back(this);
 }
 
 void ADVBProg::RemoveFromList()
 {
-	if (list) list->Remove((uptr_t)this);
+	PROGLIST::iterator it;
+	if (list && ((it = std::find(list->begin(), list->end(), this)) != list->end())) list->erase(it);
 }
 
 int ADVBProg::CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context)
@@ -1993,7 +1994,7 @@ void ADVBProg::SetPriorityScore(const ADateTime& starttime)
 
 	if (IsUrgent()) priority_score += (double)GetAttributedConfigItem(urgentscalename, "3.0");
 
-	if (list) priority_score += (double)GetAttributedConfigItem(repeatsscalename, "-1.0") * (double)(list->Count() - 1);
+	if (list) priority_score += (double)GetAttributedConfigItem(repeatsscalename, "-1.0") * (double)(list->size() - 1);
 
 	priority_score += (double)GetAttributedConfigItem(delayscalename, "-.5") * (double)(GetStartDT().GetDays() - starttime.GetDays());
 	

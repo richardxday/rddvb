@@ -101,7 +101,7 @@ public:
 
 	uint_t  GetPhysicalDVBCard(uint_t n, bool forcemapping = false) const;
 	uint_t  GetVirtualDVBCard(uint_t n)      const;
-	uint_t  GetMaxDVBCards()				 const {return dvbcards.Count();}
+	uint_t  GetMaxDVBCards()				 const {return dvbcards.size();}
 	AString GetDVBFrequencyRange()           const {return GetConfigItem("dvbfreqrange", "474,530,8");} // extractconfig()
 
 	uint_t  GetLatestStart()			     const {return (uint_t)GetConfigItem("lateststart", "5");} // extractconfig()
@@ -189,7 +189,7 @@ private:
 protected:
 	ASettingsHandler 	 config;
 	AHash			 	 defaults;
-	ADataList		 	 dvbcards;
+	std::vector<uint_t>  dvbcards;
 	std::vector<AString> *configrecorder;
 	bool				 webresponse;
 };

@@ -19,13 +19,14 @@ public:
 
 	AString LookupDVBChannel(const AString& channel) const;
 
-	uint_t GetChannelCount() const {return list.Count();}
+	uint_t GetChannelCount() const {return list.size();}
 
+	typedef std::vector<uint_t> PIDLIST;
 	typedef struct {
-		AString   name;
-		AString   convertedname;
-		uint32_t  freq;
-		ADataList pidlist;
+		AString  name;
+		AString  convertedname;
+		uint32_t freq;
+		PIDLIST  pidlist;
 	} CHANNEL;
 	const CHANNEL *GetChannel(uint_t n) const {return (const CHANNEL *)list[n];}
 
@@ -36,7 +37,6 @@ private:
 	static AString ConvertDVBChannel(const AString& str);
 
 protected:
-
 	static void __DeleteChannel(uptr_t item, void *context) {
 		UNUSED(context);
 		delete (CHANNEL *)item;
@@ -47,10 +47,12 @@ protected:
 
 	static int __CompareItems(uptr_t a, uptr_t b, void *context);
 
+	typedef std::vector<CHANNEL *>       CHANNELLIST;
+	typedef std::map<AString, CHANNEL *> CHANNELMAP;
 protected:
-	ADataList list;
-	AHash     hash;
-	bool      changed;
+	CHANNELLIST list;
+	CHANNELMAP  map;
+	bool        changed;
 };
 
 #endif

@@ -7,6 +7,8 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+#include <algorithm>
+
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
 
@@ -313,7 +315,7 @@ void ADVBConfig::MapDVBCards()
 {
 	uint_t i;
 
-	dvbcards.DeleteList();
+	dvbcards.clear();
 
 	for (i = 0; i < 4; i++) {
 		AString defname = "*";
@@ -323,31 +325,30 @@ void ADVBConfig::MapDVBCards()
 		cardname = GetConfigItem(AString("card%;").Arg(i), defname);
 
 		if ((card = findcard(cardname, &dvbcards)) >= 0) {
-			dvbcards.Add((uint_t)card);
+			dvbcards.push_back((uint_t)card);
 		}
 		else break;
 	}
 
 	printf("DVB card mapping:");
-	for (i = 0; i < dvbcards.Count(); i++) {
-		printf("Virtual card %u -> physical card %u", i, (uint_t)dvbcards[i]);
+	for (i = 0; i < dvbcards.size(); i++) {
+		printf("Virtual card %u -> physical card %u", i, dvbcards[i]);
 	}
 }
 
 uint_t ADVBConfig::GetPhysicalDVBCard(uint_t n, bool forcemapping) const
 {
-	if (forcemapping || !dvbcards.Count()) {
+	if (forcemapping || !dvbcards.size()) {
 		(const_cast<ADVBConfig *>(this))->MapDVBCards();
 	}
 
-	return dvbcards[n];
+	return (n < dvbcards.size()) ? dvbcards[n] : 0;
 }
 
 uint_t ADVBConfig::GetVirtualDVBCard(uint_t n) const
 {
-	sint_t n1 = dvbcards.Find(n);
-
-	return (n1 >= 0) ? n1 : ~0;
+	std::vector<uint_t>::const_iterator it;
+	return ((it = std::find(dvbcards.begin(), dvbcards.end(), n)) != dvbcards.end()) ? *it : ~0;
 }
 
 void ADVBConfig::Set(const AString& var, const AString& val) const

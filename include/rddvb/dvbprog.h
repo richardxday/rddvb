@@ -305,9 +305,12 @@ public:
 	bool WriteToJobQueue();
 	bool ReadFromJob(const AString& filename);
 
+	typedef std::vector<ADVBProg *> PROGLIST;
+	typedef std::vector<PROGLIST *> PROGLISTLIST;
+	
 	void ClearList() {list = NULL;}
-	void AddToList(ADataList *list);
-	ADataList *GetList() const {return list;}
+	void AddToList(PROGLIST *list);
+	PROGLIST *GetList() const {return list;}
 	void RemoveFromList();
 	
 	static int CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context);
@@ -565,7 +568,7 @@ protected:
 protected:
 	DVBPROG  		   *data;
 	uint16_t 		   maxsize;
-	ADataList		   *list;
+	PROGLIST		   *list;
 	double   		   priority_score;
 	uint_t	 		   overlaps;
 

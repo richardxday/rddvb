@@ -3,14 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include "channellist.h"
 
-ADVBChannelList::ADVBChannelList() : hash(),
-									 changed(false)
+ADVBChannelList::ADVBChannelList() : changed(false)
 {
-	list.SetDestructor(&__DeleteChannel);
-	hash.EnableCaseInSensitive(true);
-
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
 
@@ -27,13 +25,13 @@ ADVBChannelList::ADVBChannelList() : hash(),
 				(line.GetFieldNumber(":", 11, _pid2) >= 0)) {
 				if ((chan = GetChannelByName(name, true)) != NULL) {
 					chan->freq = (uint32_t)_freq;
-					chan->pidlist.DeleteList();
+					chan->pidlist.clear();
 
 					if ((uint_t)_pid1) {
-						chan->pidlist.Add((uint_t)_pid1);
+						chan->pidlist.push_back((uint_t)_pid1);
 					}
 					if ((uint_t)_pid2) {
-						chan->pidlist.Add((uint_t)_pid2);
+						chan->pidlist.push_back((uint_t)_pid2);
 					}
 
 					changed = true;
@@ -42,13 +40,13 @@ ADVBChannelList::ADVBChannelList() : hash(),
 			else if ((name = line.Column(0)).Valid() && (_freq = line.Column(1)).Valid()) {
 				if ((chan = GetChannelByName(name, true)) != NULL) {
 					chan->freq = (uint32_t)_freq;
-					chan->pidlist.DeleteList();
+					chan->pidlist.clear();
 
 					uint_t i, n = line.CountColumns();
 					for (i = 2; (i < n); i++) {
 						AString col = line.Column(i);
 
-						chan->pidlist.Add((uint_t)col);
+						chan->pidlist.push_back((uint_t)col);
 					}
 				}
 			}
@@ -62,39 +60,36 @@ ADVBChannelList::~ADVBChannelList()
 {
 	if (changed) {
 		const ADVBConfig& config = ADVBConfig::Get();
+		std::vector<AString> strlist;
 		AStdFile fp;
-		AList strlist;
 		uint_t i;
 
-		for (i = 0; i < list.Count(); i++) {
-			const CHANNEL *chan = (const CHANNEL *)list[i];
-			AString *str;
-
-			if ((str = new AString) != NULL) {
-				uint_t j;
-
-				str->printf("%s,%u", chan->name.str(), chan->freq);
-
-				for (j = 0; j < chan->pidlist.Count(); j++) {
-					str->printf(",%u", (uint_t)chan->pidlist[j]);
-				}
-
-				strlist.Add(str);
+		for (i = 0; i < list.size(); i++) {
+			const CHANNEL& chan = *list[i];
+			AString str;
+			uint_t  j;
+			
+			str.printf("%s,%u", chan.name.str(), chan.freq);
+			
+			for (j = 0; j < chan.pidlist.size(); j++) {
+				str.printf(",%u", chan.pidlist[j]);
 			}
+
+			strlist.push_back(str);
 		}
 
-		strlist.Sort(&AString::AlphaCompareNoCase);
+		std::sort(strlist.begin(), strlist.end());
 
 		if (fp.open(config.GetDVBChannelsFile(), "w")) {
-			const AString *str = AString::Cast(strlist.First());
-
-			while (str) {
-				fp.printf("%s\n", str->str());
-
-				str = str->Next();
+			for (i = 0; i < strlist.size(); i++) {
+				fp.printf("%s\n", strlist[i].str());
 			}
 
 			fp.close();
+		}
+
+		for (i = 0; i < list.size(); i++) {
+			delete list[i];
 		}
 	}
 }
@@ -117,24 +112,31 @@ AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 
 const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name) const
 {
-	const CHANNEL *chan = (const CHANNEL *)hash.Read(name);
+	CHANNELMAP::const_iterator it;
+	const CHANNEL *chan = NULL;
+	
+	if ((it = map.find(name.ToLower())) != map.end()) {
+		chan = it->second;
+	}
+
 	return chan;
 }
 
 ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name, bool create)
 {
-	CHANNEL *chan = (CHANNEL *)hash.Read(name);
+	CHANNELMAP::const_iterator it;
+	CHANNEL *chan = NULL;
+
+	if ((it = map.find(name.ToLower())) != map.end()) chan = it->second;
 
 	if (!chan && create && ((chan = new CHANNEL) != NULL)) {
-		chan->pidlist.EnableDuplication(false);
-
 		chan->name = name;
 		chan->convertedname = ConvertDVBChannel(name);
 
-		list.Add((uptr_t)chan);
+		list.push_back(chan);
+		map[chan->name.ToLower()] = chan;
 
-		hash.Insert(chan->name, (uptr_t)chan);
-		if (chan->convertedname != chan->name) hash.Insert(chan->convertedname, (uptr_t)chan);
+		if (chan->convertedname.ToLower() != chan->name.ToLower()) map[chan->convertedname.ToLower()] = chan;
 
 		changed = true;
 	}
@@ -179,8 +181,8 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 						CHANNEL *chan = GetChannelByName(servname, true);
 
 						if (chan) {
-							AHash     pidhash;
-							ADataList pidlist;
+							std::map<AString,bool> pidhash;
+							PIDLIST				   pidlist;
 							uint_t i, n = service.CountLines("\n", 0);
 
 							chan->freq = freq;
@@ -199,27 +201,27 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 									//else if (type == 5)			include = true;
 									else if (type == 6)			include = true;
 
-									if (id.Valid() && !pidhash.Exists(id)) {
-										pidhash.Insert(id);
+									if (id.Valid() && (pidhash.find(id) != pidhash.end())) {
+										pidhash[id] = true;
 										include = true;
 									}
 
-									if (include) pidlist.Add(pid);
+									if (include) pidlist.push_back(pid);
 
 									if (verbose) config.printf("Service %s Stream type %u pid %u (%s)", servname.str(), type, pid, include ? "included" : "EXCLUDED");
 								}
 							}
 
-							pidlist.Sort(&__CompareItems);
+							std::sort(pidlist.begin(), pidlist.end(), std::greater<uint_t>());
 
-							if (pidlist.Count() && (pidlist != chan->pidlist)) {
+							if (pidlist.size() && (pidlist != chan->pidlist)) {
 								AString str;
 
 								str.printf("Changing PID list for '%s' from '", chan->name.str());
-								for (i = 0; i < chan->pidlist.Count(); i++) str.printf(" %s", AValue(chan->pidlist[i]).ToString().str());
+								for (i = 0; i < chan->pidlist.size(); i++) str.printf(" %s", AValue(chan->pidlist[i]).ToString().str());
 
 								str.printf("' to '");
-								for (i = 0; i < pidlist.Count(); i++) str.printf(" %s", AValue(pidlist[i]).ToString().str());
+								for (i = 0; i < pidlist.size(); i++) str.printf(" %s", AValue(pidlist[i]).ToString().str());
 								str.printf("'");
 
 								config.printf("%s", str.str());
@@ -293,7 +295,7 @@ bool ADVBChannelList::GetPIDList(uint_t card, const AString& channel, AString& p
 		}
 
 		uint_t i;
-		for (i = 0; i < chan->pidlist.Count(); i++) {
+		for (i = 0; i < chan->pidlist.size(); i++) {
 			uint_t pid = (uint_t)chan->pidlist[i];
 
 			pids.printf(" %u", pid);

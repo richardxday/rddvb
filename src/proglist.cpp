@@ -2016,17 +2016,17 @@ int ADVBProgList::CompareRepeatLists(uptr_t item1, uptr_t item2, void *context)
 	return ADVBProg::CompareScore(prog1, prog2);
 }
 
-void ADVBProgList::CountOverlaps(ADataList& repeatlists, const ADateTime& starttime)
+void ADVBProgList::CountOverlaps(const ADVBProg::PROGLISTLIST& repeatlists, const ADateTime& starttime)
 {
 	uint_t i;
 
 	// set scores for the first programme of each list (for sorting below)
-	for (i = 0; i < repeatlists.Count(); i++) {
-		ADataList& list = *(ADataList *)repeatlists[i];
+	for (i = 0; i < repeatlists.size(); i++) {
+		const ADVBProg::PROGLIST& list = *repeatlists[i];
 		uint_t j;
 
-		for (j = 0; j < list.Count(); j++) {
-			ADVBProg& prog = *(ADVBProg *)list[j];
+		for (j = 0; j < list.size(); j++) {
+			ADVBProg& prog = *list[j];
 
 			prog.CountOverlaps(*this);
 			prog.SetPriorityScore(starttime);
@@ -2038,22 +2038,20 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	// for each programme, attach it to a list of repeats
-	ADataList repeatlists;
+	ADVBProg::PROGLISTLIST repeatlists;
 	uint_t i, nscheduledmissed = 0, nearliestscheduled = 0, nscheduled = 0;
-
-	repeatlists.SetDestructor(&DeleteDataList);
 
 	for (i = 0; i < Count(); i++) {
 		ADVBProg& prog = GetProgWritable(i);
 
 		// no point checking anything that is already part of a list!
 		if (!prog.GetList()) {
-			ADataList *list;
+			ADVBProg::PROGLIST *list;
 
 			// this programme MUST be part of a new list since it isn't already part of an existing list
-			if ((list = new ADataList) != NULL) {
+			if ((list = new ADVBProg::PROGLIST) != NULL) {
 				// dvbadd list to list of repeat lists
-				repeatlists.Add((uptr_t)list);
+				repeatlists.push_back(list);
 
 				// add this programme to the list
 				prog.AddToList(list);
@@ -2083,18 +2081,26 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 	config.printf("Sorted: %u programmes:", Count());
 	config.logit("--------------------------------------------------------------------------------");
 	for (i = 0; i < Count(); i++) {
-		const ADVBProg& prog = GetProg(i);
+		const ADVBProg&           prog = GetProg(i);
+		const ADVBProg::PROGLIST& list = *prog.GetList();
+		uint_t entry = std::find(list.begin(), list.end(), &prog) - list.begin();
 
-		config.logit("%s (%d overlaps, %u repeats, score %0.1lf)", prog.GetDescription(1).str(), prog.GetOverlaps(), prog.GetList()->Count() - 1, prog.GetPriorityScore());
+		config.logit("%s (entry %u/%u, %d overlaps, %u repeats, score %0.1lf)",
+					 prog.GetDescription(1).str(),
+					 entry,
+					 (uint_t)list.size() - 1,
+					 prog.GetOverlaps(),
+					 (uint_t)prog.GetList()->size() - 1,
+					 prog.GetPriorityScore());
 	}
 	config.logit("--------------------------------------------------------------------------------");
 
 	const uint_t nchecks = nlists * 2;
 	for (i = 0; (Count() > 0); i++) {
-		ADataList deletelist;
+		ADVBProg::PROGLIST deletelist;
 		ADVBProg& prog = GetProgWritable(0);
-		uint_t j, k;
-		bool   scheduled = false;
+		uint_t 	  j, k;
+		bool   	  scheduled = false;
 
 		// find a list to schedule this programme on
 		for (j = 0; j < nchecks; j++) {
@@ -2108,18 +2114,20 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 				// and once allowing the overlapping of pre- and post- handles
 				((j >= nlists) && (prog.GetStart()       >= recstarttimes[vcard]) && !schedulelist.FindOverlap(prog))) {
 				// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
-
-				if (prog.GetList()->Find(&prog) == 0) nearliestscheduled++;
+				const ADVBProg::PROGLIST& list = *prog.GetList();
+				uint_t entry = std::find(list.begin(), list.end(), &prog) - list.begin();
+				
+				if (entry == 0) nearliestscheduled++;
 
 				// add to scheduling list
 				schedulelist.AddProg(prog);
-				deletelist.Add((uptr_t)&prog);
+				deletelist.push_back(&prog);
 
-				config.logit("'%s' can be recorded (card %u, entry %d/%u)",
+				config.logit("'%s' can be recorded (card %u, entry %u/%u)",
 							 prog.GetQuickDescription().str(),
 							 vcard,
-							 prog.GetList()->Find((uptr_t)&prog),
-							 prog.GetList()->Count());
+							 entry,
+							 (uint_t)list.size() - 1);
 
 				// remove any programmes that do NOT have the allow repeats flag set
 				// OR that use the same base channel
@@ -2136,14 +2144,14 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 
 					if ((prog2 != prog) && (prog2.GetList() == prog.GetList())) {
 						if (!prog2.AllowRepeats()) {
-							deletelist.Add((uptr_t)&prog2);	// add to delete list that is used later to delete programme from this object
+							deletelist.push_back(&prog2);	// add to delete list that is used later to delete programme from this object
 							removed = true;
 						}
 						else if ((prog2.GetBaseChannel() == channel) &&
 								 (( prog2.IsPlus1() && (prog2.GetStart() == start1)) ||
 								  (!prog2.IsPlus1() && (prog2.GetStart() == start)))) {
 							config.logit("Removing '%s' because it is +/- 1 hour from '%s'", prog2.GetQuickDescription().str(), prog.GetQuickDescription().str());
-							deletelist.Add((uptr_t)&prog2);	// add to delete list that is used later to delete programme from this object
+							deletelist.push_back(&prog2);	// add to delete list that is used later to delete programme from this object
 							removed = true;
 						}
 					}
@@ -2166,10 +2174,10 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 
 		// this repeat of the programme cannot be scheduled
 		if (!scheduled) {
-			const ADataList *repeatlist = prog.GetList();
+			const ADVBProg::PROGLIST *repeatlist = prog.GetList();
 
 			// check to see if this repeat is the last one
-			if (repeatlist->Count() == 1) {
+			if (repeatlist->size() == 1) {
 				// the last repeat overlaps something so cannot be recorded -> the programme is *rejected*
 				config.logit("No repeats of '%s' can be recorded!", prog.GetQuickDescription().str());
 
@@ -2177,16 +2185,16 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 				rejectedlist.AddProg(prog);
 			}
 			else {
-				config.logit("'%s' cannot be recorded, %u repeats to go", prog.GetQuickDescription().str(), prog.GetList()->Count() - 1);
+				config.logit("'%s' cannot be recorded, %u repeats to go", prog.GetQuickDescription().str(), (uint_t)prog.GetList()->size() - 1);
 				nscheduledmissed++;
 			}
 
 			// remove programme from list to check
-			deletelist.Add((uptr_t)&prog);
+			deletelist.push_back(&prog);
 		}
 
-		for (j = 0; j < deletelist.Count(); j++) {
-			DeleteProg(*(const ADVBProg *)deletelist[j]);
+		for (j = 0; j < deletelist.size(); j++) {
+			DeleteProg(*deletelist[j]);
 		}
 	}
 
@@ -2200,6 +2208,10 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 
 		// tweak record times to prevent pre/post handles overlapping
 		scheduledlist.AdjustRecordTimes(recstarttimes[i]);
+	}
+
+	for (i = 0; i < repeatlists.size(); i++) {
+		delete repeatlists[i];
 	}
 }
 

@@ -4,6 +4,8 @@
 #include <string.h>
 #include <time.h>
 
+#include <algorithm>
+
 #include <rdlib/strsup.h>
 #include <rdlib/Regex.h>
 
@@ -136,7 +138,7 @@ void findcards(void)
 	}
 }
 
-sint_t findcard(const AString& pattern, const ADataList *cardlist)
+sint_t findcard(const AString& pattern, const std::vector<uint_t> *cardlist)
 {
 	AStdFile fp;
 	AString pat = ParseRegex(pattern);
@@ -148,7 +150,7 @@ sint_t findcard(const AString& pattern, const ADataList *cardlist)
 		while (line.ReadLn(fp) >= 0) {
 			uint_t testcard = (uint_t)line.Word(0);
 
-			if ((!cardlist || (cardlist->Find(testcard) < 0)) && MatchRegex(line.Words(1), pat)) {
+			if ((!cardlist || (std::find(cardlist->begin(), cardlist->end(), testcard) == cardlist->end())) && MatchRegex(line.Words(1), pat)) {
 				card = testcard;
 				break;
 			}
