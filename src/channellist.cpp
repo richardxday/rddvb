@@ -201,7 +201,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 									//else if (type == 5)			include = true;
 									else if (type == 6)			include = true;
 
-									if (id.Valid() && (pidhash.find(id) != pidhash.end())) {
+									if (id.Valid() && (pidhash.find(id) == pidhash.end())) {
 										pidhash[id] = true;
 										include = true;
 									}
@@ -212,7 +212,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 								}
 							}
 
-							std::sort(pidlist.begin(), pidlist.end(), std::greater<uint_t>());
+							std::sort(pidlist.begin(), pidlist.end(), std::less<uint_t>());
 
 							if (pidlist.size() && (pidlist != chan->pidlist)) {
 								AString str;
