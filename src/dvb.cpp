@@ -10,12 +10,15 @@
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
+#include <rdlib/simpleeval.h>
 
 #include "config.h"
 #include "dvblock.h"
 #include "proglist.h"
 #include "channellist.h"
 #include "findcards.h"
+
+#define EVALTEST 0
 
 typedef struct {
 	AString  filename;
@@ -43,6 +46,26 @@ static bool __DisplaySeries(const AString& key, uptr_t value, void *context)
 
 	return true;
 }
+
+#if EVALTEST
+static AValue __func(const AString& funcname, const simplevars_t& vars, const simpleargs_t& values, AString& errors, void *context)
+{
+	AValue res = 0;
+	size_t i;
+	
+	UNUSED(funcname);
+	UNUSED(vars);
+	UNUSED(values);
+	UNUSED(errors);
+	UNUSED(context);
+
+	for (i = 0; i < values.size(); i++) {
+		res += values[i];
+	}
+	
+	return res;
+}
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -1437,6 +1460,22 @@ int main(int argc, char *argv[])
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
 			}
+#if EVALTEST
+			else if (stricmp(argv[i], "--eval") == 0) {
+				simplevars_t vars;
+				AString  	 str = argv[++i];
+				AString  	 errors;
+				AValue       res = 0;
+
+				AddSimpleFunction("func", &__func);
+				
+				if (Evaluate(vars, str, res, errors)) {
+					printf("Resultant: %s\n", AValue(res).ToString().str());
+				}
+				else if (errors.Valid()) printf("Errors:\n%s", errors.str());
+				else printf("Failed to evaluate expression '%s'\n", str.str());
+			}
+#endif
 			else {
 				fprintf(stderr, "Unrecognized option '%s'\n", argv[i]);
 				exit(1);

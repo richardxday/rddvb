@@ -84,6 +84,8 @@ public:
 	void		SetActualStart(uint64_t dt)    {data->actstart = dt;}
 	void		SetActualStop(uint64_t dt)     {data->actstop  = dt;}
 
+	uint64_t    GetActualLengthFallback() const {return GetActualLength() ? GetActualLength() : (GetRecordLength() ? GetRecordLength() : GetLength());}
+	
 	enum {
 		TimeIndex_Start = 0,
 		TimeIndex_Stop,

@@ -2122,13 +2122,17 @@ bool ADVBProg::UpdateFileSize(uint_t nsecs)
 
 	if (::GetFileInfo(filename, &info)) {
 		uint64_t oldfilesize = GetFileSize();
-		uint32_t rate        = (uint32_t)(info.FileSize / ((uint64_t)1024 * (uint64_t)nsecs));
+		uint32_t rate        = 0;
 
+		if (nsecs) {
+			rate = (uint32_t)(info.FileSize / ((uint64_t)1024 * (uint64_t)nsecs));
+		}
+		
 		config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s%s",
 					  GetFilename(),
 					  AValue(info.FileSize / ((uint64_t)1024 * (uint64_t)1024)).ToString().str(),
 					  AValue(nsecs).ToString().str(),
-					  AValue(rate).ToString().str(),
+					  rate ? AValue(rate).ToString().str() : "<unknown>",
 					  oldfilesize ? AString(", file size ratio = %0.3;").Arg((double)info.FileSize / (double)oldfilesize).str() : "");
 
 		SetFileSize(info.FileSize);
@@ -2585,7 +2589,7 @@ bool ADVBProg::PostProcess()
 		success = postprocessed = RunCommand("nice " + postcmd);
 
 		SetPostProcessed();
-		UpdateFileSize((uint_t)(GetActualLength() / 1000));
+		UpdateFileSize((uint_t)((GetActualLengthFallback() + 999) / 1000));
 
 		ADVBProgList::RemoveFromList(config.GetProcessingFile(), *this);
 		ClearPostProcessing();
@@ -2759,11 +2763,15 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 				   tempdst.str());
 
 		if (RunCommand(cmd, !verbose)) {
+			AString finaldst;
 			AString append;
 
 			if (i) append.printf("-%u", i);
 
-			success &= MoveFile(tempdst, outputfile.Prefix() + append + "." + outputfile.Suffix(), true);
+			finaldst = outputfile.Prefix() + append + "." + outputfile.Suffix();
+			
+			config.printf("Moving file '%s' to final destination '%s'", tempdst.str(), finaldst.str());
+			success &= MoveFile(tempdst, finaldst, true);
 		}
 		else success = false;
 	}
@@ -3090,11 +3098,13 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 				success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
 			}
 
-			remove(concatfile);
-			remove(remuxsrc);
+			if (success && cleanup) {
+				remove(concatfile);
+				remove(remuxsrc);
 
-			for (i = 0; i < files.size(); i++) {
-				remove(files[i]);
+				for (i = 0; i < files.size(); i++) {
+					remove(files[i]);
+				}
 			}
 		}
 	}
@@ -3102,7 +3112,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	if (success) {
 		SetFilename(dst);
 
-		UpdateFileSize((uint_t)(GetActualLength() / 1000));
+		UpdateFileSize((uint_t)((GetActualLengthFallback() + 999) / 1000));
 
 		{
 			FlagsSaver saver(this);
