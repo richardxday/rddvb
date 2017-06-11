@@ -270,7 +270,7 @@ public:
 	bool   IsNotifySet()		  const {return GetFlag(Flag_notify);}
 	void   SetNotify()	  		  		{SetFlag(Flag_notify);}
 	bool   IsAvailable()		  const {return (IsConverted() && AStdFile::exists(GetFilename()));}
-	bool   IsRecordable()         const {return ((data->start > (uint64_t)ADateTime().TimeStamp(true)) && GetDVBChannel()[0]);}
+	bool   IsRecordable()         const;
 	void   SetPartialPattern()			{SetFlag(Flag_partialpattern);}
 	void   ClearPartialPattern()		{ClrFlag(Flag_partialpattern);}
 	bool   IsPartialPattern()     const {return GetFlag(Flag_partialpattern);}
