@@ -3160,9 +3160,10 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 bool ADVBProg::IsRecordable() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	uint64_t lateststart = (uint64_t)ADateTime().TimeStamp(true) + config.GetLatestStart() * (uint64_t)60 * (uint64_t)1000;
+	uint64_t now             = (uint64_t)ADateTime().TimeStamp(true);
+	uint64_t graceperiod = config.GetLatestStart() * (uint64_t)60 * (uint64_t)1000;
 	
-	return ((data->start >= lateststart) && GetDVBChannel()[0]);
+	return (((data->start + graceperiod) >= now) && GetDVBChannel()[0]);
 }
 
 bool ADVBProg::IsConverted() const
