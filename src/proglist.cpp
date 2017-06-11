@@ -2799,18 +2799,23 @@ bool ADVBProgList::GetAndConvertRecordings()
 	for (i = 0; i < reclist.Count(); i++) {
 		const ADVBProg& prog = reclist.GetProg(i);
 
-		if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename()) && (failureslist.CountOccurances(prog) < 2)) {
-			if (prog.IsOnceOnly() && prog.IsRecordingComplete() && !config.IsRecordingSlave()) {
-				if (ADVBPatterns::DeletePattern(prog.GetUser(), prog.GetPattern())) {
-					const bool rescheduleoption = config.RescheduleAfterDeletingPattern(prog.GetUser(), prog.GetCategory());
-
-					config.printf("Deleted pattern '%s', %srescheduling...", prog.GetPattern(), rescheduleoption ? "" : "NOT ");
-
-					reschedule |= rescheduleoption;
+		if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
+			uint_t failures;
+			
+			if ((failures = failureslist.CountOccurances(prog)) < 2) {
+				if (prog.IsOnceOnly() && prog.IsRecordingComplete() && !config.IsRecordingSlave()) {
+					if (ADVBPatterns::DeletePattern(prog.GetUser(), prog.GetPattern())) {
+						const bool rescheduleoption = config.RescheduleAfterDeletingPattern(prog.GetUser(), prog.GetCategory());
+						
+						config.printf("Deleted pattern '%s', %srescheduling...", prog.GetPattern(), rescheduleoption ? "" : "NOT ");
+						
+						reschedule |= rescheduleoption;
+					}
 				}
+				
+				convertlist.AddProg(prog);
 			}
-
-			convertlist.AddProg(prog);
+			else config.printf("*NOT* converting %s - failed %u times already", prog.GetQuickDescription().str(), failures);
 		}
 	}
 
