@@ -1027,6 +1027,17 @@ void ADVBProgList::DeleteProgrammesBefore(const ADateTime& dt)
 	}
 }
 
+uint_t ADVBProgList::CountOccurances(const AString& uuid) const
+{
+	uint_t i, n = 0;
+
+	for (i = 0; i < Count(); i++) {
+		if (GetProg(i).GetUUID() == uuid) n++;
+	}
+
+	return n;
+}
+
 void ADVBProgList::CreateHash()
 {
 	uint_t i, n = Count();
@@ -2768,6 +2779,12 @@ bool ADVBProgList::GetAndConvertRecordings()
 
 	//config.printf("Waiting for lock to convert recordings");
 
+	ADVBProgList failureslist;
+	{
+		ADVBLock lock("dvbfiles");
+		failureslist.ReadFromBinaryFile(config.GetRecordFailuresFile());
+	}
+	
 	ADVBLock lock("convertrecordings");
 	uint_t i, converted = 0;
 	bool   reschedule = false;
@@ -2782,7 +2799,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 	for (i = 0; i < reclist.Count(); i++) {
 		const ADVBProg& prog = reclist.GetProg(i);
 
-		if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
+		if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename()) && (failureslist.CountOccurances(prog) < 2)) {
 			if (prog.IsOnceOnly() && prog.IsRecordingComplete() && !config.IsRecordingSlave()) {
 				if (ADVBPatterns::DeletePattern(prog.GetUser(), prog.GetPattern())) {
 					const bool rescheduleoption = config.RescheduleAfterDeletingPattern(prog.GetUser(), prog.GetCategory());

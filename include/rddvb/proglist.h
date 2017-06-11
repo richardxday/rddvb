@@ -62,6 +62,9 @@ public:
 	bool DeleteProg(uint_t n);
 	bool DeleteProg(const ADVBProg& prog);
 
+	uint_t CountOccurances(const ADVBProg& prog) const {return CountOccurances(prog.GetUUID());}
+	uint_t CountOccurances(const AString& uuid) const;
+	
 	typedef struct {
 		AString id;
 		AString name;
