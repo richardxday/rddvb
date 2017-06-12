@@ -2538,6 +2538,8 @@ void ADVBProgList::CreateGraphs()
 
 		config.printf("Updating graphs...");
 
+		CreateDirectory(graphfileall.PathPart());
+		
 		AStdFile fp;
 		if (fp.open(datfile, "w")) {
 			uint_t i;
