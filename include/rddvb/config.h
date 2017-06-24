@@ -138,7 +138,7 @@ public:
 
 	AString GetRelativePath(const AString& filename) const;
 
-	AString GetRecordingHost()               const {return GetConfigItem("recordinghost", "");} // extractconfig()
+	AString GetRecordingSlave()              const {return GetConfigItem("recordingslave", "");} // extractconfig()
 	AString GetSSHArgs()					 const {return GetConfigItem("sshargs", "");} // extractconfig()
 	AString GetSCPArgs()					 const {return GetConfigItem("scpargs", GetSSHArgs());} // extractconfig()
 	AString GetRsyncArgs()					 const {return GetConfigItem("rsyncargs", "");} // extractconfig()

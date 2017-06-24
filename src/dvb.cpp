@@ -139,6 +139,8 @@ int main(int argc, char *argv[])
 		printf("\t--unschedule-all\t\tUnschedule all programmes\n");
 		printf("\t--schedule-list\t\t\tSchedule current list of programmes (-S)\n");
 		printf("\t--record <prog>\t\t\tRecord programme <prog> (Base64 encoded)\n");
+		printf("\t--record-title <title>\t\tSchedule to record programme by title that has already started or starts within the next hour\n");
+		printf("\t--schedule-record <base64>\t\tSchedule specified programme (Base64 encoded)\n");
 		printf("\t--add-recorded <prog>\t\tAdd recorded programme <prog> to recorded list (Base64 encoded)\n");
 		printf("\t--card <card>\t\t\tSet VIRTUAL card for subsequent scanning and PID operations (default 0)\n");
 		printf("\t--dvbcard <card>\t\tSet PHYSICAL card for subsequent scanning and PID operations (default 0)\n");
@@ -332,11 +334,11 @@ int main(int argc, char *argv[])
 			}
 			else if (strcmp(argv[i], "--modify-recorded-from-recording-host") == 0) {
 				ADVBProgList list;
-				if (!list.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) res = -1;
+				if (!list.ModifyFromRecordingSlave(config.GetRecordedFile(), ADVBProgList::Prog_Add)) res = -1;
 			}
 			else if (strcmp(argv[i], "--modify-scheduled-from-recording-host") == 0) {
 				ADVBProgList list;
-				if (!list.ModifyFromRecordingHost(config.GetScheduledFile(), ADVBProgList::Prog_ModifyAndAdd)) res = -1;
+				if (!list.ModifyFromRecordingSlave(config.GetScheduledFile(), ADVBProgList::Prog_ModifyAndAdd)) res = -1;
 			}
 			else if (strcmp(argv[i], "--jobs") == 0) {
 				printf("Reading programmes from job queue...\n");
@@ -729,6 +731,37 @@ int main(int argc, char *argv[])
 
 				if (prog.Base64Decode(progstr)) prog.Record();
 				else printf("Failed to decode programme '%s'\n", progstr.str());
+			}
+			else if (strcmp(argv[i], "--record-title") == 0) {
+				AString  title = argv[++i];
+				ADVBLock lock("dvbfiles");
+				ADVBProgList list;
+
+				if (list.ReadFromFile(config.GetListingsFile())) {
+					lock.ReleaseLock();
+
+					list.RecordImmediately(ADateTime().TimeStamp(true), title);
+				}
+			}
+			else if (stricmp(argv[i], "--schedule-record") == 0) {
+				AString  base64 = argv[++i];
+				ADVBProg prog;
+
+				if (prog.Base64Decode(base64)) {
+					if (prog.WriteToJobQueue()) {
+						ADVBLock lock("dvbfiles");
+						ADVBProgList scheduledlist;
+
+						config.printf("Scheduled '%s'", prog.GetDescription().str());
+
+						if (scheduledlist.ReadFromFile(config.GetScheduledFile())) {
+							scheduledlist.AddProg(prog);
+							scheduledlist.WriteToFile(config.GetScheduledFile());
+						}
+					}
+					else config.printf("Failed to schedule '%s'", prog.GetDescription().str());
+				}
+				else config.printf("Unable to decode base 64 string");
 			}
 			else if (strcmp(argv[i], "--add-recorded") == 0) {
 				AString  progstr = argv[++i];

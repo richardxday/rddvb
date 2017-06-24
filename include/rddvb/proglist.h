@@ -37,7 +37,7 @@ public:
 	};
 
 	void Modify(const ADVBProgList& list, uint_t& added, uint_t& modified, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
-	bool ModifyFromRecordingHost(const AString& filename, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
+	bool ModifyFromRecordingSlave(const AString& filename, uint_t mode = Prog_ModifyAndAdd, bool sort = true);
 
 	void AssignEpisodes(bool ignorerepeats = false);
 
@@ -136,6 +136,8 @@ public:
 		ADateTime end;
 	} TIMEGAP;
 	TIMEGAP FindGaps(const ADateTime& start, std::vector<TIMEGAP>& gaps) const;
+
+	bool RecordImmediately(const ADateTime& dt, const AString& title, const AString& user = "", uint64_t maxminutes = 3600) const;
 
 	static void UnscheduleAllProgrammes();
 	static uint_t SchedulePatterns(const ADateTime& starttime = ADateTime().TimeStamp(true), bool commit = true);

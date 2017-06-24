@@ -86,7 +86,7 @@ void ADVBProgList::Modify(const ADVBProgList& list, uint_t& added, uint_t& modif
 	}
 }
 
-bool ADVBProgList::ModifyFromRecordingHost(const AString& filename, uint_t mode, bool sort)
+bool ADVBProgList::ModifyFromRecordingSlave(const AString& filename, uint_t mode, bool sort)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString host;
@@ -94,10 +94,10 @@ bool ADVBProgList::ModifyFromRecordingHost(const AString& filename, uint_t mode,
 
 	DeleteAll();
 
-	if ((host = config.GetRecordingHost()).Valid()) {
+	if ((host = config.GetRecordingSlave()).Valid()) {
 		AString dstfilename = config.GetTempFile("proglist", ".dat");
 
-		if (GetFileFromRecordingHost(filename, dstfilename)) {
+		if (GetFileFromRecordingSlave(filename, dstfilename)) {
 			ADVBLock     lock("dvbfiles");
 			ADVBProgList list;
 
@@ -1650,11 +1650,11 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 
 		if (!commit) config.logit("** Not committing scheduling **");
 
-		if (config.GetRecordingHost().Valid()) {
+		if (config.GetRecordingSlave().Valid()) {
 			ADVBProgList list;
-			list.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add);
+			list.ModifyFromRecordingSlave(config.GetRecordedFile(), ADVBProgList::Prog_Add);
 			GetRecordingListFromRecordingSlave();
-			GetFileFromRecordingHost(config.GetDVBChannelsFile());
+			GetFileFromRecordingSlave(config.GetDVBChannelsFile());
 		}
 
 		config.logit("Loading listings from '%s'", filename.str());
@@ -1826,7 +1826,7 @@ bool ADVBProgList::RemoveFromRecordLists(const AString& uuid)
 		removed |= ADVBProgList::RemoveFromList(config.GetRecordedFile(), uuid);
 	}
 
-	if (config.GetRecordingHost().Valid()) {
+	if (config.GetRecordingSlave().Valid()) {
 		AString cmd;
 
 		cmd.printf("dvb --delete-from-record-lists \"%s\"", uuid.Escapify().str());
@@ -2364,7 +2364,7 @@ bool ADVBProgList::WriteToJobList()
 	const AString filename = config.GetScheduledFile();
 	bool success = false;
 
-	if (config.GetRecordingHost().Valid()) {
+	if (config.GetRecordingSlave().Valid()) {
 		ADVBProgList scheduledlist;
 		ADVBProgList unscheduledlist;
 		uint_t tries;
@@ -2376,7 +2376,7 @@ bool ADVBProgList::WriteToJobList()
 			if (tries) config.printf("Scheduling try %u/3:", tries + 1);
 
 			success = (SendFileRunRemoteCommand(filename, "dvb --write-scheduled-jobs") &&
-					   scheduledlist.ModifyFromRecordingHost(config.GetScheduledFile(), ADVBProgList::Prog_ModifyAndAdd));
+					   scheduledlist.ModifyFromRecordingSlave(config.GetScheduledFile(), ADVBProgList::Prog_ModifyAndAdd));
 
 			if (!success) config.printf("Remote scheduling failed!");
 
@@ -2731,27 +2731,27 @@ bool ADVBProgList::GetAndConvertRecordings()
 	bool     success = false;
 
 	{
-		//config.printf("Waiting for lock to update lists from record host '%s'", config.GetRecordingHost().str());
+		//config.printf("Waiting for lock to update lists from record host '%s'", config.GetRecordingSlave().str());
 
 		ADVBLock lock("dvbfiles");
 
-		config.printf("Update recording and recorded lists from record host '%s'", config.GetRecordingHost().str());
+		config.printf("Update recording and recorded lists from record host '%s'", config.GetRecordingSlave().str());
 
 		success = GetRecordingListFromRecordingSlave();
 
 		ADVBProgList reclist;
-		if (!reclist.ModifyFromRecordingHost(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
+		if (!reclist.ModifyFromRecordingSlave(config.GetRecordedFile(), ADVBProgList::Prog_Add)) {
 			config.logit("Failed to read recorded list from recording slave");
 			success = false;
 		}
 	}
 
 	{
-		//config.printf("Waiting for lock to get and convert recordings from record host '%s'", config.GetRecordingHost().str());
+		//config.printf("Waiting for lock to get and convert recordings from record host '%s'", config.GetRecordingSlave().str());
 
 		ADVBLock lock("copyfiles");
 
-		config.printf("Getting and converting recordings from record host '%s'", config.GetRecordingHost().str());
+		config.printf("Getting and converting recordings from record host '%s'", config.GetRecordingSlave().str());
 
 		CreateDirectory(config.GetRecordingsStorageDir());
 
@@ -2759,7 +2759,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 		cmd.Delete();
 		cmd.printf("nice rsync -v --partial --remove-source-files --ignore-missing-args %s %s:%s/'*.mpg' %s",
 				   config.GetRsyncArgs().str(),
-				   config.GetRecordingHost().str(),
+				   config.GetRecordingSlave().str(),
 				   config.GetRecordingsStorageDir().str(),
 				   config.GetRecordingsStorageDir().str());
 
@@ -2772,7 +2772,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 		cmd.Delete();
 		cmd.printf("nice rsync -z --partial --ignore-missing-args %s %s:%s/'dvb*.txt' %s",
 				   config.GetRsyncArgs().str(),
-				   config.GetRecordingHost().str(),
+				   config.GetRecordingSlave().str(),
 				   config.GetLogDir().str(),
 				   config.GetSlaveLogDir().str());
 
@@ -2855,11 +2855,11 @@ bool ADVBProgList::GetRecordingListFromRecordingSlave()
 	FILE_INFO 	 info;
 	bool      	 success = true, update = false;
 
-	config.printf("Updating recording list from record host '%s'", config.GetRecordingHost().str());
+	config.printf("Updating recording list from record host '%s'", config.GetRecordingSlave().str());
 
 	if (::GetFileInfo(config.GetCombinedFile(), &info)) combinedwritetime = info.WriteTime;
 
-	if (!failurelist.ModifyFromRecordingHost(config.GetRecordFailuresFile(), Prog_Add)) {
+	if (!failurelist.ModifyFromRecordingSlave(config.GetRecordFailuresFile(), Prog_Add)) {
 		config.printf("Failed to get and modify failures list");
 		success = false;
 	}
@@ -2869,7 +2869,7 @@ bool ADVBProgList::GetRecordingListFromRecordingSlave()
 	// save writetime of existing recordings file
 	if (::GetFileInfo(config.GetRecordingFile(), &info)) recordingwritetime = info.WriteTime;
 
-	if (GetFileFromRecordingHost(config.GetRecordingFile())) {
+	if (GetFileFromRecordingSlave(config.GetRecordingFile())) {
 		// force update of combined if recordings file has been updated
 		update |= (::GetFileInfo(config.GetRecordingFile(), &info) && (info.WriteTime > recordingwritetime));
 	}
@@ -2897,7 +2897,7 @@ bool ADVBProgList::CheckRecordingNow()
 	ADVBProgList scheduledlist, recordinglist;
 	bool         success = false;
 
-	if (config.GetRecordingHost().Valid() && !GetRecordingListFromRecordingSlave()) {
+	if (config.GetRecordingSlave().Valid() && !GetRecordingListFromRecordingSlave()) {
 		AString cmd;
 
 		if ((cmd = config.GetConfigItem("recordingcheckcmd", "")).Valid()) {
@@ -2905,7 +2905,7 @@ bool ADVBProgList::CheckRecordingNow()
 			AString  filename = config.GetTempFile("recordingcheck", ".txt");
 
 			if (fp.open(filename, "w")) {
-				fp.printf("Recording check failed: host '%s' inaccessible\n", config.GetRecordingHost().str());
+				fp.printf("Recording check failed: host '%s' inaccessible\n", config.GetRecordingSlave().str());
 				fp.close();
 
 				cmd = cmd.SearchAndReplace("{logfile}", filename);
@@ -3252,4 +3252,86 @@ ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector
 	}
 
 	return res;
+}
+
+bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, const AString& user, uint64_t maxminutes) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	const uint64_t dt1 = (uint64_t)dt;
+	const uint64_t dt2 = dt1 + (uint64_t)maxminutes * (uint64_t)1000;
+	uint_t i;
+	bool success = false;
+
+	for (i = 0; i < Count(); i++) {
+		const ADVBProg& prog = GetProg(i);
+
+		if ((prog.GetStop() > dt1) && (prog.GetStart() <= dt2) && (stricmp(prog.GetTitle(), title.str()) == 0)) {
+			config.printf("Found '%s'", prog.GetQuickDescription().str());
+			break;
+		}
+	}
+
+	if (i < Count()) {
+		const ADateTime buffer(10000);
+		ADVBProg prog(GetProg(i));
+		std::vector<TIMEGAP> gaps;
+		int best = -1;
+
+		if (user.Valid()) prog.SetUser(user);
+		prog.GenerateRecordData(dt1 + 20000);
+
+		FindGaps(dt, gaps);
+
+		for (i = 0; i < (uint_t)gaps.size(); i++) {
+			const TIMEGAP& gap = gaps[i];
+			
+			if ((prog.GetRecordStartDT() >= (gap.start + buffer)) && ((prog.GetRecordStopDT() + buffer)  <= gap.end)) {
+				if ((best < 0) || (gap.end < gaps[best].end)) best = i;
+			}
+		}
+
+		if (best >= 0) {
+			prog.SetDVBCard(best);
+			
+			if (config.GetRecordingSlave().Valid()) {
+				AString cmd;
+
+				cmd.printf("dvb --schedule-record %s", prog.Base64Encode().str());
+ 
+				if (RunRemoteCommand(cmd)) {
+					ADVBLock lock("dvbfiles");
+					ADVBProgList scheduledlist;
+
+					config.printf("Scheduled '%s' (remotely) as using DVB card %u (hardware card %u)", prog.GetDescription().str(), prog.GetDVBCard(), config.GetPhysicalDVBCard(prog.GetDVBCard()));
+
+					if (scheduledlist.ReadFromBinaryFile(config.GetScheduledFile())) {
+						scheduledlist.ModifyFromRecordingSlave(config.GetScheduledFile(), Prog_ModifyAndAdd);
+						scheduledlist.WriteToFile(config.GetScheduledFile());
+						success = true;
+					}
+				}
+				else config.printf("Failed to schedule '%s' (remotely)", prog.GetDescription().str());
+			}
+			else if (config.CommitScheduling()) {
+				if (prog.WriteToJobQueue()) {
+					ADVBLock lock("dvbfiles");
+					ADVBProgList scheduledlist;
+
+					config.printf("Scheduled '%s' as job %u using DVB card %u (hardware card %u)", prog.GetDescription().str(), prog.GetJobID(), prog.GetDVBCard(), config.GetPhysicalDVBCard(prog.GetDVBCard()));
+
+					if (scheduledlist.ReadFromBinaryFile(config.GetScheduledFile())) {
+						scheduledlist.AddProg(prog);
+						scheduledlist.WriteToFile(config.GetScheduledFile());
+						success = true;
+					}
+				}
+				else config.printf("Failed to schedule '%s'", prog.GetDescription().str());
+			}
+			else config.printf("Not allowed to schedule '%s'", prog.GetDescription().str());
+		}
+		else config.printf("No gap big enough to schedule '%s'", prog.GetDescription().str());
+	}
+	else config.printf("Failed to find '%s'", title.str());
+
+	return success;
 }

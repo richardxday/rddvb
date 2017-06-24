@@ -650,7 +650,7 @@ ADVBProg& ADVBProg::operator = (const ADVBProg& obj)
 	Delete();
 
 	if (obj.Valid()) {
-		if ((sizeof(*obj.data) + obj.data->strings.end) > maxsize) {
+		if (!data || ((sizeof(*obj.data) + obj.data->strings.end) > maxsize)) {
 			if (data) free(data);
 
 			maxsize = sizeof(*obj.data) + obj.data->strings.end;
@@ -665,6 +665,7 @@ ADVBProg& ADVBProg::operator = (const ADVBProg& obj)
 
 			success = true;
 		}
+		else debug("Error in copy\n");
 	}
 
 	if (!success) Delete();
@@ -1757,7 +1758,8 @@ AString ADVBProg::ReplaceTerms(const AString& str, bool filesystem) const
 					 .SearchAndReplace("{titledir}", SanitizeString(GetTitle(), filesystem, true))
 					 .SearchAndReplace("{filename}", SanitizeString(GetFilename(), filesystem, true))
 					 .SearchAndReplace("{logfile}", SanitizeString(GetLogFile(), filesystem, true))
-					 .SearchAndReplace("{link}", SanitizeString(GetLinkToFile(), filesystem, true)));
+					 .SearchAndReplace("{link}", SanitizeString(GetLinkToFile(), filesystem, true))
+					 .SearchAndReplace("//", "/"));
 
 	while (res.Pos("{sep}{sep}") >= 0) {
 		res = res.SearchAndReplace("{sep}{sep}", "{sep}");
@@ -2300,7 +2302,7 @@ void ADVBProg::Record()
 			AString cmd;
 			int     res;
 
-			CreateDirectory(AString(GetTempFilename()).PathPart());
+			CreateDirectory(GetTempFilename().PathPart());
 			CreateDirectory(filename.PathPart());
 
 			config.printf("Recording '%s' for %u seconds (%u minutes) to '%s' using freq %uHz PIDs %s",

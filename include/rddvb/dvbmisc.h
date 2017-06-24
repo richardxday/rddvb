@@ -15,9 +15,9 @@ typedef struct {
 extern AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint_t n);
 
 extern bool RunAndLogCommand(const AString& cmd);
-extern bool SendFileToRecordingHost(const AString& filename);
-extern bool GetFileFromRecordingHost(const AString& filename);
-extern bool GetFileFromRecordingHost(const AString& filename, const AString& localfilename);
+extern bool SendFileToRecordingSlave(const AString& filename);
+extern bool GetFileFromRecordingSlave(const AString& filename);
+extern bool GetFileFromRecordingSlave(const AString& filename, const AString& localfilename);
 extern bool RunRemoteCommand(const AString& cmd);
 extern bool SendFileRunRemoteCommand(const AString& filename, const AString& cmd);
 extern bool RunRemoteCommandGetFile(const AString& cmd, const AString& filename);
