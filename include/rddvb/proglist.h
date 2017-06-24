@@ -80,7 +80,7 @@ public:
 	int				FindUUIDIndex(const AString& uuid) const;
 	ADVBProg 	   *FindUUIDWritable(const ADVBProg& prog) const {return FindUUIDWritable(prog.GetUUID());}
 	ADVBProg 	   *FindUUIDWritable(const AString& uuid) const;
-
+	
 	static void ReadPatterns(ADataList& patternlist, AString& errors, bool sort = true);
 
 	static bool CheckDiskSpace(bool runcmd = false, bool report = false);
@@ -130,6 +130,12 @@ public:
 		double timeoffset;
 	} TREND;
 	TREND CalculateTrend(const ADateTime& startdate = ADateTime::MinDateTime, const ADateTime& enddate = ADateTime::MaxDateTime) const;
+
+	typedef struct {
+		ADateTime start;
+		ADateTime end;
+	} TIMEGAP;
+	TIMEGAP FindGaps(const ADateTime& start, std::vector<TIMEGAP>& gaps) const;
 
 	static void UnscheduleAllProgrammes();
 	static uint_t SchedulePatterns(const ADateTime& starttime = ADateTime().TimeStamp(true), bool commit = true);

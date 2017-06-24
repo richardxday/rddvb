@@ -578,7 +578,7 @@ bool ADVBProgList::ReadFromJobQueue(int queue, bool runningonly)
 
 						if (prog.ReadFromJob(scriptname)) {
 							prog.SetJobID(jobid);
-							
+
 							if (queue == '=') prog.SetRunning();
 
 							if (AddProg(prog) < 0) {
@@ -1044,7 +1044,7 @@ void ADVBProgList::CreateHash()
 
 	proghash.Delete();
 	useproghash = true;
-	
+
 	for (i = 0; i < n; i++) {
 		const ADVBProg& prog = GetProg(i);
 
@@ -2127,7 +2127,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 				// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
 				const ADVBProg::PROGLIST& list = *prog.GetList();
 				uint_t entry = std::find(list.begin(), list.end(), &prog) - list.begin();
-				
+
 				if (entry == 0) nearliestscheduled++;
 
 				// add to scheduling list
@@ -2302,7 +2302,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 		uint_t dvbcard = config.GetPhysicalDVBCard(i);
 
 		if ((errorprog = scheduledlist.FindFirstRecordOverlap()) != NULL) {
-			config.printf("Error: found overlap in schedule list for card %u ('%s')!", i, errorprog->GetQuickDescription().str());
+			config.printf("Error: found overlap in schedule list for card %u (hardware card %u) ('%s')!", i, dvbcard, errorprog->GetQuickDescription().str());
 		}
 
 		config.logit("--------------------------------------------------------------------------------");
@@ -2313,7 +2313,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 			const ADVBProg *rprog;
 
 			prog.SetScheduled();
-			prog.SetDVBCard(dvbcard);
+			prog.SetDVBCard(i);
 
 			allscheduledlist.AddProg(prog, false);
 
@@ -2345,11 +2345,12 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 	for (i = 0; i < allscheduledlist.Count(); i++) {
 		const ADVBProg& prog = allscheduledlist.GetProg(i);
 
-		config.logit("%s (%s - %s) (DVB card %u)",
+		config.logit("%s (%s - %s) (DVB card %u, hardware card %u)",
 					 prog.GetDescription(1).str(),
 					 prog.GetRecordStartDT().UTCToLocal().DateFormat("%d %D-%N-%Y %h:%m:%s").str(),
 					 prog.GetRecordStopDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
-					 prog.GetDVBCard());
+					 prog.GetDVBCard(),
+					 config.GetPhysicalDVBCard(prog.GetDVBCard()));
 	}
 	config.logit("--------------------------------------------------------------------------------");
 
@@ -2539,7 +2540,7 @@ void ADVBProgList::CreateGraphs()
 		config.printf("Updating graphs...");
 
 		CreateDirectory(graphfileall.PathPart());
-		
+
 		AStdFile fp;
 		if (fp.open(datfile, "w")) {
 			uint_t i;
@@ -2786,7 +2787,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 		ADVBLock lock("dvbfiles");
 		failureslist.ReadFromBinaryFile(config.GetRecordFailuresFile());
 	}
-	
+
 	ADVBLock lock("convertrecordings");
 	uint_t i, converted = 0;
 	bool   reschedule = false;
@@ -2803,18 +2804,18 @@ bool ADVBProgList::GetAndConvertRecordings()
 
 		if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
 			uint_t failures;
-			
+
 			if ((failures = failureslist.CountOccurances(prog)) < 2) {
 				if (prog.IsOnceOnly() && prog.IsRecordingComplete() && !config.IsRecordingSlave()) {
 					if (ADVBPatterns::DeletePattern(prog.GetUser(), prog.GetPattern())) {
 						const bool rescheduleoption = config.RescheduleAfterDeletingPattern(prog.GetUser(), prog.GetCategory());
-						
+
 						config.printf("Deleted pattern '%s', %srescheduling...", prog.GetPattern(), rescheduleoption ? "" : "NOT ");
-						
+
 						reschedule |= rescheduleoption;
 					}
 				}
-				
+
 				convertlist.AddProg(prog);
 			}
 			else config.printf("*NOT* converting %s - failed %u times already", prog.GetQuickDescription().str(), failures);
@@ -2914,10 +2915,10 @@ bool ADVBProgList::CheckRecordingNow()
 			}
 			else config.printf("Failed to open text file for logging recording errors!");
 		}
-		
+
 		return false;
 	}
-	
+
 	if (recordinglist.ReadFromFile(config.GetRecordingFile())) {
 		recordinglist.CreateHash();
 
@@ -3207,4 +3208,48 @@ ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate, con
 	}
 
 	return trend;
+}
+
+ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector<TIMEGAP>& gaps) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	std::vector<std::vector<const ADVBProg *> > lists;
+	TIMEGAP res = {start, start};
+	uint_t i;
+
+	config.GetPhysicalDVBCard(0);
+	gaps.resize(config.GetMaxDVBCards());
+	lists.resize(config.GetMaxDVBCards());
+
+	for (i = 0; i < Count(); i++) {
+		const ADVBProg& prog = GetProg(i);
+
+		if (prog.GetDVBCard() < (uint_t)lists.size()) {
+			std::vector<const ADVBProg *>& list = lists[prog.GetDVBCard()];
+
+			if ((list.size() < 2) && (prog.GetRecordStopDT() >= start)) list.push_back(&prog);
+		}
+	}
+
+	for (i = 0; i < (uint_t)lists.size(); i++) {
+		const std::vector<const ADVBProg *>& list = lists[i];
+		TIMEGAP& gap = gaps[i];
+
+		gap.start = start;
+		gap.end   = ADateTime::MaxDateTime;
+
+		if (list.size() > 0) {
+			if (list[0]->GetRecordStartDT() < start) {
+				gap.start = list[0]->GetRecordStopDT();
+				if (list.size() > 1) {
+					gap.end = list[1]->GetRecordStartDT();
+				}
+			}
+			else gap.end = list[0]->GetRecordStartDT();
+		}
+
+		if ((gap.end - gap.start) > (res.end - res.start)) res = gap;
+	}
+
+	return res;
 }

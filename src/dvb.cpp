@@ -1460,6 +1460,31 @@ int main(int argc, char *argv[])
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
 			}
+			else if (stricmp(argv[i], "--find-gap") == 0) {
+				ADVBProgList list;
+
+				if (list.ReadFromFile(config.GetScheduledFile())) {
+					std::vector<ADVBProgList::TIMEGAP> gaps;
+					ADVBProgList::TIMEGAP best;
+					uint_t i;
+
+					best = list.FindGaps(ADateTime().TimeStamp(true), gaps);
+
+					for (i = 0; i < (uint_t)gaps.size(); i++) {
+						const ADVBProgList::TIMEGAP& gap = gaps[i];
+						uint_t card = i;
+						
+						if (gap.end < ADateTime::MaxDateTime) {
+							ADateTime diff = gap.end - gap.start;								
+							printf("Card %u (hardware card %u): free from %s to %s (%s)\n", card, config.GetPhysicalDVBCard(card), gap.start.DateToStr().str(), gap.end.DateToStr().str(), diff.SpanStr().str());
+						}
+						else {
+							printf("Card %u (hardware card %u): free from %s onwards\n", card, config.GetPhysicalDVBCard(card), gap.start.DateToStr().str());
+						}
+					}
+				}
+				else fprintf(stderr, "Failed to read scheduled programmes file\n");
+			}
 #if EVALTEST
 			else if (stricmp(argv[i], "--eval") == 0) {
 				simplevars_t vars;

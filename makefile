@@ -128,5 +128,18 @@ $(INSTALLBINDST)/%: scripts/%
 
 all: $(DEFAULTCONFIG)
 
+ifdef DEBUG
+RUNDVB=$(DEBUG_BINDIR)/dvb
+else
+RUNDVB=$(RELEASE_BINDIR)/dvb
+endif
+
 include $(MAKEFILEDIR)/makefile.post
 
+post-install: $(INSTALLTARGETS)
+	@echo "Creating directories..."
+	-@test -d $(shell $(RUNDVB) --confdir) || ( $(SUDO) mkdir $(shell $(RUNDVB) --confdir) && $(SUDO) chown -R ${LOGNAME}:${LOGNAME} $(shell $(RUNDVB) --confdir) )
+	-@test -d $(shell $(RUNDVB) --datadir) || ( $(SUDO) mkdir $(shell $(RUNDVB) --datadir) && $(SUDO) chown -R ${LOGNAME}:${LOGNAME} $(shell $(RUNDVB) --datadir) )
+	-@test -d $(shell $(RUNDVB) --datadir)/graphs || ( $(SUDO) mkdir $(shell $(RUNDVB) --datadir)/graphs && $(SUDO) chown -R ${LOGNAME}:${LOGNAME} $(shell $(RUNDVB) --datadir)/graphs )
+	-@test -d $(shell $(RUNDVB) --logdir) || ( $(SUDO) mkdir $(shell $(RUNDVB) --logdir) && $(SUDO) chown -R ${LOGNAME}:${LOGNAME} $(shell $(RUNDVB) --logdir) )
+	-@test -d $(shell $(RUNDVB) --logdir)/slave || ( $(SUDO) mkdir $(shell $(RUNDVB) --logdir)/slave && $(SUDO) chown -R ${LOGNAME}:${LOGNAME} $(shell $(RUNDVB) --logdir)/slave )
