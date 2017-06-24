@@ -179,6 +179,7 @@ int main(int argc, char *argv[])
 		printf("\t--assign-episodes\t\tAssign episodes to current list\n");
 		printf("\t--reset-assigned-episodes\tReset assigned episodes to current list\n");
 		printf("\t--count-hours\t\t\tCount total hours of programmes in current list\n");
+		printf("\t--find-gaps\t\t\tFind gap from now until the next working for each card\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -1457,10 +1458,7 @@ int main(int argc, char *argv[])
 				double hours = (double)ms / (1000.0 * 3600.0);
 				printf("%u programmes, %0.2lf hours, average %0.1lf minutes/programme\n", proglist.Count(), hours, (60.0 * hours) / (double)proglist.Count());
 			}
-			else if (stricmp(argv[i], "--return-count") == 0) {
-				res = proglist.Count();
-			}
-			else if (stricmp(argv[i], "--find-gap") == 0) {
+			else if (stricmp(argv[i], "--find-gaps") == 0) {
 				ADVBProgList list;
 
 				if (list.ReadFromFile(config.GetScheduledFile())) {
@@ -1484,6 +1482,9 @@ int main(int argc, char *argv[])
 					}
 				}
 				else fprintf(stderr, "Failed to read scheduled programmes file\n");
+			}
+			else if (stricmp(argv[i], "--return-count") == 0) {
+				res = proglist.Count();
 			}
 #if EVALTEST
 			else if (stricmp(argv[i], "--eval") == 0) {
