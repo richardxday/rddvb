@@ -210,7 +210,8 @@ public:
 		Flag_recordingfailed,
 		Flag_notify,
 		Flag_partialpattern,
-
+		Flag_ignorelatestart,
+		
 		Flag_count,
 
 		_Flag_extra_start = 32,
@@ -274,6 +275,9 @@ public:
 	void   SetPartialPattern()			{SetFlag(Flag_partialpattern);}
 	void   ClearPartialPattern()		{ClrFlag(Flag_partialpattern);}
 	bool   IsPartialPattern()     const {return GetFlag(Flag_partialpattern);}
+	void   SetIgnoreLateStart()			{SetFlag(Flag_ignorelatestart);}
+	void   ClearIgnoreLateStart()		{ClrFlag(Flag_ignorelatestart);}
+	bool   IgnoreLateStart()	  const {return GetFlag(Flag_ignorelatestart);}
 	
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}

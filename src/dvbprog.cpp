@@ -99,6 +99,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(film,				 Flag_film,				   "Programme is a film"),
 	DEFINE_FLAG(recordable,			 Flag_recordable,		   "Programme is recordable"),
 	DEFINE_FLAG(partial,			 Flag_partialpattern,      "Pattern is partial and not complete"),
+	DEFINE_FLAG(ignorelatestart,	 Flag_ignorelatestart,     "Allow programme to be recorded even if is late starting"),
 
 	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
 	DEFINE_FIELD(series,   	  episode.series,   uint8_t,  "Series"),
@@ -107,14 +108,15 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 
 	DEFINE_FIELD(assignedepisode, assignedepisode, uint16_t, "Assigned episode"),
 
-	DEFINE_FLAG_ASSIGN(usedesc,		  Flag_usedesc,       	   "Use description"),
-	DEFINE_FLAG_ASSIGN(allowrepeats,  Flag_allowrepeats,  	   "Allow repeats to be recorded"),
-	DEFINE_FLAG_ASSIGN(urgent,		  Flag_urgent,   	  	   "Record as soon as possible"),
-	DEFINE_FLAG_ASSIGN(markonly,	  Flag_markonly, 	  	   "Do not record, just mark as recorded"),
-	DEFINE_FLAG_ASSIGN(postprocess,	  Flag_postprocess,   	   "Post process programme"),
-	DEFINE_FLAG_ASSIGN(onceonly,	  Flag_onceonly,      	   "Once recorded, delete the pattern"),
-	DEFINE_FLAG_ASSIGN(notify,		  Flag_notify,        	   "Once recorded, run 'notifycmd'"),
-	DEFINE_FLAG_ASSIGN(partial,		  Flag_partialpattern,     "Pattern is partial and not complete"),
+	DEFINE_FLAG_ASSIGN(usedesc,		  	Flag_usedesc,       	"Use description"),
+	DEFINE_FLAG_ASSIGN(allowrepeats,  	Flag_allowrepeats,  	"Allow repeats to be recorded"),
+	DEFINE_FLAG_ASSIGN(urgent,		  	Flag_urgent,   	  	    "Record as soon as possible"),
+	DEFINE_FLAG_ASSIGN(markonly,	  	Flag_markonly, 	  	    "Do not record, just mark as recorded"),
+	DEFINE_FLAG_ASSIGN(postprocess,	  	Flag_postprocess,   	"Post process programme"),
+	DEFINE_FLAG_ASSIGN(onceonly,	  	Flag_onceonly,      	"Once recorded, delete the pattern"),
+	DEFINE_FLAG_ASSIGN(notify,		  	Flag_notify,        	"Once recorded, run 'notifycmd'"),
+	DEFINE_FLAG_ASSIGN(partial,		  	Flag_partialpattern,    "Pattern is partial and not complete"),
+	DEFINE_FLAG_ASSIGN(ignorelatestart, Flag_ignorelatestart,	"Allow programme to be recorded even if is late starting"),
 
 	DEFINE_ASSIGN(pri,        pri,        	 	sint8_t,  "Scheduling priority"),
 	DEFINE_ASSIGN(score,	  score,			sint16_t, "Record score"),
@@ -2243,7 +2245,7 @@ void ADVBProg::Record()
 			nsecs = (et >= dt) ? (uint_t)((et - dt + 1000 - 1) / 1000) : 0;
 
 			// if programme has been running too long, abort recording
-			if (nmins >= config.GetLatestStart()) {
+			if (!IgnoreLateStart() && (nmins >= config.GetLatestStart())) {
 				config.printf("'%s' started too long ago (%u minutes)!", GetTitleAndSubtitle().str(), nmins);
 				reschedule = true;
 				record = false;

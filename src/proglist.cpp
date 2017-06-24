@@ -3279,7 +3279,8 @@ bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, 
 
 		if (user.Valid()) prog.SetUser(user);
 		prog.GenerateRecordData(dt1 + 20000);
-
+		prog.SetIgnoreLateStart();
+		
 		FindGaps(dt, gaps);
 
 		for (i = 0; i < (uint_t)gaps.size(); i++) {
