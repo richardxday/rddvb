@@ -477,7 +477,9 @@ void ADVBProg::SetRecordingComplete()
 	const ADVBConfig& config = ADVBConfig::Get();
 	uint64_t maxreclag = (uint64_t)config.GetConfigItem("maxrecordlag", "20") * 1000;
 
-	SetFlag(Flag_incompleterecording, !((data->actstart <= (data->start + maxreclag)) && (data->actstop >= MIN(data->stop, data->recstop - 1000))));
+	SetFlag(Flag_incompleterecording, !IgnoreLateStart() &&
+										((data->actstart > (data->start + maxreclag)) ||
+										 (data->actstop  < MIN(data->stop, data->recstop - 1000))));
 }
 
 uint64_t ADVBProg::GetDate(const AString& str, const AString& fieldname) const
