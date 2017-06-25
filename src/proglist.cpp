@@ -3293,6 +3293,7 @@ bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, 
 
 		if (best >= 0) {
 			prog.SetDVBCard(best);
+			prog.SetScheduled();
 			
 			if (config.GetRecordingSlave().Valid()) {
 				AString cmd;
