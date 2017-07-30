@@ -1,8 +1,6 @@
 #ifndef __DVB_PROGLIST__
 #define __DVB_PROGLIST__
 
-#include <stdarg.h>
-
 #include <rdlib/strsup.h>
 #include <rdlib/Hash.h>
 #include <rdlib/DataList.h>

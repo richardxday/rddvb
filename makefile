@@ -16,6 +16,7 @@ include $(MAKEFILEDIR)/makefile.init
 OBJECTS :=										\
 	channellist.o								\
 	config.o									\
+	dvbdatabase.o								\
 	dvblock.o									\
 	dvbmisc.o									\
 	dvbpatterns.o								\
@@ -28,6 +29,7 @@ OBJECTS :=										\
 HEADERS :=										\
 	channellist.h								\
 	config.h									\
+	dvbdatabase.h								\
 	dvblock.h									\
 	dvbmisc.h									\
 	dvbpatterns.h								\
