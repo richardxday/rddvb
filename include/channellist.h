@@ -29,6 +29,7 @@ public:
 		PIDLIST  pidlist;
 	} CHANNEL;
 	const CHANNEL *GetChannel(uint_t n) const {return (const CHANNEL *)list[n];}
+	const CHANNEL *GetChannelByName(const AString& name) const;
 
 private:
 	ADVBChannelList();
@@ -42,7 +43,6 @@ protected:
 		delete (CHANNEL *)item;
 	}
 
-	const CHANNEL *GetChannelByName(const AString& name) const;
 	CHANNEL *GetChannelByName(const AString& name, bool create = false);
 
 	static int __CompareItems(uptr_t a, uptr_t b, void *context);

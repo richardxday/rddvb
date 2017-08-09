@@ -17,6 +17,7 @@
 #include "proglist.h"
 #include "channellist.h"
 #include "findcards.h"
+#include "dvbdatabase.h"
 
 #define EVALTEST 0
 
@@ -1535,6 +1536,10 @@ int main(int argc, char *argv[])
 				else printf("Failed to evaluate expression '%s'\n", str.str());
 			}
 #endif
+			else if (stricmp(argv[i], "--db") == 0) {
+				ADVBDatabase db;
+				
+			}
 			else {
 				fprintf(stderr, "Unrecognized option '%s'\n", argv[i]);
 				exit(1);

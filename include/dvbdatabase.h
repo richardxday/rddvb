@@ -3,13 +3,20 @@
 
 #include <rdlib/Database.h>
 
-#include "proglist.h"
+#include "dvbprog.h"
 
 class ADVBDatabase {
 public:
 	ADVBDatabase();
 	virtual ~ADVBDatabase();
 
+	virtual bool Open();
+	virtual void Close();
+	
+	virtual bool IsOpen() const {return (database && database->IsOpen());};
+
+	virtual bool AddProg(const ADVBProg& prog);
+	
 protected:
 	Database *database;
 };
