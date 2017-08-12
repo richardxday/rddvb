@@ -1057,8 +1057,7 @@ const ADVBProg *ADVBProgList::FindUUID(const AString& uuid) const
 	const ADVBProg *prog = NULL;
 	int p;
 
-	if		(proghash.GetItems())			 prog = (const ADVBProg *)proghash.Read(uuid);
-	else if ((p = FindUUIDIndex(uuid)) >= 0) prog = &GetProg(p);
+	if ((p = FindUUIDIndex(uuid)) >= 0) prog = &GetProg(p);
 
 	return prog;
 }
@@ -1189,19 +1188,33 @@ uint_t ADVBProgList::FindSimilarProgrammes(ADVBProgList& dest, const ADVBProg& p
 	return n;
 }
 
+const ADVBProg *ADVBProgList::GetNextProgramme(const ADVBProg *prog, uint_t *index) const
+{
+	if (prog) {
+		const ADVBProg *tmpprog;
+		uint_t progindex;
+		int p;
+
+		if ((((p = proglist.Find((uptr_t)prog)) >= 0) ||
+			 (((tmpprog = FindUUID(*prog)) != NULL) &&
+			  ((p = proglist.Find((uptr_t)tmpprog)) >= 0))) &&
+			((progindex = p + 1) < Count())) {
+			if (index) index[0] = progindex;
+			prog = &GetProg(progindex);
+		}
+		else prog = NULL;
+	}
+
+	return prog;
+}
+
 const ADVBProg *ADVBProgList::FindSimilar(const ADVBProg& prog, const ADVBProg *startprog) const
 {
 	const ADVBProg *res = NULL;
 	uint_t i = 0;
 
 	if (startprog) {
-		const ADVBProg *startprog2;
-		int p;
-
-		if (((p = proglist.Find((uptr_t)startprog)) >= 0) ||
-			(((startprog2 = FindUUID(startprog)) != NULL) && ((p = proglist.Find((uptr_t)startprog2)) >= 0))) {
-			i = p + 1;
-		}
+		GetNextProgramme(startprog, &i);
 	}
 
 	for (; i < Count(); i++) {
@@ -1216,20 +1229,20 @@ const ADVBProg *ADVBProgList::FindSimilar(const ADVBProg& prog, const ADVBProg *
 	return res;
 }
 
-ADVBProg *ADVBProgList::FindSimilarWritable(const ADVBProg& prog, ADVBProg *startprog)
+const ADVBProg *ADVBProgList::FindCompleteRecording(const ADVBProg& prog, const ADVBProg *startprog) const
 {
-	const ADVBProg *res;
-
-	if ((res = FindSimilar(prog, startprog)) != NULL) return FindUUIDWritable(*res);
-
-	return NULL;
-}
-
-const ADVBProg *ADVBProgList::FindCompleteRecording(const ADVBProg& prog) const
-{
-	const ADVBProg *res = NULL;
+	const ADVBProg *res = startprog;
 
 	while (((res = FindSimilar(prog, res)) != NULL) && (res->IgnoreRecording() || !res->IsRecordingComplete())) ;
+
+	return res;
+}
+
+const ADVBProg *ADVBProgList::FindCompleteRecordingThatExists(const ADVBProg& prog, const ADVBProg *startprog) const
+{
+	const ADVBProg *res = startprog;
+
+	while (((res = FindSimilar(prog, res)) != NULL) && (res->IgnoreRecording() || !res->IsRecordingComplete() || !res->IsAvailable())) ;
 
 	return res;
 }
@@ -1900,34 +1913,32 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	for (i = 0; i < Count();) {
 		const ADVBProg *otherprog;
 		ADVBProg& prog = GetProgWritable(i);
+		bool deleteprog = true;
 
-		if (!prog.AllowRepeats() &&															// 'allowrepeats' must be disabled; and
-			(!prog.RecordIfMissing() || AStdFile::exists(prog.GenerateFilename(true))) &&	// 'recordifmissing' must be disabled OR final converted programme must exist; and
-			((otherprog = recordedlist.FindCompleteRecording(prog)) != NULL)) {				// programme must have been recorded to be able to delete this programme
-			config.logit("'%s' has already been recorded ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
-
-			DeleteProg(i);
+		if (!prog.AllowRepeats() &&																		// for a programme to be deleted: 'allowrepeats' must be disabled; and
+			((prog.RecordIfMissing() &&
+			  ((otherprog = recordedlist.FindCompleteRecordingThatExists(prog)) != NULL)) ||			// 'recordifmissing' enabled and a completed recording that exists is found; or
+			 (!prog.RecordIfMissing() &&
+			  ((otherprog = recordedlist.FindCompleteRecording(prog))           != NULL)))) {			// 'recordifmissing' disabled and a completed recording is found
+			config.logit("'%s' has already been recorded ('%s': %s)", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str(), otherprog->IsAvailable() ? "available" : "NOT available");
 		}
 		else if (prog.IsMarkOnly()) {
 			config.logit("Adding '%s' to recorded list (Mark Only)", prog.GetQuickDescription().str());
 
 			recordedlist.AddProg(prog, false);
-
-			DeleteProg(i);
 		}
 		else if (prog.GetStop() == prog.GetStart()) {
 			config.logit("'%s' is zero-length", prog.GetQuickDescription().str());
-
-			DeleteProg(i);
 		}
 		else if (!prog.AllowRepeats() && ((otherprog = runninglist.FindSimilar(prog)) != NULL)) {
 			config.logit("'%s' is being recorded now ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
-
-			DeleteProg(i);
 		}
 		else if ((starttimems >= lateststartms) && ((starttimems - lateststartms) >= prog.GetStart())) {
 			config.logit("'%s' started too long ago (%u minutes)", prog.GetQuickDescription().str(), (uint_t)((starttimems - prog.GetStart() + 59999) / 60000));
+		}
+		else deleteprog = false;
 
+		if (deleteprog) {
 			DeleteProg(i);
 		}
 		else i++;
@@ -3284,12 +3295,12 @@ bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, 
 		if (user.Valid()) prog.SetUser(user);
 		prog.GenerateRecordData(dt1 + 20000);
 		prog.SetIgnoreLateStart();
-		
+
 		FindGaps(dt, gaps);
 
 		for (i = 0; i < (uint_t)gaps.size(); i++) {
 			const TIMEGAP& gap = gaps[i];
-			
+
 			if ((prog.GetRecordStartDT() >= (gap.start + buffer)) && ((prog.GetRecordStopDT() + buffer)  <= gap.end)) {
 				if ((best < 0) || (gap.end < gaps[best].end)) best = i;
 			}
@@ -3298,12 +3309,12 @@ bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, 
 		if (best >= 0) {
 			prog.SetDVBCard(best);
 			prog.SetScheduled();
-			
+
 			if (config.GetRecordingSlave().Valid()) {
 				AString cmd;
 
 				cmd.printf("dvb --schedule-record %s", prog.Base64Encode().str());
- 
+
 				if (RunRemoteCommand(cmd)) {
 					ADVBLock lock("dvbfiles");
 					ADVBProgList scheduledlist;
