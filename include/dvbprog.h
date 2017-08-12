@@ -211,6 +211,7 @@ public:
 		Flag_notify,
 		Flag_partialpattern,
 		Flag_ignorelatestart,
+		Flag_recordifmissing,
 		
 		Flag_count,
 
@@ -278,6 +279,9 @@ public:
 	void   SetIgnoreLateStart()			{SetFlag(Flag_ignorelatestart);}
 	void   ClearIgnoreLateStart()		{ClrFlag(Flag_ignorelatestart);}
 	bool   IgnoreLateStart()	  const {return GetFlag(Flag_ignorelatestart);}
+	void   SetRecordIfMissing()			{SetFlag(Flag_recordifmissing);}
+	void   ClearRecordIfMissing()		{ClrFlag(Flag_recordifmissing);}
+	bool   RecordIfMissing()	  const {return GetFlag(Flag_recordifmissing);}
 	
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}

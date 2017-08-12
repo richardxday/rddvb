@@ -1892,14 +1892,18 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	}
 	config.logit("--------------------------------------------------------------------------------");
 
-	// first, remove programmes that do not have a valid DVB channel
-	// then, remove any that have already finished
-	// then, remove any that have already been recorded
+	// remove any programmes that have already been recorded
+	// or are mark only
+	// or have zero length
+	// or are being recorded now
+	// or have been on too long
 	for (i = 0; i < Count();) {
 		const ADVBProg *otherprog;
 		ADVBProg& prog = GetProgWritable(i);
 
-		if (!prog.AllowRepeats() && ((otherprog = recordedlist.FindCompleteRecording(prog)) != NULL)) {
+		if (!prog.AllowRepeats() &&															// 'allowrepeats' must be disabled; and
+			(!prog.RecordIfMissing() || AStdFile::exists(prog.GenerateFilename(true))) &&	// 'recordifmissing' must be disabled OR final converted programme must exist; and
+			((otherprog = recordedlist.FindCompleteRecording(prog)) != NULL)) {				// programme must have been recorded to be able to delete this programme
 			config.logit("'%s' has already been recorded ('%s')", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str());
 
 			DeleteProg(i);

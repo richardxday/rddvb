@@ -117,7 +117,8 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG_ASSIGN(notify,		  	Flag_notify,        	"Once recorded, run 'notifycmd'"),
 	DEFINE_FLAG_ASSIGN(partial,		  	Flag_partialpattern,    "Pattern is partial and not complete"),
 	DEFINE_FLAG_ASSIGN(ignorelatestart, Flag_ignorelatestart,	"Allow programme to be recorded even if is late starting"),
-
+	DEFINE_FLAG_ASSIGN(recordifmissing, Flag_recordifmissing,	"Allow programme to be recorded if it has been recorded already but the file doesn't exist"),
+	
 	DEFINE_ASSIGN(pri,        pri,        	 	sint8_t,  "Scheduling priority"),
 	DEFINE_ASSIGN(score,	  score,			sint16_t, "Record score"),
 	DEFINE_ASSIGN(prehandle,  prehandle,  	 	uint16_t, "Record pre-handle (minutes)"),
