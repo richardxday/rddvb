@@ -146,6 +146,7 @@ bool SameFile(const AString& file1, const AString& file2)
 			 (stat1.st_dev == stat2.st_dev) &&
 			 (stat1.st_ino == stat2.st_ino)));
 }
+
 bool CopyFile(AStdData& fp1, AStdData& fp2)
 {
 	static uint8_t buffer[65536];
