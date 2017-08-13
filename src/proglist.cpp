@@ -1997,10 +1997,25 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	{
 		ADVBProgList programmeslostlist;
 
+		// find programmes in old schedule list but not in new one
 		programmeslostlist.FindDifferences(oldscheduledlist, scheduledlist, true, false);
+
+		// strip those that have already finished or are running
+		for (i = 0; i < programmeslostlist.Count();) {
+			const ADVBProg& prog = programmeslostlist[i];
+			
+			if (runninglist.FindUUID(prog) ||
+				(prog.GetStopDT() <= starttime)) {
+				programmeslostlist.DeleteProg(i);
+			}
+			else i++;
+		}
+
 		if (programmeslostlist.Count() > 0) {
 			AString cmd;
 
+			config.printf("%u programmes lost fromm scheduling", programmeslostlist.Count());
+			
 			if ((cmd = config.GetConfigItem("programmeslostcmd")).Valid()) {
 				AString  filename = config.GetLogDir().CatPath("programmes-lost-text-" + ADateTime().DateFormat("%Y-%M-%D") + ".txt");
 				AStdFile fp;
