@@ -43,6 +43,8 @@ public:
 
 	bool WriteToFile(const AString& filename, bool updatedependantfiles = true) const;
 	bool WriteToTextFile(const AString& filename) const;
+	
+	ADVBProgList& FindDifferences(ADVBProgList& list1, ADVBProgList& list2, bool in1only = true, bool in2only = true);
 
 	bool WriteToGNUPlotFile(const AString& filename) const;
 

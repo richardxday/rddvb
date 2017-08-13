@@ -709,6 +709,30 @@ bool ADVBProgList::WriteToTextFile(const AString& filename) const
 	return success;
 }
 
+ADVBProgList& ADVBProgList::FindDifferences(ADVBProgList& list1, ADVBProgList& list2, bool in1only, bool in2only)
+{
+	uint_t i;
+	
+	list1.CreateHash();
+	list2.CreateHash();
+
+	if (in1only) {
+		for (i = 0; i < list1.Count(); i++) {
+			if (!list2.FindUUID(list1[i])) AddProg(list1[i]);
+		}
+	}
+
+	if (in2only) {
+		for (i = 0; i < list2.Count(); i++) {
+			if (!list1.FindUUID(list2[i])) AddProg(list2[i]);
+		}
+	}
+	
+	Sort();
+	
+	return *this;
+}
+
 bool ADVBProgList::WriteToGNUPlotFile(const AString& filename) const
 {
 	AStdFile fp;
@@ -1854,6 +1878,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock     lock("dvbfiles");
 	ADVBProgList oldrejectedlist;
+	ADVBProgList oldscheduledlist;
 	ADVBProgList recordedlist;
 	ADVBProgList scheduledlist;
 	ADVBProgList rejectedlist;
@@ -1864,6 +1889,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	uint_t i, n, reccount;
 
 	oldrejectedlist.ReadFromFile(config.GetRejectedFile());
+	oldscheduledlist.ReadFromFile(config.GetScheduledFile());
 
 	for (i = 0; i < Count(); ) {
 		ADVBProg& prog = GetProgWritable(i);
@@ -1882,7 +1908,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		}
 		else i++;
 	}
-
+	
 	WriteToFile(config.GetRequestedFile(), false);
 
 	recordedlist.ReadFromFile(config.GetRecordedFile());
@@ -1968,6 +1994,38 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		}
 	}
 
+	{
+		ADVBProgList programmeslostlist;
+
+		programmeslostlist.FindDifferences(oldscheduledlist, scheduledlist, true, false);
+		if (programmeslostlist.Count() > 0) {
+			AString cmd;
+
+			if ((cmd = config.GetConfigItem("programmeslostcmd")).Valid()) {
+				AString  filename = config.GetLogDir().CatPath("programmes-lost-text-" + ADateTime().DateFormat("%Y-%M-%D") + ".txt");
+				AStdFile fp;
+
+				if (fp.open(filename, "w")) {
+					fp.printf("Programmes no longer scheduled at %s:\n", ADateTime().DateToStr().str());
+
+					for (i = 0; i < programmeslostlist.Count(); i++) {
+						const ADVBProg& prog = programmeslostlist.GetProg(i);
+
+						fp.printf("%s\n", prog.GetDescription().str());
+					}
+
+					fp.close();
+
+					cmd = cmd.SearchAndReplace("{logfile}", filename);
+
+					RunAndLogCommand(cmd);
+				}
+
+				remove(filename);
+			}
+		}
+	}
+	
 	if ((newrejectedlist.Count() > 0) ||
 		(oldrejectedlist.Count() > 0)) {
 		AString cmd;
