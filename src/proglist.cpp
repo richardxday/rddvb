@@ -2004,8 +2004,9 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		for (i = 0; i < programmeslostlist.Count();) {
 			const ADVBProg& prog = programmeslostlist[i];
 			
-			if (runninglist.FindUUID(prog) ||
-				(prog.GetStopDT() <= starttime)) {
+			if ((prog.GetStopDT() <= starttime) ||
+				runninglist.FindUUID(prog) ||
+				scheduledlist.FindSimilar(prog)) {
 				programmeslostlist.DeleteProg(i);
 			}
 			else i++;
