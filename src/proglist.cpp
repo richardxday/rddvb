@@ -639,13 +639,19 @@ void ADVBProgList::UpdateDVBChannels()
 bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfiles) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
+	AString  backupfilename = filename + ".bak";
 	AStdFile fp;
 	bool success = false;
 
 	config.printf("Writing '%s'", filename.str());
 
-	if		(filename.Suffix() == "txt") success = WriteToTextFile(filename);
+	if (filename.Suffix() == "txt") {
+		success = WriteToTextFile(filename);
+	}
 	else if (filename.Suffix() == "dat") {
+		remove(backupfilename);
+		rename(filename, backupfilename);
+
 		if (fp.open(filename, "wb")) {
 			uint_t i;
 
@@ -688,8 +694,12 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 
 bool ADVBProgList::WriteToTextFile(const AString& filename) const
 {
+	AString  backupfilename = filename + ".bak";
 	AStdFile fp;
 	bool success = false;
+
+	remove(backupfilename);
+	rename(filename, backupfilename);
 
 	if (fp.open(filename, "w")) {
 		uint_t i;
@@ -712,7 +722,7 @@ bool ADVBProgList::WriteToTextFile(const AString& filename) const
 ADVBProgList& ADVBProgList::FindDifferences(ADVBProgList& list1, ADVBProgList& list2, bool in1only, bool in2only)
 {
 	uint_t i;
-	
+
 	list1.CreateHash();
 	list2.CreateHash();
 
@@ -727,9 +737,9 @@ ADVBProgList& ADVBProgList::FindDifferences(ADVBProgList& list1, ADVBProgList& l
 			if (!list1.FindUUID(list2[i])) AddProg(list2[i]);
 		}
 	}
-	
+
 	Sort();
-	
+
 	return *this;
 }
 
@@ -1908,7 +1918,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		}
 		else i++;
 	}
-	
+
 	WriteToFile(config.GetRequestedFile(), false);
 
 	recordedlist.ReadFromFile(config.GetRecordedFile());
@@ -2003,7 +2013,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		// strip those that have already finished or are running
 		for (i = 0; i < programmeslostlist.Count();) {
 			const ADVBProg& prog = programmeslostlist[i];
-			
+
 			if ((prog.GetStopDT() <= starttime) ||
 				runninglist.FindUUID(prog) ||
 				scheduledlist.FindSimilar(prog)) {
@@ -2016,7 +2026,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 			AString cmd;
 
 			config.printf("%u programmes lost fromm scheduling", programmeslostlist.Count());
-			
+
 			if ((cmd = config.GetConfigItem("programmeslostcmd")).Valid()) {
 				AString  filename = config.GetLogDir().CatPath("programmes-lost-text-" + ADateTime().DateFormat("%Y-%M-%D") + ".txt");
 				AStdFile fp;
@@ -2041,7 +2051,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 			}
 		}
 	}
-	
+
 	if ((newrejectedlist.Count() > 0) ||
 		(oldrejectedlist.Count() > 0)) {
 		AString cmd;
