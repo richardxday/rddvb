@@ -56,13 +56,22 @@ bool ADVBDatabase::Open()
 							"Subtitle string(200),"
 							"Description string(1000),"
 							"ChannelID references Channels,"
-						}
+							"Start date,"
+							"Stop date,"
+							"Director string(100),"
+							"Category string(100),"
+							"Subcategories string(200),"
+							"Year,"
+							"EpisodeNum string(100),"
+							"EpisodeID string(100),"
+							"Actors string(200)"
+						},
 					};
 					uint_t i;
 
 					for (i = 0; i < NUMBEROF(tables); i++) {
 						if (!database->CreateTable(tables[i].name, tables[i].columns)) {
-							
+							debug("Failed to create table '%s' in database\n", tables[i].name);
 						}
 					}
 				}

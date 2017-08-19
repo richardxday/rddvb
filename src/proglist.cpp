@@ -1232,7 +1232,29 @@ const ADVBProg *ADVBProgList::GetNextProgramme(const ADVBProg *prog, uint_t *ind
 		if ((((p = proglist.Find((uptr_t)prog)) >= 0) ||
 			 (((tmpprog = FindUUID(*prog)) != NULL) &&
 			  ((p = proglist.Find((uptr_t)tmpprog)) >= 0))) &&
-			((progindex = p + 1) < Count())) {
+			(p < ((int)Count() - 1))) {
+			progindex = p + 1;
+			if (index) index[0] = progindex;
+			prog = &GetProg(progindex);
+		}
+		else prog = NULL;
+	}
+
+	return prog;
+}
+
+const ADVBProg *ADVBProgList::GetPrevProgramme(const ADVBProg *prog, uint_t *index) const
+{
+	if (prog) {
+		const ADVBProg *tmpprog;
+		uint_t progindex;
+		int p;
+
+		if ((((p = proglist.Find((uptr_t)prog)) >= 0) ||
+			 (((tmpprog = FindUUID(*prog)) != NULL) &&
+			  ((p = proglist.Find((uptr_t)tmpprog)) >= 0))) &&
+			(p > 0)) {
+			progindex = p - 1;
 			if (index) index[0] = progindex;
 			prog = &GetProg(progindex);
 		}
@@ -1260,6 +1282,30 @@ const ADVBProg *ADVBProgList::FindSimilar(const ADVBProg& prog, const ADVBProg *
 		}
 	}
 
+	return res;
+}
+
+const ADVBProg *ADVBProgList::FindLastSimilar(const ADVBProg& prog, const ADVBProg *startprog) const
+{
+	const ADVBProg *res = NULL;
+
+	if (Count()) {
+		uint_t i = Count() - 1;
+
+		if (startprog) {
+			GetPrevProgramme(startprog, &i);
+		}
+
+		do {
+			const ADVBProg& prog1 = GetProg(i);
+
+			if (ADVBProg::SameProgramme(prog, prog1)) {
+				res = &prog1;
+				break;
+			}
+		} while (i--);
+	}
+	
 	return res;
 }
 

@@ -90,7 +90,9 @@ public:
 	void FindProgrammes(ADVBProgList& dest, const AString& patterns, AString& errors, const AString& sep = "\n", uint_t maxmatches = MAX_UNSIGNED(uint_t)) const;
 
 	const ADVBProg *GetNextProgramme(const ADVBProg *prog, uint_t *index = NULL) const;
+	const ADVBProg *GetPrevProgramme(const ADVBProg *prog, uint_t *index = NULL) const;
 	const ADVBProg *FindSimilar(const ADVBProg& prog, const ADVBProg *startprog = NULL) const;
+	const ADVBProg *FindLastSimilar(const ADVBProg& prog, const ADVBProg *startprog = NULL) const;
 	const ADVBProg *FindCompleteRecording(const ADVBProg& prog, const ADVBProg *startprog = NULL) const;
 	const ADVBProg *FindCompleteRecordingThatExists(const ADVBProg& prog, const ADVBProg *startprog = NULL) const;
 	uint_t FindSimilarProgrammes(ADVBProgList& dest, const ADVBProg& prog, uint_t index = 0) const;
