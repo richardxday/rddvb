@@ -2071,18 +2071,20 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		if (programmeslostlist.Count() > 0) {
 			AString cmd;
 
-			config.printf("%u programmes lost fromm scheduling", programmeslostlist.Count());
+			config.printf("%u programmes lost from scheduling", programmeslostlist.Count());
 
 			if ((cmd = config.GetConfigItem("programmeslostcmd")).Valid()) {
-				AString  filename = config.GetLogDir().CatPath("programmes-lost-text-" + ADateTime().DateFormat("%Y-%M-%D") + ".txt");
+				AString  filename = config.GetLogDir().CatPath("programmes-lost-text-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
 				AStdFile fp;
 
 				if (fp.open(filename, "w")) {
+					config.logit("Programmes no longer scheduled at %s:", ADateTime().DateToStr().str());
 					fp.printf("Programmes no longer scheduled at %s:\n", ADateTime().DateToStr().str());
 
 					for (i = 0; i < programmeslostlist.Count(); i++) {
 						const ADVBProg& prog = programmeslostlist.GetProg(i);
 
+						config.logit("%s", prog.GetDescription().str());
 						fp.printf("%s\n", prog.GetDescription().str());
 					}
 
@@ -2093,7 +2095,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 					RunAndLogCommand(cmd);
 				}
 
-				remove(filename);
+				//remove(filename);
 			}
 		}
 	}
@@ -2103,7 +2105,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		AString cmd;
 
 		if ((cmd = config.GetConfigItem("rejectedcmd")).Valid()) {
-			AString  filename = config.GetLogDir().CatPath("rejected-text-" + ADateTime().DateFormat("%Y-%M-%D") + ".txt");
+			AString  filename = config.GetLogDir().CatPath("rejected-text-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
 			AStdFile fp;
 
 			if (fp.open(filename, "w")) {
@@ -2146,7 +2148,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 				RunAndLogCommand(cmd);
 			}
 
-			remove(filename);
+			//remove(filename);
 		}
 	}
 
