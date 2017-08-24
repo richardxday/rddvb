@@ -237,6 +237,8 @@ protected:
 	ADataList proglist;
 	ADataList channellist;
 	bool	  useproghash;
+
+	static uint_t writefiledepth;
 };
 
 #endif

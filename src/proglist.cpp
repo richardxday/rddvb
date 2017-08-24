@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <sys/statvfs.h>
+#include <unistd.h>
 
 #include <algorithm>
 
@@ -21,6 +22,8 @@
 #include "iconcache.h"
 
 /*--------------------------------------------------------------------------------*/
+
+uint_t ADVBProgList::writefiledepth = 0;
 
 ADVBProgList::ADVBProgList() : useproghash(false)
 {
@@ -643,6 +646,10 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 	AStdFile fp;
 	bool success = false;
 
+	// keep track of 'depth' of file write so that file system sync is done at the *end*
+	// of the last write
+	writefiledepth++;
+	
 	config.printf("Writing '%s'", filename.str());
 
 	if (filename.Suffix() == "txt") {
@@ -689,6 +696,12 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 		//else config.printf("No need to update combined file");
 	}
 
+	if ((--writefiledepth) == 0) {
+		// this is the end of the last write, so
+		// sync file system now to minimise chance of losing data
+		sync();
+	}
+		
 	return success;
 }
 
