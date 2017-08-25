@@ -3189,14 +3189,6 @@ bool ADVBProg::IsRecordable() const
 	return (((data->start + graceperiod) >= now) && GetDVBChannel()[0]);
 }
 
-bool ADVBProg::IsArchived() const
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	AString filename = config.GetRecordingsArchiveDir().CatPath(AString(GetFilename()).FilePart().Prefix() + "." + config.GetConvertedFileSuffix(GetUser()));
-	//debug("Looking for %s\n", filename.str());
-	return AStdFile::exists(filename);
-}
-
 bool ADVBProg::IsConverted() const
 {
 	AString suf = AString(GetFilename()).Suffix();
