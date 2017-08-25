@@ -739,7 +739,8 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 				for (j = 0; j < NUMBEROF(operators); j++) {
 					if (((isassign == operators[j].assign) ||
 						 (isassign && !operators[j].assign)) &&
-						(operators[j].fieldtypes & (1U << fieldptr->type)) &&
+						(((fieldptr->type <  FieldType_flag) && (operators[j].fieldtypes & (1U << fieldptr->type))) ||
+						 ((fieldptr->type >= FieldType_flag) && (operators[j].fieldtypes & (1U << FieldType_uint8_t)))) &&
 						(strncmp(str, operators[j].str, operators[j].len) == 0)) {
 						i      += operators[j].len;
 						opindex = j;
