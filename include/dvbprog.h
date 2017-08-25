@@ -222,6 +222,7 @@ public:
 		Flag_recordable,
 		Flag_convertedexists,
 		Flag_unconvertedexists,
+		Flag_archived,
 
 		Flag_total,
 	};
@@ -275,6 +276,7 @@ public:
 	void   SetNotify()	  		  		{SetFlag(Flag_notify);}
 	bool   IsAvailable()		  const {return (IsConverted() && AStdFile::exists(GetFilename()));}
 	bool   IsAvailable(bool converted) const {return AStdFile::exists(GenerateFilename(converted));}
+	bool   IsArchived()			  const;
 	bool   IsRecordable()         const;
 	void   SetPartialPattern()			{SetFlag(Flag_partialpattern);}
 	void   ClearPartialPattern()		{ClrFlag(Flag_partialpattern);}

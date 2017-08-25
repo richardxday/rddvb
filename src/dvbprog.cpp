@@ -95,6 +95,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(exists,				 Flag_exists,    	 	   "Programme exists"),
 	DEFINE_FLAG(convertedexists,	 Flag_convertedexists,     "Converted programme exists"),
 	DEFINE_FLAG(unconvertedexists,	 Flag_unconvertedexists,   "Unconverted programme exists (pre-converted)"),
+	DEFINE_FLAG(archived,			 Flag_archived,			   "Programme has been archived (pre-converted)"),
 	DEFINE_FLAG(available,			 Flag_exists,    	 	   "Programme is available"),
 	DEFINE_FLAG(notify,				 Flag_notify,    	 	   "Notify by when programme has recorded"),
 	DEFINE_FLAG(converted,			 Flag_converted,    	   "Programme has been converted"),
@@ -446,6 +447,10 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 			
 		case Flag_unconvertedexists:
 			set = IsAvailable(false);
+			break;
+
+		case Flag_archived:
+			set = IsArchived();
 			break;
 	}
 
@@ -3182,6 +3187,12 @@ bool ADVBProg::IsRecordable() const
 	uint64_t graceperiod = config.GetLatestStart() * (uint64_t)60 * (uint64_t)1000;
 	
 	return (((data->start + graceperiod) >= now) && GetDVBChannel()[0]);
+}
+
+bool ADVBProg::IsArchived() const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	return AStdFile::exists(config.GetRecordingsArchiveDir().CatPath(AString(GetFilename()).Prefix() + config.GetConvertedFileSuffix(GetUser())));
 }
 
 bool ADVBProg::IsConverted() const
