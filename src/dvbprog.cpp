@@ -3192,7 +3192,7 @@ bool ADVBProg::IsRecordable() const
 bool ADVBProg::IsArchived() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	return AStdFile::exists(config.GetRecordingsArchiveDir().CatPath(AString(GetFilename()).Prefix() + config.GetConvertedFileSuffix(GetUser())));
+	return AStdFile::exists(config.GetRecordingsArchiveDir().CatPath(AString(GetFilename()).FilePart().Prefix() + config.GetConvertedFileSuffix(GetUser())));
 }
 
 bool ADVBProg::IsConverted() const
