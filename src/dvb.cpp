@@ -125,6 +125,9 @@ int main(int argc, char *argv[])
 		printf("\t--find-with-file <pattern-file>\tFind programmes matching patterns in patterns file <pattern-file> (-F)\n");
 		printf("\t--find-repeats\t\t\tFor each programme in current list, list repeats (-R)\n");
 		printf("\t--find-similar <file>\t\tFor each programme in current list, find first similar programme in <file>\n");
+		printf("\t--find-differences <file1> <file2>\tFind programmes in <file1> but not in <file2> or in <file2> and not in <file1>\n");
+		printf("\t--find-in-file1-only <file1> <file2>\tFind programmes in <file1> but not in <file2>\n");
+		printf("\t--find-in-file2-only <file1> <file2>\tFind programmes in <file2> and not in <file1>\n");
 		printf("\t--describe-pattern <patterns>\tDescribe patterns as parsed\n");
 		printf("\t--delete-all\t\t\tDelete all programmes\n");
 		printf("\t--delete <patterns>\t\tDelete programmes matching <patterns>\n");
@@ -456,6 +459,32 @@ int main(int argc, char *argv[])
 					}
 				}
 				else printf("Failed to read programmes from '%s'\n", argv[i]);
+			}
+			else if ((strcmp(argv[i], "--find-differences")   == 0) ||
+					 (strcmp(argv[i], "--find-in-file1-only") == 0) ||
+					 (strcmp(argv[i], "--find-in-file2-only") == 0)) {
+				const bool in1only = ((strcmp(argv[i], "--find-differences") == 0) || (strcmp(argv[i], "--find-in-file1-only") == 0));
+				const bool in2only = ((strcmp(argv[i], "--find-differences") == 0) || (strcmp(argv[i], "--find-in-file2-only") == 0));
+				ADVBProgList file1list, file2list;
+				AString file1name = argv[++i];
+				AString file2name = argv[++i];
+				bool success = true;
+				
+				if (!file1list.ReadFromFile(file1name)) {
+					printf("Failed to read programmes fomr '%s'\n", file1name.str());
+					success = false;
+				}
+				if (!file2list.ReadFromFile(file2name)) {
+					printf("Failed to read programmes fomr '%s'\n", file2name.str());
+					success = false;
+				}
+
+				if (success) {
+					proglist.DeleteAll();
+					proglist.FindDifferences(file1list, file2list, in1only, in2only);
+					
+					printf("Found %u programme%s\n", proglist.Count(), (proglist.Count() == 1) ? "" : "s");
+				}
 			}
 			else if (strcmp(argv[i], "--describe-pattern") == 0) {
 				ADataList patternlist;
