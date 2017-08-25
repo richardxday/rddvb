@@ -128,6 +128,7 @@ int main(int argc, char *argv[])
 		printf("\t--find-differences <file1> <file2>\tFind programmes in <file1> but not in <file2> or in <file2> and not in <file1>\n");
 		printf("\t--find-in-file1-only <file1> <file2>\tFind programmes in <file1> but not in <file2>\n");
 		printf("\t--find-in-file2-only <file1> <file2>\tFind programmes in <file2> and not in <file1>\n");
+		printf("\t--find-similarities <file1> <file2>\tFind programmes in both <file1> and <file2>\n");
 		printf("\t--describe-pattern <patterns>\tDescribe patterns as parsed\n");
 		printf("\t--delete-all\t\t\tDelete all programmes\n");
 		printf("\t--delete <patterns>\t\tDelete programmes matching <patterns>\n");
@@ -462,7 +463,9 @@ int main(int argc, char *argv[])
 			}
 			else if ((strcmp(argv[i], "--find-differences")   == 0) ||
 					 (strcmp(argv[i], "--find-in-file1-only") == 0) ||
-					 (strcmp(argv[i], "--find-in-file2-only") == 0)) {
+					 (strcmp(argv[i], "--find-in-file2-only") == 0) ||
+					 (strcmp(argv[i], "--find-similarities")  == 0)) {
+				const bool similarities = (strcmp(argv[i], "--find-similarities") == 0);
 				const bool in1only = ((strcmp(argv[i], "--find-differences") == 0) || (strcmp(argv[i], "--find-in-file1-only") == 0));
 				const bool in2only = ((strcmp(argv[i], "--find-differences") == 0) || (strcmp(argv[i], "--find-in-file2-only") == 0));
 				ADVBProgList file1list, file2list;
@@ -481,7 +484,13 @@ int main(int argc, char *argv[])
 
 				if (success) {
 					proglist.DeleteAll();
-					proglist.FindDifferences(file1list, file2list, in1only, in2only);
+
+					if (similarities) {
+						proglist.FindSimilarities(file1list, file2list);
+					}
+					else {
+						proglist.FindDifferences(file1list, file2list, in1only, in2only);
+					}
 					
 					printf("Found %u programme%s\n", proglist.Count(), (proglist.Count() == 1) ? "" : "s");
 				}

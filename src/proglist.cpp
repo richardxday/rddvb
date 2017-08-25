@@ -736,6 +736,7 @@ ADVBProgList& ADVBProgList::FindDifferences(ADVBProgList& list1, ADVBProgList& l
 {
 	uint_t i;
 
+	CreateHash();
 	list1.CreateHash();
 	list2.CreateHash();
 
@@ -747,11 +748,26 @@ ADVBProgList& ADVBProgList::FindDifferences(ADVBProgList& list1, ADVBProgList& l
 
 	if (in2only) {
 		for (i = 0; i < list2.Count(); i++) {
-			if (!list1.FindUUID(list2[i])) AddProg(list2[i]);
+			if (!FindUUID(list2[i]) && !list1.FindUUID(list2[i])) AddProg(list2[i]);
 		}
 	}
 
 	Sort();
+
+	return *this;
+}
+
+ADVBProgList& ADVBProgList::FindSimilarities(ADVBProgList& list1, ADVBProgList& list2)
+{
+	uint_t i;
+
+	CreateHash();
+	list1.CreateHash();
+	list2.CreateHash();
+
+	for (i = 0; i < list1.Count(); i++) {
+		if (list2.FindUUID(list1[i])) AddProg(list1[i]);
+	}
 
 	return *this;
 }

@@ -45,7 +45,8 @@ public:
 	bool WriteToTextFile(const AString& filename) const;
 	
 	ADVBProgList& FindDifferences(ADVBProgList& list1, ADVBProgList& list2, bool in1only = true, bool in2only = true);
-
+	ADVBProgList& FindSimilarities(ADVBProgList& list1, ADVBProgList& list2);
+	
 	bool WriteToGNUPlotFile(const AString& filename) const;
 
 	void SearchAndReplace(const AString& search, const AString& replace);
