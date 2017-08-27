@@ -137,6 +137,7 @@ public:
 	typedef struct {
 		ADateTime start;
 		ADateTime end;
+		uint_t card;
 	} TIMEGAP;
 	TIMEGAP FindGaps(const ADateTime& start, std::vector<TIMEGAP>& gaps) const;
 

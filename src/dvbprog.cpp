@@ -2121,16 +2121,31 @@ bool ADVBProg::GetRecordPIDs(AString& pids, bool update) const
 	return channellist.GetPIDList(GetDVBCard(), dvbchannel, pids, update);
 }
 
+AString ADVBProg::GenerateStreamCommand(uint_t card, uint_t nsecs, const AString& pids, const AString& logfile)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString cmd;
+
+	cmd.printf("%s -c %u -n %u -f %s -o 2>>\"%s\"",
+			   config.GetDVBStreamCommand().str(),
+			   card,
+			   nsecs,
+			   pids.str(),
+			   logfile.str());
+
+	return cmd;
+}
+
 AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
 
-	cmd.printf("dvbstream -c %u -n %u -f %s -o 2>>\"%s\" >\"%s\"",
-			   config.GetPhysicalDVBCard(GetDVBCard()),
-			   nsecs,
-			   pids.str(),
-			   config.GetLogFile().str(),
+	cmd.printf("%s >\"%s\"",
+			   GenerateStreamCommand(config.GetPhysicalDVBCard(GetDVBCard()),
+									 nsecs,
+									 pids, 
+									 config.GetLogFile().str()).str(),
 			   GetTempFilename().str());
 
 	return cmd;

@@ -93,7 +93,10 @@ public:
 	AString ReplaceTerms(const AString& user, const AString& str) const;
 	AString ReplaceTerms(const AString& user, const AString& subitem, const AString& str) const;
 
-	AString GetTempFileSuffix()     		 const {return GetConfigItem("tempfilesuffix", "tmp");} // extractconfig()
+	AString GetDVBStreamCommand()			 const {return GetConfigItem("dvbstreamcmd", "dvbstream");} // extractconfig()
+	AString GetVideoPlayerCommand()			 const {return GetConfigItem("playercmd", "mplayer -cache 2048 -");} // extractconfig()
+
+	AString GetTempFileSuffix()     		 const {return GetConfigItem("tempfilesuffix", "mp2ts");} // extractconfig()
 	AString GetRecordedFileSuffix() 		 const {return GetConfigItem("recordedfilesuffix", "mpg");} // extractconfig()
 	AString GetVideoFileSuffix() 			 const {return GetConfigItem("videofilesuffix", "m2v");} // extractconfig()
 	AString GetAudioFileSuffix() 			 const {return GetConfigItem("audiofilesuffix", "mp2");} // extractconfig()

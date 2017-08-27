@@ -187,6 +187,7 @@ int main(int argc, char *argv[])
 		printf("\t--reset-assigned-episodes\tReset assigned episodes to current list\n");
 		printf("\t--count-hours\t\t\tCount total hours of programmes in current list\n");
 		printf("\t--find-gaps\t\t\tFind gap from now until the next working for each card\n");
+		printf("\t--stream <channel>\t\tStream DVB channel <channel> to mplayer (or other player)\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -1546,14 +1547,67 @@ int main(int argc, char *argv[])
 						
 						if (gap.end < ADateTime::MaxDateTime) {
 							ADateTime diff = gap.end - gap.start;								
-							printf("Card %u (hardware card %u): free from %s to %s (%s)\n", card, config.GetPhysicalDVBCard(card), gap.start.DateToStr().str(), gap.end.DateToStr().str(), diff.SpanStr().str());
+							printf("Card %u (hardware card %u): free from %s to %s (%s)\n", card, config.GetPhysicalDVBCard(card), gap.start.UTCToLocal().DateToStr().str(), gap.end.UTCToLocal().DateToStr().str(), diff.SpanStr().str());
 						}
 						else {
-							printf("Card %u (hardware card %u): free from %s onwards\n", card, config.GetPhysicalDVBCard(card), gap.start.DateToStr().str());
+							printf("Card %u (hardware card %u): free from %s onwards\n", card, config.GetPhysicalDVBCard(card), gap.start.UTCToLocal().DateToStr().str());
 						}
 					}
 				}
 				else fprintf(stderr, "Failed to read scheduled programmes file\n");
+			}
+			else if (stricmp(argv[i], "--stream") == 0) {
+				AString channel = argv[++i];
+				
+				if (config.GetRecordingSlave().Valid()) {
+					AString cmd1, cmd2;
+					
+					cmd1.printf("dvb --stream \"%s\"", channel.str());
+					cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
+					
+					RunRemoteCommand(cmd1, cmd2);
+				}
+				else {
+					ADVBChannelList& channellist = ADVBChannelList::Get();
+					ADVBProgList list;
+					
+					if (list.ReadFromFile(config.GetScheduledFile())) {
+						std::vector<ADVBProgList::TIMEGAP> gaps;
+						ADVBProgList::TIMEGAP best;
+						AString cmd, pids;
+						uint_t gap;
+						
+						best = list.FindGaps(ADateTime().TimeStamp(true), gaps);
+						gap  = (uint_t)((uint64_t)(best.end - best.start) / 1000);
+								
+						printf("Biggest gap is on card %u: %s-%s (%u seconds)\n",
+							   best.card,
+							   best.start.UTCToLocal().DateToStr().str(),
+							   best.end.UTCToLocal().DateToStr().str(),
+							   gap);
+
+						if (gap > 10U) {
+							AString pids;
+
+							gap -= 10U;
+
+							channellist.GetPIDList(best.card, channel, pids);
+							if (pids.Valid()) {
+								cmd = ADVBProg::GenerateStreamCommand(best.card, gap, pids);
+
+								if (!config.IsRecordingSlave()) cmd.printf(" | %s", config.GetVideoPlayerCommand().str());
+								
+								printf("Running command '%s'\n", cmd.str());
+								if (system(cmd) != 0) {
+									fprintf(stderr, "Command '%s' failed!\n", cmd.str());
+								}
+							}
+							else fprintf(stderr, "Failed to find PIDs for channel '%s'\n", channel.str());
+						}
+						else fprintf(stderr, "No DVB card has big enough gap\n");
+					}
+					else fprintf(stderr, "Failed to read scheduled programmes file\n");
+				}
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();

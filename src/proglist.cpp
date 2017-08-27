@@ -3390,7 +3390,7 @@ ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	std::vector<std::vector<const ADVBProg *> > lists;
-	TIMEGAP res = {start, start};
+	TIMEGAP res = {start, start, 0};
 	uint_t i;
 
 	config.GetPhysicalDVBCard(0);
@@ -3413,7 +3413,8 @@ ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector
 
 		gap.start = start;
 		gap.end   = ADateTime::MaxDateTime;
-
+		gap.card  = i;
+		
 		if (list.size() > 0) {
 			if (list[0]->GetRecordStartDT() < start) {
 				gap.start = list[0]->GetRecordStopDT();

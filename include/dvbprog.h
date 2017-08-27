@@ -368,7 +368,9 @@ public:
 	bool FixData();
 
 	AString GetConvertedDestinationDirectory() const;
-	
+
+	static AString GenerateStreamCommand(uint_t card, uint_t nsecs, const AString& pids, const AString& logfile = "/dev/null");
+
 	static bool FilePatternExists(const AString& filename);
 
 	static bool GetFileFormat(const AString& filename, AString& format);

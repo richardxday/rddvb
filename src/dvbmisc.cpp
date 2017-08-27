@@ -89,12 +89,12 @@ bool GetFileFromRecordingSlave(const AString& filename, const AString& localfile
 	return success;
 }
 
-bool RunRemoteCommand(const AString& cmd)
+bool RunRemoteCommand(const AString& cmd, const AString& postcmd)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd1;
 
-	cmd1.printf("ssh -C %s %s \"%s\"", config.GetSSHArgs().str(), config.GetRecordingSlave().str(), cmd.Escapify().str());
+	cmd1.printf("ssh -C %s %s \"%s\"%s", config.GetSSHArgs().str(), config.GetRecordingSlave().str(), cmd.Escapify().str(), postcmd.str());
 
 	return RunAndLogCommand(cmd1);
 }
