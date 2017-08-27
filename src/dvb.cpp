@@ -1580,11 +1580,11 @@ int main(int argc, char *argv[])
 						best = list.FindGaps(ADateTime().TimeStamp(true), gaps);
 						gap  = (uint_t)((uint64_t)(best.end - best.start) / 1000);
 								
-						printf("Biggest gap is on card %u: %s-%s (%u seconds)\n",
-							   best.card,
-							   best.start.UTCToLocal().DateToStr().str(),
-							   best.end.UTCToLocal().DateToStr().str(),
-							   gap);
+						fprintf(stderr, "Biggest gap is on card %u: %s-%s (%u seconds)\n",
+								best.card,
+								best.start.UTCToLocal().DateToStr().str(),
+								best.end.UTCToLocal().DateToStr().str(),
+								gap);
 
 						if (gap > 10U) {
 							AString pids;
@@ -1597,7 +1597,6 @@ int main(int argc, char *argv[])
 
 								if (!config.IsRecordingSlave()) cmd.printf(" | %s", config.GetVideoPlayerCommand().str());
 								
-								printf("Running command '%s'\n", cmd.str());
 								if (system(cmd) != 0) {
 									fprintf(stderr, "Command '%s' failed!\n", cmd.str());
 								}
