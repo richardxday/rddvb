@@ -1565,7 +1565,7 @@ int main(int argc, char *argv[])
 					cmd1.printf("dvb --stream \"%s\"", channel.str());
 					cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
 					
-					RunRemoteCommand(cmd1, cmd2);
+					RunRemoteCommand(cmd1, cmd2, false);
 				}
 				else {
 					ADVBChannelList& channellist = ADVBChannelList::Get();
