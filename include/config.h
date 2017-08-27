@@ -94,7 +94,7 @@ public:
 	AString ReplaceTerms(const AString& user, const AString& subitem, const AString& str) const;
 
 	AString GetDVBStreamCommand()			 const {return GetConfigItem("dvbstreamcmd", "dvbstream");} // extractconfig()
-	AString GetVideoPlayerCommand()			 const {return GetConfigItem("playercmd", "mplayer -cache 2048 -");} // extractconfig()
+	AString GetVideoPlayerCommand()			 const {return GetConfigItem("playercmd", "mplayer -vf yadif=1 -cache 2048 -");} // extractconfig()
 
 	AString GetTempFileSuffix()     		 const {return GetConfigItem("tempfilesuffix", "mp2ts");} // extractconfig()
 	AString GetRecordedFileSuffix() 		 const {return GetConfigItem("recordedfilesuffix", "mpg");} // extractconfig()
