@@ -1575,25 +1575,22 @@ int main(int argc, char *argv[])
 						std::vector<ADVBProgList::TIMEGAP> gaps;
 						ADVBProgList::TIMEGAP best;
 						AString cmd, pids;
-						uint_t gap;
+						uint64_t maxseconds;
 						
 						best = list.FindGaps(ADateTime().TimeStamp(true), gaps);
-						gap  = (uint_t)((uint64_t)(best.end - best.start) / 1000);
-								
-						fprintf(stderr, "Biggest gap is on card %u: %s-%s (%u seconds)\n",
-								best.card,
-								best.start.UTCToLocal().DateToStr().str(),
-								best.end.UTCToLocal().DateToStr().str(),
-								gap);
+						maxseconds = ((uint64_t)best.end - (uint64_t)best.start) / 1000U;
 
-						if (gap > 10U) {
+						if (maxseconds > 10U) {
 							AString pids;
 
-							gap -= 10U;
+							maxseconds -= 10U;
+							maxseconds  = std::min(maxseconds, (uint64_t)0xfffffffU);
+							
+							fprintf(stderr, "Max stream time is %s seconds\n", AValue(maxseconds).ToString().str());
 
 							channellist.GetPIDList(best.card, channel, pids);
 							if (pids.Valid()) {
-								cmd = ADVBProg::GenerateStreamCommand(best.card, gap, pids);
+								cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)maxseconds, pids);
 
 								if (!config.IsRecordingSlave()) cmd.printf(" | %s", config.GetVideoPlayerCommand().str());
 								
