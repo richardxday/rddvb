@@ -69,7 +69,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 
 	// ensure no changes are saved
 	config.EnableWrite(false);
-	
+
 	CreateDirectory(GetConfigDir());
 	CreateDirectory(GetDataDir());
 	CreateDirectory(GetLogDir());
@@ -157,7 +157,7 @@ AString ADVBConfig::GetConfigItem(const AString& name) const
 	else if ((def = (const AString *)defaults.Read(name)) != NULL) res = *def;
 
 	if (def && configrecorder) configrecorder->push_back(name + "=" + *def);
-	
+
 	//debug("Request for '%s' (implicit default: '%s'): '%s'\n", name.str(), def ? def->str() : "<notset>", res.str());
 
 	return res;
@@ -221,7 +221,7 @@ void ADVBConfig::GetCombinations(std::vector<AString>& list, const AString& pre,
 AString ADVBConfig::GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post) const
 {
 	std::vector<AString> list;
-	
+
 	GetCombinations(list, pre, name, post);
 
 	return GetConfigItem(list);
@@ -230,7 +230,7 @@ AString ADVBConfig::GetHierarchicalConfigItem(const AString& pre, const AString&
 AString ADVBConfig::GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post, const AString& defval) const
 {
 	std::vector<AString> list;
-	
+
 	GetCombinations(list, pre, name, post);
 
 	return GetConfigItem(list, defval, true);
@@ -562,4 +562,432 @@ void ADVBConfig::SetConfigRecorder(std::vector<AString> *recorder) const
 	// must cheat const system
 	ADVBConfig *pconfig = const_cast<ADVBConfig *>(this);
 	pconfig->configrecorder = recorder;
+}
+
+AString ADVBConfig::GetSlaveLogDir() const
+{
+	return GetConfigItem("slavelogdir", GetLogDir().CatPath(GetConfigItem("slavelogsubdir", "slave")));
+}
+
+AString ADVBConfig::GetRecordingsDir() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("recdir", GetConfigItem("homedir").CatPath("Videos")));
+}
+
+AString ADVBConfig::GetRecordingsStorageDir() const
+{
+	return CatPath(GetRecordingsDir(), GetConfigItem("storagedir", "Temp"));
+}
+
+AString ADVBConfig::GetRecordingsArchiveDir() const
+{
+	return CatPath(GetRecordingsDir(), GetConfigItem("achivedir", "Archive"));
+}
+
+AString ADVBConfig::GetTempDir() const
+{
+	return GetConfigItem("tempdir", GetDataDir().CatPath("temp"));
+}
+
+AString ADVBConfig::GetQueue() const
+{
+	return GetConfigItem("queue", "d");
+}
+
+AString ADVBConfig::GetRecordingsSubDir(const AString& user, const AString& category) const
+{
+	return GetUserSubItemConfigItem(user, category, "dir");
+}
+
+AString ADVBConfig::GetRecordingsDir(const AString& user, const AString& category) const
+{
+	return CatPath(GetRecordingsDir(), GetRecordingsSubDir(user, category));
+}
+
+AString ADVBConfig::GetFilenameTemplate(const AString& user, const AString& title, const AString category) const
+{
+	return GetHierarchicalConfigItem(user, category, "filename", GetUserSubItemConfigItem(user, title, "filename", "{conf:episodefirstfilenametemplate}")) + "{sep}{suffix}";
+}
+
+AString ADVBConfig::GetListingsFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("listingsfile", "dvblistings.dat"));
+}
+
+AString ADVBConfig::GetDVBChannelsFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("dvbchannelsfile", "channels.dat"));
+}
+
+AString ADVBConfig::GetPatternsFile() const
+{
+	return CatPath(GetConfigDir(), GetConfigItem("patternsfile", "patterns.txt"));
+}
+
+AString ADVBConfig::GetUserPatternsPattern() const
+{
+	return CatPath(GetConfigDir(), GetConfigItem("patternsfile", "{#?}-patterns.txt"));
+}
+
+AString ADVBConfig::GetRecordedFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("recordedfile", "recorded.dat"));
+}
+
+AString ADVBConfig::GetRequestedFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("requestedfile", "requested.dat"));
+}
+
+AString ADVBConfig::GetScheduledFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("scheduledfile", "scheduled.dat"));
+}
+
+AString ADVBConfig::GetRejectedFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("rejectedfile", "rejected.dat"));
+}
+
+AString ADVBConfig::GetRecordingFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("recordingfile", "recording.dat"));
+}
+
+AString ADVBConfig::GetProcessingFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("processingfile", "processing.dat"));
+}
+
+AString ADVBConfig::GetRecordFailuresFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("recordfailuresfile", "recordfailures.dat"));
+}
+
+AString ADVBConfig::GetCombinedFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("combinedfile", "combined.dat"));
+}
+
+AString ADVBConfig::GetDVBReplacementsFileShare() const
+{
+	return CatPath(GetShareDir(), GetConfigItem("dvbreplacementsfile", "dvbchannelreplacements.txt"));
+}
+
+AString ADVBConfig::GetDVBReplacementsFileConfig() const
+{
+	return CatPath(GetConfigDir(), GetConfigItem("dvbreplacementsfile", "dvbchannelreplacements.txt"));
+}
+
+AString ADVBConfig::GetDVBReplacementsFile() const
+{
+	return AStdFile::exists(GetDVBReplacementsFileConfig()) ? GetDVBReplacementsFileConfig() : GetDVBReplacementsFileShare();
+}
+
+AString ADVBConfig::GetXMLTVReplacementsFileShare() const
+{
+	return CatPath(GetShareDir(), GetConfigItem("xmltvreplacementsfile", "xmltvchannelreplacements.txt"));
+}
+
+AString ADVBConfig::GetXMLTVReplacementsFileConfig() const
+{
+	return CatPath(GetConfigDir(), GetConfigItem("xmltvreplacementsfile", "xmltvchannelreplacements.txt"));
+}
+
+AString ADVBConfig::GetXMLTVReplacementsFile() const
+{
+	return AStdFile::exists(GetXMLTVReplacementsFileConfig()) ? GetXMLTVReplacementsFileConfig() : GetXMLTVReplacementsFileShare();
+}
+
+AString ADVBConfig::GetXMLTVDownloadCommand() const
+{
+	return GetConfigItem("xmltvcmd", "tv_grab_sd_json");
+}
+
+AString ADVBConfig::GetXMLTVDownloadArguments(const AString& destfile) const
+{
+	return GetConfigItem("xmltvargs", "--days 14 >\"{destfile}\"").SearchAndReplace("{destfile}", destfile);
+}
+
+AString ADVBConfig::GetExtraRecordFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("extrarecordfile", "extrarecordprogrammes.txt"));
+}
+
+AString ADVBConfig::GetDVBCardsFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("dvbcardsfile", "dvbcards.txt"));
+}
+
+AString ADVBConfig::GetLogBase() const
+{
+	return "dvblog-";
+}
+
+AString ADVBConfig::GetLogFile(uint32_t day) const
+{
+	return CatPath(GetLogDir(), GetLogBase() + ADateTime(day, 0UL).DateFormat("%Y-%M-%D") + ".txt");
+}
+
+AString ADVBConfig::GetRecordLogBase() const
+{
+	return "dvbrecordlog-";
+}
+
+AString ADVBConfig::GetRecordLog(uint32_t day) const
+{
+	return CatPath(GetLogDir(), GetRecordLogBase() + ADateTime(day, 0UL).DateFormat("%Y-%M") + ".txt");
+}
+
+AString ADVBConfig::GetDVBSignalLogBase() const
+{
+	return "dvbsignal-";
+}
+
+AString ADVBConfig::GetDVBSignalLog(uint32_t day) const
+{
+	return CatPath(GetLogDir(), GetDVBSignalLogBase() + ADateTime(day, 0UL).DateFormat("%Y-%M-%D") + ".txt");
+}
+
+AString ADVBConfig::GetEpisodesFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("episodesfile", "episodes.txt"));
+}
+
+AString ADVBConfig::GetSearchesFile() const
+{
+	return CatPath(GetConfigDir(), GetConfigItem("searchesfile", "searches.txt"));
+}
+
+AString ADVBConfig::GetIconCacheFilename() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("iconcache", "iconcache.txt"));
+}
+
+AString ADVBConfig::GetRegionalChannels() const
+{
+	return GetConfigItem("regionalchannels", "bbc1.bbc.co.uk=north-west,bbc2.bbc.co.uk=north-west,bbc2.bbc.co.uk=england,itv1.itv.co.uk=granada");
+}
+
+AString ADVBConfig::GetConvertedFileSuffix(const AString& user, const AString& def) const
+{
+	return GetUserConfigItem(user, "filesuffix", def);
+}
+
+AString ADVBConfig::GetDVBStreamCommand() const
+{
+	return GetConfigItem("dvbstreamcmd", "dvbstream");
+}
+
+AString ADVBConfig::GetMPlayerArgs() const
+{
+	return GetConfigItem("mplayerargs", "-vf yadif=1");
+}
+
+uint_t ADVBConfig::GetMPlayerCacheSize() const
+{
+	return (uint_t)GetConfigItem("mplayercachesize", "1048576");
+}
+
+uint_t ADVBConfig::GetMPlayerCacheMinSize() const
+{
+	return (uint_t)GetConfigItem("mplayercacheminsize", "1024");
+}
+
+AString ADVBConfig::GetVideoPlayerCommand() const
+{
+	return GetConfigItem("playercmd", (AString("mplayer {args} -cache-min {cacheminpercent} -cache {cachesize} -")
+									   .SearchAndReplace("{args}",            GetMPlayerArgs())
+									   .SearchAndReplace("{cacheminpercent}", AValue(100.0 * (double)GetMPlayerCacheMinSize() / (double)GetMPlayerCacheSize() + .01).ToString("0.2"))
+									   .SearchAndReplace("{cachesize}",       AValue(GetMPlayerCacheSize()).ToString())));
+}
+
+AString ADVBConfig::GetTempFileSuffix() const
+{
+	return GetConfigItem("tempfilesuffix", "mp2ts");
+}
+
+AString ADVBConfig::GetRecordedFileSuffix() const
+{
+	return GetConfigItem("recordedfilesuffix", "mpg");
+}
+
+AString ADVBConfig::GetVideoFileSuffix() const
+{
+	return GetConfigItem("videofilesuffix", "m2v");
+}
+
+AString ADVBConfig::GetAudioFileSuffix() const
+{
+	return GetConfigItem("audiofilesuffix", "mp2");
+}
+
+AString ADVBConfig::GetAudioDestFileSuffix() const
+{
+	return GetConfigItem("audiodestfilesuffix", "mp3");
+}
+
+uint_t ADVBConfig::GetMaxDVBCards() const
+{
+	return dvbcards.size();
+}
+
+AString ADVBConfig::GetDVBFrequencyRange() const
+{
+	return GetConfigItem("dvbfreqrange", "474,530,8");
+}
+
+uint_t ADVBConfig::GetLatestStart() const
+{
+	return (uint_t)GetConfigItem("lateststart", "5");
+}
+
+uint_t ADVBConfig::GetDaysToKeep() const
+{
+	return (uint_t)GetConfigItem("daystokeep", "7");
+}
+
+sint_t ADVBConfig::GetScoreThreshold() const
+{
+	return (sint_t)GetConfigItem("scorethreshold", "100");
+}
+
+double ADVBConfig::GetLowSpaceWarningLimit() const
+{
+	return (double)GetConfigItem("lowdisklimit", "10.0");
+}
+
+bool ADVBConfig::CommitScheduling() const
+{
+	return ((uint_t)GetConfigItem("commitscheduling", "0") != 0);
+}
+
+bool ADVBConfig::AssignEpisodes() const
+{
+	return ((uint_t)GetConfigItem("assignepisodes", "0") != 0);
+}
+
+bool ADVBConfig::RescheduleAfterDeletingPattern(const AString& user, const AString& category) const
+{
+	return ((uint_t)GetUserSubItemConfigItem(user, category, "rescheduleafterdeletingpattern", "0") != 0);
+}
+
+bool ADVBConfig::IsRecordingSlave() const
+{
+	return ((uint_t)GetConfigItem("isrecordingslave", "0"));
+}
+
+bool ADVBConfig::ConvertVideos() const
+{
+	return ((uint_t)GetConfigItem("convertvideos", AString("%").Arg(!IsRecordingSlave())));
+}
+
+bool ADVBConfig::EnableCombined() const
+{
+	return ((uint_t)GetConfigItem("enablecombined", AString("%").Arg(!IsRecordingSlave())));
+}
+
+bool ADVBConfig::UseOldChannelIcon(const AString& user, const AString& category) const
+{
+	return ((uint_t)GetUserSubItemConfigItem(user, category.ToLower(), "useoldchannelicon",   "1") != 0);
+}
+
+bool ADVBConfig::UseOldProgrammeIcon(const AString& user, const AString& category) const
+{
+	return ((uint_t)GetUserSubItemConfigItem(user, category.ToLower(), "useoldprogrammeicon", "0") != 0);
+}
+
+bool ADVBConfig::MonitorDVBSignal() const
+{
+	return ((uint_t)GetConfigItem("monitordvbsignal", "0") != 0);
+}
+
+AString ADVBConfig::GetPriorityDVBPIDs() const
+{
+	return GetConfigItem("prioritypids", "");
+}
+
+AString ADVBConfig::GetExtraDVBPIDs() const
+{
+	return GetConfigItem("extrapids", "");
+}
+
+AString ADVBConfig::GetServerURL() const
+{
+	return GetConfigItem("serverurl", "");
+}
+
+bool ADVBConfig::ForceSubs(const AString& user) const
+{
+	return ((uint_t)GetUserConfigItem(user, "forcesubs", "0") != 0);
+}
+
+AString ADVBConfig::GetEncodeCommand(const AString& user, const AString& category) const
+{
+	return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodecmd", "avconv"));
+}
+
+AString ADVBConfig::GetEncodeArgs(const AString& user, const AString& category) const
+{
+	return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodeargs"));
+}
+
+AString ADVBConfig::GetEncodeAudioOnlyArgs(const AString& user, const AString& category) const
+{
+	return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodeaudioonlyargs"));
+}
+
+AString ADVBConfig::GetEncodeLogLevel(const AString& user, bool verbose) const
+{
+	return verbose ? GetUserConfigItem(user, "processloglevel:verbose", "warning") : GetUserConfigItem(user, "processloglevel:normal", "error");
+}
+
+AString ADVBConfig::GetRecordingSlave() const
+{
+	return GetConfigItem("recordingslave", "");
+}
+
+AString ADVBConfig::GetSSHArgs() const
+{
+	return GetConfigItem("sshargs", "");
+}
+
+AString ADVBConfig::GetSCPArgs() const
+{
+	return GetConfigItem("scpargs", GetSSHArgs());
+}
+
+AString ADVBConfig::GetRsyncArgs() const
+{
+	return GetConfigItem("rsyncargs", "");
+}
+
+AString ADVBConfig::GetRsyncBandwidthLimit() const
+{
+	return GetConfigItem("rsyncbw", "");
+}
+
+AString ADVBConfig::GetServerHost() const
+{
+	return GetConfigItem("serverhost", "");
+}
+
+uint_t ADVBConfig::GetServerPort() const
+{
+	return GetConfigItem("serverport", "1722");
+}
+
+AString ADVBConfig::GetServerGetAndConvertCommand() const
+{
+	return GetConfigItem("servergetandconvertcommand", "dvbgetandconvertrecorded");
+}
+
+AString ADVBConfig::GetServerUpdateRecordingsCommand() const
+{
+	return GetConfigItem("serverupdaterecordingscommand", "dvbupdaterecordings");
+}
+
+AString ADVBConfig::GetServerRescheduleCommand() const
+{
+	return GetConfigItem("serverreschedulecommand", "dvbreschedule");
 }
