@@ -2126,7 +2126,7 @@ AString ADVBProg::GenerateStreamCommand(uint_t card, uint_t nsecs, const AString
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
 
-	cmd.printf("%s -c %u -n %u -f %s -o 2>>\"%s\"",
+	cmd.printf("nice -10 %s -c %u -n %u -f %s -o 2>>\"%s\"",
 			   config.GetDVBStreamCommand().str(),
 			   card,
 			   nsecs,
