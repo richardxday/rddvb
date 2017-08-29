@@ -145,7 +145,8 @@ public:
 	AString GetSSHArgs()					 const {return GetConfigItem("sshargs", "");} // extractconfig()
 	AString GetSCPArgs()					 const {return GetConfigItem("scpargs", GetSSHArgs());} // extractconfig()
 	AString GetRsyncArgs()					 const {return GetConfigItem("rsyncargs", "");} // extractconfig()
-
+	AString GetRsyncBandwidthLimit()		 const {return GetConfigItem("rsyncbw", "");}
+	
 	AString GetServerHost()                  const {return GetConfigItem("serverhost", "");} // extractconfig()
 	uint_t  GetServerPort()                  const {return GetConfigItem("serverport", "1722");} // extractconfig()
 	AString GetServerGetAndConvertCommand()  const {return GetConfigItem("servergetandconvertcommand", "dvbgetandconvertrecorded");} // extractconfig()

@@ -188,6 +188,7 @@ int main(int argc, char *argv[])
 		printf("\t--count-hours\t\t\tCount total hours of programmes in current list\n");
 		printf("\t--find-gaps\t\t\tFind gap from now until the next working for each card\n");
 		printf("\t--stream <channel>\t\tStream DVB channel <channel> to mplayer (or other player)\n");
+		printf("\t--rawstream <channel>\t\tStream DVB channel <channel> to console (for piping to arbitrary programs)\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
 	}
 	else {
@@ -1556,14 +1557,19 @@ int main(int argc, char *argv[])
 				}
 				else fprintf(stderr, "Failed to read scheduled programmes file\n");
 			}
-			else if (stricmp(argv[i], "--stream") == 0) {
+			else if ((stricmp(argv[i], "--stream") == 0) ||
+					 (stricmp(argv[i], "--rawstream") == 0)) {
+				bool rawstream = (stricmp(argv[i], "--rawstream") == 0);
 				AString channel = argv[++i];
 				
 				if (config.GetRecordingSlave().Valid()) {
 					AString cmd1, cmd2;
 					
 					cmd1.printf("dvb --stream \"%s\"", channel.str());
-					cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
+
+					if (!rawstream) {
+						cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
+					}
 					
 					RunRemoteCommand(cmd1, cmd2, false);
 				}
@@ -1592,7 +1598,7 @@ int main(int argc, char *argv[])
 							if (pids.Valid()) {
 								cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)maxseconds, pids);
 
-								if (!config.IsRecordingSlave()) cmd.printf(" | %s", config.GetVideoPlayerCommand().str());
+								if (!config.IsRecordingSlave() && !rawstream) cmd.printf(" | %s", config.GetVideoPlayerCommand().str());
 								
 								if (system(cmd) != 0) {
 									fprintf(stderr, "Command '%s' failed!\n", cmd.str());
