@@ -1593,7 +1593,7 @@ int main(int argc, char *argv[])
 								maxseconds -= 10U;
 								maxseconds  = std::min(maxseconds, (uint64_t)0xfffffffU);
 							
-								fprintf(stderr, "Max stream time is %s seconds\n", AValue(maxseconds).ToString().str());
+								fprintf(stderr, "Max stream time is %s seconds, using card %u\n", AValue(maxseconds).ToString().str(), best.card);
 
 								if (pids.Empty()) {
 									channellist.GetPIDList(best.card, text, pids, true);
@@ -1621,7 +1621,7 @@ int main(int argc, char *argv[])
 								
 								if (((strnicmp(prog.GetTitle(), text, text.len()) == 0) ||
 									 (strnicmp(prog.GetSubtitle(), text, text.len()) == 0)) &&
-									AStdFile::exists(prog.GetFilename())) {
+									AStdFile::exists(prog.GetTempFilename())) {
 									break;
 								}
 							}
@@ -1629,7 +1629,7 @@ int main(int argc, char *argv[])
 							if (i < list.Count()) {
 								const ADVBProg& prog = list[i];
 
-								cmd.printf("cat \"%s\"", prog.GetFilename());
+								cmd.printf("cat \"%s\"", prog.GetTempFilename().str());
 								
 								fprintf(stderr, "Streaming '%s'\n", prog.GetTitle());
 							}
@@ -1644,8 +1644,6 @@ int main(int argc, char *argv[])
 				}
 
 				if (cmd.Valid()) {
-					fprintf(stderr, "Running command '%s'\n", cmd.str());
-
 					int res = system(cmd);
 					(void)res;
 				}
