@@ -146,6 +146,7 @@ public:
 	AString GetRelativePath(const AString& filename) const;
 
 	AString GetRecordingSlave()              const; // extractconfig()
+	uint_t  GetRecordingSlavePort()			 const;
 	AString GetSSHArgs()					 const; // extractconfig()
 	AString GetSCPArgs()					 const; // extractconfig()
 	AString GetRsyncArgs()					 const; // extractconfig()

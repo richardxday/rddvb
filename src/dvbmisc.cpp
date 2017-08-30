@@ -62,7 +62,7 @@ bool SendFileToRecordingSlave(const AString& filename)
 	bool    success;
 
 	//config.logit("'%s' -> '%s:%s'...", filename.str(), config.GetRecordingSlave().str(), filename.str());
-	cmd.printf("scp -p -C %s \"%s\" %s:\"%s\"", config.GetSCPArgs().str(), filename.str(), config.GetRecordingSlave().str(), filename.str());
+	cmd.printf("scp -p -C %s \"%s\" -P %u %s:\"%s\"", config.GetSCPArgs().str(), filename.str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), filename.str());
 	success = RunAndLogCommand(cmd);
 	//config.logit("'%s' -> '%s:%s' %s", filename.str(), config.GetRecordingSlave().str(), filename.str(), success ? "success" : "failed");
 
@@ -82,7 +82,7 @@ bool GetFileFromRecordingSlave(const AString& filename, const AString& localfile
 
 	remove(localfilename);
 	//config.logit("'%s:%s' -> '%s'...", config.GetRecordingSlave().str(), filename.str(), localfilename.str());
-	cmd.printf("scp -p -C %s %s:\"%s\" \"%s\"", config.GetSCPArgs().str(), config.GetRecordingSlave().str(), filename.str(), localfilename.str());
+	cmd.printf("scp -p -C %s -p %u %s:\"%s\" \"%s\"", config.GetSCPArgs().str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), filename.str(), localfilename.str());
 	success = RunAndLogCommand(cmd);
 	//config.logit("'%s:%s' -> '%s' %s", config.GetRecordingSlave().str(), filename.str(), localfilename.str(), success ? "success" : "failed");
 
@@ -94,7 +94,7 @@ bool RunRemoteCommand(const AString& cmd, const AString& postcmd, bool compress)
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd1;
 
-	cmd1.printf("ssh %s %s %s \"%s\"%s", compress ? "-C" : "", config.GetSSHArgs().str(), config.GetRecordingSlave().str(), cmd.Escapify().str(), postcmd.str());
+	cmd1.printf("ssh %s %s -p %u %s \"%s\"%s", compress ? "-C" : "", config.GetSSHArgs().str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), cmd.Escapify().str(), postcmd.str());
 
 	return RunAndLogCommand(cmd1);
 }

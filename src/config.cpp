@@ -804,7 +804,7 @@ AString ADVBConfig::GetVideoPlayerCommand() const
 
 AString ADVBConfig::GetTempFileSuffix() const
 {
-	return GetConfigItem("tempfilesuffix", "mp2ts");
+	return GetConfigItem("tempfilesuffix", "ts");
 }
 
 AString ADVBConfig::GetRecordedFileSuffix() const
@@ -945,6 +945,11 @@ AString ADVBConfig::GetEncodeLogLevel(const AString& user, bool verbose) const
 AString ADVBConfig::GetRecordingSlave() const
 {
 	return GetConfigItem("recordingslave", "");
+}
+
+uint_t ADVBConfig::GetRecordingSlavePort() const
+{
+	return (uint_t)GetConfigItem("recordingslaveport", "22");
 }
 
 AString ADVBConfig::GetSSHArgs() const
