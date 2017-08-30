@@ -1535,10 +1535,13 @@ int main(int argc, char *argv[])
 			else if (stricmp(argv[i], "--find-gaps") == 0) {
 				ADVBProgList list;
 
-				if (list.ReadFromFile(config.GetCombinedFile())) {
+				if (list.ReadFromFile(config.GetScheduledFile())) {
 					std::vector<ADVBProgList::TIMEGAP> gaps;
 					ADVBProgList::TIMEGAP best;
 					uint_t i;
+
+					list.ReadFromFile(config.GetRecordingFile());
+					list.Sort();
 
 					best = list.FindGaps(ADateTime().TimeStamp(true), gaps);
 
@@ -1555,7 +1558,9 @@ int main(int argc, char *argv[])
 						}
 					}
 				}
-				else fprintf(stderr, "Failed to read scheduled programmes file\n");
+				else {
+					fprintf(stderr, "Failed to read scheduled programmes file\n");
+				}
 			}
 			else if ((stricmp(argv[i], "--stream") == 0) ||
 					 (stricmp(argv[i], "--rawstream") == 0)) {
@@ -1580,11 +1585,14 @@ int main(int argc, char *argv[])
 					if (channellist.GetPIDList(0U, text, pids, false)) {
 						ADVBProgList list;
 						
-						if (list.ReadFromFile(config.GetCombinedFile())) {
+						if (list.ReadFromFile(config.GetScheduledFile())) {
 							std::vector<ADVBProgList::TIMEGAP> gaps;
 							ADVBProgList::TIMEGAP best;
 							uint64_t maxseconds;
-						
+
+							list.ReadFromFile(config.GetRecordingFile());
+							list.Sort();
+							
 							best = list.FindGaps(ADateTime().TimeStamp(true), gaps);
 							maxseconds = ((uint64_t)best.end - (uint64_t)best.start) / 1000U;
 
@@ -1607,7 +1615,9 @@ int main(int argc, char *argv[])
 							}
 							else fprintf(stderr, "No DVB card has big enough gap\n");
 						}
-						else fprintf(stderr, "Failed to read scheduled programmes file\n");
+						else {
+							fprintf(stderr, "Failed to read scheduled programmes file\n");	
+						}
 					}
 					else {
 						ADVBProgList list;
