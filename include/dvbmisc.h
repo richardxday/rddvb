@@ -18,7 +18,8 @@ extern bool RunAndLogCommand(const AString& cmd);
 extern bool SendFileToRecordingSlave(const AString& filename);
 extern bool GetFileFromRecordingSlave(const AString& filename);
 extern bool GetFileFromRecordingSlave(const AString& filename, const AString& localfilename);
-extern bool RunRemoteCommand(const AString& cmd, const AString& postcmd = "", bool compress = true);
+extern AString GetRemoteCommand(const AString& cmd, const AString& postcmd, bool compress = true);
+extern bool RunAndLogRemoteCommand(const AString& cmd, const AString& postcmd = "", bool compress = true);
 extern bool SendFileRunRemoteCommand(const AString& filename, const AString& cmd);
 extern bool RunRemoteCommandGetFile(const AString& cmd, const AString& filename);
 

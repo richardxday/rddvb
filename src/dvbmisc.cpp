@@ -89,24 +89,34 @@ bool GetFileFromRecordingSlave(const AString& filename, const AString& localfile
 	return success;
 }
 
-bool RunRemoteCommand(const AString& cmd, const AString& postcmd, bool compress)
+AString GetRemoteCommand(const AString& cmd, const AString& postcmd, bool compress)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd1;
 
 	cmd1.printf("ssh %s %s -p %u %s \"%s\"%s", compress ? "-C" : "", config.GetSSHArgs().str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), cmd.Escapify().str(), postcmd.str());
 
+	return cmd1;
+}
+
+bool RunAndLogRemoteCommand(const AString& cmd, const AString& postcmd, bool compress)
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString cmd1;
+	
+	cmd1.printf("ssh %s %s -p %u %s \"%s\" %s", compress ? "-C" : "", config.GetSSHArgs().str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), cmd.Escapify().str(), postcmd.str());
+
 	return RunAndLogCommand(cmd1);
 }
 
 bool SendFileRunRemoteCommand(const AString& filename, const AString& cmd)
 {
-	return (SendFileToRecordingSlave(filename) && RunRemoteCommand(cmd));
+	return (SendFileToRecordingSlave(filename) && RunAndLogRemoteCommand(cmd));
 }
 
 bool RunRemoteCommandGetFile(const AString& cmd, const AString& filename)
 {
-	return (RunRemoteCommand(cmd) && GetFileFromRecordingSlave(filename));
+	return (RunAndLogRemoteCommand(cmd) && GetFileFromRecordingSlave(filename));
 }
 
 bool TriggerServerCommand(const AString& cmd)

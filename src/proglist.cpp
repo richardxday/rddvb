@@ -1952,7 +1952,7 @@ bool ADVBProgList::RemoveFromRecordLists(const AString& uuid)
 		AString cmd;
 
 		cmd.printf("dvb --delete-from-record-lists \"%s\"", uuid.Escapify().str());
-		RunRemoteCommand(cmd);
+		RunAndLogRemoteCommand(cmd);
 	}
 
 	return removed;
@@ -3481,7 +3481,7 @@ bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, 
 
 				cmd.printf("dvb --schedule-record %s", prog.Base64Encode().str());
 
-				if (RunRemoteCommand(cmd)) {
+				if (RunAndLogRemoteCommand(cmd)) {
 					ADVBLock lock("dvbfiles");
 					ADVBProgList scheduledlist;
 

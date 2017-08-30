@@ -1560,31 +1560,29 @@ int main(int argc, char *argv[])
 			else if ((stricmp(argv[i], "--stream") == 0) ||
 					 (stricmp(argv[i], "--rawstream") == 0)) {
 				bool rawstream = (stricmp(argv[i], "--rawstream") == 0);
-				AString channel = argv[++i];
-				int res = -1;
+				AString text = argv[++i], cmd;
 				
 				if (config.GetRecordingSlave().Valid()) {
 					AString cmd1, cmd2;
 					
-					cmd1.printf("dvb --stream \"%s\"", channel.str());
+					cmd1.printf("dvb --stream \"%s\"", text.str());
 
 					if (!rawstream) {
 						cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
 					}
 					
-					RunRemoteCommand(cmd1, cmd2, false);
+					cmd = GetRemoteCommand(cmd1, cmd2, false);
 				}
 				else {
 					ADVBChannelList& channellist = ADVBChannelList::Get();
 					AString pids;
 
-					if (channellist.GetPIDList(0U, channel, pids, false)) {
+					if (channellist.GetPIDList(0U, text, pids, false)) {
 						ADVBProgList list;
 						
 						if (list.ReadFromFile(config.GetScheduledFile())) {
 							std::vector<ADVBProgList::TIMEGAP> gaps;
 							ADVBProgList::TIMEGAP best;
-							AString cmd;
 							uint64_t maxseconds;
 						
 							best = list.FindGaps(ADateTime().TimeStamp(true), gaps);
@@ -1598,17 +1596,15 @@ int main(int argc, char *argv[])
 								fprintf(stderr, "Max stream time is %s seconds\n", AValue(maxseconds).ToString().str());
 
 								if (pids.Empty()) {
-									channellist.GetPIDList(best.card, channel, pids, true);
+									channellist.GetPIDList(best.card, text, pids, true);
 								}
 
 								if (pids.Valid()) {
 									cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)maxseconds, pids);
 
 									if (!config.IsRecordingSlave() && !rawstream) cmd.printf(" | %s", config.GetVideoPlayerCommand().str());
-								
-									res = system(cmd);
 								}
-								else fprintf(stderr, "Failed to find PIDs for channel '%s'\n", channel.str());
+								else fprintf(stderr, "Failed to find PIDs for channel '%s'\n", text.str());
 							}
 							else fprintf(stderr, "No DVB card has big enough gap\n");
 						}
@@ -1623,8 +1619,8 @@ int main(int argc, char *argv[])
 							for (i = 0; i < list.Count(); i++) {
 								const ADVBProg& prog = list[i];
 								
-								if (((strnicmp(prog.GetTitle(), channel, channel.len()) == 0) ||
-									 (strnicmp(prog.GetSubtitle(), channel, channel.len()) == 0)) &&
+								if (((strnicmp(prog.GetTitle(), text, text.len()) == 0) ||
+									 (strnicmp(prog.GetSubtitle(), text, text.len()) == 0)) &&
 									AStdFile::exists(prog.GetFilename())) {
 									break;
 								}
@@ -1632,15 +1628,13 @@ int main(int argc, char *argv[])
 
 							if (i < list.Count()) {
 								const ADVBProg& prog = list[i];
-								AString cmd;
 
 								cmd.printf("cat \"%s\"", prog.GetFilename());
 								
 								fprintf(stderr, "Streaming '%s'\n", prog.GetTitle());
-								res = system(cmd);
 							}
 							else {
-								fprintf(stderr, "Failed to find a programme in running list (%u programmes long) matching '%s'\n", list.Count(), channel.str());
+								fprintf(stderr, "Failed to find a programme in running list (%u programmes long) matching '%s'\n", list.Count(), text.str());
 							}
 						}
 						else {
@@ -1649,7 +1643,12 @@ int main(int argc, char *argv[])
 					}
 				}
 
-				(void)res;
+				if (cmd.Valid()) {
+					fprintf(stderr, "Running command '%s'\n", cmd.str());
+
+					int res = system(cmd);
+					(void)res;
+				}
 			}
 			else if (stricmp(argv[i], "--return-count") == 0) {
 				res = proglist.Count();
