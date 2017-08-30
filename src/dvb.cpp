@@ -1535,7 +1535,7 @@ int main(int argc, char *argv[])
 			else if (stricmp(argv[i], "--find-gaps") == 0) {
 				ADVBProgList list;
 
-				if (list.ReadFromFile(config.GetScheduledFile())) {
+				if (list.ReadFromFile(config.GetCombinedFile())) {
 					std::vector<ADVBProgList::TIMEGAP> gaps;
 					ADVBProgList::TIMEGAP best;
 					uint_t i;
@@ -1580,7 +1580,7 @@ int main(int argc, char *argv[])
 					if (channellist.GetPIDList(0U, text, pids, false)) {
 						ADVBProgList list;
 						
-						if (list.ReadFromFile(config.GetScheduledFile())) {
+						if (list.ReadFromFile(config.GetCombinedFile())) {
 							std::vector<ADVBProgList::TIMEGAP> gaps;
 							ADVBProgList::TIMEGAP best;
 							uint64_t maxseconds;
@@ -1588,8 +1588,7 @@ int main(int argc, char *argv[])
 							best = list.FindGaps(ADateTime().TimeStamp(true), gaps);
 							maxseconds = ((uint64_t)best.end - (uint64_t)best.start) / 1000U;
 
-							if (maxseconds > 10U) {
-								
+							if ((best.card < config.GetMaxDVBCards()) && (maxseconds > 10U)) {
 								maxseconds -= 10U;
 								maxseconds  = std::min(maxseconds, (uint64_t)0xfffffffU);
 							

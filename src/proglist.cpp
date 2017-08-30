@@ -649,7 +649,7 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 	// keep track of 'depth' of file write so that file system sync is done at the *end*
 	// of the last write
 	writefiledepth++;
-	
+
 	config.printf("Writing '%s'", filename.str());
 
 	if (filename.Suffix() == "txt") {
@@ -701,7 +701,7 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 		// sync file system now to minimise chance of losing data
 		sync();
 	}
-		
+
 	return success;
 }
 
@@ -1334,7 +1334,7 @@ const ADVBProg *ADVBProgList::FindLastSimilar(const ADVBProg& prog, const ADVBPr
 			}
 		} while (i--);
 	}
-	
+
 	return res;
 }
 
@@ -3394,7 +3394,7 @@ ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	std::vector<std::vector<const ADVBProg *> > lists;
-	TIMEGAP res = {start, start, 0};
+	TIMEGAP res = {start, start, ~0U};
 	uint_t i;
 
 	config.GetPhysicalDVBCard(0);
@@ -3418,7 +3418,7 @@ ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector
 		gap.start = start;
 		gap.end   = ADateTime::MaxDateTime;
 		gap.card  = i;
-		
+
 		if (list.size() > 0) {
 			if (list[0]->GetRecordStartDT() < start) {
 				gap.start = list[0]->GetRecordStopDT();
@@ -3429,7 +3429,10 @@ ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector
 			else gap.end = list[0]->GetRecordStartDT();
 		}
 
-		if ((gap.end - gap.start) > (res.end - res.start)) res = gap;
+		if ((gap.start <= start) &&
+			((gap.end - gap.start) > (res.end - res.start))) {
+			res = gap;
+		}
 	}
 
 	return res;
