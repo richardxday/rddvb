@@ -94,19 +94,14 @@ AString GetRemoteCommand(const AString& cmd, const AString& postcmd, bool compre
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd1;
 
-	cmd1.printf("ssh %s %s -p %u %s \"%s\"%s", compress ? "-C" : "", config.GetSSHArgs().str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), cmd.Escapify().str(), postcmd.str());
+	cmd1.printf("ssh %s %s -p %u %s \"%s\" %s", compress ? "-C" : "", config.GetSSHArgs().str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), cmd.Escapify().str(), postcmd.str());
 
 	return cmd1;
 }
 
 bool RunAndLogRemoteCommand(const AString& cmd, const AString& postcmd, bool compress)
 {
-	const ADVBConfig& config = ADVBConfig::Get();
-	AString cmd1;
-	
-	cmd1.printf("ssh %s %s -p %u %s \"%s\" %s", compress ? "-C" : "", config.GetSSHArgs().str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), cmd.Escapify().str(), postcmd.str());
-
-	return RunAndLogCommand(cmd1);
+	return RunAndLogCommand(GetRemoteCommand(cmd, postcmd, compress));
 }
 
 bool SendFileRunRemoteCommand(const AString& filename, const AString& cmd)
