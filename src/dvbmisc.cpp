@@ -82,7 +82,7 @@ bool GetFileFromRecordingSlave(const AString& filename, const AString& localfile
 
 	remove(localfilename);
 	//config.logit("'%s:%s' -> '%s'...", config.GetRecordingSlave().str(), filename.str(), localfilename.str());
-	cmd.printf("scp -p -C %s -p %u %s:\"%s\" \"%s\"", config.GetSCPArgs().str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), filename.str(), localfilename.str());
+	cmd.printf("scp -p -C %s -P %u %s:\"%s\" \"%s\"", config.GetSCPArgs().str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), filename.str(), localfilename.str());
 	success = RunAndLogCommand(cmd);
 	//config.logit("'%s:%s' -> '%s' %s", config.GetRecordingSlave().str(), filename.str(), localfilename.str(), success ? "success" : "failed");
 
