@@ -48,7 +48,10 @@ bool RunAndLogCommand(const AString& cmd)
 	if (config.IsWebResponse()) cmd1.printf(" >>\"%s\" 2>&1", config.GetLogFile(ADateTime().GetDays()).str());
 	else						cmd1.printf(" 2>&1 | tee -a \"%s\"", config.GetLogFile(ADateTime().GetDays()).str());
 
-	//config.printf("Running '%s'", cmd1.str());
+	if (config.LogRemoteCommands()) {
+		config.logit("Running '%s'", cmd1.str());
+	}
+	
 	bool success = (system(cmd1) == 0);
 	if (!success) config.logit("Command '%s' failed", cmd.str());
 
@@ -62,7 +65,7 @@ bool SendFileToRecordingSlave(const AString& filename)
 	bool    success;
 
 	//config.logit("'%s' -> '%s:%s'...", filename.str(), config.GetRecordingSlave().str(), filename.str());
-	cmd.printf("scp -p -C %s \"%s\" -P %u %s:\"%s\"", config.GetSCPArgs().str(), filename.str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), filename.str());
+	cmd.printf("scp -p -C -P %u %s \"%s\" %s:\"%s\"", config.GetRecordingSlavePort(), config.GetSCPArgs().str(), filename.str(), config.GetRecordingSlave().str(), filename.str());
 	success = RunAndLogCommand(cmd);
 	//config.logit("'%s' -> '%s:%s' %s", filename.str(), config.GetRecordingSlave().str(), filename.str(), success ? "success" : "failed");
 
@@ -82,7 +85,7 @@ bool GetFileFromRecordingSlave(const AString& filename, const AString& localfile
 
 	remove(localfilename);
 	//config.logit("'%s:%s' -> '%s'...", config.GetRecordingSlave().str(), filename.str(), localfilename.str());
-	cmd.printf("scp -p -C %s -P %u %s:\"%s\" \"%s\"", config.GetSCPArgs().str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), filename.str(), localfilename.str());
+	cmd.printf("scp -p -C -P %u %s %s:\"%s\" \"%s\"", config.GetRecordingSlavePort(), config.GetSCPArgs().str(), config.GetRecordingSlave().str(), filename.str(), localfilename.str());
 	success = RunAndLogCommand(cmd);
 	//config.logit("'%s:%s' -> '%s' %s", config.GetRecordingSlave().str(), filename.str(), localfilename.str(), success ? "success" : "failed");
 

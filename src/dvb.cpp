@@ -1653,7 +1653,9 @@ int main(int argc, char *argv[])
 				}
 
 				if (cmd.Valid()) {
-					config.printf("Running command '%s'", cmd.str());
+					if (config.LogRemoteCommands()) {
+						config.logit("Running command '%s'", cmd.str());
+					}
 					
 					int res = system(cmd);
 					(void)res;

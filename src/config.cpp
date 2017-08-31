@@ -942,6 +942,11 @@ AString ADVBConfig::GetEncodeLogLevel(const AString& user, bool verbose) const
 	return verbose ? GetUserConfigItem(user, "processloglevel:verbose", "warning") : GetUserConfigItem(user, "processloglevel:normal", "error");
 }
 
+bool ADVBConfig::LogRemoteCommands() const
+{
+	return ((uint_t)GetConfigItem("logremotecommands", "0") != 0);
+}
+
 AString ADVBConfig::GetRecordingSlave() const
 {
 	return GetConfigItem("recordingslave", "");

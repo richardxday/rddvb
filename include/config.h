@@ -95,9 +95,9 @@ public:
 
 	AString GetDVBStreamCommand()			 const; // extractconfig()
 
-	AString GetMPlayerArgs()			 	 const;
-	uint_t  GetMPlayerCacheSize()		 	 const;
-	uint_t  GetMPlayerCacheMinSize()	 	 const;
+	AString GetMPlayerArgs()			 	 const; // extractconfig()
+	uint_t  GetMPlayerCacheSize()		 	 const; // extractconfig()
+	uint_t  GetMPlayerCacheMinSize()	 	 const; // extractconfig()
 	AString GetVideoPlayerCommand()			 const; // extractconfig()
 
 	AString GetTempFileSuffix()     		 const; // extractconfig()
@@ -145,8 +145,9 @@ public:
 
 	AString GetRelativePath(const AString& filename) const;
 
+	bool    LogRemoteCommands()              const; // extractconfig()
 	AString GetRecordingSlave()              const; // extractconfig()
-	uint_t  GetRecordingSlavePort()			 const;
+	uint_t  GetRecordingSlavePort()			 const; // extractconfig()
 	AString GetSSHArgs()					 const; // extractconfig()
 	AString GetSCPArgs()					 const; // extractconfig()
 	AString GetRsyncArgs()					 const; // extractconfig()
