@@ -1622,12 +1622,15 @@ int main(int argc, char *argv[])
 					else {
 						ADVBProgList list;
 
-						if (list.ReadFromFile(config.GetRecordingFile()) && (list.Count() > 0)) {
+						list.ReadFromFile(config.GetRecordedFile());
+						list.ReadFromFile(config.GetRecordingFile());
+						
+						if (list.Count() > 0) {
 							AString filename;
 							uint_t i;
 
-							for (i = 0; (i < list.Count()) && filename.Empty(); i++) {
-								const ADVBProg& prog = list[i];
+							for (i = list.Count(); (i > 0) && filename.Empty(); ) {
+								const ADVBProg& prog = list[--i];
 								
 								if ((strnicmp(prog.GetTitle(), text, text.len()) == 0) ||
 									(strnicmp(prog.GetSubtitle(), text, text.len()) == 0)) {
