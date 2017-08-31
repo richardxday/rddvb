@@ -1623,22 +1623,33 @@ int main(int argc, char *argv[])
 						ADVBProgList list;
 
 						if (list.ReadFromFile(config.GetRecordingFile()) && (list.Count() > 0)) {
+							AString filename;
 							uint_t i;
 
-							for (i = 0; i < list.Count(); i++) {
+							for (i = 0; (i < list.Count()) && filename.Empty(); i++) {
 								const ADVBProg& prog = list[i];
 								
-								if (((strnicmp(prog.GetTitle(), text, text.len()) == 0) ||
-									 (strnicmp(prog.GetSubtitle(), text, text.len()) == 0)) &&
-									AStdFile::exists(prog.GetTempFilename())) {
-									break;
+								if ((strnicmp(prog.GetTitle(), text, text.len()) == 0) ||
+									(strnicmp(prog.GetSubtitle(), text, text.len()) == 0)) {
+									if (AStdFile::exists(prog.GetFilename())) {
+										filename = prog.GetFilename();
+									}
+									else if (AStdFile::exists(prog.GetArchiveRecordingFilename())) {
+										filename = prog.GetArchiveRecordingFilename();
+									}
+									else if (AStdFile::exists(prog.GetTempRecordingFilename())) {
+										filename = prog.GetTempRecordingFilename();
+									}
+									else if (AStdFile::exists(prog.GetTempFilename())) {
+										filename = prog.GetTempFilename();
+									}
 								}
 							}
 
 							if (i < list.Count()) {
 								const ADVBProg& prog = list[i];
 
-								cmd.printf("cat \"%s\"", prog.GetTempFilename().str());
+								cmd.printf("cat \"%s\"", filename.str());
 								
 								fprintf(stderr, "Streaming '%s'\n", prog.GetTitle());
 							}

@@ -155,6 +155,9 @@ public:
 	AString GetFilenameStub() const;
 	AString GetTempFilename() const;
 
+	AString GetArchiveRecordingFilename() const;
+	AString GetTempRecordingFilename() const;
+
 	AString GetPrefItem(const AString& name, const AString& defval = "") const;
 
 	uint_t	GetRate() const {return GetActualLength() ? (uint_t)((8000 * GetFileSize()) / GetActualLength()) : 0;}
@@ -539,9 +542,6 @@ protected:
 
 	AString ReplaceTerms(const AString& str, bool filesystem = false) const;
 	AString ReplaceFilenameTerms(const AString& str, bool converted) const;
-
-	AString GetArchiveRecordingFilename() const;
-	AString GetTempRecordingFilename() const;
 	
 	AString GetLogFile() const;
 	bool    RunCommand(const AString& cmd, bool logoutput = false) const;
