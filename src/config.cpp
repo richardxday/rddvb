@@ -59,6 +59,10 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		{"episodelastfilenametemplate",  "{title}{sep}{episode}{sep}{date}{sep}{times}{sep}{episodeid}{sep}{subtitle}"},
 		{"dir",							 "{capitaluser}/{titledir}"},
 		{"dir:film",					 "Films"},
+		{"mindatarate:mpg",				 "12"},
+		{"mindatarate:mp4",				 "100"},
+		{"mindatarate:mp3",				 "12"},
+		{"mindatarate",					 "10"},
 	};
 	uint_t i;
 
@@ -1000,4 +1004,13 @@ AString ADVBConfig::GetServerUpdateRecordingsCommand() const
 AString ADVBConfig::GetServerRescheduleCommand() const
 {
 	return GetConfigItem("serverreschedulecommand", "dvbreschedule");
+}
+
+uint_t ADVBConfig::GetMinimalDataRate(const AString& filesuffix) const
+{
+	AString val = GetConfigItem("mindatarate:" + filesuffix);
+	if (val.Empty()) val = GetDefaultItem("mindatarate:" + filesuffix);
+	if (val.Empty()) val = GetConfigItem("mindatarate");
+	if (val.Empty()) val = GetDefaultItem("mindatarate");
+	return (uint_t)val;
 }

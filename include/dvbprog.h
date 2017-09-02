@@ -352,7 +352,7 @@ public:
 	AString Base64Encode() const {return ::Base64Encode((const uint8_t *)data, sizeof(*data) + data->strings.end);}
 
 	AString GetLinkToFile() const;
-	bool    UpdateFileSize(uint_t nsecs);
+	bool    UpdateFileSize();
 
 	void Record();
 	bool OnRecordSuccess() const;

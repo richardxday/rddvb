@@ -159,6 +159,8 @@ public:
 	AString GetServerUpdateRecordingsCommand() const; // extractconfig()
 	AString GetServerRescheduleCommand()     const; // extractconfig()
 
+	uint_t  GetMinimalDataRate(const AString& filesuffix) const; // extractconfig("<filesuffix>")
+	
 	// NOTE: function cheats 'const'!
 	void Set(const AString& var, const AString& val) const;
 

@@ -2151,7 +2151,7 @@ AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
 	return cmd;
 }
 
-bool ADVBProg::UpdateFileSize(uint_t nsecs)
+bool ADVBProg::UpdateFileSize()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	FILE_INFO info;
@@ -2162,20 +2162,22 @@ bool ADVBProg::UpdateFileSize(uint_t nsecs)
 		uint64_t oldfilesize = GetFileSize();
 		uint32_t rate        = 0;
 
-		if (nsecs) {
-			rate = (uint32_t)(info.FileSize / ((uint64_t)1024 * (uint64_t)nsecs));
+		if (GetActualLengthFallback() > 0) {
+			uint64_t divisor = (uint64_t)1024U * GetActualLengthFallback();
+			
+			rate = (uint32_t)(((uint64_t)1000U * info.FileSize + divisor / 2U) / divisor);
 		}
 		
 		config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s%s",
 					  GetFilename(),
-					  AValue(info.FileSize / ((uint64_t)1024 * (uint64_t)1024)).ToString().str(),
-					  AValue(nsecs).ToString().str(),
+					  AValue(info.FileSize / ((uint64_t)1024U * (uint64_t)1024U)).ToString().str(),
+					  AValue((GetActualLengthFallback() + 999U) / 1000U).ToString().str(),
 					  rate ? AValue(rate).ToString().str() : "<unknown>",
 					  oldfilesize ? AString(", file size ratio = %0.3;").Arg((double)info.FileSize / (double)oldfilesize).str() : "");
 
 		SetFileSize(info.FileSize);
 
-		valid = (rate > 0);
+		valid = (rate >= config.GetMinimalDataRate(filename.Suffix()));
 
 		if (!valid) config.printf("File considered to be invalid as rate it too small!");
 	}
@@ -2350,8 +2352,6 @@ void ADVBProg::Record()
 
 			cmd = GenerateRecordCommand(nsecs, pids);
 
-			data->actstart = ADateTime().TimeStamp(true);
-
 			config.printf("Running '%s'", cmd.str());
 
 			SetRecording();
@@ -2360,8 +2360,10 @@ void ADVBProg::Record()
 			TriggerServerCommand(config.GetServerUpdateRecordingsCommand());
 
 			config.printf("--------------------------------------------------------------------------------");
+			data->actstart = ADateTime().TimeStamp(true);
 			config.writetorecordlog("start %s", Base64Encode().str());
 			res = system(cmd);
+			data->actstop = ADateTime().TimeStamp(true);
 			config.writetorecordlog("stop %s", Base64Encode().str());
 			config.printf("--------------------------------------------------------------------------------");
 
@@ -2372,11 +2374,9 @@ void ADVBProg::Record()
 
 			if (res == 0) {
 				AString  str;
-				uint64_t dt = (uint64_t)ADateTime().TimeStamp(true);
+				uint64_t dt = GetActualStop();
 				uint64_t st = GetStop();
-
-				data->actstop = dt;
-
+				
 				if (rename(GetTempFilename(), GetFilename()) == 0) {
 					SetRecordingComplete();
 
@@ -2397,7 +2397,13 @@ void ADVBProg::Record()
 						// force reschedule
 						failed = true;
 					}
-					else if (UpdateFileSize(nsecs)) {
+					else if (!UpdateFileSize()) {
+						config.printf("Record of '%s' ('%s') is not valid or doesn't exist", GetTitleAndSubtitle().str(), GetFilename());
+
+						// force reschedule
+						failed = true;
+					}
+					else {
 						config.printf("Adding '%s' to list of recorded programmes", GetTitleAndSubtitle().str());
 
 						ClearScheduled();
@@ -2420,10 +2426,6 @@ void ADVBProg::Record()
 						if (success) success = ConvertVideoEx();
 						if (success) OnRecordSuccess();
 						else		 failed  = true;
-					}
-					else {
-						config.printf("Record of '%s' ('%s') is not valid or doesn't exist", GetTitleAndSubtitle().str(), filename.str());
-						failed = true;
 					}
 				}
 				else {
@@ -2627,7 +2629,7 @@ bool ADVBProg::PostProcess()
 		success = postprocessed = RunCommand("nice " + postcmd);
 
 		SetPostProcessed();
-		UpdateFileSize((uint_t)((GetActualLengthFallback() + 999) / 1000));
+		UpdateFileSize();
 
 		ADVBProgList::RemoveFromList(config.GetProcessingFile(), *this);
 		ClearPostProcessing();
@@ -3150,7 +3152,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	if (success) {
 		SetFilename(dst);
 
-		UpdateFileSize((uint_t)((GetActualLengthFallback() + 999) / 1000));
+		UpdateFileSize();
 
 		{
 			FlagsSaver saver(this);
