@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <map>
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
@@ -2081,7 +2082,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 
 	{
 		ADVBProgList programmeslostlist;
-
+		
 		// find programmes in old schedule list but not in new one
 		programmeslostlist.FindDifferences(oldscheduledlist, scheduledlist, true, false);
 
@@ -2096,7 +2097,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 			}
 			else i++;
 		}
-
+		
 		if (programmeslostlist.Count() > 0) {
 			AString cmd;
 
@@ -2113,8 +2114,8 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 					for (i = 0; i < programmeslostlist.Count(); i++) {
 						const ADVBProg& prog = programmeslostlist.GetProg(i);
 
-						config.logit("%s", prog.GetDescription().str());
-						fp.printf("%s\n", prog.GetDescription().str());
+						config.logit("%s", prog.GetQuickDescription().str());
+						fp.printf("%s\n", prog.GetDescription(10).str());
 					}
 
 					fp.close();
@@ -2129,6 +2130,77 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		}
 	}
 
+	{
+		ADVBProgList newprogrammeslist;
+		std::map<AString,bool> titlesandseries;
+		
+		// find programmes in new schedile list but not in old one
+		newprogrammeslist.FindDifferences(oldscheduledlist, scheduledlist, false, true);
+
+		// compile list of titles and series already recorded
+		for (i = 0; i < recordedlist.Count(); i++) {
+			const ADVBProg& prog = recordedlist[i];
+
+			if (!prog.IsFilm()) {
+				const ADVBProg::EPISODE& ep = prog.GetEpisode();
+				AString key = ep.valid ? AString("%;[%;]").Arg(prog.GetTitle()).Arg(ep.series) : AString(prog.GetTitle());
+
+				titlesandseries[key] = true;
+			}
+		}
+		
+		// strip any programmes in new list that:
+		// 1. Are a film
+		// 2. The title and series has previously been recorded
+		for (i = 0; i < newprogrammeslist.Count();) {
+			const ADVBProg& prog = newprogrammeslist[i];
+			bool delprog = prog.IsFilm();
+			
+			if (!delprog) {
+				const ADVBProg::EPISODE& ep = prog.GetEpisode();
+				AString key = ep.valid ? AString("%;[%;]").Arg(prog.GetTitle()).Arg(ep.series) : AString(prog.GetTitle());
+
+				delprog = (titlesandseries.find(key) != titlesandseries.end());
+			}
+			
+			if (delprog) {
+				newprogrammeslist.DeleteProg(i);
+			}
+			else i++;
+		}
+		
+		if (newprogrammeslist.Count() > 0) {
+			AString cmd;
+
+			config.printf("%u new programmes/series in scheduling", newprogrammeslist.Count());
+
+			if ((cmd = config.GetConfigItem("newprogrammescmd")).Valid()) {
+				AString  filename = config.GetLogDir().CatPath("new-programmes-text-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
+				AStdFile fp;
+
+				if (fp.open(filename, "w")) {
+					config.logit("New programmes/series scheduled at %s:", ADateTime().DateToStr().str());
+					fp.printf("New programmes/series scheduled at %s:\n", ADateTime().DateToStr().str());
+
+					for (i = 0; i < newprogrammeslist.Count(); i++) {
+						const ADVBProg& prog = newprogrammeslist.GetProg(i);
+
+						config.logit("%s", prog.GetQuickDescription().str());
+						fp.printf("%s\n", prog.GetDescription(10).str());
+					}
+
+					fp.close();
+
+					cmd = cmd.SearchAndReplace("{logfile}", filename);
+
+					RunAndLogCommand(cmd);
+				}
+
+				//remove(filename);
+			}
+		}
+	}
+	
 	if ((newrejectedlist.Count() > 0) ||
 		(oldrejectedlist.Count() > 0)) {
 		AString cmd;
