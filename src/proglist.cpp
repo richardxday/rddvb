@@ -7,7 +7,6 @@
 #include <unistd.h>
 
 #include <algorithm>
-#include <map>
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
@@ -2131,24 +2130,14 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	}
 
 	{
-		ADVBProgList newprogrammeslist;
 		std::map<AString,bool> titlesandseries;
+		ADVBProgList newprogrammeslist;
+
+		recordedlist.CompileTitlesAndSeriesList(titlesandseries);
 		
 		// find programmes in new schedile list but not in old one
 		newprogrammeslist.FindDifferences(oldscheduledlist, scheduledlist, false, true);
 
-		// compile list of titles and series already recorded
-		for (i = 0; i < recordedlist.Count(); i++) {
-			const ADVBProg& prog = recordedlist[i];
-
-			if (!prog.IsFilm()) {
-				const ADVBProg::EPISODE& ep = prog.GetEpisode();
-				AString key = ep.valid ? AString("%;[%;]").Arg(prog.GetTitle()).Arg(ep.series) : AString(prog.GetTitle());
-
-				titlesandseries[key] = true;
-			}
-		}
-		
 		// strip any programmes in new list that:
 		// 1. Are a film
 		// 2. The title and series has previously been recorded
@@ -3593,3 +3582,21 @@ bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, 
 
 	return success;
 }
+
+void ADVBProgList::CompileTitlesAndSeriesList(std::map<AString,bool>& titlesandseries) const
+{
+	uint_t i;
+	
+	// compile list of titles and series already recorded
+	for (i = 0; i < Count(); i++) {
+		const ADVBProg& prog = GetProg(i);
+
+		if (!prog.IsFilm()) {
+			const ADVBProg::EPISODE& ep = prog.GetEpisode();
+			AString key = ep.valid ? AString("%;[%;]").Arg(prog.GetTitle()).Arg(ep.series) : AString(prog.GetTitle());
+
+			titlesandseries[key] = true;
+		}
+	}
+}
+		

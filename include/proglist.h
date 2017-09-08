@@ -1,6 +1,8 @@
 #ifndef __DVB_PROGLIST__
 #define __DVB_PROGLIST__
 
+#include <map>
+
 #include <rdlib/strsup.h>
 #include <rdlib/Hash.h>
 #include <rdlib/DataList.h>
@@ -106,13 +108,13 @@ public:
 	void CountOverlaps(const ADVBProg::PROGLISTLIST& repeatlists, const ADateTime& starttime);
 	void PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *recstarttimes, uint_t nlists, ADVBProgList& rejectedlist, const ADateTime& starttime);
 	uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));
-
+	
 	typedef struct {
 		AString   title;
 		ADataList list;
 	} SERIES;
 	void FindSeries(AHash& hash) const;
-
+	
 	typedef struct {
 		double recordedfactor;
 		double scheduledfactor;
@@ -125,6 +127,8 @@ public:
 	void FindPopularTitles(AList& list, double (*fn)(const ADVBProg& prog, void *context), void *context = NULL) const;
 
 	void EnhanceListings();
+
+	void CompileTitlesAndSeriesList(std::map<AString,bool>& titlesandseries) const;
 
 	typedef struct {
 		bool   valid;

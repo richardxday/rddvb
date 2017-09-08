@@ -1562,6 +1562,21 @@ int main(int argc, char *argv[])
 					fprintf(stderr, "Failed to read scheduled programmes file\n");
 				}
 			}
+			else if (stricmp(argv[i], "--find-new-programmes") == 0) {
+				ADVBLock lock("files");
+				ADVBProgList reclist;
+				ADVBProgList schlist;
+
+				if (reclist.ReadFromFile(config.GetRecordedFile())) {
+					if (schlist.ReadFromFile(config.GetScheduledFile())) {
+						lock.ReleaseLock();
+
+						
+					}
+					else fprintf(stderr, "Failed to read scheduled programmes list\n");
+				}
+				else fprintf(stderr, "Failed to read recorded programmes list\n");
+			}
 			else if ((stricmp(argv[i], "--stream") == 0) ||
 					 (stricmp(argv[i], "--rawstream") == 0)) {
 				bool rawstream = (stricmp(argv[i], "--rawstream") == 0);
