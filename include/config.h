@@ -160,6 +160,8 @@ public:
 	AString GetServerRescheduleCommand()     const; // extractconfig()
 
 	uint_t  GetMinimalDataRate(const AString& filesuffix) const; // extractconfig("<filesuffix>")
+
+	uint_t  GetScheduleReportVerbosity(const AString& type = "") const; // extractconfig("<type>")
 	
 	// NOTE: function cheats 'const'!
 	void Set(const AString& var, const AString& val) const;

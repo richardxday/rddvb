@@ -2115,7 +2115,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 						const ADVBProg& prog = programmeslostlist.GetProg(i);
 
 						config.logit("%s", prog.GetQuickDescription().str());
-						fp.printf("%s\n", prog.GetDescription(10).str());
+						fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("lost")).str());
 					}
 
 					fp.close();
@@ -2186,7 +2186,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 						const ADVBProg& prog = newprogrammeslist.GetProg(i);
 
 						config.logit("%s", prog.GetQuickDescription().str());
-						fp.printf("%s\n", prog.GetDescription(10).str());
+						fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("new")).str());
 					}
 
 					fp.close();
@@ -2653,7 +2653,7 @@ bool ADVBProgList::WriteToJobList()
 				if (fp.open(filename, "w")) {
 					fp.printf("The following programmes have NOT been scheduled:\n");
 					for (i = 0; i < unscheduledlist.Count(); i++) {
-						fp.printf("%s\n", unscheduledlist[i].GetDescription(10).str());
+						fp.printf("%s\n", unscheduledlist[i].GetDescription(config.GetScheduleReportVerbosity("schedulefailed")).str());
 					}
 					fp.close();
 
