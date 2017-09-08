@@ -29,23 +29,15 @@ typedef struct {
 
 bool forcelogging = false;
 
-static bool __DisplaySeries(const AString& key, uptr_t value, void *context)
+static void DisplaySeries(const ADVBProgList::SERIES& series)
 {
-	UNUSED(context);
+	uint_t j;
 
-	if (value) {
-		const ADVBProgList::SERIES& series = *(const ADVBProgList::SERIES *)value;
-		const ADataList& serieslist = series.list;
-		uint_t j;
+	for (j = 0; j < series.list.size(); j++) {
+		const AString& str = series.list[j];
 
-		for (j = 0; j < serieslist.Count(); j++) {
-			const AString *str = (const AString *)serieslist[j];
-
-			if (str) printf("Programme '%s' series %u: %s\n", key.str(), j, str->str());
-		}
+		if (str.Valid()) printf("Programme '%s' series %u: %s\n", series.title.str(), j, str.str());
 	}
-
-	return true;
 }
 
 #if EVALTEST
@@ -187,6 +179,7 @@ int main(int argc, char *argv[])
 		printf("\t--reset-assigned-episodes\tReset assigned episodes to current list\n");
 		printf("\t--count-hours\t\t\tCount total hours of programmes in current list\n");
 		printf("\t--find-gaps\t\t\tFind gap from now until the next working for each card\n");
+		printf("\t--find-new-programmes\t\tFind programmes that have been scheduled that are either new or from a new series\n");
 		printf("\t--stream <text>\t\t\tStream DVB channel or programme being recorded <text> to mplayer (or other player)\n");
 		printf("\t--rawstream <text>\t\tStream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)\n");
 		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
@@ -979,12 +972,15 @@ int main(int argc, char *argv[])
 				else config.printf("Failed to read recorded programme list");
 			}
 			else if (stricmp(argv[i], "--find-series") == 0) {
-				AHash series;
-
+				ADVBProgList::SERIESLIST series;
+				ADVBProgList::SERIESLIST::iterator it;
+				
 				proglist.FindSeries(series);
 
-				printf("Found series for %u programmes\n", series.GetItems());
-				series.Traverse(&__DisplaySeries);
+				printf("Found series for %u programmes\n", (uint_t)series.size());
+				for (it = series.begin(); it != series.end(); ++it) {
+					DisplaySeries(it->second);
+				}
 			}
 			else if (stricmp(argv[i], "--fix-data-in-recorded") == 0) {
 				ADVBLock     lock("dvbfiles");
@@ -1563,15 +1559,24 @@ int main(int argc, char *argv[])
 				}
 			}
 			else if (stricmp(argv[i], "--find-new-programmes") == 0) {
-				ADVBLock lock("files");
+				ADVBLock     lock("dvbfiles");
 				ADVBProgList reclist;
 				ADVBProgList schlist;
 
-				if (reclist.ReadFromFile(config.GetRecordedFile())) {
+				if (reclist.ReadFromFile(config.GetRecordedFile())) {					
 					if (schlist.ReadFromFile(config.GetScheduledFile())) {
+						ADVBProgList::SERIESLIST serieslist;
+						uint_t i;
+						
 						lock.ReleaseLock();
 
-						
+						reclist.FindSeries(serieslist);
+						schlist.StripFilmsAndSeries(serieslist);
+
+						printf("Found %u new programmes\n", schlist.Count());
+						for (i = 0; i < schlist.Count(); i++) {
+							printf("%s\n", schlist[i].GetDescription(verbosity).str());
+						}						
 					}
 					else fprintf(stderr, "Failed to read scheduled programmes list\n");
 				}

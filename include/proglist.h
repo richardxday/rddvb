@@ -2,6 +2,7 @@
 #define __DVB_PROGLIST__
 
 #include <map>
+#include <vector>
 
 #include <rdlib/strsup.h>
 #include <rdlib/Hash.h>
@@ -110,11 +111,14 @@ public:
 	uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));
 	
 	typedef struct {
-		AString   title;
-		ADataList list;
+		AString				 title;
+		std::vector<AString> list;
 	} SERIES;
-	void FindSeries(AHash& hash) const;
+	typedef std::map<AString,SERIES> SERIESLIST;
+	void FindSeries(SERIESLIST& serieslist) const;
 	
+	void StripFilmsAndSeries(const SERIESLIST& serieslist);
+
 	typedef struct {
 		double recordedfactor;
 		double scheduledfactor;
@@ -127,8 +131,6 @@ public:
 	void FindPopularTitles(AList& list, double (*fn)(const ADVBProg& prog, void *context), void *context = NULL) const;
 
 	void EnhanceListings();
-
-	void CompileTitlesAndSeriesList(std::map<AString,bool>& titlesandseries) const;
 
 	typedef struct {
 		bool   valid;

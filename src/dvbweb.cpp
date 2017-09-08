@@ -117,17 +117,17 @@ void printseries(const ADVBProgList::SERIES& serieslist)
 	uint_t j;
 
 	printf(",\"series\":[");
-	for (j = 0; j < serieslist.list.Count(); j++) {
-		const AString *str = (const AString *)serieslist.list[j];
+	for (j = 0; j < serieslist.list.size(); j++) {
+		const AString& str = serieslist.list[j];
 
 		if (j > 0) printf(",");
 		printf("{\"state\":");
-		if (str) {
-			if (str->Pos("-") >= 0) printf("\"incomplete\"");
-			else					printf("\"complete\"");
+		if (str.Valid()) {
+			if (str.Pos("-") >= 0) printf("\"incomplete\"");
+			else	 			   printf("\"complete\"");
 		}
 		else printf("\"empty\"");
-		printf(",\"episodes\":\"%s\"}", str ? str->str() : "");
+		printf(",\"episodes\":\"%s\"}", str.str());
 	}
 	printf("]");
 }
@@ -251,18 +251,18 @@ int main(int argc, char *argv[])
 			DataSource_Patterns,
 			DataSource_Logs,
 		};
-		ADVBProgList 	  recordedlist, scheduledlist, requestedlist, rejectedlist, combinedlist, failureslist, recordinglist, processinglist;
-		ADVBProgList 	  list[2], *proglist = NULL;
-		AHash     		  titleshash;
-		ADataList 		  titleslist;
-		ADataList	      patternlist;
-		ADVBPatterns::PATTERN filterpattern;
-		AHash 			  patterns(&ADVBPatterns::__DeletePattern);
-		AHash 			  fullseries;
-		AString           from;
-		uint_t 			  pagesize = (uint_t)config.GetConfigItem("pagesize", "20"), page = 0;
-		uint_t 			  datasource = DataSource_Progs;
-		uint_t 			  index = 0;
+		ADVBProgList 	  		 recordedlist, scheduledlist, requestedlist, rejectedlist, combinedlist, failureslist, recordinglist, processinglist;
+		ADVBProgList 	  		 list[2], *proglist = NULL;
+		AHash     		  		 titleshash;
+		ADataList 		  		 titleslist;
+		ADataList	      		 patternlist;
+		ADVBPatterns::PATTERN	 filterpattern;
+		AHash					 patterns(&ADVBPatterns::__DeletePattern);
+		ADVBProgList::SERIESLIST fullseries;
+		AString           		 from;
+		uint_t 			  		 pagesize = (uint_t)config.GetConfigItem("pagesize", "20"), page = 0;
+		uint_t 			  		 datasource = DataSource_Progs;
+		uint_t 			  		 index = 0;
 
 		recordedlist.ReadFromFile(config.GetRecordedFile());
 		recordedlist.CreateHash();
@@ -658,9 +658,11 @@ int main(int argc, char *argv[])
 							printf("}");
 						}
 
-						const ADVBProgList::SERIES *serieslist = (const ADVBProgList::SERIES *)fullseries.Read(prog.GetTitle());
-						if (serieslist) printseries(*serieslist);
-
+						ADVBProgList::SERIESLIST::const_iterator it;
+						if ((it = fullseries.find(prog.GetTitle())) != fullseries.end()) {
+							printseries(it->second);
+						}
+						
 						printf("}");
 					}
 
@@ -683,8 +685,10 @@ int main(int argc, char *argv[])
 						printf(",\"notfilm\":%u", title.counts.notfilm);
 						printf(",\"total\":%u", title.counts.total);
 
-						const ADVBProgList::SERIES *serieslist = (const ADVBProgList::SERIES *)fullseries.Read(title.title);
-						if (serieslist) printseries(*serieslist);
+						ADVBProgList::SERIESLIST::const_iterator it;
+						if ((it = fullseries.find(prog.GetTitle())) != fullseries.end()) {
+							printseries(it->second);
+						}
 
 						printf("}");
 					}

@@ -2130,34 +2130,17 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 	}
 
 	{
-		std::map<AString,bool> titlesandseries;
+		SERIESLIST serieslist;
 		ADVBProgList newprogrammeslist;
 
-		recordedlist.CompileTitlesAndSeriesList(titlesandseries);
+		recordedlist.FindSeries(serieslist);
 		
 		// find programmes in new schedile list but not in old one
 		newprogrammeslist.FindDifferences(oldscheduledlist, scheduledlist, false, true);
 
-		// strip any programmes in new list that:
-		// 1. Are a film
-		// 2. The title and series has previously been recorded
-		for (i = 0; i < newprogrammeslist.Count();) {
-			const ADVBProg& prog = newprogrammeslist[i];
-			bool delprog = prog.IsFilm();
-			
-			if (!delprog) {
-				const ADVBProg::EPISODE& ep = prog.GetEpisode();
-				AString key = ep.valid ? AString("%;[%;]").Arg(prog.GetTitle()).Arg(ep.series) : AString(prog.GetTitle());
+		// strip any programmes that are either films or from a series already recorded
+		newprogrammeslist.StripFilmsAndSeries(serieslist);
 
-				delprog = (titlesandseries.find(key) != titlesandseries.end());
-			}
-			
-			if (delprog) {
-				newprogrammeslist.DeleteProg(i);
-			}
-			else i++;
-		}
-		
 		if (newprogrammeslist.Count() > 0) {
 			AString cmd;
 
@@ -3239,14 +3222,12 @@ bool ADVBProgList::CheckRecordingNow()
 	return success;
 }
 
-void ADVBProgList::FindSeries(AHash& hash) const
+void ADVBProgList::FindSeries(SERIESLIST& serieslist) const
 {
 	uint_t i;
 
-	hash.Delete();
-	hash.SetDestructor(&DeleteSeries);
-	hash.EnableCaseInSensitive(true);
-
+	serieslist.clear();
+	
 	for (i = 0; i < Count(); i++) {
 		const ADVBProg&          prog    = GetProg(i);
 		const ADVBProg::EPISODE& episode = prog.GetEpisode();
@@ -3255,7 +3236,6 @@ void ADVBProgList::FindSeries(AHash& hash) const
 			uint_t ser = episode.series;
 			uint_t epn = episode.episode;
 			uint_t ept = episode.episodes;
-			SERIES *series;
 
 			if (!ser) {
 				if (epn >= 100) ept = 100;
@@ -3263,58 +3243,42 @@ void ADVBProgList::FindSeries(AHash& hash) const
 				epn = 1 + ((epn - 1) % 100);
 			}
 
-			if (((series = (SERIES *)hash.Read(prog.GetTitle())) == NULL) &&
-				((series = new SERIES) != NULL)) {
-				series->title = prog.GetTitle();
-				series->list.SetDestructor(&AString::DeleteString);
-				hash.Insert(prog.GetTitle(), (uptr_t)series);
+			SERIES& series = serieslist[prog.GetTitle()];
+			if (series.title.Empty()) series.title = prog.GetTitle();
+
+			if (ser >= series.list.size()) series.list.resize(ser + 1);
+
+			AString& str = series.list[ser];
+			int len = (int)std::max(ept, epn);
+			if (str.len() < len) str += AString("-").Copies(len - str.len());
+
+			uint_t ind = epn - 1;
+			char t = str[ind], t1 = t;
+
+			if		(prog.IsScheduled())	    t1 = 's';
+			else if	(prog.HasRecordingFailed()) t1 = 'f';
+			else if	(prog.IsAvailable())  		t1 = 'a';
+			else if	(prog.IsRecorded())  		t1 = 'r';
+			else if (prog.IsRejected())  		t1 = 'x';
+			
+			static const char *allowablechanges[] = {
+				"-sfarx",
+				"sfar",
+				"fsrax",
+				"asx",
+				"rasx",
+				"xsfar",
+			};
+			uint_t i;
+			for (i = 0; i < NUMBEROF(allowablechanges); i++) {
+				if ((t == allowablechanges[i][0]) && strchr(allowablechanges[i] + 1, t1)) {
+					t = t1;
+					break;
+				}
 			}
 
-			if (series) {
-				ADataList& list = series->list;
-				AString    *str;
-
-				if (((str = (AString *)list[ser]) == NULL) &&
-					((str = new AString) != NULL)) {
-					list.Replace(ser, (uptr_t)str);
-					*str = AString("-").Copies(ept);
-				}
-
-				if (str) {
-					AString& elist = *str;
-					uint_t   ind   = epn - 1;
-
-					if (ind >= (uint_t)elist.len()) elist += AString("-").Copies(ind + 1 - elist.len());
-
-					char t = elist[ind], t1 = t;
-					if		(prog.IsScheduled())	    t1 = 's';
-					else if	(prog.HasRecordingFailed()) t1 = 'f';
-					else if	(prog.IsAvailable())  		t1 = 'a';
-					else if	(prog.IsRecorded())  		t1 = 'r';
-					else if (prog.IsRejected())  		t1 = 'x';
-
-					static const char *allowablechanges[] = {
-						"-sfarx",
-						"sfar",
-						"fsrax",
-						"asx",
-						"rasx",
-						"xsfar",
-					};
-					uint_t i;
-					for (i = 0; i < NUMBEROF(allowablechanges); i++) {
-						if ((t == allowablechanges[i][0]) && strchr(allowablechanges[i] + 1, t1)) {
-							t = t1;
-							break;
-						}
-					}
-
-					if (t != elist[ind]) {
-						elist = elist.Left(ind) + AString(t) + elist.Mid(ind + 1);
-					}
-
-					//debug("%s: %u/%u: %s (%s)\n", prog.GetTitle(), ser, epn, str->str(), prog.GetDescription(1).str());
-				}
+			if (t != str[ind]) {
+				str = str.Left(ind) + AString(t) + str.Mid(ind + 1);
 			}
 		}
 	}
@@ -3583,20 +3547,29 @@ bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, 
 	return success;
 }
 
-void ADVBProgList::CompileTitlesAndSeriesList(std::map<AString,bool>& titlesandseries) const
+void ADVBProgList::StripFilmsAndSeries(const SERIESLIST& serieslist)
 {
 	uint_t i;
 	
-	// compile list of titles and series already recorded
-	for (i = 0; i < Count(); i++) {
+	for (i = 0; i < Count();) {
 		const ADVBProg& prog = GetProg(i);
+		bool delprog = prog.IsFilm();
 
-		if (!prog.IsFilm()) {
+		if (!delprog) {
+			SERIESLIST::const_iterator it = serieslist.find(prog.GetTitle());
 			const ADVBProg::EPISODE& ep = prog.GetEpisode();
-			AString key = ep.valid ? AString("%;[%;]").Arg(prog.GetTitle()).Arg(ep.series) : AString(prog.GetTitle());
 
-			titlesandseries[key] = true;
+			delprog = ((it != serieslist.end()) &&
+					   (!ep.valid ||
+						(ep.valid &&
+						 (ep.series > 0) &&
+						 (ep.series < it->second.list.size()) &&
+						 it->second.list[ep.series].Valid())));
 		}
+			
+		if (delprog) {
+			DeleteProg(i);
+		}
+		else i++;
 	}
 }
-		
