@@ -1017,6 +1017,6 @@ uint_t ADVBConfig::GetMinimalDataRate(const AString& filesuffix) const
 
 uint_t ADVBConfig::GetScheduleReportVerbosity(const AString& type) const
 {
-	AString defval = GetConfigItem("schedulereportverbosity", "4");
+	AString defval = GetConfigItem("schedulereportverbosity", "1");
 	return (uint_t)(type.Valid() ? GetConfigItem("schedulereportverbosity:" + type, defval) : defval);
 }
