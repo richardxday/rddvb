@@ -256,12 +256,18 @@ uint16_t ADVBProg::GetScoreDataOffset()
 	return DVBPROG_OFFSET(score);
 }
 
-#if DVBDATVERSION > 1
-uint16_t ADVBProg::GetTagsDataOffset()
+void ADVBProg::ModifySearchValue(const ADVBPatterns::FIELD *field, AString& value)
 {
-	return DVBPROG_OFFSET(strings.tags);
-}
+	if ((stricmp(field->name, "channel")    == 0) ||
+		(stricmp(field->name, "dvbchannel") == 0)) {
+		value = value.SearchAndReplace("_", " ");
+	}
+#if DVBDATVERSION > 1
+	else if (stricmp(field->name, "tags") == 0) {
+		value = "|" + value + "|";
+	}
 #endif
+}
 
 void ADVBProg::Init()
 {

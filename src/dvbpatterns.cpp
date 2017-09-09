@@ -819,6 +819,8 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 					while (IsWhiteSpace(line[i])) i++;
 				}
 
+				ADVBProg::ModifySearchValue(fieldptr, value);
+
 				bool orflag;
 				i = CheckOrStatement(line, i, orflag);
 
@@ -836,12 +838,6 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 
 					switch (term->field->type) {
 						case FieldType_string:
-#if DVBDATVERSION > 1
-							if (fieldptr->offset == ADVBProg::GetTagsDataOffset()) {
-								value = "|" + value + "|";
-							}
-#endif
-
 							if ((opcode & ~Operator_Inverted) == Operator_Regex) {
 								AString regexerrors;
 								AString rvalue;

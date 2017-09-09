@@ -113,9 +113,10 @@ AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name) const
 {
 	CHANNELMAP::const_iterator it;
+	const AString chname = name.SearchAndReplace("_", " ");
 	const CHANNEL *chan = NULL;
-	
-	if ((it = map.find(name.ToLower())) != map.end()) {
+
+	if ((it = map.find(chname.ToLower())) != map.end()) {
 		chan = it->second;
 	}
 
@@ -125,13 +126,16 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString&
 ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name, bool create)
 {
 	CHANNELMAP::const_iterator it;
+	const AString chname = name.SearchAndReplace("_", " ");
 	CHANNEL *chan = NULL;
 
-	if ((it = map.find(name.ToLower())) != map.end()) chan = it->second;
+	if ((it = map.find(chname.ToLower())) != map.end()) {
+		chan = it->second;
+	}
 
 	if (!chan && create && ((chan = new CHANNEL) != NULL)) {
-		chan->name = name;
-		chan->convertedname = ConvertDVBChannel(name);
+		chan->name = chname;
+		chan->convertedname = ConvertDVBChannel(chname);
 
 		list.push_back(chan);
 		map[chan->name.ToLower()] = chan;

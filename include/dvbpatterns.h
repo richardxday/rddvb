@@ -61,6 +61,14 @@ public:
 		bool	  orflag;
 	} TERMDATA;
 
+	typedef struct {
+		const char *name;
+		uint8_t    type;
+		bool       assignable;
+		uint16_t   offset;
+		const char *desc;
+	} FIELD;
+
 	static const TERMDATA *GetTermData(const PATTERN& pattern, uint_t term) {return &(((const TERM *)pattern.list[term])->data);}
 	
 protected:
@@ -153,14 +161,6 @@ protected:
 		FieldTypes_Prog    = 1U << FieldType_prog,
 		FieldTypes_Default = ~(FieldTypes_String | FieldTypes_Prog),
 	};
-
-	typedef struct {
-		const char *name;
-		uint8_t    type;
-		bool       assignable;
-		uint16_t   offset;
-		const char *desc;
-	} FIELD;
 
 	typedef struct {
 		const char *str;

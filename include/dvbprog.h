@@ -378,6 +378,8 @@ public:
 
 	static bool GetFileFormat(const AString& filename, AString& format);
 
+	static void ModifySearchValue(const ADVBPatterns::FIELD *field, AString& value);
+
 	static bool debugsameprogramme;
 
 protected:
@@ -508,9 +510,6 @@ protected:
 #endif
 	static uint16_t GetPriDataOffset();
 	static uint16_t GetScoreDataOffset();
-#if DVBDATVERSION > 1
-	static uint16_t GetTagsDataOffset();
-#endif
 
 	static AString SanitizeString(const AString& str, bool filesystem = false, bool dir = false);
 
