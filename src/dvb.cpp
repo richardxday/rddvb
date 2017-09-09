@@ -1669,12 +1669,12 @@ int main(int argc, char *argv[])
 								}
 							}
 
-							if (i < list.Count()) {
+							if (filename.Valid()) {
 								const ADVBProg& prog = list[i];
 
 								cmd.printf("cat \"%s\"", filename.str());
 								
-								fprintf(stderr, "Streaming '%s'\n", prog.GetTitle());
+								fprintf(stderr, "Streaming '%s'\n", prog.GetDescription(1).str());
 							}
 							else {
 								fprintf(stderr, "Failed to find a programme in running list (%u programmes long) matching '%s'\n", list.Count(), text.str());
