@@ -785,7 +785,7 @@ AString ADVBConfig::GetDVBStreamCommand() const
 
 AString ADVBConfig::GetMPlayerArgs() const
 {
-	return GetConfigItem("mplayerargs", "-vf yadif=1");
+	return GetConfigItem("mplayerargs", "");
 }
 
 uint_t ADVBConfig::GetMPlayerCacheSize() const
