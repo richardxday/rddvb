@@ -1585,7 +1585,7 @@ int main(int argc, char *argv[])
 			else if ((stricmp(argv[i], "--stream") == 0) ||
 					 (stricmp(argv[i], "--rawstream") == 0)) {
 				bool rawstream = (stricmp(argv[i], "--rawstream") == 0);
-				AString text = AString(argv[++i]), cmd;
+				AString text = AString(argv[++i]).DeEscapify(), cmd;
 
 				ADVBConfig::GetWriteable(true);
 				
