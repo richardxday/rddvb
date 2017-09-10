@@ -24,7 +24,7 @@ AQuitHandler quithandler;
 ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false),
 						   defaults(&AString::DeleteString),
 						   configrecorder(NULL),
-						   webresponse(false)
+						   disableoutput(false)
 {
 	const struct passwd *pw = getpwuid(getuid());
 	static const struct {
@@ -101,15 +101,15 @@ ADVBConfig::~ADVBConfig()
 {
 }
 
-const ADVBConfig& ADVBConfig::Get(bool webresponse)
+const ADVBConfig& ADVBConfig::Get(bool disableoutput)
 {
-	return (const ADVBConfig &)ADVBConfig::GetWriteable(webresponse);
+	return (const ADVBConfig &)ADVBConfig::GetWriteable(disableoutput);
 }
 
-ADVBConfig& ADVBConfig::GetWriteable(bool webresponse)
+ADVBConfig& ADVBConfig::GetWriteable(bool disableoutput)
 {
 	static ADVBConfig config;
-	if (webresponse) config.WebResponse();
+	if (disableoutput) config.DisableOutput();
 	return config;
 }
 
@@ -399,7 +399,7 @@ void ADVBConfig::vlogit(const char *fmt, va_list ap, bool show) const
 		fp.close();
 	}
 
-	if (show && !webresponse) {
+	if (show && !disableoutput) {
 		Stdout->printf("%s\n", str.str());
 	}
 }

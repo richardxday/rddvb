@@ -45,8 +45,8 @@ bool RunAndLogCommand(const AString& cmd)
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd1 = cmd;
 
-	if (config.IsWebResponse()) cmd1.printf(" >>\"%s\" 2>&1", config.GetLogFile(ADateTime().GetDays()).str());
-	else						cmd1.printf(" 2>&1 | tee -a \"%s\"", config.GetLogFile(ADateTime().GetDays()).str());
+	if (config.IsOutputDisabled()) cmd1.printf(" >>\"%s\" 2>&1", config.GetLogFile(ADateTime().GetDays()).str());
+	else						   cmd1.printf(" 2>&1 | tee -a \"%s\"", config.GetLogFile(ADateTime().GetDays()).str());
 
 	if (config.LogRemoteCommands()) {
 		config.logit("Running '%s'", cmd1.str());

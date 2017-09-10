@@ -13,11 +13,11 @@
 
 class ADVBConfig {
 public:
-	static const ADVBConfig& Get(bool webresponse = false);
-	static ADVBConfig& GetWriteable(bool webresponse = false);
+	static const ADVBConfig& Get(bool disableoutput = false);
+	static ADVBConfig& GetWriteable(bool disableoutput = false);
 
-	void WebResponse() {webresponse = true;}
-	bool IsWebResponse() const {return webresponse;}
+	void DisableOutput() {disableoutput = true;}
+	bool IsOutputDisabled() const {return disableoutput;}
 
 	AString GetConfigItem(const AString& name) const;
 	AString GetDefaultItem(const AString& name) const;
@@ -205,7 +205,7 @@ protected:
 	AHash			 	 defaults;
 	std::vector<uint_t>  dvbcards;
 	std::vector<AString> *configrecorder;
-	bool				 webresponse;
+	bool				 disableoutput;
 };
 
 #endif

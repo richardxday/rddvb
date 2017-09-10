@@ -1585,7 +1585,9 @@ int main(int argc, char *argv[])
 			else if ((stricmp(argv[i], "--stream") == 0) ||
 					 (stricmp(argv[i], "--rawstream") == 0)) {
 				bool rawstream = (stricmp(argv[i], "--rawstream") == 0);
-				AString text = argv[++i], cmd;
+				AString text = AString(argv[++i]), cmd;
+
+				ADVBConfig::GetWriteable(true);
 				
 				if (config.GetRecordingSlave().Valid()) {
 					AString cmd1, cmd2;
@@ -1646,6 +1648,7 @@ int main(int argc, char *argv[])
 						list.ReadFromFile(config.GetRecordedFile());
 						list.ReadFromFile(config.GetRecordingFile());
 
+						//fprintf(stderr, "Search pattern '%s'\n", text.str());
 						list.FindProgrammes(list1, text, errors);
 
 						if (errors.Valid()) {
