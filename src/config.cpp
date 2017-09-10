@@ -355,6 +355,23 @@ uint_t ADVBConfig::GetVirtualDVBCard(uint_t n) const
 	return ((it = std::find(dvbcards.begin(), dvbcards.end(), n)) != dvbcards.end()) ? *it : ~0;
 }
 
+AString ADVBConfig::GetIgnoreDVBCardList() const
+{
+	return GetConfigItem("ignoredvbcards", "");
+}
+
+bool ADVBConfig::IgnoreDVBCard(uint_t n) const
+{
+	AString cards = GetIgnoreDVBCardList();
+	uint_t i, ncards = cards.CountColumns();
+
+	for (i = 0; i < ncards; i++) {
+		if ((uint_t)cards.Column(i) == n) return true;
+	}
+
+	return false;
+}
+
 void ADVBConfig::Set(const AString& var, const AString& val) const
 {
 	// must cheat const system

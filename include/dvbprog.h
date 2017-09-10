@@ -85,7 +85,7 @@ public:
 	void		SetActualStop(uint64_t dt)     {data->actstop  = dt;}
 
 	uint64_t    GetActualLengthFallback() const {return GetActualLength() ? GetActualLength() : (GetRecordLength() ? GetRecordLength() : GetLength());}
-	
+
 	enum {
 		TimeIndex_Start = 0,
 		TimeIndex_Stop,
@@ -151,7 +151,7 @@ public:
 	static void SetDateFormat(const AString& str) 	  {dateformat 	  = str;}
 	static void SetTimeFormat(const AString& str) 	  {timeformat 	  = str;}
 	static void SetFullTimeFormat(const AString& str) {fulltimeformat = str;}
-	
+
 	AString GetFilenameStub() const;
 	AString GetTempFilename() const;
 
@@ -184,7 +184,7 @@ public:
 	const EPISODE& GetEpisode() 		 const {return data->episode;}
 	AString GetEpisodeString()  		 const;
 	AString GetShortEpisodeID()			 const;
-	
+
 	uint_t GetAssignedEpisode()          const {return data->assignedepisode;}
 	void SetAssignedEpisode(uint16_t ep) 	   {data->assignedepisode = ep;}
 
@@ -215,7 +215,7 @@ public:
 		Flag_partialpattern,
 		Flag_ignorelatestart,
 		Flag_recordifmissing,
-		
+
 		Flag_count,
 
 		_Flag_extra_start = 32,
@@ -290,19 +290,19 @@ public:
 	void   SetRecordIfMissing()			{SetFlag(Flag_recordifmissing);}
 	void   ClearRecordIfMissing()		{ClrFlag(Flag_recordifmissing);}
 	bool   RecordIfMissing()	  const {return GetFlag(Flag_recordifmissing);}
-	
+
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}
 
 	uint_t GetPreHandle()      	  const {return data->prehandle;}
 	uint_t GetPostHandle()     	  const {return data->posthandle;}
-	uint_t GetDVBCard()	   	   	  const {return data->dvbcard;}
+	uint_t GetDVBCard()	   	   	  const {return data->dvbcard;}	// NOTE: virtual card number!
 	uint_t GetJobID()		   	  const {return data->jobid;}
 
 	void   SetPri(sint_t pri)			{data->pri     = pri;}
 	void   SetScore(sint_t score)		{data->score   = score;}
 
-	void   SetDVBCard(uint8_t card)     {data->dvbcard = card;}
+	void   SetDVBCard(uint8_t card)     {data->dvbcard = card;}	// NOTE: virtual card number!
 	void   SetJobID(uint_t id)		    {data->jobid   = id;}
 
 	bool   RecordDataValid()   	  const {return (data->recstart || data->recstop);}
@@ -325,21 +325,21 @@ public:
 
 	typedef std::vector<ADVBProg *> PROGLIST;
 	typedef std::vector<PROGLIST *> PROGLISTLIST;
-	
+
 	void ClearList() {list = NULL;}
 	void AddToList(PROGLIST *list);
 	PROGLIST *GetList() const {return list;}
 	void RemoveFromList();
-	
+
 	static int CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context);
-	
+
 	void   SetPriorityScore(const ADateTime& starttime);
 	double GetPriorityScore() const {return priority_score;}
 	bool   BiasPriorityScore(const ADVBProg& prog);
 
 	bool   CountOverlaps(const ADVBProgList& proglist);
 	uint_t GetOverlaps() const {return overlaps;}
-	
+
 	typedef ADVBPatterns::PATTERN PATTERN;
 	bool Match(const PATTERN& pattern) const {return ADVBPatterns::Match(*this, pattern);}
 	void AssignValues(const PATTERN& pattern) {ADVBPatterns::AssignValues(*this, pattern);}
@@ -348,7 +348,7 @@ public:
 	static int SortListByOverlaps(uptr_t item1, uptr_t item2, void *context);
 	static int CompareScore(const ADVBProg& prog1, const ADVBProg& prog2);
 	static int SortListByScore(uptr_t item1, uptr_t item2, void *context);
-	
+
 	AString Base64Encode() const {return ::Base64Encode((const uint8_t *)data, sizeof(*data) + data->strings.end);}
 
 	AString GetLinkToFile() const;
@@ -364,7 +364,7 @@ public:
 	bool IsConverted() const;
 	bool ConvertVideo(bool verbose = false, bool cleanup = true, bool force = false);
 	bool ForceConvertVideo(bool verbose = false, bool cleanup = true);
-	
+
 	void GetEncodedFiles(AList& files) const;
 	bool DeleteEncodedFiles() const;
 
@@ -541,7 +541,7 @@ protected:
 
 	AString ReplaceTerms(const AString& str, bool filesystem = false) const;
 	AString ReplaceFilenameTerms(const AString& str, bool converted) const;
-	
+
 	AString GetLogFile() const;
 	bool    RunCommand(const AString& cmd, bool logoutput = false) const;
 
@@ -560,7 +560,7 @@ protected:
 	} MEDIAFILE;
 
 	static bool CompareMediaFiles(const MEDIAFILE& file1, const MEDIAFILE& file2);
-	
+
 	void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect);
 	bool EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose) const;
 

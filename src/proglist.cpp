@@ -742,13 +742,13 @@ ADVBProgList& ADVBProgList::FindDifferences(ADVBProgList& list1, ADVBProgList& l
 
 	if (in1only) {
 		for (i = 0; i < list1.Count(); i++) {
-			if (!list2.FindUUID(list1[i])) AddProg(list1[i]);
+			if (!list2.FindSimilar(list1[i])) AddProg(list1[i]);
 		}
 	}
 
 	if (in2only) {
 		for (i = 0; i < list2.Count(); i++) {
-			if (!FindUUID(list2[i]) && !list1.FindUUID(list2[i])) AddProg(list2[i]);
+			if (!FindUUID(list2[i]) && !list1.FindSimilar(list2[i])) AddProg(list2[i]);
 		}
 	}
 
@@ -2012,7 +2012,9 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 
 		config.logit("%s%s",
 					 prog.GetDescription(1).str(),
-					 ((rprog = runninglist.FindUUID(prog)) != NULL) ? AString(" (recording on DVB card %s)").Arg(rprog->GetDVBCard()).str() : "");
+					 ((rprog = runninglist.FindUUID(prog)) != NULL) ? AString(" (recording on DVB card %u, hardware card %u)").
+					 Arg(rprog->GetDVBCard()).
+					 Arg(config.GetPhysicalDVBCard(rprog->GetDVBCard())).str() : "");
 	}
 	config.logit("--------------------------------------------------------------------------------");
 
@@ -2100,7 +2102,12 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		if (programmeslostlist.Count() > 0) {
 			AString cmd;
 
-			config.printf("%u programmes lost from scheduling", programmeslostlist.Count());
+			config.printf("%u programmes lost from scheduling:", programmeslostlist.Count());
+			for (i = 0; i < programmeslostlist.Count(); i++) {
+				const ADVBProg& prog = programmeslostlist.GetProg(i);
+
+				config.printf("%s", prog.GetQuickDescription().str());
+			}
 
 			if ((cmd = config.GetConfigItem("programmeslostcmd")).Valid()) {
 				AString  filename = config.GetLogDir().CatPath("programmes-lost-text-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
@@ -2113,7 +2120,6 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 					for (i = 0; i < programmeslostlist.Count(); i++) {
 						const ADVBProg& prog = programmeslostlist.GetProg(i);
 
-						config.logit("%s", prog.GetQuickDescription().str());
 						fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("lost")).str());
 					}
 
@@ -2137,14 +2143,19 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		
 		// find programmes in new schedile list but not in old one
 		newprogrammeslist.FindDifferences(oldscheduledlist, scheduledlist, false, true);
-
+		
 		// strip any programmes that are either films or from a series already recorded
 		newprogrammeslist.StripFilmsAndSeries(serieslist);
 
 		if (newprogrammeslist.Count() > 0) {
 			AString cmd;
 
-			config.printf("%u new programmes/series in scheduling", newprogrammeslist.Count());
+			config.printf("%u new programmes/series in scheduling:", newprogrammeslist.Count());
+			for (i = 0; i < newprogrammeslist.Count(); i++) {
+				const ADVBProg& prog = newprogrammeslist.GetProg(i);
+
+				config.printf("%s", prog.GetQuickDescription().str());
+			}
 
 			if ((cmd = config.GetConfigItem("newprogrammescmd")).Valid()) {
 				AString  filename = config.GetLogDir().CatPath("new-programmes-text-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
@@ -2157,7 +2168,6 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 					for (i = 0; i < newprogrammeslist.Count(); i++) {
 						const ADVBProg& prog = newprogrammeslist.GetProg(i);
 
-						config.logit("%s", prog.GetQuickDescription().str());
 						fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("new")).str());
 					}
 
@@ -2338,12 +2348,14 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 			uint_t vcard = (i + j) % nlists;
 			ADVBProgList& schedulelist = schedulelists[vcard];
 
+			// card must be available (not ignored)
 			// programme must start after list's rec start time and not overlap anything already on it
 			// run twice over the scheduling list for each card:
 			// once not allowing any overlapping of pre- and post- handles
-			if (((j <  nlists) && (prog.GetRecordStart() >= recstarttimes[vcard]) && !schedulelist.FindRecordOverlap(prog)) ||
-				// and once allowing the overlapping of pre- and post- handles
-				((j >= nlists) && (prog.GetStart()       >= recstarttimes[vcard]) && !schedulelist.FindOverlap(prog))) {
+			if (!config.IgnoreDVBCard(vcard) &&
+				(((j <  nlists) && (prog.GetRecordStart() >= recstarttimes[vcard]) && !schedulelist.FindRecordOverlap(prog)) ||
+				 // and once allowing the overlapping of pre- and post- handles
+				 ((j >= nlists) && (prog.GetStart()       >= recstarttimes[vcard]) && !schedulelist.FindOverlap(prog)))) {
 				// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
 				const ADVBProg::PROGLIST& list = *prog.GetList();
 				uint_t entry = std::find(list.begin(), list.end(), &prog) - list.begin();
@@ -2480,7 +2492,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 	if (runninglist.Count()) {
 		for (i = 0; i < runninglist.Count(); i++) {
 			const ADVBProg& prog = runninglist[i];
-			uint_t vcard = config.GetVirtualDVBCard(prog.GetDVBCard());
+			uint_t vcard = prog.GetDVBCard();
 
 			if (vcard < ncards) {
 				recstarttimes[vcard] = std::max(recstarttimes[vcard], (uint64_t)(prog.GetRecordStop() + 10000));
@@ -2516,7 +2528,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 	PrioritizeProgrammes(schedulelists, recstarttimes, ncards, allrejectedlist, starttime);
 	//ADVBProg::debugsameprogramme = false;
 
-	for (i = 0; i < ncards; i++) {
+	for (i = 0; i < ncards; i++) {		
 		ADVBProgList& scheduledlist = schedulelists[i];
 		const ADVBProg *errorprog;
 		uint_t dvbcard = config.GetPhysicalDVBCard(i);
@@ -3423,12 +3435,17 @@ ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector
 	uint_t i;
 
 	config.GetPhysicalDVBCard(0);
-	gaps.resize(config.GetMaxDVBCards());
 	lists.resize(config.GetMaxDVBCards());
-
+	gaps.resize(config.GetMaxDVBCards());
+	
 	for (i = 0; i < Count(); i++) {
 		const ADVBProg& prog = GetProg(i);
 
+		if (prog.GetDVBCard() >= (uint_t)lists.size()) {
+			lists.resize(prog.GetDVBCard() + 1);
+			gaps.resize(lists.size());
+		}
+		
 		if (prog.GetDVBCard() < (uint_t)lists.size()) {
 			std::vector<const ADVBProg *>& list = lists[prog.GetDVBCard()];
 
@@ -3442,7 +3459,7 @@ ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector
 
 		gap.start = start;
 		gap.end   = ADateTime::MaxDateTime;
-		gap.card  = i;
+		gap.card  = i;	// NOTE: virtual card
 
 		if (list.size() > 0) {
 			if (list[0]->GetRecordStartDT() < start) {

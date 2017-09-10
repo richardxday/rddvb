@@ -1918,8 +1918,10 @@ bool ADVBProg::WriteToJobQueue()
 			str.CutLine(n - 1, "\n", 0);
 		}
 
-		str.printf("\nCard %u, priority %d, Recording %s - %s\n",
-				   GetDVBCard(), GetPri(),
+		str.printf("\nDVB card %u (hardware card %u), priority %d, Recording %s - %s\n",
+				   GetDVBCard(),
+				   config.GetPhysicalDVBCard(GetDVBCard()),
+				   GetPri(),
 				   GetRecordStartDT().UTCToLocal().DateFormat(dayformat + dateformat + fulltimeformat).str(),
 				   GetRecordStopDT().UTCToLocal().DateFormat(fulltimeformat).str());
 
@@ -2119,12 +2121,13 @@ int ADVBProg::SortListByScore(uptr_t item1, uptr_t item2, void *context)
 
 bool ADVBProg::GetRecordPIDs(AString& pids, bool update) const
 {
+	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBChannelList& channellist = ADVBChannelList::Get();
 	AString dvbchannel = GetDVBChannel();
 
 	if (dvbchannel.Empty()) dvbchannel = GetChannel();
 
-	return channellist.GetPIDList(GetDVBCard(), dvbchannel, pids, update);
+	return channellist.GetPIDList(config.GetPhysicalDVBCard(GetDVBCard()), dvbchannel, pids, update);
 }
 
 AString ADVBProg::GenerateStreamCommand(uint_t card, uint_t nsecs, const AString& pids, const AString& logfile)
@@ -2134,7 +2137,7 @@ AString ADVBProg::GenerateStreamCommand(uint_t card, uint_t nsecs, const AString
 
 	cmd.printf("nice -10 %s -c %u -n %u -f %s -o 2>>\"%s\"",
 			   config.GetDVBStreamCommand().str(),
-			   card,
+			   config.GetPhysicalDVBCard(card),
 			   nsecs,
 			   pids.str(),
 			   logfile.str());
@@ -2148,7 +2151,7 @@ AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
 	AString cmd;
 
 	cmd.printf("%s >\"%s\"",
-			   GenerateStreamCommand(config.GetPhysicalDVBCard(GetDVBCard()),
+			   GenerateStreamCommand(GetDVBCard(),
 									 nsecs,
 									 pids, 
 									 config.GetLogFile().str()).str(),

@@ -109,6 +109,8 @@ public:
 	uint_t  GetPhysicalDVBCard(uint_t n, bool forcemapping = false) const;
 	uint_t  GetVirtualDVBCard(uint_t n)      const;
 	uint_t  GetMaxDVBCards()				 const;
+	AString GetIgnoreDVBCardList()			 const; // extractconfig()
+	bool    IgnoreDVBCard(uint_t n)          const;
 	AString GetDVBFrequencyRange()           const; // extractconfig()
 
 	uint_t  GetLatestStart()			     const; // extractconfig()
