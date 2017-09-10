@@ -1640,37 +1640,40 @@ int main(int argc, char *argv[])
 						}
 					}
 					else {
-						ADVBProgList list;
-
+						ADVBProgList list, list1;
+						AString errors;
+						
 						list.ReadFromFile(config.GetRecordedFile());
 						list.ReadFromFile(config.GetRecordingFile());
-						
-						if (list.Count() > 0) {
+
+						list.FindProgrammes(list1, text, errors);
+
+						if (errors.Valid()) {
+							fprintf(stderr, "Errors found in pattern: %s\n", errors.str());
+						}
+						else if (list1.Count() > 0) {
 							AString filename;
 							uint_t i;
 
-							for (i = list.Count(); (i > 0) && filename.Empty(); ) {
-								const ADVBProg& prog = list[--i];
+							for (i = list1.Count(); (i > 0) && filename.Empty(); ) {
+								const ADVBProg& prog = list1[--i];
 								
-								if ((strnicmp(prog.GetTitle(), text, text.len()) == 0) ||
-									(strnicmp(prog.GetSubtitle(), text, text.len()) == 0)) {
-									if (AStdFile::exists(prog.GetFilename())) {
-										filename = prog.GetFilename();
-									}
-									else if (AStdFile::exists(prog.GetArchiveRecordingFilename())) {
-										filename = prog.GetArchiveRecordingFilename();
-									}
-									else if (AStdFile::exists(prog.GetTempRecordingFilename())) {
-										filename = prog.GetTempRecordingFilename();
-									}
-									else if (AStdFile::exists(prog.GetTempFilename())) {
-										filename = prog.GetTempFilename();
-									}
+								if (AStdFile::exists(prog.GetFilename())) {
+									filename = prog.GetFilename();
+								}
+								else if (AStdFile::exists(prog.GetArchiveRecordingFilename())) {
+									filename = prog.GetArchiveRecordingFilename();
+								}
+								else if (AStdFile::exists(prog.GetTempRecordingFilename())) {
+									filename = prog.GetTempRecordingFilename();
+								}
+								else if (AStdFile::exists(prog.GetTempFilename())) {
+									filename = prog.GetTempFilename();
 								}
 							}
 
 							if (filename.Valid()) {
-								const ADVBProg& prog = list[i];
+								const ADVBProg& prog = list1[i];
 
 								cmd.printf("cat \"%s\"", filename.str());
 								
@@ -1681,7 +1684,7 @@ int main(int argc, char *argv[])
 							}
 						}
 						else {
-							fprintf(stderr, "No programmes being recorded\n");
+							fprintf(stderr, "No programmes found with pattern\n");
 						}
 					}
 				}
