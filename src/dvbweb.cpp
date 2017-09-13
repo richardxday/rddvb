@@ -724,6 +724,7 @@ int main(int argc, char *argv[])
 
 			{
 				AList users;
+				
 				printf(",\"users\":[");
 
 				printuserdetails("");
