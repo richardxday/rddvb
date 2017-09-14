@@ -2886,7 +2886,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
 		cmd.printf("nice projectx -ini %s/X.ini \"%s\"", config.GetConfigDir().str(), src.str());
 
-		RunCommand(cmd, !verbose);
+		success &= RunCommand(cmd, !verbose);
 		remove(basename + ".sup");
 		remove(basename + ".sup.IFO");
 	}
