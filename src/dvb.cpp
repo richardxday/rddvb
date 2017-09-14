@@ -73,6 +73,43 @@ int main(int argc, char *argv[])
 
 	(void)prog;
 
+#if 0
+	if (argc == 1) {
+		ADVBLock lock("dvbfiles");
+		ADVBProgList list;
+
+		if (list.ReadFromFile(config.GetRecordedFile())) {
+			uint_t i;
+			uint_t n = 0;
+			
+			for (i = 0; i < list.Count(); i++) {
+				ADVBProg& prog = list.GetProgWritable(i);
+				AString filename = prog.GetFilename();
+
+				if (filename.FilePart() == ".") {
+					AString convertedfilename   = prog.GenerateFilename(true);
+					AString unconvertedfilename = prog.GenerateFilename(false);
+					if (AStdFile::exists(convertedfilename)) {
+						prog.SetFilename(convertedfilename);
+					}
+					else if (AStdFile::exists(unconvertedfilename)) {
+						prog.SetFilename(unconvertedfilename);
+					}
+					else if (prog.GetStartDT() < ADateTime("today,00:00:00")) {
+						prog.SetFilename(convertedfilename);
+					}
+					printf("Changed '%s' from '%s' to '%s'\n", prog.GetQuickDescription().str(), filename.str(), prog.GetFilename());
+					n++;
+				}
+			}
+
+			if (n > 0) {
+				list.WriteToFile(config.GetRecordedFile());
+			}
+		}
+	}
+#endif
+	
 	if ((argc == 1) || ((argc > 1) && ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)))) {
 		printf("Usage: dvb {<file>|<cmd> ...}\n");
 		printf("Where <cmd> is:\n");
@@ -153,8 +190,9 @@ int main(int argc, char *argv[])
 		printf("\t--find-series\t\t\tFind series' in programme list\n");
 		printf("\t--fix-data-in-recorded\t\tFix incorrect metadata of certain programmes and rename files as necessary\n");
 		printf("\t--set-recorded-flag\t\tSet recorded flag on all programmes in recorded list\n");
-		printf("\t--set-ignore-flag <patterns>\tSet ignore recording flag on programmes matching pattern\n");
-		printf("\t--clr-ignore-flag <patterns>\tClear ignore recording flag on programmes matching pattern\n");
+		printf("\t--list-flags\t\t\tList flags that can be used for --set-flag and --clr-flag\n");
+		printf("\t--set-flag <flag> <patterns>\tSet flag <flag> on programmes matching pattern\n");
+		printf("\t--clr-flag <flag> <patterns>\tClear flag <flag> on programmes matching pattern\n");
 		printf("\t--check-disk-space\t\tCheck disk space for all patterns\n");
 		printf("\t--update-recording-complete\tUpdate recording complete flag in every recorded programme\n");
 		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
@@ -1112,48 +1150,55 @@ int main(int argc, char *argv[])
 			else if (stricmp(argv[i], "--check-recording-file") == 0) {
 				ADVBProgList::CheckRecordingFile();
 			}
-			else if ((stricmp(argv[i], "--set-ignore-flag") == 0) ||
-					 (stricmp(argv[i], "--clr-ignore-flag") == 0)) {
-				ADVBLock     lock("dvbfiles");
-				ADVBProgList reclist;
-				bool         ignore = (stricmp(argv[i], "--set-ignore-flag") == 0);
-				AString      patterns = argv[++i], errors;
+			else if (stricmp(argv[i], "--list-flags") == 0) {
+				std::vector<AString> flags;
+				size_t i;
+				
+				ADVBProg::GetFlagList(flags, false);
 
-				if (reclist.ReadFromFile(config.GetRecordedFile())) {
-					ADVBProgList reslist;
-					uint_t j, changed = 0;
+				printf("Flags:\n");
+				for (i = 0; i < flags.size(); i++) {
+					printf("%s\n", flags[i].str());
+				}
+			}
+			else if ((stricmp(argv[i], "--set-flag") == 0) ||
+					 (stricmp(argv[i], "--clr-flag") == 0)) {
+				ADVBProgList reslist;
+				bool    set      = (stricmp(argv[i], "--set-flag") == 0);
+				AString flagname = argv[++i];
+				AString patterns = argv[++i], errors;
+				uint_t j, changed = 0;
 
-					reclist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
+				if (ADVBProg::IsFlagNameValid(flagname)) {
+					proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
 
-					config.printf("Found %u programme%s", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
+					printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 
 					if (errors.Valid()) {
-						config.printf("Errors:");
-
+						printf("Errors:\n");
+					
 						uint_t j, n = errors.CountLines();
-						for (j = 0; j < n; j++) config.printf("%s", errors.Line(j).str());
+						for (j = 0; j < n; j++) printf("%s\n", errors.Line(j).str());
 					}
 
 					for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
 						ADVBProg *prog;
 
-						if ((prog = reclist.FindUUIDWritable(reslist.GetProg(j))) != NULL) {
-							if (prog->IgnoreRecording() != ignore) {
-								config.printf("Changing '%s'", prog->GetQuickDescription().str());
-								prog->SetIgnoreRecording(ignore);
+						if ((prog = proglist.FindUUIDWritable(reslist.GetProg(j))) != NULL) {
+							if (prog->GetFlag(flagname) != set) {
+								printf("Changing '%s'\n", prog->GetQuickDescription().str());
+								prog->SetFlag(flagname, set);
 								changed++;
 							}
+							else printf("NOT changing '%s', flag is already %s\n", prog->GetQuickDescription().str(), prog->GetFlag(flagname) ? "set" : "clear");
 						}
-						else config.printf("Failed to find programme '%s' in recordlist!", reslist.GetProg(j).GetQuickDescription().str());
+						else printf("Failed to find programme '%s' in list!\n", reslist.GetProg(j).GetQuickDescription().str());
 					}
 
-					config.printf("Changed %u programme%s", changed, (changed == 1) ? "" : "s");
-
-					if (changed) {
-						if (HasQuit() || !reclist.WriteToFile(config.GetRecordedFile())) {
-							config.printf("Failed to write recorded programme list back!");
-						}
-					}
+					printf("Changed %u programme%s\n", changed, (changed == 1) ? "" : "s");
+				}
+				else {
+					fprintf(stderr, "Flag name '%s' is not valid, use --list-flags to list valid flags\n", flagname.str());
 				}
 			}
 			else if (stricmp(argv[i], "--force-failures") == 0) {

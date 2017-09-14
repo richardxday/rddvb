@@ -291,6 +291,13 @@ public:
 	void   ClearRecordIfMissing()		{ClrFlag(Flag_recordifmissing);}
 	bool   RecordIfMissing()	  const {return GetFlag(Flag_recordifmissing);}
 
+	static void GetFlagList(std::vector<AString>& list, bool includegetonly = true);
+	static bool IsFlagNameValid(const AString& name) {return (GetFlagNumber(name) >= 0);}
+	
+	bool   SetFlag(const AString& name, bool set = true);
+	bool   ClrFlag(const AString& name);
+	bool   GetFlag(const AString& name) const;
+	
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}
 
@@ -520,6 +527,8 @@ protected:
 	const char *GetString(uint16_t offset)   const {return data->strdata + offset;}
 	bool StringValid(const uint16_t *offset) const {return (offset[1] > offset[0]);}
 	bool SetString(const uint16_t *offset, const char *str);
+
+	static sint_t GetFlagNumber(const AString& name, uint_t maxflags = Flag_total);
 
 	uint32_t GetFlagMask(uint8_t flag, bool set = true) const {return set ? (1U << flag) : ~(1U << flag);}
 	void 	 SetFlag(uint8_t flag, bool set = true);

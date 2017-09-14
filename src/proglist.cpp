@@ -2083,7 +2083,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 
 	{
 		ADVBProgList programmeslostlist;
-		
+
 		// find programmes in old schedule list but not in new one
 		programmeslostlist.FindDifferences(oldscheduledlist, scheduledlist, true, false);
 
@@ -2098,7 +2098,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 			}
 			else i++;
 		}
-		
+
 		if (programmeslostlist.Count() > 0) {
 			AString cmd;
 
@@ -2140,10 +2140,10 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		ADVBProgList newprogrammeslist;
 
 		recordedlist.FindSeries(serieslist);
-		
+
 		// find programmes in new schedile list but not in old one
 		newprogrammeslist.FindDifferences(oldscheduledlist, scheduledlist, false, true);
-		
+
 		// strip any programmes that are either films or from a series already recorded
 		newprogrammeslist.StripFilmsAndSeries(serieslist);
 
@@ -2182,7 +2182,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 			}
 		}
 	}
-	
+
 	if ((newrejectedlist.Count() > 0) ||
 		(oldrejectedlist.Count() > 0)) {
 		AString cmd;
@@ -2528,7 +2528,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 	PrioritizeProgrammes(schedulelists, recstarttimes, ncards, allrejectedlist, starttime);
 	//ADVBProg::debugsameprogramme = false;
 
-	for (i = 0; i < ncards; i++) {		
+	for (i = 0; i < ncards; i++) {
 		ADVBProgList& scheduledlist = schedulelists[i];
 		const ADVBProg *errorprog;
 		uint_t dvbcard = config.GetPhysicalDVBCard(i);
@@ -3038,7 +3038,8 @@ bool ADVBProgList::GetAndConvertRecordings()
 	for (i = 0; i < reclist.Count(); i++) {
 		const ADVBProg& prog = reclist.GetProg(i);
 
-		if (!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) {
+		if (!prog.IsConverted() &&
+			AStdFile::exists(prog.GetFilename())) {
 			uint_t failures;
 
 			if ((failures = failureslist.CountOccurances(prog)) < 2) {
@@ -3239,7 +3240,7 @@ void ADVBProgList::FindSeries(SERIESLIST& serieslist) const
 	uint_t i;
 
 	serieslist.clear();
-	
+
 	for (i = 0; i < Count(); i++) {
 		const ADVBProg&          prog    = GetProg(i);
 		const ADVBProg::EPISODE& episode = prog.GetEpisode();
@@ -3272,7 +3273,7 @@ void ADVBProgList::FindSeries(SERIESLIST& serieslist) const
 			else if	(prog.IsAvailable())  		t1 = 'a';
 			else if	(prog.IsRecorded())  		t1 = 'r';
 			else if (prog.IsRejected())  		t1 = 'x';
-			
+
 			static const char *allowablechanges[] = {
 				"-sfarx",
 				"sfar",
@@ -3437,7 +3438,7 @@ ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector
 	config.GetPhysicalDVBCard(0);
 	lists.resize(config.GetMaxDVBCards());
 	gaps.resize(config.GetMaxDVBCards());
-	
+
 	for (i = 0; i < Count(); i++) {
 		const ADVBProg& prog = GetProg(i);
 
@@ -3445,7 +3446,7 @@ ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector
 			lists.resize(prog.GetDVBCard() + 1);
 			gaps.resize(lists.size());
 		}
-		
+
 		if (prog.GetDVBCard() < (uint_t)lists.size()) {
 			std::vector<const ADVBProg *>& list = lists[prog.GetDVBCard()];
 
@@ -3567,7 +3568,7 @@ bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, 
 void ADVBProgList::StripFilmsAndSeries(const SERIESLIST& serieslist)
 {
 	uint_t i;
-	
+
 	for (i = 0; i < Count();) {
 		const ADVBProg& prog = GetProg(i);
 		bool delprog = prog.IsFilm();
@@ -3583,7 +3584,7 @@ void ADVBProgList::StripFilmsAndSeries(const SERIESLIST& serieslist)
 						 (ep.series < it->second.list.size()) &&
 						 it->second.list[ep.series].Valid())));
 		}
-			
+
 		if (delprog) {
 			DeleteProg(i);
 		}

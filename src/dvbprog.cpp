@@ -3221,6 +3221,62 @@ bool ADVBProg::IsConverted() const
 	return (suf.Valid() && (suf != recordedfilesuffix));
 }
 
+void ADVBProg::GetFlagList(std::vector<AString>& list, bool includegetonly)
+{
+	uint_t maxflags = includegetonly ? Flag_total : Flag_count;
+	uint_t i;
+
+	for (i = 0; i < NUMBEROF(fields); i++) {
+		if (RANGE(fields[i].type, ADVBPatterns::FieldType_flag, ADVBPatterns::FieldType_flag + maxflags - 1) && !fields[i].assignable) {
+			list.push_back(fields[i].name);
+		}
+	}
+}
+
+sint_t ADVBProg::GetFlagNumber(const AString& name, uint_t maxflags)
+{
+	uint_t i;
+
+	for (i = 0; i < NUMBEROF(fields); i++) {
+		if (RANGE(fields[i].type, ADVBPatterns::FieldType_flag, ADVBPatterns::FieldType_flag + maxflags - 1) && !fields[i].assignable &&
+			(CompareNoCase(name, fields[i].name) == 0)) {
+			return (sint_t)(fields[i].type - ADVBPatterns::FieldType_flag);
+		}
+	}
+
+	return -1;
+}
+
+bool ADVBProg::SetFlag(const AString& name, bool set)
+{
+	sint_t n;
+	bool success = false;
+
+	if ((n = GetFlagNumber(name, Flag_count)) >= 0) {
+		SetFlag((uint8_t)n, set);
+		success = true;
+	}
+	
+	return success;
+}
+
+bool ADVBProg::ClrFlag(const AString& name)
+{
+	return SetFlag(name, false);
+}
+
+bool ADVBProg::GetFlag(const AString& name) const
+{
+	sint_t n;
+	bool state = false;
+	
+	if ((n = GetFlagNumber(name)) >= 0) {
+		state = GetFlag((uint8_t)n);
+	}
+	
+	return state;
+}
+
 bool ADVBProg::ConvertVideo(bool verbose, bool cleanup, bool force)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
