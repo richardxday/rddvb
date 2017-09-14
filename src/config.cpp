@@ -233,6 +233,7 @@ AString ADVBConfig::GetConfigItem(const std::vector<AString>& list, const AStrin
 
 	for (i = 0; i < list.size(); i++) {
 		const AString& name = list[i];
+		const AString *def;
 
 		//debug("Checking config for '%s'\n", name.str());
 		if (config.Exists(name)) {
@@ -240,23 +241,13 @@ AString ADVBConfig::GetConfigItem(const std::vector<AString>& list, const AStrin
 			//debug("Config for '%s' exists: '%s'\n", name.str(), res.str());
 			break;
 		}
-	}
-
-	if (i < list.size()) {
-		if (defvalid) {
-			res = defval;	
+		else if (defvalid) {
+			res = defval;
+			break;
 		}
-		else {
-			const AString *def;
-			
-			for (i = 0; i < list.size(); i++) {
-				const AString& name = list[i];
-
-				if ((def = GetDefaultItemEx(name)) != NULL) {
-					res = *def;
-					break;
-				}
-			}
+		else if ((def = GetDefaultItemEx(name)) != NULL) {
+			res = *def;
+			break;
 		}
 	}
 
