@@ -8,6 +8,9 @@ cd "$DATADIR"
 if [ ! -f "archives/recorded-`date +%Y-%m-%d`.dat.gz" ] ; then
   cp recorded.dat "archives/recorded-`date +%Y-%m-%d`.dat" && gzip "archives/recorded-`date +%Y-%m-%d`.dat"
 fi
+if [ ! -f "archives/scheduled-`date +%Y-%m-%d`.dat.gz" ] ; then
+  cp scheduled.dat "archives/scheduled-`date +%Y-%m-%d`.dat" && gzip "archives/scheduled-`date +%Y-%m-%d`.dat"
+fi
 if [ ! -f "archives/episodes-`date +%Y-%m-%d`.txt.gz" ] ; then
   cp episodes.txt "archives/episodes-`date +%Y-%m-%d`.txt" && gzip "archives/episodes-`date +%Y-%m-%d`.txt"
 fi
