@@ -2083,6 +2083,8 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 
 	{
 		ADVBProgList programmeslostlist;
+		ADVBProgList newprogrammeslist;
+		SERIESLIST serieslist;
 
 		// find programmes in old schedule list but not in new one
 		programmeslostlist.FindDifferences(oldscheduledlist, scheduledlist, true, false);
@@ -2099,47 +2101,11 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 			else i++;
 		}
 
-		if (programmeslostlist.Count() > 0) {
-			AString cmd;
-
-			config.printf("%u programmes lost from scheduling:", programmeslostlist.Count());
-			for (i = 0; i < programmeslostlist.Count(); i++) {
-				const ADVBProg& prog = programmeslostlist.GetProg(i);
-
-				config.printf("%s", prog.GetQuickDescription().str());
-			}
-
-			if ((cmd = config.GetConfigItem("programmeslostcmd")).Valid()) {
-				AString  filename = config.GetLogDir().CatPath("programmes-lost-text-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
-				AStdFile fp;
-
-				if (fp.open(filename, "w")) {
-					config.logit("Programmes no longer scheduled at %s:", ADateTime().DateToStr().str());
-					fp.printf("Programmes no longer scheduled at %s:\n", ADateTime().DateToStr().str());
-
-					for (i = 0; i < programmeslostlist.Count(); i++) {
-						const ADVBProg& prog = programmeslostlist.GetProg(i);
-
-						fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("lost")).str());
-					}
-
-					fp.close();
-
-					cmd = cmd.SearchAndReplace("{logfile}", filename);
-
-					RunAndLogCommand(cmd);
-				}
-
-				//remove(filename);
-			}
-		}
-	}
-
-	{
-		SERIESLIST serieslist;
-		ADVBProgList newprogrammeslist;
-
+		// generate a list of series from recorded programmes
 		recordedlist.FindSeries(serieslist);
+
+		// add a list of series from the old scheduled list of programmes
+		oldscheduledlist.FindSeries(serieslist);
 
 		// find programmes in new schedile list but not in old one
 		newprogrammeslist.FindDifferences(oldscheduledlist, scheduledlist, false, true);
@@ -2147,39 +2113,61 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 		// strip any programmes that are either films or from a series already recorded
 		newprogrammeslist.StripFilmsAndSeries(serieslist);
 
-		if (newprogrammeslist.Count() > 0) {
-			AString cmd;
+		if (programmeslostlist.Count() > 0) {
+			config.logit("--------------------------------------------------------------------------------");
+			config.printf("%u programmes lost from scheduling:", programmeslostlist.Count());
+			for (i = 0; i < programmeslostlist.Count(); i++) {
+				const ADVBProg& prog = programmeslostlist.GetProg(i);
 
+				config.printf("%s", prog.GetQuickDescription().str());
+			}
+			config.logit("--------------------------------------------------------------------------------");
+		}
+		
+		if (newprogrammeslist.Count() > 0) {
+			config.logit("--------------------------------------------------------------------------------");
 			config.printf("%u new programmes/series in scheduling:", newprogrammeslist.Count());
 			for (i = 0; i < newprogrammeslist.Count(); i++) {
 				const ADVBProg& prog = newprogrammeslist.GetProg(i);
 
 				config.printf("%s", prog.GetQuickDescription().str());
 			}
+			config.logit("--------------------------------------------------------------------------------");
+		}
 
-			if ((cmd = config.GetConfigItem("newprogrammescmd")).Valid()) {
-				AString  filename = config.GetLogDir().CatPath("new-programmes-text-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
-				AStdFile fp;
+		AString cmd;
+		if (((programmeslostlist.Count() > 0) ||
+			 (newprogrammeslist.Count() > 0)) &&
+			((cmd = config.GetConfigItem("scheduledlistchangedcmd")).Valid())) {
+			AString  filename = config.GetLogDir().CatPath("scheduled-list-changed-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
+			AStdFile fp;
 
-				if (fp.open(filename, "w")) {
-					config.logit("New programmes/series scheduled at %s:", ADateTime().DateToStr().str());
-					fp.printf("New programmes/series scheduled at %s:\n", ADateTime().DateToStr().str());
+			if (fp.open(filename, "w")) {
+				fp.printf("Programmes no longer scheduled at %s:\n", ADateTime().DateToStr().str());
 
-					for (i = 0; i < newprogrammeslist.Count(); i++) {
-						const ADVBProg& prog = newprogrammeslist.GetProg(i);
+				for (i = 0; i < programmeslostlist.Count(); i++) {
+					const ADVBProg& prog = programmeslostlist.GetProg(i);
 
-						fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("new")).str());
-					}
-
-					fp.close();
-
-					cmd = cmd.SearchAndReplace("{logfile}", filename);
-
-					RunAndLogCommand(cmd);
+					fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("lost")).str());
 				}
+				
+				fp.printf("\n");
+				fp.printf("New programmes/series scheduled at %s:\n", ADateTime().DateToStr().str());
 
-				//remove(filename);
+				for (i = 0; i < newprogrammeslist.Count(); i++) {
+					const ADVBProg& prog = newprogrammeslist.GetProg(i);
+
+					fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("new")).str());
+				}
+				
+				fp.close();
+
+				cmd = cmd.SearchAndReplace("{logfile}", filename);
+
+				RunAndLogCommand(cmd);
 			}
+
+			//remove(filename);
 		}
 	}
 
@@ -3238,8 +3226,6 @@ bool ADVBProgList::CheckRecordingNow()
 void ADVBProgList::FindSeries(SERIESLIST& serieslist) const
 {
 	uint_t i;
-
-	serieslist.clear();
 
 	for (i = 0; i < Count(); i++) {
 		const ADVBProg&          prog    = GetProg(i);
