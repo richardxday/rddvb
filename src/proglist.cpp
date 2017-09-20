@@ -2143,21 +2143,25 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 			AStdFile fp;
 
 			if (fp.open(filename, "w")) {
-				fp.printf("Programmes no longer scheduled at %s:\n", ADateTime().DateToStr().str());
+				if (programmeslostlist.Count() > 0) {
+					fp.printf("Programmes no longer scheduled at %s:\n", ADateTime().DateToStr().str());
 
-				for (i = 0; i < programmeslostlist.Count(); i++) {
-					const ADVBProg& prog = programmeslostlist.GetProg(i);
+					for (i = 0; i < programmeslostlist.Count(); i++) {
+						const ADVBProg& prog = programmeslostlist.GetProg(i);
 
-					fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("lost")).str());
+						fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("lost")).str());
+					}
+					fp.printf("\n");
 				}
 				
-				fp.printf("\n");
-				fp.printf("New programmes/series scheduled at %s:\n", ADateTime().DateToStr().str());
-
-				for (i = 0; i < newprogrammeslist.Count(); i++) {
-					const ADVBProg& prog = newprogrammeslist.GetProg(i);
-
-					fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("new")).str());
+				if (newprogrammeslist.Count() > 0) {
+					fp.printf("New programmes/series scheduled at %s:\n", ADateTime().DateToStr().str());
+					
+					for (i = 0; i < newprogrammeslist.Count(); i++) {
+						const ADVBProg& prog = newprogrammeslist.GetProg(i);
+						
+						fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("new")).str());
+					}
 				}
 				
 				fp.close();
