@@ -3061,10 +3061,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 		if (prog.ConvertVideo(true)) {
 			converted++;
 		}
-		else {
-			success = false;
-			prog.OnRecordFailure();
-		}
+		else success = false;
 	}
 
 	if (converted) config.printf("%u programmes converted", converted);
