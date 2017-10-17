@@ -2123,7 +2123,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 			}
 			config.logit("--------------------------------------------------------------------------------");
 		}
-		
+
 		if (newprogrammeslist.Count() > 0) {
 			config.logit("--------------------------------------------------------------------------------");
 			config.printf("%u new programmes/series in scheduling:", newprogrammeslist.Count());
@@ -2153,17 +2153,17 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 					}
 					fp.printf("\n");
 				}
-				
+
 				if (newprogrammeslist.Count() > 0) {
 					fp.printf("New programmes/series scheduled at %s:\n", ADateTime().DateToStr().str());
-					
+
 					for (i = 0; i < newprogrammeslist.Count(); i++) {
 						const ADVBProg& prog = newprogrammeslist.GetProg(i);
-						
+
 						fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("new")).str());
 					}
 				}
-				
+
 				fp.close();
 
 				cmd = cmd.SearchAndReplace("{logfile}", filename);
@@ -3064,7 +3064,58 @@ bool ADVBProgList::GetAndConvertRecordings()
 		else success = false;
 	}
 
-	if (converted) config.printf("%u programmes converted", converted);
+	// don't need lock for the next bit
+	lock.ReleaseLock();
+
+	if (converted) {
+		std::map<AString, bool> userlist;
+		std::map<AString, bool>::iterator it;
+
+		config.printf("%u programmes converted", converted);
+
+		// add empty user (for all users)
+		userlist[""] = true;
+
+		// create list of users affected by this round of conversion
+		for (i = 0; i < convertlist.Count(); i++) {
+			const ADVBProg& prog = convertlist.GetProg(i);
+
+			userlist[prog.GetUser()] = true;
+		}
+
+		for (it = userlist.begin(); it != userlist.end(); ++it) {
+			AString user = it->first;
+			AString cmd;
+
+			// get global or user specific command
+			if ((cmd = config.GetUserConfigItem(user, "convertednotifycmd")).Valid()) {
+				AString  filename = config.GetLogDir().CatPath("converted-list-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
+				AStdFile fp;
+
+				if (fp.open(filename, "w")) {
+					fp.printf("Converted files");
+
+					if (user.Valid()) fp.printf(" (for %s)", user.str());
+
+					fp.printf(":\n");
+
+					for (i = 0; i < convertlist.Count(); i++) {
+						const ADVBProg& prog = convertlist.GetProg(i);
+
+						if (user.Empty() || (user == prog.GetUser())) {
+							fp.printf("%s\n", prog.GetDescription((uint_t)config.GetUserConfigItem(user, "convertednotifyverbosity", "1")).str());
+						}
+					}
+
+					fp.close();
+
+					cmd = cmd.SearchAndReplace("{logfile}", filename);
+
+					RunAndLogCommand(cmd);
+				}
+			}
+		}
+	}
 
 	//config.printf("Converted recordings, releasing lock");
 

@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 	int  res = 0;
 
 	(void)prog;
-	
+
 #if 0
 	if (argc == 1) {
 		ADVBLock lock("dvbfiles");

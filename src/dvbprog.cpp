@@ -2841,9 +2841,9 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	const AString recordedfilesuffix = config.GetRecordedFileSuffix();
 	const AString videofilesuffix    = config.GetVideoFileSuffix();
 	const AString audiofilesuffix    = config.GetAudioFileSuffix();
-	AString src  	   = GetFilename();
-	AString dst  	   = GenerateFilename(true);
-	AString archivedst = ReplaceFilenameTerms(config.GetRecordingsArchiveDir(), false).CatPath(src.FilePart());
+	AString 	  src  	     		 = GetFilename();
+	AString 	  dst  	     		 = GenerateFilename(true);
+	AString 	  archivedst 		 = ReplaceFilenameTerms(config.GetRecordingsArchiveDir(), false).CatPath(src.FilePart());
 
 	CreateDirectory(archivedst.PathPart());
 
