@@ -3629,3 +3629,53 @@ void ADVBProgList::StripFilmsAndSeries(const SERIESLIST& serieslist)
 		else i++;
 	}
 }
+
+bool ADVBProgList::EmailList(const AString& recipient, const AString& subject, const AString& message, uint_t verbosity, bool force) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString cmd;
+	bool    success = false;
+	
+	if (force || (Count() > 0)) {
+		if ((cmd = config.GetConfigItem("emailcmd", "mail -s \"{subject}\" {recipient} <{file}")).Valid()) {
+			AString  filename = config.GetLogDir().CatPath("email-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
+			AStdFile fp;
+			
+			if (fp.open(filename, "w")) {
+				uint_t i;
+
+				if (message.Valid()) {
+					fp.printf("%s\n", message.str());
+				}
+				
+				for (i = 0; i < Count(); i++) {
+					fp.printf("%s\n", GetProg(i).GetDescription(verbosity).str());
+				}
+				
+				fp.close();
+
+				cmd = (cmd.
+					   SearchAndReplace("{subject}",   subject).
+					   SearchAndReplace("{recipient}", recipient).
+					   SearchAndReplace("{file}",      filename));
+
+				success = RunAndLogCommand(cmd);
+
+				remove(filename);
+			}
+			else {
+				config.printf("Failed to email '%s' (subject '%s') with list of %u programmes: failed to create temporary file", recipient.str(), subject.str(), Count());
+			}
+		}
+		else {
+			config.printf("Failed to email '%s' (subject '%s') with list of %u programmes: no email command configure", recipient.str(), subject.str(), Count());
+		}
+	}
+	else {
+		config.printf("List is empty, not emailing '%s' (subject '%s')", recipient.str(), subject.str());
+
+		success = true;
+	}
+
+	return success;
+}

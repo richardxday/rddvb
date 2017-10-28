@@ -137,6 +137,7 @@ int main(int argc, char *argv[])
 		printf("\t--sort-rev\t\t\tSort list in reverse-chronological order\n");
 		printf("\t--write-text <filename>\t\tWrite listings to file <filename> in text format\n");
 		printf("\t--write-gnuplot <filename>\tWrite listings to file <filename> in format usable by GNUPlot\n");
+		printf("\t--email <recipient> <subject> <message>\tEmail current list (if it is non-empty) to <recipient> using subject");
 		printf("\t--fix-pound <file>\t\tFix pound symbols in file\n");
 		printf("\t--update-dvb-channels\t\tUpdate DVB channel assignments\n");
 		printf("\t--update-uuid\t\t\tSet UUID's on every programme\n");
@@ -766,6 +767,18 @@ int main(int argc, char *argv[])
 
 				if (!proglist.WriteToGNUPlotFile(filename)) {
 					fprintf(stderr, "Failed to write GNU plot file %s\n", filename.str());
+				}
+			}
+			else if (stricmp(argv[i], "--email") == 0) {
+				AString recipient = argv[++i];
+				AString subject   = argv[++i];
+				AString message   = AString(argv[++i]).DeEscapify();
+
+				if (proglist.EmailList(recipient, subject, message, verbosity)) {
+					printf("List emailed successfully (if not empty)\n");
+				}
+				else {
+					res = -1;
 				}
 			}
 			else if ((strcmp(argv[i], "--sort") == 0) || (strcmp(argv[i], "--sort-rev") == 0)) {

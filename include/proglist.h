@@ -149,6 +149,8 @@ public:
 
 	bool RecordImmediately(const ADateTime& dt, const AString& title, const AString& user = "", uint64_t maxminutes = 3600) const;
 
+	bool EmailList(const AString& recipient, const AString& subject, const AString& message, uint_t verbosity = 1, bool force = false) const;
+
 	static void UnscheduleAllProgrammes();
 	static uint_t SchedulePatterns(const ADateTime& starttime = ADateTime().TimeStamp(true), bool commit = true);
 	static bool WriteToJobList();
