@@ -1754,6 +1754,16 @@ function dvbrequest(filter, postdata, stackrequest)
 		}
 		//document.getElementById("title").innerHTML = title;
 	}
+
+	{
+		var link = '';
+		link  = '<a href="?';
+		link += 'from:' + filter.from;
+		link += '&titlefilter:' + filter.titlefilter;
+		link += '&timefilter:'  + filter.timefilter;
+		link += '">Link</a>';
+		document.getElementById("link").innerHTML = link;
+	}
 	
 	if (((currentfilter == null) ||
 		 (typeof postdata    != 'undefined') ||
@@ -1977,7 +1987,8 @@ function decodeurl()
 	var search = location.search.substring(1);
 
 	if ((typeof search != 'undefined') && (search != '')) {
-		filter = JSON.parse('{"' + search.replace(/&/g, '","').replace(/=/g,'":"') + '"}',
+		search = '{"' + search.replace(/&/g, '","').replace(/:/g,'":"').replace(/%22/g,'"') + '"}';
+		filter = JSON.parse(search,
 							function(key, value) {return key === "" ? value : decodeURIComponent(value);});
 	}
 
