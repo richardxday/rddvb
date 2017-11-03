@@ -389,20 +389,6 @@ int main(int argc, char *argv[])
 				proglist->ReadFromFile(config.GetListingsFile());
 				index = (index + 1) % NUMBEROF(list);
 			}
-
-			if ((proglist != &recordedlist) &&
-				(((uint_t)config.GetConfigItem("markrecordedinwebsearch", "1")) != 0U)) {
-				uint_t i, n = recordedlist.Count();
-				
-				for (i = 0; i < n; i++) {
-					const ADVBProg& prog  = recordedlist[i];
-					ADVBProg       *prog1 = NULL;
-					
-					while ((prog1 = proglist->FindSimilarWritable(prog, prog1)) != NULL) {
-						prog1->SetRecorded();
-					}
-				}
-			}
 			
 			ADVBProgList *reslist = list + index;
 			index = (index + 1) % NUMBEROF(list);
