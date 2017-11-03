@@ -97,6 +97,8 @@ public:
 	const ADVBProg *GetPrevProgramme(const ADVBProg *prog, uint_t *index = NULL) const;
 	const ADVBProg *FindSimilar(const ADVBProg& prog, const ADVBProg *startprog = NULL) const;
 	const ADVBProg *FindLastSimilar(const ADVBProg& prog, const ADVBProg *startprog = NULL) const;
+	ADVBProg *FindSimilarWritable(const ADVBProg& prog, ADVBProg *startprog = NULL);
+	ADVBProg *FindLastSimilarWritable(const ADVBProg& prog, ADVBProg *startprog = NULL);
 	const ADVBProg *FindCompleteRecording(const ADVBProg& prog, const ADVBProg *startprog = NULL) const;
 	const ADVBProg *FindCompleteRecordingThatExists(const ADVBProg& prog, const ADVBProg *startprog = NULL) const;
 	uint_t FindSimilarProgrammes(ADVBProgList& dest, const ADVBProg& prog, uint_t index = 0) const;

@@ -1338,6 +1338,51 @@ const ADVBProg *ADVBProgList::FindLastSimilar(const ADVBProg& prog, const ADVBPr
 	return res;
 }
 
+ADVBProg *ADVBProgList::FindSimilarWritable(const ADVBProg& prog, ADVBProg *startprog)
+{
+	ADVBProg *res = NULL;
+	uint_t i = 0;
+
+	if (startprog) {
+		GetNextProgramme(startprog, &i);
+	}
+
+	for (; i < Count(); i++) {
+		ADVBProg& prog1 = GetProgWritable(i);
+
+		if (ADVBProg::SameProgramme(prog, prog1)) {
+			res = &prog1;
+			break;
+		}
+	}
+
+	return res;
+}
+
+ADVBProg *ADVBProgList::FindLastSimilarWritable(const ADVBProg& prog, ADVBProg *startprog)
+{
+	ADVBProg *res = NULL;
+
+	if (Count()) {
+		uint_t i = Count() - 1;
+
+		if (startprog) {
+			GetPrevProgramme(startprog, &i);
+		}
+
+		do {
+			ADVBProg& prog1 = GetProgWritable(i);
+
+			if (ADVBProg::SameProgramme(prog, prog1)) {
+				res = &prog1;
+				break;
+			}
+		} while (i--);
+	}
+
+	return res;
+}
+
 const ADVBProg *ADVBProgList::FindCompleteRecording(const ADVBProg& prog, const ADVBProg *startprog) const
 {
 	const ADVBProg *res = startprog;
