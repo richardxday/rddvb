@@ -1756,13 +1756,8 @@ function dvbrequest(filter, postdata, stackrequest)
 	}
 
 	{
-		var link = '';
-		link  = '<a href="?';
-		link += 'from:' + filter.from;
-		link += '&titlefilter:' + filter.titlefilter;
-		link += '&timefilter:'  + filter.timefilter;
-		link += '">Link</a>';
-		document.getElementById("link").innerHTML = link;
+		var link = JSON.stringify(filter);
+		document.getElementById("link").innerHTML = '<a href="?' + encodeURIComponent(link) + '">Link</a>';
 	}
 	
 	if (((currentfilter == null) ||
@@ -1890,7 +1885,10 @@ function generatefilterdescription(filter)
 	if (fullfilter != '') {
 		str += '\nFiltered using \'' + limitstring(fullfilter) + '\'';
 	}
-	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined') && (filter.expanded < response.progs.length)) {
+	if ((filter.expanded >= 0) &&
+		(response != null) &&
+		(typeof response.progs != 'undefined') &&
+		(filter.expanded < response.progs.length)) {
 		var prog = response.progs[filter.expanded];
 		title = prog.title;
 
@@ -1918,7 +1916,7 @@ function generatefilterdescription(filter)
 
 	str = 'Page ' + (filter.page + 1) + ' of ' + filter.from;
 	if (filter.titlefilter != '') str += ' \'' + limitstring(filter.titlefilter) + '\'';
-	if ((filter.expanded >= 0) && (typeof response.progs != 'undefined')) {
+	if ((filter.expanded >= 0) && (response != null) && (typeof response.progs != 'undefined')) {
 		str += ' (' + title + ')';
 	}
 	filter.shortdesc = str;
@@ -1987,9 +1985,8 @@ function decodeurl()
 	var search = location.search.substring(1);
 
 	if ((typeof search != 'undefined') && (search != '')) {
-		search = '{"' + search.replace(/&/g, '","').replace(/:/g,'":"').replace(/%22/g,'"') + '"}';
-		filter = JSON.parse(search,
-							function(key, value) {return key === "" ? value : decodeURIComponent(value);});
+		search = decodeURIComponent(search);
+		filter = JSON.parse(search, function(key, value) {return value;});
 	}
 
 	return filter;
