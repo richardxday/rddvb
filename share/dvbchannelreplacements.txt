@@ -25,3 +25,4 @@
 "ADULT Babestn"="Babestation"
 "talkSPORT"="Talk Sport"
 "Sony Movie Ch"="Sony Movie Channel"
+"TalkingPictures TV"="Talking Pictures TV"
