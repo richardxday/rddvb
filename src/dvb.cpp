@@ -140,6 +140,7 @@ int main(int argc, char *argv[])
 		printf("\t--email <recipient> <subject> <message>\tEmail current list (if it is non-empty) to <recipient> using subject\n");
 		printf("\t--fix-pound <file>\t\tFix pound symbols in file\n");
 		printf("\t--update-dvb-channels\t\tUpdate DVB channel assignments\n");
+		printf("\t--update-dvb-channels-output-list Update DVB channel assignments and output list of SchedulesDirect channel ID's\n");
 		printf("\t--update-uuid\t\t\tSet UUID's on every programme\n");
 		printf("\t--update-combined\t\tCreate a combined list of recorded and scheduled programmes\n");
 		printf("\t--list\t\t\t\tList programmes in current list (-L)\n");
@@ -407,9 +408,22 @@ int main(int argc, char *argv[])
 					printf("Failed to read programme list from '%s'\n", filename.str());
 				}
 			}
-			else if (strcmp(argv[i], "--update-dvb-channels") == 0) {
+			else if ((strcmp(argv[i], "--update-dvb-channels") == 0) ||
+					 (strcmp(argv[i], "--update-dvb-channels-output-list") == 0)) {
+				std::map<uint_t, bool> sdchannelids;
+				
 				config.printf("Updating DVB channels...");
-				proglist.UpdateDVBChannels();
+				proglist.UpdateDVBChannels(&sdchannelids);
+				
+				if (strcmp(argv[i], "--update-dvb-channels-output-list") == 0) {
+					std::map<uint_t, bool>::iterator it;
+
+					printf("----Channel ID's----\n");
+					for (it = sdchannelids.begin(); it != sdchannelids.end(); ++it) {
+						printf("channel=%u\n", it->first);
+					}
+					printf("----Channel ID's----\n");
+				}
 			}
 			else if (strcmp(argv[i], "--update-uuid") == 0) {
 				uint_t j;

@@ -42,7 +42,7 @@ public:
 
 	void AssignEpisodes(bool ignorerepeats = false);
 
-	void UpdateDVBChannels();
+	void UpdateDVBChannels(std::map<uint_t, bool> *sdchannelids = NULL);
 
 	bool WriteToFile(const AString& filename, bool updatedependantfiles = true) const;
 	bool WriteToTextFile(const AString& filename) const;

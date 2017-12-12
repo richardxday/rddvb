@@ -619,21 +619,32 @@ bool ADVBProgList::CheckFile(const AString& filename, const AString& targetfilen
 	return ((filename == targetfilename) || (::GetFileInfo(targetfilename, &fileinfo2) && (fileinfo2.WriteTime > fileinfo.WriteTime)));
 }
 
-void ADVBProgList::UpdateDVBChannels()
+void ADVBProgList::UpdateDVBChannels(std::map<uint_t, bool> *sdchannelids)
 {
 	const ADVBConfig&      config = ADVBConfig::Get();
 	const ADVBChannelList& clist  = ADVBChannelList::Get();
-	AHash hash;
-	uint_t  i;
+	AHash  hash;
+	uint_t i;
 
 	for (i = 0; i < Count(); i++) {
 		ADVBProg& prog     = GetProgWritable(i);
 		AString channel    = prog.GetChannel();
 		AString dvbchannel = clist.LookupDVBChannel(channel);
 
-		if		(dvbchannel.Valid()) prog.SetDVBChannel(dvbchannel);
+		if (dvbchannel.Valid()) {
+			prog.SetDVBChannel(dvbchannel);
+
+			if (sdchannelids) {
+				uint_t id;
+
+				// format is 'I101023.json.schedulesdirect.org'
+				if (sscanf(prog.GetChannelID(), "I%u.json.schedulesdirect.org", &id) > 0) {
+					(*sdchannelids)[id] = true;
+				}
+			}
+		}
 		else if (!hash.Exists(channel)) {
-			config.logit("Unable to find DVB channel for '%s'", channel.str());
+			config.logit("Unable to find DVB channel for '%s' ('%s')", channel.str(), prog.GetChannelID());
 			hash.Insert(channel, 0);
 		}
 	}
