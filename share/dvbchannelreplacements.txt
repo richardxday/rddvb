@@ -24,3 +24,4 @@
 "Capital FM"="Capital Radio"
 "ADULT Babestn"="Babestation"
 "talkSPORT"="Talk Sport"
+"Sony Movie Ch"="Sony Movie Channel"
