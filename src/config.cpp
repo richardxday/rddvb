@@ -915,7 +915,7 @@ AString ADVBConfig::GetXMLTVReplacementsFile() const
 
 AString ADVBConfig::GetXMLTVDownloadCommand() const
 {
-	return GetConfigItem("xmltvcmd", "tv_grab_sd_json");
+	return GetConfigItem("xmltvcmd", "tv_grab_zz_sdjson");
 }
 
 AString ADVBConfig::GetXMLTVDownloadArguments(const AString& destfile) const

@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 		printf("\t--sort-rev\t\t\tSort list in reverse-chronological order\n");
 		printf("\t--write-text <filename>\t\tWrite listings to file <filename> in text format\n");
 		printf("\t--write-gnuplot <filename>\tWrite listings to file <filename> in format usable by GNUPlot\n");
-		printf("\t--email <recipient> <subject> <message>\tEmail current list (if it is non-empty) to <recipient> using subject");
+		printf("\t--email <recipient> <subject> <message>\tEmail current list (if it is non-empty) to <recipient> using subject\n");
 		printf("\t--fix-pound <file>\t\tFix pound symbols in file\n");
 		printf("\t--update-dvb-channels\t\tUpdate DVB channel assignments\n");
 		printf("\t--update-uuid\t\t\tSet UUID's on every programme\n");

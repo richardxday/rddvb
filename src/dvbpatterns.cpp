@@ -10,56 +10,56 @@
 ADVBPatterns _patterns;
 
 ADVBPatterns::OPERATOR ADVBPatterns::operators[] = {
-    {"!=", 	  false, FieldTypes_Default | FieldTypes_Prog, Operator_NE, "Is not equal to", 0},
-    {"<>", 	  false, FieldTypes_Default | FieldTypes_Prog, Operator_NE, "Is not equal to", 0},
-    {"<=", 	  false, FieldTypes_Default,                   Operator_LE, "Is less than or equal to", 0},
-    {">=", 	  false, FieldTypes_Default,                   Operator_GE, "Is greater than or equal to", 0},
-    {"=",  	  false, FieldTypes_Default | FieldTypes_Prog, Operator_EQ, "Equals", 0},
-    {"<",  	  false, FieldTypes_Default,                   Operator_LT, "Is less than", 0},
-    {">",  	  false, FieldTypes_Default,                   Operator_GT, "Is greater than", 0},
+    {"!=", 	  false, FieldTypes_Default | FieldTypes_Prog, Operator_NE,            "Is not equal to",                      0},
+    {"<>", 	  false, FieldTypes_Default | FieldTypes_Prog, Operator_NE,            "Is not equal to",                      0},
+    {"<=", 	  false, FieldTypes_Default,                   Operator_LE,            "Is less than or equal to",             0},
+    {">=", 	  false, FieldTypes_Default,                   Operator_GE,            "Is greater than or equal to",          0},
+    {"=",  	  false, FieldTypes_Default | FieldTypes_Prog, Operator_EQ,            "Equals",                               0},
+    {"<",  	  false, FieldTypes_Default,                   Operator_LT,            "Is less than",                         0},
+    {">",  	  false, FieldTypes_Default,                   Operator_GT,            "Is greater than",                      0},
 
-    {"!@>",   false, FieldTypes_String,                    Operator_NotEndsWith, "Does not end with", 0},
-    {"!@<",   false, FieldTypes_String,                    Operator_NotStartsWith, "Does not start with", 0},
-    {"!@>",   false, FieldTypes_String,                    Operator_NotEndsWith, "Does not end with", 0},
-    {"!%<",   false, FieldTypes_String,                    Operator_NotStarts, "Does not start", 0},
-    {"!%>",   false, FieldTypes_String,                    Operator_NotEnds, "Does not end", 0},
-    {"!=", 	  false, FieldTypes_String,                    Operator_NE, "Is not equal to", 0},
-    {"!~", 	  false, FieldTypes_String,                    Operator_NotRegex, "Does not match regex", 0},
-    {"!@", 	  false, FieldTypes_String,                    Operator_NotContains, "Does not contain", 0},
-    {"!%",    false, FieldTypes_String,                    Operator_NotWithin, "Is not within", 0},
-    {"<>", 	  false, FieldTypes_String,                    Operator_NE, "Is not equal to", 0},
-    {"<=", 	  false, FieldTypes_String,                    Operator_LE, "Is less than or equal to", 0},
-    {">=", 	  false, FieldTypes_String,                    Operator_GE, "Is greater than or equal to", 0},
-    {"@<<=",  false, FieldTypes_String,                    Operator_StartsWithLE, "Starts with less than or equal to", 0},
-    {"@<>=",  false, FieldTypes_String,                    Operator_StartsWithGE, "Starts with greater than or equal to", 0},
-    {"@<<",   false, FieldTypes_String,                    Operator_StartsWithLT, "Starts with less than", 0},
-    {"@<>",   false, FieldTypes_String,                    Operator_StartsWithGT, "Starts with greater than", 0},
-    {"@><=",  false, FieldTypes_String,                    Operator_EndsWithLE, "Ends with less than or equal to", 0},
-    {"@>>=",  false, FieldTypes_String,                    Operator_EndsWithGE, "Ends with greater than or equal to", 0},
-    {"@><",   false, FieldTypes_String,                    Operator_EndsWithLT, "Ends with less than", 0},
-    {"@>>",   false, FieldTypes_String,                    Operator_EndsWithGT, "Ends with greater than", 0},
-    {"@<", 	  false, FieldTypes_String,                    Operator_StartsWith, "Starts with", 0},
-    {"@>", 	  false, FieldTypes_String,                    Operator_EndsWith, "Ends with", 0},
-    {"%<", 	  false, FieldTypes_String,                    Operator_Starts, "Starts", 0},
-    {"%>", 	  false, FieldTypes_String,                    Operator_Ends, "Ends", 0},
-    {"=",  	  false, FieldTypes_String,                    Operator_EQ, "Equals", 0},
-    {"~",  	  false, FieldTypes_String,                    Operator_Regex, "Matches regex", 0},
-    {"@",  	  false, FieldTypes_String,                    Operator_Contains, "Contains", 0},
-    {"%",  	  false, FieldTypes_String,                    Operator_Within, "Is within", 0},
-    {"<",  	  false, FieldTypes_String,                    Operator_LT, "Is less than", 0},
-    {">",  	  false, FieldTypes_String,                    Operator_GT, "Is greater than", 0},
+    {"!@>",   false, FieldTypes_String,                    Operator_NotEndsWith,   "Does not end with",                    0},
+    {"!@<",   false, FieldTypes_String,                    Operator_NotStartsWith, "Does not start with",                  0},
+    {"!@>",   false, FieldTypes_String,                    Operator_NotEndsWith,   "Does not end with",                    0},
+    {"!%<",   false, FieldTypes_String,                    Operator_NotStarts,     "Does not start",                       0},
+    {"!%>",   false, FieldTypes_String,                    Operator_NotEnds,       "Does not end",                         0},
+    {"!=", 	  false, FieldTypes_String,                    Operator_NE,            "Is not equal to",                      0},
+    {"!~", 	  false, FieldTypes_String,                    Operator_NotRegex,      "Does not match regex",                 0},
+    {"!@", 	  false, FieldTypes_String,                    Operator_NotContains,   "Does not contain",                     0},
+    {"!%",    false, FieldTypes_String,                    Operator_NotWithin,     "Is not within",                        0},
+    {"<>", 	  false, FieldTypes_String,                    Operator_NE,            "Is not equal to",                      0},
+    {"<=", 	  false, FieldTypes_String,                    Operator_LE,            "Is less than or equal to",             0},
+    {">=", 	  false, FieldTypes_String,                    Operator_GE,            "Is greater than or equal to",          0},
+    {"@<<=",  false, FieldTypes_String,                    Operator_StartsWithLE,  "Starts with less than or equal to",    0},
+    {"@<>=",  false, FieldTypes_String,                    Operator_StartsWithGE,  "Starts with greater than or equal to", 0},
+    {"@<<",   false, FieldTypes_String,                    Operator_StartsWithLT,  "Starts with less than",                0},
+    {"@<>",   false, FieldTypes_String,                    Operator_StartsWithGT,  "Starts with greater than",             0},
+    {"@><=",  false, FieldTypes_String,                    Operator_EndsWithLE,    "Ends with less than or equal to",      0},
+    {"@>>=",  false, FieldTypes_String,                    Operator_EndsWithGE,    "Ends with greater than or equal to",   0},
+    {"@><",   false, FieldTypes_String,                    Operator_EndsWithLT,    "Ends with less than",                  0},
+    {"@>>",   false, FieldTypes_String,                    Operator_EndsWithGT,    "Ends with greater than",               0},
+    {"@<", 	  false, FieldTypes_String,                    Operator_StartsWith,    "Starts with",                          0},
+    {"@>", 	  false, FieldTypes_String,                    Operator_EndsWith,      "Ends with",                            0},
+    {"%<", 	  false, FieldTypes_String,                    Operator_Starts,        "Starts",                               0},
+    {"%>", 	  false, FieldTypes_String,                    Operator_Ends,          "Ends",                                 0},
+    {"=",  	  false, FieldTypes_String,                    Operator_EQ,            "Equals",                               0},
+    {"~",  	  false, FieldTypes_String,                    Operator_Regex,         "Matches regex",                        0},
+    {"@",  	  false, FieldTypes_String,                    Operator_Contains,      "Contains",                             0},
+    {"%",  	  false, FieldTypes_String,                    Operator_Within,        "Is within",                            0},
+    {"<",  	  false, FieldTypes_String,                    Operator_LT,            "Is less than",                         0},
+    {">",  	  false, FieldTypes_String,                    Operator_GT,            "Is greater than",                      0},
 
-    {"+=", 	  true,  FieldTypes_String,                    Operator_Concat, "Is concatenated with", 0},
-    {"-=", 	  true,  FieldTypes_String,                    Operator_Remove, "Removal of", 0},
-    {":=", 	  true,  FieldTypes_String,                    Operator_Assign, "Is set to", 0},
-    {":=", 	  true,  FieldTypes_Default,                   Operator_Assign, "Is set to", 0},
+    {"+=", 	  true,  FieldTypes_String,                    Operator_Concat,        "Is concatenated with",                 0},
+    {"-=", 	  true,  FieldTypes_String,                    Operator_Remove,        "Removal of",                           0},
+    {":=", 	  true,  FieldTypes_String,                    Operator_Assign,        "Is set to",                            0},
+    {":=", 	  true,  FieldTypes_Default,                   Operator_Assign,        "Is set to",                            0},
 
-    {"+=", 	  true,  FieldTypes_Number,                    Operator_Add, "Is incremented by", 0},
-    {"-=", 	  true,  FieldTypes_Number,                    Operator_Subtract, "Is decremented by", 0},
-    {"*=", 	  true,  FieldTypes_Number,                    Operator_Multiply, "Is multiplied by", 0},
-    {"/=", 	  true,  FieldTypes_Number,                    Operator_Divide, "Is divided by", 0},
-    {":>", 	  true,  FieldTypes_Number,                    Operator_Maximum, "Is maximized with", 0},
-    {":<", 	  true,  FieldTypes_Number,                    Operator_Minimum, "Is minimized with", 0},
+    {"+=", 	  true,  FieldTypes_Number,                    Operator_Add,           "Is incremented by",                    0},
+    {"-=", 	  true,  FieldTypes_Number,                    Operator_Subtract,      "Is decremented by",                    0},
+    {"*=", 	  true,  FieldTypes_Number,                    Operator_Multiply,      "Is multiplied by",                     0},
+    {"/=", 	  true,  FieldTypes_Number,                    Operator_Divide,        "Is divided by",                        0},
+    {":>", 	  true,  FieldTypes_Number,                    Operator_Maximum,       "Is maximized with",                    0},
+    {":<", 	  true,  FieldTypes_Number,                    Operator_Minimum,       "Is minimized with",                    0},
 
 	//{"+=", 	false, FieldTypes_String,  	 			 	 Operator_Concat},
 };
@@ -594,11 +594,11 @@ uint_t ADVBPatterns::CheckOrStatement(const AString& line, uint_t i, bool& orfla
 AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const AString& user)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADataList& list   = pattern.list;
-	AString&   errors = pattern.errors;
-	AString    line   = config.ReplaceTerms(user, _line);
-	TERM   *term;
-	uint_t i;
+	ADataList&        list   = pattern.list;
+	AString&          errors = pattern.errors;
+	AString           line   = config.ReplaceTerms(user, _line);
+	TERM              *term;
+	uint_t            i;
 
 	pattern.exclude    = false;
 	pattern.enabled    = true;
