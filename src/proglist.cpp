@@ -789,53 +789,60 @@ bool ADVBProgList::WriteToGNUPlotFile(const AString& filename) const
 	bool success = false;
 
 	if (fp.open(filename, "w")) {
-		AHash channels;
-		uint_t i, j, n = 0;
-
-		fp.printf("#time channel-index dvb-card length(hours) recorded scheduled rejected desc\n");
+		std::vector<AString>	  channellist;
+		std::map<AString, uint_t> channelmap;
+		uint_t i;
 
 		for (i = 0; i < Count(); i++) {
 			AString channel = GetProg(i).GetChannel();
 
-			if (!channels.Exists(channel)) {
-				for (j = i; j < Count(); j++) {
-					const ADVBProg& prog = GetProg(j);
-					AString channel2 = prog.GetChannel();
-
-					if (channel2 == channel) {
-						const uint64_t times[] = {
-							prog.GetRecordStart() ? prog.GetRecordStart() : prog.GetStart(),
-							prog.GetStart(),
-							prog.GetStop(),
-							prog.GetRecordStop() ? prog.GetRecordStop() : prog.GetStop(),
-						};
-						const double levels[] = {
-							0.0,
-							(double)prog.GetLength() / 3600000.0,
-							(double)prog.GetLength() / 3600000.0,
-							0.0,
-						};
-						AString desc = prog.GetQuickDescription();
-						uint_t  card = prog.GetDVBCard();
-						uint_t  k;
-
-						for (k = 0; k < NUMBEROF(times); k++) {
-							fp.printf("%s %u %u %s %u %u %u %s\n",
-									  ADateTime(times[k]).DateFormat("%Y-%M-%D %h:%m:%s").str(),
-									  n, card,
-									  AValue(levels[k]).ToString().str(),
-									  (uint_t)prog.IsRecorded(),
-									  (uint_t)prog.IsScheduled(),
-									  (uint_t)prog.IsRejected(),
-									  desc.str());
-						}
-
-						fp.printf("\n\n");
-					}
-				}
-
-				channels.Insert(channel, n++);
+			if (channelmap.find(channel) == channelmap.end()) {
+				channellist.push_back(channel);
+				channelmap[channel] = true;
 			}
+		}
+
+		std::sort(channellist.begin(), channellist.end());
+
+		for (i = 0; i < (uint_t)channellist.size(); i++) {
+			channelmap[channellist[i]] = i;
+		}
+
+		fp.printf("#time channel-index channel-name dvb-card length(hours) recorded scheduled rejected desc\n");
+
+		for (i = 0; i < Count(); i++) {
+			const ADVBProg& prog    = GetProg(i);
+			const AString   channel = prog.GetChannel();
+			const uint64_t times[] = {
+				prog.GetRecordStart() ? prog.GetRecordStart() : prog.GetStart(),
+				prog.GetStart(),
+				prog.GetStop(),
+				prog.GetRecordStop() ? prog.GetRecordStop() : prog.GetStop(),
+			};
+			const double levels[] = {
+				0.0,
+				(double)prog.GetLength() / 3600000.0,
+				(double)prog.GetLength() / 3600000.0,
+				0.0,
+			};
+			AString desc = prog.GetQuickDescription();
+			uint_t  card = prog.GetDVBCard();
+			uint_t  k;
+
+			for (k = 0; k < NUMBEROF(times); k++) {
+				fp.printf("%s %u '%s' %u %s %u %u %u %s\n",
+						  ADateTime(times[k]).DateFormat("%Y-%M-%D %h:%m:%s").str(),
+						  channelmap[channel],
+						  channel.str(),
+						  card,
+						  AValue(levels[k]).ToString().str(),
+						  (uint_t)prog.IsRecorded(),
+						  (uint_t)prog.IsScheduled(),
+						  (uint_t)prog.IsRejected(),
+						  desc.str());
+			}
+
+			fp.printf("\n\n");
 		}
 
 		fp.close();
@@ -3691,23 +3698,23 @@ bool ADVBProgList::EmailList(const AString& recipient, const AString& subject, c
 	const ADVBConfig& config = ADVBConfig::Get();
 	AString cmd;
 	bool    success = false;
-	
+
 	if (force || (Count() > 0)) {
 		if ((cmd = config.GetConfigItem("emailcmd", "mail -s \"{subject}\" {recipient} <{file}")).Valid()) {
 			AString  filename = config.GetLogDir().CatPath("email-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
 			AStdFile fp;
-			
+
 			if (fp.open(filename, "w")) {
 				uint_t i;
 
 				if (message.Valid()) {
 					fp.printf("%s\n", message.str());
 				}
-				
+
 				for (i = 0; i < Count(); i++) {
 					fp.printf("%s\n", GetProg(i).GetDescription(verbosity).str());
 				}
-				
+
 				fp.close();
 
 				cmd = (cmd.
