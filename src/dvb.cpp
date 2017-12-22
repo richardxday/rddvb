@@ -27,6 +27,12 @@ typedef struct {
 	uint64_t filesize;
 } RECORDDETAILS;
 
+typedef struct {
+	const AString option;
+	const AString args;
+	const AString helptext;
+} OPTION;
+
 bool forcelogging = false;
 
 static void DisplaySeries(const ADVBProgList::SERIES& series)
@@ -60,14 +66,139 @@ static AValue __func(const AString& funcname, const simplevars_t& vars, const si
 }
 #endif
 
-int main(int argc, char *argv[])
+static bool argsvalid(int argc, const char *argv[], int i, const OPTION& option)
 {
+	int  n     = option.args.CountWords();
+	bool valid = (!(((i + 1) < argc) && (stricmp(argv[i + 1], "--help") == 0)) && ((i + n) < argc));
+
+	if (!valid) {
+		fprintf(stderr, "Incorrect arguments: %s %s \t%s\n", argv[i], option.args.str(), option.helptext.str());
+	}
+
+	return valid;
+}
+
+int main(int argc, const char *argv[])
+{
+	static const OPTION options[] = {
+		{"-v[<n>]",								   "",								  "Increase verbosity by <n> or by 1"},
+		{"--confdir",							   "",								  "Print conf directory"},
+		{"--datadir",							   "",								  "Print data directory"},
+		{"--logdir",							   "",								  "Print log directory"},
+		{"--dirs",								   "",								  "Print important configuration directories"},
+		{"--getxmltv",							   "<outputfile>",					  "Download XMLTV listings"},
+		{"--dayformat",							   "<format>",						  AString("Format string for day (default '%')").Arg(ADVBProg::GetDayFormat())},
+		{"--dateformat",						   "<format>",						  AString("Format string for date (default '%')").Arg(ADVBProg::GetDateFormat())},
+		{"--timeformat",						   "<format>",						  AString("Format string for time (default '%')").Arg(ADVBProg::GetTimeFormat())},
+		{"--fulltimeformat",					   "<format>",						  AString("Format string for fulltime (default '%')").Arg(ADVBProg::GetFullTimeFormat())},
+		{"--set",								   "<var>=<val>",					  "Set variable in configuration file for this session only"},
+		{"-u, --update",						   "<file>",						  "Update main listings with file <file>"},
+		{"-l, --load",							   "",								  "Read listings from default file"},
+		{"-r, --read",							   "<file>",						  "Read listings from file <file>"},
+		{"--merge",								   "<file>",						  "Merge listings from file <file>, adding any programmes that dot not exist"},
+		{"--modify-recorded",					   "<file>",						  "Merge listings from file <file> into recorded programmes, adding any programmes that dot not exist"},
+		{"--modify-recorded-from-recording-host",  "",								  "Add recorded programmes from recording host into recorded programmes, adding any programmes that dot not exist"},
+		{"--modify-scheduled-from-recording-host", "",								  "Modfy scheduled programmes from recording host into scheduled programmes"},
+		{"--jobs",								   "",								  "Read programmes from scheduled jobs"},
+		{"-w, --write",							   "<file>",						  "Write listings to file <file>"},
+		{"--sort",								   "",								  "Sort list in chronological order"},
+		{"--sort-rev",							   "",								  "Sort list in reverse-chronological order"},
+		{"--write-text",						   "<file>",						  "Write listings to file <file> in text format"},
+		{"--write-gnuplot",						   "<file>",						  "Write listings to file <file> in format usable by GNUPlot"},
+		{"--email",								   "<recipient> <subject> <message>", "Email current list (if it is non-empty) to <recipient> using subject"},
+		{"--fix-pound",							   "<file>",						  "Fix pound symbols in file"},
+		{"--update-dvb-channels",				   "",								  "Update DVB channel assignments"},
+		{"--update-dvb-channels-output-list",	   "",								  "Update DVB channel assignments and output list of SchedulesDirect channel ID's"},
+		{"--update-uuid",						   "",								  "Set UUID's on every programme"},
+		{"--update-combined",					   "",								  "Create a combined list of recorded and scheduled programmes"},
+		{"-L, --list",							   "",								  "List programmes in current list"},
+		{"--list-to-file",						   "<file>",						  "List programmes in current list to file <file>"},
+		{"--list-base64",						   "",								  "List programmes in current list in base64 format"},
+		{"--list-channels",						   "",								  "List channels"},
+		{"--cut-head",							   "<n>",							  "Cut <n> programmes from the start of the list"},
+		{"--cut-tail",							   "<n>",							  "Cut <n> programmes from the end of the list"},
+		{"--head",								   "<n>",							  "Keep <n> programmes at the start of the list"},
+		{"--tail",								   "<n>",							  "Keep <n> programmes at the end of the list"},
+		{"--limit",								   "<n>",							  "Limit list to <n> programmes, deleting programmes from the end of the list"},
+		{"-f, --find",							   "<patterns>",					  "Find programmes matching <patterns>"},
+		{"-F, --find-with-file",				   "<pattern-file>",				  "Find programmes matching patterns in patterns file <pattern-file>"},
+		{"-R, --find-repeats",				       "",								  "For each programme in current list, list repeats"},
+		{"--find-similar",						   "<file>",						  "For each programme in current list, find first similar programme in <file>"},
+		{"--find-differences",					   "<file1> <file2>",				  "Find programmes in <file1> but not in <file2> or in <file2> and not in <file1>"},
+		{"--find-in-file1-only",				   "<file1> <file2>",				  "Find programmes in <file1> but not in <file2>"},
+		{"--find-in-file2-only",				   "<file1> <file2>",				  "Find programmes in <file2> and not in <file1>"},
+		{"--find-similarities",					   "<file1> <file2>",				  "Find programmes in both <file1> and <file2>"},
+		{"--describe-pattern",					   "<patterns>",					  "Describe patterns as parsed"},
+		{"--delete-all",						   "",								  "Delete all programmes"},
+		{"--delete",							   "<patterns>",					  "Delete programmes matching <patterns>"},
+		{"--delete-with-file",					   "<pattern-file>",				  "Delete programmes matching patterns in patterns file <pattern-file>"},
+		{"--delete-recorded",					   "",								  "Delete programmes that have been recorded"},
+		{"--delete-using-file",					   "<file>",						  "Delete programmes that are similar to those in file <file>"},
+		{"--delete-similar",					   "",								  "Delete programmes that are similar to others in the list"},
+		{"--schedule",							   "",								  "Schedule and create jobs for default set of patterns on the main listings file"},
+		{"--write-scheduled-jobs",				   "",								  "Create jobs for current scheduled list"},
+		{"--start-time",						   "<time>",						  "Set start time for scheduling"},
+		{"--fake-schedule",						   "",								  "Pretend to schedule (write files) for default set of patterns on the main listings file"},
+		{"--fake-schedule-list",				   "",								  "Pretend to schedule (write files) for current list of programmes"},
+		{"--unschedule-all",					   "",								  "Unschedule all programmes"},
+		{"-S, --schedule-list",					   "",								  "Schedule current list of programmes"},
+		{"--record",							   "<prog>",						  "Record programme <prog> (Base64 encoded)"},
+		{"--record-title",						   "<title>",						  "Schedule to record programme by title that has already started or starts within the next hour"},
+		{"--schedule-record",					   "<base64>",						  "Schedule specified programme (Base64 encoded)"},
+		{"--add-recorded",						   "<prog>",						  "Add recorded programme <prog> to recorded list (Base64 encoded)"},
+		{"--card",								   "<card>",						  "Set VIRTUAL card for subsequent scanning and PID operations (default 0)"},
+		{"--dvbcard",							   "<card>",						  "Set PHYSICAL card for subsequent scanning and PID operations (default 0)"},
+		{"--pids",								   "<channel>",						  "Find PIDs (all streams) associated with channel <channel>"},
+		{"--scan",								   "<freq>[,<freq>...]",			  "Scan frequencies <freq>MHz for DVB channels"},
+		{"--scan-all",							   "",								  "Scan all known frequencies for DVB channels"},
+		{"--scan-range",						   "<start-freq> <end-freq> <step>",  "Scan frequencies <freq>MHz for DVB channels"},
+		{"--find-cards",						   "",								  "Find DVB cards"},
+		{"--change-filename",					   "<filename1> <filename2>",		  "Change filename of recorded progamme with filename <filename1> to <filename2>"},
+		{"--change-filename-regex",				   "<filename1> <filename2>",		  "Change filename of recorded progamme with filename <filename1> to <filename2> (where <filename1> can be a regex and <filename2> can be an expansion)"},
+		{"--change-filename-regex-test",		   "<filename1> <filename2>",		  "Like above but do not commit changes"},
+		{"--find-recorded-programmes-on-disk",	   "",								  "Search for recorded programmes in 'searchdirs' and update any filenames"},
+		{"--find-series",						   "",								  "Find series' in programme list"},
+		{"--fix-data-in-recorded",				   "",								  "Fix incorrect metadata of certain programmes and rename files as necessary"},
+		{"--set-recorded-flag",					   "",								  "Set recorded flag on all programmes in recorded list"},
+		{"--list-flags",						   "",								  "List flags that can be used for --set-flag and --clr-flag"},
+		{"--set-flag",							   "<flag> <patterns>",				  "Set flag <flag> on programmes matching pattern"},
+		{"--clr-flag",							   "<flag> <patterns>",				  "Clear flag <flag> on programmes matching pattern"},
+		{"--check-disk-space",					   "",								  "Check disk space for all patterns"},
+		{"--update-recording-complete",			   "",								  "Update recording complete flag in every recorded programme"},
+		{"--check-recording-file",				   "",								  "Check programmes in running list to ensure they should remain in there"},
+		{"--force-failures",					   "",								  "Add current list to recording failures (setting failed flag)"},
+		{"--show-encoding-args",				   "",								  "Show encoding arguments for programmes in current list"},
+		{"--show-file-format",					   "",								  "Show file format of encoded programme"},
+		{"--use-converted-filename",			   "",								  "Change filename to that of converted file, without actually converting file"},
+		{"--set-dir",							   "<patterns> <newdir>",			  "Change directory for programmes in current list that match <patterns> to <newdir>"},
+		{"--regenerate-filename",				   "",								  "Change filename of current list of programmes (dependant on converted state), renaming files (in original directory OR current directory)"},
+		{"--regenerate-filename-test",			   "",								  "Test version of the above, will make no changes to programme list or move files"},
+		{"--delete-files",						   "",								  "Delete encoded files from programmes in current list"},
+		{"--delete-from-record-lists",			   "<uuid>",						  "Delete programme with UUID <uuid> from record lists (recorded and record failues)"},
+		{"--record-success",					   "",								  "Run recordsuccess command on programmes in current list"},
+		{"--change-user",						   "<patterns> <newuser>",			  "Change user of programmes matching <patterns> to <newuser>"},
+		{"--get-and-convert-recorded",			   "",								  "Pull and convert any recordings from recording host"},
+		{"--force-convert-files",				   "",								  "convert files in current list, even if they have already been converted"},
+		{"--update-recordings-list",			   "",								  "Pull list of programmes being recorded"},
+		{"--check-recording-now",				   "",								  "Check to see if programmes that should be being recording are recording"},
+		{"--calc-trend",						   "<start-date>",					  "Calculate average programmes per day and trend line based on programmes after <start-date> in current list"},
+		{"--gen-graphs",						   "",								  "Generate graphs from recorded data"},
+		{"--assign-episodes",					   "",								  "Assign episodes to current list"},
+		{"--reset-assigned-episodes",			   "",								  "Reset assigned episodes to current list"},
+		{"--count-hours",						   "",								  "Count total hours of programmes in current list"},
+		{"--find-gaps",							   "",								  "Find gap from now until the next working for each card"},
+		{"--find-new-programmes",				   "",								  "Find programmes that have been scheduled that are either new or from a new series"},
+		{"--stream",							   "<text>",						  "Stream DVB channel or programme being recorded <text> to mplayer (or other player)"},
+		{"--rawstream",							   "<text>",						  "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
+		{"--return-count",						   "",								  "Return programme list count in error code"},
+	};
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProgList proglist;
 	ADVBProg  prog;	// ensure ADVBProg initialisation takes place
 	ADateTime starttime = ADateTime().TimeStamp(true);
 	uint_t dvbcard   = 0;
 	uint_t verbosity = 0;
+	uint_t nopt, nsubopt;
 	int  i;
 	int  res = 0;
 
@@ -111,126 +242,70 @@ int main(int argc, char *argv[])
 #endif
 	
 	if ((argc == 1) || ((argc > 1) && ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)))) {
+		std::vector<AString> optionlist;
+		uint_t maxwid = 0;
+
 		printf("Usage: dvb {<file>|<cmd> ...}\n");
 		printf("Where <cmd> is:\n");
-		printf("\t-v[<n>]\t\t\t\tIncrease verbosity by <n> or by 1\n");
-		printf("\t--confdir\t\t\tPrint conf directory\n");
-		printf("\t--datadir\t\t\tPrint data directory\n");
-		printf("\t--logdir\t\t\tPrint log directory\n");
-		printf("\t--dirs\t\t\t\tPrint important configuration directories\n");
-		printf("\t--getxmltv <outputfile>\t\tDownload XMLTV listings\n");
-		printf("\t--dayformat <format>\t\tFormat string for day (default '%s')\n", ADVBProg::GetDayFormat().str());
-		printf("\t--dateformat <format>\t\tFormat string for date (default '%s')\n", ADVBProg::GetDateFormat().str());
-		printf("\t--timeformat <format>\t\tFormat string for time (default '%s')\n", ADVBProg::GetTimeFormat().str());
-		printf("\t--fulltimeformat <format>\tFormat string for fulltime (default '%s')\n", ADVBProg::GetFullTimeFormat().str());
-		printf("\t--set <var>=<val>\t\tSet variable in configuration file for this session only\n");
-		printf("\t--update <file>\t\t\tUpdate main listings with file <file> (-u)\n");
-		printf("\t--load\t\t\t\tRead listings from default file (-l)\n");
-		printf("\t--read <file>\t\t\tRead listings from file <file> (-r)\n");
-		printf("\t--merge <file>\t\t\tMerge listings from file <file>, adding any programmes that dot not exist\n");
-		printf("\t--modify-recorded <file>\tMerge listings from file <file> into recorded programmes, adding any programmes that dot not exist\n");
-		printf("\t--modify-recorded-from-recording-host Add recorded programmes from recording host into recorded programmes, adding any programmes that dot not exist\n");
-		printf("\t--modify-scheduled-from-recording-host Modfy scheduled programmes from recording host into scheduled programmes\n");
-		printf("\t--jobs\t\t\t\tRead programmes from scheduled jobs\n");
-		printf("\t--write <file>\t\t\tWrite listings to file <file> (-w)\n");
-		printf("\t--sort\t\t\t\tSort list in chronological order\n");
-		printf("\t--sort-rev\t\t\tSort list in reverse-chronological order\n");
-		printf("\t--write-text <filename>\t\tWrite listings to file <filename> in text format\n");
-		printf("\t--write-gnuplot <filename>\tWrite listings to file <filename> in format usable by GNUPlot\n");
-		printf("\t--email <recipient> <subject> <message>\tEmail current list (if it is non-empty) to <recipient> using subject\n");
-		printf("\t--fix-pound <file>\t\tFix pound symbols in file\n");
-		printf("\t--update-dvb-channels\t\tUpdate DVB channel assignments\n");
-		printf("\t--update-dvb-channels-output-list Update DVB channel assignments and output list of SchedulesDirect channel ID's\n");
-		printf("\t--update-uuid\t\t\tSet UUID's on every programme\n");
-		printf("\t--update-combined\t\tCreate a combined list of recorded and scheduled programmes\n");
-		printf("\t--list\t\t\t\tList programmes in current list (-L)\n");
-		printf("\t--list-to-file <file>\t\tList programmes in current list (-L) to file <file>\n");
-		printf("\t--list-base64\t\t\tList programmes in current list in base64 format\n");
-		printf("\t--list-channels\t\t\tList channels\n");
-		printf("\t--cut-head <n>\t\t\tCut <n> programmes from the start of the list\n");
-		printf("\t--cut-tail <n>\t\t\tCut <n> programmes from the end of the list\n");
-		printf("\t--head <n>\t\t\tKeep <n> programmes at the start of the list\n");
-		printf("\t--tail <n>\t\t\tKeep <n> programmes at the end of the list\n");
-		printf("\t--limit <n>\t\t\tLimit list to <n> programmes, deleting programmes from the end of the list\n");
-		printf("\t--find <patterns>\t\tFind programmes matching <patterns> (-f)\n");
-		printf("\t--find-with-file <pattern-file>\tFind programmes matching patterns in patterns file <pattern-file> (-F)\n");
-		printf("\t--find-repeats\t\t\tFor each programme in current list, list repeats (-R)\n");
-		printf("\t--find-similar <file>\t\tFor each programme in current list, find first similar programme in <file>\n");
-		printf("\t--find-differences <file1> <file2>\tFind programmes in <file1> but not in <file2> or in <file2> and not in <file1>\n");
-		printf("\t--find-in-file1-only <file1> <file2>\tFind programmes in <file1> but not in <file2>\n");
-		printf("\t--find-in-file2-only <file1> <file2>\tFind programmes in <file2> and not in <file1>\n");
-		printf("\t--find-similarities <file1> <file2>\tFind programmes in both <file1> and <file2>\n");
-		printf("\t--describe-pattern <patterns>\tDescribe patterns as parsed\n");
-		printf("\t--delete-all\t\t\tDelete all programmes\n");
-		printf("\t--delete <patterns>\t\tDelete programmes matching <patterns>\n");
-		printf("\t--delete-with-file <pattern-file> Delete programmes matching patterns in patterns file <pattern-file>\n");
-		printf("\t--delete-recorded\t\tDelete programmes that have been recorded\n");
-		printf("\t--delete-using-file <file>\tDelete programmes that are similar to those in file <file>\n");
-		printf("\t--delete-similar\t\tDelete programmes that are similar to others in the list\n");
-		printf("\t--schedule\t\t\tSchedule and create jobs for default set of patterns on the main listings file\n");
-		printf("\t--write-scheduled-jobs\t\tCreate jobs for current scheduled list\n");
-		printf("\t--start-time <time>\t\tSet start time for scheduling\n");
-		printf("\t--fake-schedule\t\t\tPretend to schedule (write files) for default set of patterns on the main listings file\n");
-		printf("\t--fake-schedule-list\t\tPretend to schedule (write files) for current list of programmes\n");
-		printf("\t--unschedule-all\t\tUnschedule all programmes\n");
-		printf("\t--schedule-list\t\t\tSchedule current list of programmes (-S)\n");
-		printf("\t--record <prog>\t\t\tRecord programme <prog> (Base64 encoded)\n");
-		printf("\t--record-title <title>\t\tSchedule to record programme by title that has already started or starts within the next hour\n");
-		printf("\t--schedule-record <base64>\t\tSchedule specified programme (Base64 encoded)\n");
-		printf("\t--add-recorded <prog>\t\tAdd recorded programme <prog> to recorded list (Base64 encoded)\n");
-		printf("\t--card <card>\t\t\tSet VIRTUAL card for subsequent scanning and PID operations (default 0)\n");
-		printf("\t--dvbcard <card>\t\tSet PHYSICAL card for subsequent scanning and PID operations (default 0)\n");
-		printf("\t--pids <channel>\t\tFind PIDs (all streams) associated with channel <channel>\n");
-		printf("\t--scan <freq>[,<freq>...]\tScan frequencies <freq>MHz for DVB channels\n");
-		printf("\t--scan-all\t\t\tScan all known frequencies for DVB channels\n");
-		printf("\t--scan-range <start-freq> <end-freq> <step>\n\t\t\t\t\tScan frequencies <freq>MHz for DVB channels\n");
-		printf("\t--find-cards\t\t\tFind DVB cards\n");
-		printf("\t--change-filename <filename1> <filename2>\n\t\t\t\t\tChange filename of recorded progamme with filename <filename1> to <filename2>\n");
-		printf("\t--change-filename-regex <filename1> <filename2>\n\t\t\t\t\tChange filename of recorded progamme with filename <filename1> to <filename2> (where <filename1> can be a regex and <filename2> can be an expansion)\n");
-		printf("\t--change-filename-regex-test <filename1> <filename2>\n\t\t\t\t\tLike above but do not commit changes\n");
-		printf("\t--find-recorded-programmes-on-disk\n\t\t\t\t\tSearch for recorded programmes in 'searchdirs' and update any filenames\n");
-		printf("\t--find-series\t\t\tFind series' in programme list\n");
-		printf("\t--fix-data-in-recorded\t\tFix incorrect metadata of certain programmes and rename files as necessary\n");
-		printf("\t--set-recorded-flag\t\tSet recorded flag on all programmes in recorded list\n");
-		printf("\t--list-flags\t\t\tList flags that can be used for --set-flag and --clr-flag\n");
-		printf("\t--set-flag <flag> <patterns>\tSet flag <flag> on programmes matching pattern\n");
-		printf("\t--clr-flag <flag> <patterns>\tClear flag <flag> on programmes matching pattern\n");
-		printf("\t--check-disk-space\t\tCheck disk space for all patterns\n");
-		printf("\t--update-recording-complete\tUpdate recording complete flag in every recorded programme\n");
-		printf("\t--check-recording-file\t\tCheck programmes in running list to ensure they should remain in there\n");
-		printf("\t--force-failures\t\tAdd current list to recording failures (setting failed flag)\n");
-		printf("\t--show-encoding-args\t\tShow encoding arguments for programmes in current list\n");
-		printf("\t--show-file-format\t\tShow file format of encoded programme\n");
-		printf("\t--use-converted-filename\tChange filename to that of converted file, without actually converting file\n");
-		printf("\t--set-dir <patterns> <newdir>\tChange directory for programmes in current list that match <patterns> to <newdir>\n");
-		printf("\t--regenerate-filename\t\tChange filename of current list of programmes (dependant on converted state), renaming files (in original directory OR current directory)\n");
-		printf("\t--regenerate-filename-test\tTest version of the above, will make no changes to programme list or move files\n");
-		printf("\t--delete-files\t\t\tDelete encoded files from programmes in current list\n");
-		printf("\t--delete-from-record-lists <uuid> Delete programme with UUID <uuid> from record lists (recorded and record failues)\n");
-		printf("\t--record-success\t\tRun recordsuccess command on programmes in current list\n");
-		printf("\t--change-user <patterns> <newuser>\n\t\t\t\t\tChange user of programmes matching <patterns> to <newuser>\n");
-		printf("\t--get-and-convert-recorded\tPull and convert any recordings from recording host\n");
-		printf("\t--force-convert-files\t\tconvert files in current list, even if they have already been converted\n");
-		printf("\t--update-recordings-list\tPull list of programmes being recorded\n");
-		printf("\t--check-recording-now\t\tCheck to see if programmes that should be being recording are recording\n");
-		printf("\t--calc-trend <start-date>\tCalculate average programmes per day and trend line based on programmes after <start-date> in current list\n");
-		printf("\t--gen-graphs\t\t\tGenerate graphs from recorded data\n");
-		printf("\t--assign-episodes\t\tAssign episodes to current list\n");
-		printf("\t--reset-assigned-episodes\tReset assigned episodes to current list\n");
-		printf("\t--count-hours\t\t\tCount total hours of programmes in current list\n");
-		printf("\t--find-gaps\t\t\tFind gap from now until the next working for each card\n");
-		printf("\t--find-new-programmes\t\tFind programmes that have been scheduled that are either new or from a new series\n");
-		printf("\t--stream <text>\t\t\tStream DVB channel or programme being recorded <text> to mplayer (or other player)\n");
-		printf("\t--rawstream <text>\t\tStream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)\n");
-		printf("\t--return-count\t\t\tReturn programme list count in error code\n");
+
+		for (nopt = 0; nopt < NUMBEROF(options); nopt++) {
+			const OPTION& option = options[nopt];
+			AString text;
+			uint_t nsubopts = option.option.CountColumns();
+
+			for (nsubopt = 0; nsubopt < nsubopts; nsubopt++) {
+				if (text.Valid()) text += ", ";
+				text += option.option.Column(nsubopt).Words(0);
+				if (option.args.Valid()) text += " " + option.args;
+			}
+
+			optionlist.push_back(text);
+			maxwid = std::max(maxwid, (uint_t)text.len());
+		}
+		
+		maxwid++;
+		
+		for (nopt = 0; nopt < NUMBEROF(options); nopt++) {
+			const OPTION& option = options[nopt];
+
+			printf("\t%s%s\t%s\n",
+				   optionlist[nopt].str(),
+				   AString(" ").Copies(maxwid - optionlist[nopt].len()).str(),
+				   option.helptext.str());
+		}
 	}
 	else {
 		for (i = 1; (i < argc) && !HasQuit(); i++) {
+			bool valid = false;
+			
 			if (strncmp(argv[i], "-v", 2) == 0) {
 				uint_t inc = (uint_t)AString(argv[i] + 2);
 				verbosity += inc ? inc : 1;
+				continue;
 			}
-			else if (strcmp(argv[i], "--confdir") == 0) printf("%s\n", config.GetConfigDir().str());
+
+			for (nopt = 0; nopt < NUMBEROF(options); nopt++) {
+				const OPTION& option = options[nopt];
+				uint_t nsubopts = option.option.CountColumns();
+
+				for (nsubopt = 0; nsubopt < nsubopts; nsubopt++) {
+					if (strcmp(argv[i], option.option.Column(nsubopt).Words(0).str()) == 0) {
+						valid = argsvalid(argc, argv, i, option);
+						break;
+					}
+				}
+
+				if (nsubopt < nsubopts) break;
+			}
+
+			if (nopt == NUMBEROF(options)) {
+				fprintf(stderr, "Unrecognized option: '%s'\n", argv[i]);
+				break;
+			}
+
+			if (!valid) break;
+			
+			if		(strcmp(argv[i], "--confdir") == 0) printf("%s\n", config.GetConfigDir().str());
 			else if (strcmp(argv[i], "--datadir") == 0) printf("%s\n", config.GetDataDir().str());
 			else if (strcmp(argv[i], "--logdir") == 0)  printf("%s\n", config.GetLogDir().str());
 			else if (strcmp(argv[i], "--dirs") == 0) {
@@ -262,10 +337,18 @@ int main(int argc, char *argv[])
 					config.logit("Downloading failed!");
 				}
 			}
-			else if (strcmp(argv[i], "--dayformat") == 0) ADVBProg::SetDayFormat(argv[++i]);
-			else if (strcmp(argv[i], "--dateformat") == 0) ADVBProg::SetDateFormat(argv[++i]);
-			else if (strcmp(argv[i], "--timeformat") == 0) ADVBProg::SetTimeFormat(argv[++i]);
-			else if (strcmp(argv[i], "--fulltimeformat") == 0) ADVBProg::SetFullTimeFormat(argv[++i]);
+			else if (strcmp(argv[i], "--dayformat") == 0) {
+				ADVBProg::SetDayFormat(argv[++i]);
+			}
+			else if (strcmp(argv[i], "--dateformat") == 0) {
+				ADVBProg::SetDateFormat(argv[++i]);
+			}
+			else if (strcmp(argv[i], "--timeformat") == 0) {
+				ADVBProg::SetTimeFormat(argv[++i]);
+			}
+			else if (strcmp(argv[i], "--fulltimeformat") == 0) {
+				ADVBProg::SetFullTimeFormat(argv[++i]);
+			}
 			else if (strcmp(argv[i], "--set") == 0) {
 				AString str = argv[++i];
 				int p;
@@ -275,7 +358,7 @@ int main(int argc, char *argv[])
 					AString val = str.Mid(p + 1).DeQuotify().DeEscapify();
 					config.Set(var, val);
 				}
-				else config.printf("Configuration setting '%s' invalid, format should be '<var>=<val>'", str.str());
+				else fprintf(stderr, "Configuration setting '%s' invalid, format should be '<var>=<val>'", str.str());
 			}
 			else if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0) || (AString(argv[i]).Suffix() == "xmltv") || (AString(argv[i]).Suffix() == "txt")) {
 				AString filename = config.GetListingsFile();
@@ -283,40 +366,43 @@ int main(int argc, char *argv[])
 
 				if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0)) i++;
 
-				config.printf("Reading main listings file...");
-				proglist.DeleteAll();
-				proglist.ReadFromFile(filename);
-				config.printf("Read programmes from '%s', total now %u", filename.str(), proglist.Count());
+				if (i < argc) {
+					config.printf("Reading main listings file...");
+					proglist.DeleteAll();
+					proglist.ReadFromFile(filename);
+					config.printf("Read programmes from '%s', total now %u", filename.str(), proglist.Count());
 
-				updatefile = argv[i];
+					updatefile = argv[i];
 
-				config.printf("Updating from new file...");
-				if (proglist.ReadFromFile(updatefile)) {
-					config.printf("Read programmes from '%s', total now %u", updatefile.str(), proglist.Count());
+					config.printf("Updating from new file...");
+					if (proglist.ReadFromFile(updatefile)) {
+						config.printf("Read programmes from '%s', total now %u", updatefile.str(), proglist.Count());
 
-					ADateTime dt(ADateTime().TimeStamp(true).GetDays() - config.GetDaysToKeep(), 0);
-					config.printf("Removing old programmes (before %s)...", dt.UTCToLocal().DateToStr().str());
-					proglist.DeleteProgrammesBefore(dt);
+						ADateTime dt(ADateTime().TimeStamp(true).GetDays() - config.GetDaysToKeep(), 0);
+						config.printf("Removing old programmes (before %s)...", dt.UTCToLocal().DateToStr().str());
+						proglist.DeleteProgrammesBefore(dt);
 
-					config.printf("Updating DVB channels...");
-					proglist.UpdateDVBChannels();
+						config.printf("Updating DVB channels...");
+						proglist.UpdateDVBChannels();
 
-					if (config.AssignEpisodes()) {
-						config.printf("Assigning episode numbers where necessary...");
-						proglist.AssignEpisodes();
-					}
+						if (config.AssignEpisodes()) {
+							config.printf("Assigning episode numbers where necessary...");
+							proglist.AssignEpisodes();
+						}
 
-					config.printf("Writing main listings file...");
-					if (!HasQuit() && proglist.WriteToFile(filename)) {
-						config.printf("Wrote %u programmes to '%s'", proglist.Count(), filename.str());
+						config.printf("Writing main listings file...");
+						if (!HasQuit() && proglist.WriteToFile(filename)) {
+							config.printf("Wrote %u programmes to '%s'", proglist.Count(), filename.str());
+						}
+						else {
+							config.printf("Failed to write programme list to '%s'", filename.str());
+						}
 					}
 					else {
-						config.printf("Failed to write programme list to '%s'", filename.str());
+						config.printf("Failed to read programme list from '%s'", filename.str());
 					}
 				}
-				else {
-					config.printf("Failed to read programme list from '%s'", filename.str());
-				}
+				else fprintf(stderr, "Arguments: %s <file>\n", argv[i]);
 			}
 			else if ((strcmp(argv[i], "--load") == 0) || (strcmp(argv[i], "-l") == 0)) {
 				AString filename = config.GetListingsFile();
@@ -405,7 +491,7 @@ int main(int argc, char *argv[])
 					}
 				}
 				else {
-					printf("Failed to read programme list from '%s'\n", filename.str());
+					fprintf(stderr, "Failed to read programme list from '%s'\n", filename.str());
 				}
 			}
 			else if ((strcmp(argv[i], "--update-dvb-channels") == 0) ||
@@ -507,7 +593,7 @@ int main(int argc, char *argv[])
 						else printf("Nothing similar to %s\n", proglist[j].GetDescription(verbosity).str());
 					}
 				}
-				else printf("Failed to read programmes from '%s'\n", argv[i]);
+				else fprintf(stderr, "Failed to read programmes from '%s'\n", argv[i]);
 			}
 			else if ((strcmp(argv[i], "--find-differences")   == 0) ||
 					 (strcmp(argv[i], "--find-in-file1-only") == 0) ||
@@ -631,10 +717,10 @@ int main(int argc, char *argv[])
 						if (proglist.DeleteProg(prog)) {
 							printf("Deleted '%s'\n", prog.GetDescription(verbosity).str());
 						}
-						else printf("Failed to delete '%s'!\n", prog.GetDescription(verbosity).str());
+						else fprintf(stderr, "Failed to delete '%s'!\n", prog.GetDescription(verbosity).str());
 					}
 				}
-				else printf("Failed to read patterns from '%s'\n", filename.str());
+				else fprintf(stderr, "Failed to read patterns from '%s'\n", filename.str());
 			}
 			else if ((strcmp(argv[i], "--delete-recorded") == 0) ||
 					 (strcmp(argv[i], "--delete-using-file") == 0)) {
@@ -656,7 +742,7 @@ int main(int argc, char *argv[])
 
 					printf("Deleted %u programmes\n", ndeleted);
 				}
-				else printf("Failed to read file '%s'\n", filename.str());
+				else fprintf(stderr, "Failed to read file '%s'\n", filename.str());
 			}
 			else if (strcmp(argv[i], "--delete-similar") == 0) {
 				uint_t j, ndeleted = 0;
@@ -1795,10 +1881,6 @@ int main(int argc, char *argv[])
 			else if (stricmp(argv[i], "--db") == 0) {
 				ADVBDatabase db;
 				
-			}
-			else {
-				fprintf(stderr, "Unrecognized option '%s'\n", argv[i]);
-				exit(1);
 			}
 		}
 	}

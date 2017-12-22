@@ -143,14 +143,14 @@ public:
 	bool SetEpisodeID(const char *str)		   {return SetString(&data->strings.episodeid,  str);}
 #endif
 
-	static const AString& GetDayFormat()  	  		  {return dayformat;}
-	static const AString& GetDateFormat() 	  		  {return dateformat;}
-	static const AString& GetTimeFormat() 	  		  {return timeformat;}
-	static const AString& GetFullTimeFormat() 		  {return fulltimeformat;}
-	static void SetDayFormat(const AString& str)  	  {dayformat  	  = str;}
-	static void SetDateFormat(const AString& str) 	  {dateformat 	  = str;}
-	static void SetTimeFormat(const AString& str) 	  {timeformat 	  = str;}
-	static void SetFullTimeFormat(const AString& str) {fulltimeformat = str;}
+	static const AString& GetDayFormat()  	  		  {StaticInit(); return dayformat;}
+	static const AString& GetDateFormat() 	  		  {StaticInit(); return dateformat;}
+	static const AString& GetTimeFormat() 	  		  {StaticInit(); return timeformat;}
+	static const AString& GetFullTimeFormat() 		  {StaticInit(); return fulltimeformat;}
+	static void SetDayFormat(const AString& str)  	  {StaticInit(); dayformat  	  = str;}
+	static void SetDateFormat(const AString& str) 	  {StaticInit(); dateformat 	  = str;}
+	static void SetTimeFormat(const AString& str) 	  {StaticInit(); timeformat 	  = str;}
+	static void SetFullTimeFormat(const AString& str) {StaticInit(); fulltimeformat = str;}
 
 	AString GetFilenameStub() const;
 	AString GetTempFilename() const;
