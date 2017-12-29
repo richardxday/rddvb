@@ -109,6 +109,7 @@ int main(int argc, const char *argv[])
 		{"--fix-pound",							   "<file>",						  "Fix pound symbols in file"},
 		{"--update-dvb-channels",				   "",								  "Update DVB channel assignments"},
 		{"--update-dvb-channels-output-list",	   "",								  "Update DVB channel assignments and output list of SchedulesDirect channel ID's"},
+		{"--find-unused-channels",				   "",								  "Find listings and DVB channels that are unused"},
 		{"--update-uuid",						   "",								  "Set UUID's on every programme"},
 		{"--update-combined",					   "",								  "Create a combined list of recorded and scheduled programmes"},
 		{"-L, --list",							   "",								  "List programmes in current list"},
@@ -509,6 +510,37 @@ int main(int argc, const char *argv[])
 						printf("channel=%u\n", it->first);
 					}
 					printf("----Channel ID's----\n");
+				}
+			}
+			else if (strcmp(argv[i], "--find-unused-channels") == 0) {
+				const ADVBChannelList& channellist = ADVBChannelList::Get();
+				std::map<AString,uint_t> dvbchannels;
+				std::map<AString,uint_t> missingchannels;
+				uint_t j, n = channellist.GetChannelCount();
+
+				for (j = 0; j < n; j++) {
+					dvbchannels[channellist.GetChannel(j)->name] = 0;
+				}
+				
+				for (j = 0; j < proglist.Count(); j++) {
+					const ADVBProg& prog       = proglist[j];
+					const AString   dvbchannel = prog.GetDVBChannel();
+
+					if (dvbchannel.Valid()) {
+						//printf("Programme '%s' has DVB channel '%s'\n", prog.GetQuickDescription().str(), dvbchannel.str());
+						dvbchannels[dvbchannel]++;
+					}
+					else missingchannels[prog.GetChannel()]++;
+				}
+
+				std::map<AString,uint_t>::iterator it;
+				for (it = dvbchannels.begin(); it != dvbchannels.end(); ++it) {
+					if (it->second == 0) {
+						printf("DVB channel '%s' has no programmes associated with it\n", it->first.str());
+					}
+				}
+				for (it = missingchannels.begin(); it != missingchannels.end(); ++it) {
+					printf("Listings channel '%s' has no DVB channel associated with it\n", it->first.str());
 				}
 			}
 			else if (strcmp(argv[i], "--update-uuid") == 0) {

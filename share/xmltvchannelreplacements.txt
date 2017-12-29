@@ -26,6 +26,7 @@
 " Ireland"=""
 " Channel Islands"=""
 " Freeview"=""
+" Free"=""
 " European"=""
 " (W)"=""
 " (E)"=""
@@ -45,6 +46,7 @@
 "BBC Four"="BBC4"
 "BBC Radio 4 FM"="BBC Radio 4"
 "BBC Radio 6"="BBC 6 Music"
+"BBC 6 Music Music"="BBC 6 Music
 "CBBC Channel"="CBBC"
 "Children's ITV"="CITV"
 "Challenge TV"="Challenge"
@@ -63,4 +65,4 @@
 "Food Network FM"="Food Network"
 "Rocks and Co 1"="Rocks & Co 1"
 "Film 4"="Film4"
-"Channel 5+24 Free"="Channel 5+24"
+"ITV BE"="ITVBe"
