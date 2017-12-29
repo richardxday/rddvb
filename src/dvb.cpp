@@ -51,7 +51,7 @@ static AValue __func(const AString& funcname, const simplevars_t& vars, const si
 {
 	AValue res = 0;
 	size_t i;
-	
+
 	UNUSED(funcname);
 	UNUSED(vars);
 	UNUSED(values);
@@ -61,7 +61,7 @@ static AValue __func(const AString& funcname, const simplevars_t& vars, const si
 	for (i = 0; i < values.size(); i++) {
 		res += values[i];
 	}
-	
+
 	return res;
 }
 #endif
@@ -213,7 +213,7 @@ int main(int argc, const char *argv[])
 		if (list.ReadFromFile(config.GetRecordedFile())) {
 			uint_t i;
 			uint_t n = 0;
-			
+
 			for (i = 0; i < list.Count(); i++) {
 				ADVBProg& prog = list.GetProgWritable(i);
 				AString filename = prog.GetFilename();
@@ -241,7 +241,7 @@ int main(int argc, const char *argv[])
 		}
 	}
 #endif
-	
+
 	if ((argc == 1) || ((argc > 1) && ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)))) {
 		std::vector<AString> optionlist;
 		uint_t maxwid = 0;
@@ -263,9 +263,9 @@ int main(int argc, const char *argv[])
 			optionlist.push_back(text);
 			maxwid = std::max(maxwid, (uint_t)text.len());
 		}
-		
+
 		maxwid++;
-		
+
 		for (nopt = 0; nopt < NUMBEROF(options); nopt++) {
 			const OPTION& option = options[nopt];
 
@@ -278,7 +278,7 @@ int main(int argc, const char *argv[])
 	else {
 		for (i = 1; (i < argc) && !HasQuit(); i++) {
 			bool valid = false;
-			
+
 			if (strncmp(argv[i], "-v", 2) == 0) {
 				uint_t inc = (uint_t)AString(argv[i] + 2);
 				verbosity += inc ? inc : 1;
@@ -305,7 +305,7 @@ int main(int argc, const char *argv[])
 			}
 
 			if (!valid) break;
-			
+
 			if		(strcmp(argv[i], "--confdir") == 0) printf("%s\n", config.GetConfigDir().str());
 			else if (strcmp(argv[i], "--datadir") == 0) printf("%s\n", config.GetDataDir().str());
 			else if (strcmp(argv[i], "--logdir") == 0)  printf("%s\n", config.GetLogDir().str());
@@ -367,43 +367,54 @@ int main(int argc, const char *argv[])
 
 				if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0)) i++;
 
-				if (i < argc) {
-					config.printf("Reading main listings file...");
-					proglist.DeleteAll();
-					proglist.ReadFromFile(filename);
-					config.printf("Read programmes from '%s', total now %u", filename.str(), proglist.Count());
+				config.printf("Reading main listings file...");
+				proglist.DeleteAll();
+				proglist.ReadFromFile(filename);
+				config.printf("Read programmes from '%s', total now %u", filename.str(), proglist.Count());
 
-					updatefile = argv[i];
+				updatefile = argv[i];
 
-					config.printf("Updating from new file...");
-					if (proglist.ReadFromFile(updatefile)) {
-						config.printf("Read programmes from '%s', total now %u", updatefile.str(), proglist.Count());
+				config.printf("Updating from new file...");
+				if (proglist.ReadFromFile(updatefile)) {
+					config.printf("Read programmes from '%s', total now %u", updatefile.str(), proglist.Count());
 
-						ADateTime dt(ADateTime().TimeStamp(true).GetDays() - config.GetDaysToKeep(), 0);
-						config.printf("Removing old programmes (before %s)...", dt.UTCToLocal().DateToStr().str());
-						proglist.DeleteProgrammesBefore(dt);
+					ADateTime dt(ADateTime().TimeStamp(true).GetDays() - config.GetDaysToKeep(), 0);
+					config.printf("Removing old programmes (before %s)...", dt.UTCToLocal().DateToStr().str());
+					proglist.DeleteProgrammesBefore(dt);
 
-						config.printf("Updating DVB channels...");
-						proglist.UpdateDVBChannels();
+					config.printf("Updating DVB channels...");
+					proglist.UpdateDVBChannels();
 
-						if (config.AssignEpisodes()) {
-							config.printf("Assigning episode numbers where necessary...");
-							proglist.AssignEpisodes();
+					if (config.AssignEpisodes()) {
+						config.printf("Assigning episode numbers where necessary...");
+						proglist.AssignEpisodes();
+					}
+
+#if 0
+					config.printf("Removing programmes without a DVB...");
+					uint_t j, deleted = 0;
+					for (j = 0; j < proglist.Count(); ) {
+						if (AString(proglist[j].GetChannel()).Empty()) {
+							proglist.DeleteProg(j);
+							deleted++;
 						}
+						else j++;
+					}
 
-						config.printf("Writing main listings file...");
-						if (!HasQuit() && proglist.WriteToFile(filename)) {
-							config.printf("Wrote %u programmes to '%s'", proglist.Count(), filename.str());
-						}
-						else {
-							config.printf("Failed to write programme list to '%s'", filename.str());
-						}
+					config.printf("%u programmes deleted", deleted);
+#endif
+
+					config.printf("Writing main listings file...");
+					if (!HasQuit() && proglist.WriteToFile(filename)) {
+						config.printf("Wrote %u programmes to '%s'", proglist.Count(), filename.str());
 					}
 					else {
-						config.printf("Failed to read programme list from '%s'", filename.str());
+						config.printf("Failed to write programme list to '%s'", filename.str());
 					}
 				}
-				else fprintf(stderr, "Arguments: %s <file>\n", argv[i]);
+				else {
+					config.printf("Failed to read programme list from '%s'", filename.str());
+				}
 			}
 			else if ((strcmp(argv[i], "--load") == 0) || (strcmp(argv[i], "-l") == 0)) {
 				AString filename = config.GetListingsFile();
@@ -498,10 +509,10 @@ int main(int argc, const char *argv[])
 			else if ((strcmp(argv[i], "--update-dvb-channels") == 0) ||
 					 (strcmp(argv[i], "--update-dvb-channels-output-list") == 0)) {
 				std::map<uint_t, bool> sdchannelids;
-				
+
 				config.printf("Updating DVB channels...");
 				proglist.UpdateDVBChannels(&sdchannelids);
-				
+
 				if (strcmp(argv[i], "--update-dvb-channels-output-list") == 0) {
 					std::map<uint_t, bool>::iterator it;
 
@@ -521,7 +532,7 @@ int main(int argc, const char *argv[])
 				for (j = 0; j < n; j++) {
 					dvbchannels[channellist.GetChannel(j)->name] = 0;
 				}
-				
+
 				for (j = 0; j < proglist.Count(); j++) {
 					const ADVBProg& prog       = proglist[j];
 					const AString   dvbchannel = prog.GetDVBChannel();
@@ -638,7 +649,7 @@ int main(int argc, const char *argv[])
 				AString file1name = argv[++i];
 				AString file2name = argv[++i];
 				bool success = true;
-				
+
 				if (!file1list.ReadFromFile(file1name)) {
 					printf("Failed to read programmes fomr '%s'\n", file1name.str());
 					success = false;
@@ -657,7 +668,7 @@ int main(int argc, const char *argv[])
 					else {
 						proglist.FindDifferences(file1list, file2list, in1only, in2only);
 					}
-					
+
 					printf("Found %u programme%s\n", proglist.Count(), (proglist.Count() == 1) ? "" : "s");
 				}
 			}
@@ -1157,7 +1168,7 @@ int main(int argc, const char *argv[])
 			else if (stricmp(argv[i], "--find-series") == 0) {
 				ADVBProgList::SERIESLIST series;
 				ADVBProgList::SERIESLIST::iterator it;
-				
+
 				proglist.FindSeries(series);
 
 				printf("Found series for %u programmes\n", (uint_t)series.size());
@@ -1298,7 +1309,7 @@ int main(int argc, const char *argv[])
 			else if (stricmp(argv[i], "--list-flags") == 0) {
 				std::vector<AString> flags;
 				size_t i;
-				
+
 				ADVBProg::GetFlagList(flags, false);
 
 				printf("Flags:\n");
@@ -1321,7 +1332,7 @@ int main(int argc, const char *argv[])
 
 					if (errors.Valid()) {
 						printf("Errors:\n");
-					
+
 						uint_t j, n = errors.CountLines();
 						for (j = 0; j < n; j++) printf("%s\n", errors.Line(j).str());
 					}
@@ -1542,7 +1553,7 @@ int main(int argc, const char *argv[])
 
 						if (!test) {
 							prog.SetFilename(newfilename);
-						
+
 							if (AStdFile::exists(oldfilename)) {
 								CreateDirectory(newfilename.PathPart());
 								if (MoveFile(oldfilename, newfilename)) {
@@ -1734,9 +1745,9 @@ int main(int argc, const char *argv[])
 					for (i = 0; i < (uint_t)gaps.size(); i++) {
 						const ADVBProgList::TIMEGAP& gap = gaps[i];
 						uint_t card = i;
-						
+
 						if (gap.end < ADateTime::MaxDateTime) {
-							ADateTime diff = gap.end - gap.start;								
+							ADateTime diff = gap.end - gap.start;
 							printf("Card %u (hardware card %u): free from %s to %s (%s)\n", card, config.GetPhysicalDVBCard(card), gap.start.UTCToLocal().DateToStr().str(), gap.end.UTCToLocal().DateToStr().str(), diff.SpanStr().str());
 						}
 						else {
@@ -1753,11 +1764,11 @@ int main(int argc, const char *argv[])
 				ADVBProgList reclist;
 				ADVBProgList schlist;
 
-				if (reclist.ReadFromFile(config.GetRecordedFile())) {					
+				if (reclist.ReadFromFile(config.GetRecordedFile())) {
 					if (schlist.ReadFromFile(config.GetScheduledFile())) {
 						ADVBProgList::SERIESLIST serieslist;
 						uint_t i;
-						
+
 						lock.ReleaseLock();
 
 						reclist.FindSeries(serieslist);
@@ -1766,7 +1777,7 @@ int main(int argc, const char *argv[])
 						printf("Found %u new programmes\n", schlist.Count());
 						for (i = 0; i < schlist.Count(); i++) {
 							printf("%s\n", schlist[i].GetDescription(verbosity).str());
-						}						
+						}
 					}
 					else fprintf(stderr, "Failed to read scheduled programmes list\n");
 				}
@@ -1778,16 +1789,16 @@ int main(int argc, const char *argv[])
 				AString text = AString(argv[++i]).DeEscapify(), cmd;
 
 				ADVBConfig::GetWriteable(true);
-				
+
 				if (config.GetRecordingSlave().Valid()) {
 					AString cmd1, cmd2;
-					
+
 					cmd1.printf("dvb --stream \"%s\"", text.str());
 
 					if (!rawstream) {
 						cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
 					}
-					
+
 					cmd = GetRemoteCommand(cmd1, cmd2, false);
 				}
 				else {
@@ -1796,7 +1807,7 @@ int main(int argc, const char *argv[])
 
 					if (channellist.GetPIDList(0U, text, pids, false)) {
 						ADVBProgList list;
-						
+
 						if (list.ReadFromFile(config.GetScheduledFile())) {
 							std::vector<ADVBProgList::TIMEGAP> gaps;
 							ADVBProgList::TIMEGAP best;
@@ -1804,14 +1815,14 @@ int main(int argc, const char *argv[])
 
 							list.ReadFromFile(config.GetRecordingFile());
 							list.Sort();
-							
+
 							best = list.FindGaps(ADateTime().TimeStamp(true), gaps);
 							maxseconds = ((uint64_t)best.end - (uint64_t)best.start) / 1000U;
 
 							if ((best.card < config.GetMaxDVBCards()) && (maxseconds > 10U)) {
 								maxseconds -= 10U;
 								maxseconds  = std::min(maxseconds, (uint64_t)0xfffffffU);
-							
+
 								fprintf(stderr, "Max stream time is %s seconds, using card %u\n", AValue(maxseconds).ToString().str(), best.card);
 
 								if (pids.Empty()) {
@@ -1828,13 +1839,13 @@ int main(int argc, const char *argv[])
 							else fprintf(stderr, "No DVB card has big enough gap\n");
 						}
 						else {
-							fprintf(stderr, "Failed to read scheduled programmes file\n");	
+							fprintf(stderr, "Failed to read scheduled programmes file\n");
 						}
 					}
 					else {
 						ADVBProgList list, list1;
 						AString errors;
-						
+
 						list.ReadFromFile(config.GetRecordedFile());
 						list.ReadFromFile(config.GetRecordingFile());
 
@@ -1850,7 +1861,7 @@ int main(int argc, const char *argv[])
 
 							for (i = list1.Count(); (i > 0) && filename.Empty(); ) {
 								const ADVBProg& prog = list1[--i];
-								
+
 								if (AStdFile::exists(prog.GetFilename())) {
 									filename = prog.GetFilename();
 								}
@@ -1869,7 +1880,7 @@ int main(int argc, const char *argv[])
 								const ADVBProg& prog = list1[i];
 
 								cmd.printf("cat \"%s\"", filename.str());
-								
+
 								fprintf(stderr, "Streaming '%s'\n", prog.GetDescription(1).str());
 							}
 							else {
@@ -1886,7 +1897,7 @@ int main(int argc, const char *argv[])
 					if (config.LogRemoteCommands()) {
 						config.logit("Running command '%s'", cmd.str());
 					}
-					
+
 					int res = system(cmd);
 					(void)res;
 				}
@@ -1902,7 +1913,7 @@ int main(int argc, const char *argv[])
 				AValue       res = 0;
 
 				AddSimpleFunction("func", &__func);
-				
+
 				if (Evaluate(vars, str, res, errors)) {
 					printf("Resultant: %s\n", AValue(res).ToString().str());
 				}
@@ -1912,7 +1923,7 @@ int main(int argc, const char *argv[])
 #endif
 			else if (stricmp(argv[i], "--db") == 0) {
 				ADVBDatabase db;
-				
+
 			}
 		}
 	}
