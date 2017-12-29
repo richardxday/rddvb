@@ -390,6 +390,8 @@ public:
 
 	uint_t  GetMaxRecordLag(const AString& user, const AString& category) const;
 
+	bool    DeleteProgrammesWithNoDVBChannel() const; // extractconfig()
+	
 	// NOTE: function cheats 'const'!
 	void Set(const AString& var, const AString& val) const;
 

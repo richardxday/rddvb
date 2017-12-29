@@ -390,19 +390,19 @@ int main(int argc, const char *argv[])
 						proglist.AssignEpisodes();
 					}
 
-#if 0
-					config.printf("Removing programmes without a DVB...");
-					uint_t j, deleted = 0;
-					for (j = 0; j < proglist.Count(); ) {
-						if (AString(proglist[j].GetChannel()).Empty()) {
-							proglist.DeleteProg(j);
-							deleted++;
+					if (config.DeleteProgrammesWithNoDVBChannel()) {
+						config.printf("Removing programmes without a DVB...");
+						uint_t j, deleted = 0;
+						for (j = 0; j < proglist.Count(); ) {
+							if (AString(proglist[j].GetChannel()).Empty()) {
+								proglist.DeleteProg(j);
+								deleted++;
+							}
+							else j++;
 						}
-						else j++;
-					}
 
-					config.printf("%u programmes deleted", deleted);
-#endif
+						config.printf("%u programmes deleted", deleted);
+					}
 
 					config.printf("Writing main listings file...");
 					if (!HasQuit() && proglist.WriteToFile(filename)) {

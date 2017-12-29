@@ -1235,3 +1235,8 @@ uint_t ADVBConfig::GetMaxRecordLag(const AString& user, const AString& category)
 {
 	return (uint_t)GetUserSubItemConfigItem(user, category, "maxrecordlag", "30");
 }
+
+bool ADVBConfig::DeleteProgrammesWithNoDVBChannel() const
+{
+	return ((uint_t)GetConfigItem("deleteprogrammeswithnodvbchannel", "0") != 0);
+}
