@@ -46,6 +46,11 @@
 "BBC Four"="BBC4"
 "BBC Radio 4 FM"="BBC Radio 4"
 "BBC Radio 6"="BBC 6 Music"
+"BBC Radio Manchester"="BBC Manchester"
+"BBC Radio Lancashire"="BBC Lancashire"
+"BBC Radio Cumbria"="BBC Cumbria"
+"BBC Radio Merseyside"="BBC Merseyside"
+"BBC Radio Stoke"="BBC Stoke"
 "BBC 6 Music Music"="BBC 6 Music
 "CBBC Channel"="CBBC"
 "Children's ITV"="CITV"
