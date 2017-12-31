@@ -391,9 +391,11 @@ int main(int argc, const char *argv[])
 					}
 
 					if (config.DeleteProgrammesWithNoDVBChannel()) {
-						config.printf("Removing programmes without a DVB...");
 						uint_t j, deleted = 0;
-						for (j = 0; j < proglist.Count(); ) {
+
+						config.printf("Removing programmes without a DVB channel...");
+
+						for (j = 0; !HasQuit() && (j < proglist.Count()); ) {
 							if (AString(proglist[j].GetChannel()).Empty()) {
 								proglist.DeleteProg(j);
 								deleted++;
