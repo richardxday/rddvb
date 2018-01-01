@@ -23,12 +23,14 @@ public:
 
 	typedef std::vector<uint_t> PIDLIST;
 	typedef struct {
+		uint_t   lcn;
 		AString  name;
 		AString  convertedname;
 		uint32_t freq;
 		PIDLIST  pidlist;
 	} CHANNEL;
-	const CHANNEL *GetChannel(uint_t n) const {return (const CHANNEL *)list[n];}
+	const CHANNEL *GetChannel(uint_t n)      const {return (n < list.size()) ? (const CHANNEL *)list[n] : NULL;}
+	const CHANNEL *GetChannelByLCN(uint_t n) const {return (n < lcnlist.size()) ? (const CHANNEL *)lcnlist[n] : NULL;}
 	const CHANNEL *GetChannelByName(const AString& name) const;
 
 private:
@@ -51,6 +53,7 @@ protected:
 	typedef std::map<AString, CHANNEL *> CHANNELMAP;
 protected:
 	CHANNELLIST list;
+	CHANNELLIST lcnlist;
 	CHANNELMAP  map;
 	bool        changed;
 };

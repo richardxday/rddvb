@@ -24,6 +24,7 @@ ADVBChannelList::ADVBChannelList() : changed(false)
 				(line.GetFieldNumber(":", 10, _pid1) >= 0) &&
 				(line.GetFieldNumber(":", 11, _pid2) >= 0)) {
 				if ((chan = GetChannelByName(name, true)) != NULL) {
+					chan->lcn = 0;
 					chan->freq = (uint32_t)_freq;
 					chan->pidlist.clear();
 
@@ -38,10 +39,19 @@ ADVBChannelList::ADVBChannelList() : changed(false)
 				}
 			}
 			else if ((name = line.Column(0)).Valid() && (_freq = line.Column(1)).Valid()) {
+				uint_t lcn = 0;
+
+				if (sscanf(name.str(), "[%u]", &lcn) > 0) {
+					name = name.Mid(name.Pos("]") + 1);
+				}
+
 				if ((chan = GetChannelByName(name, true)) != NULL) {
+					chan->lcn = lcn;
 					chan->freq = (uint32_t)_freq;
 					chan->pidlist.clear();
 
+					debug("Channel %03u: %s\n", lcn, name.str());
+					
 					uint_t i, n = line.CountColumns();
 					for (i = 2; (i < n); i++) {
 						AString col = line.Column(i);
@@ -68,6 +78,10 @@ ADVBChannelList::~ADVBChannelList()
 			const CHANNEL& chan = *list[i];
 			AString str;
 			uint_t  j;
+
+			if (chan.lcn) {
+				str.printf("[%u]", chan.lcn);
+			}
 			
 			str.printf("%s,%u", chan.name.str(), chan.freq);
 			
@@ -140,8 +154,17 @@ ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name,
 		list.push_back(chan);
 		map[chan->name.ToLower()] = chan;
 
-		if (chan->convertedname.ToLower() != chan->name.ToLower()) map[chan->convertedname.ToLower()] = chan;
-
+		if (chan->convertedname.ToLower() != chan->name.ToLower()) {
+			map[chan->convertedname.ToLower()] = chan;
+		}
+		
+		if (chan->lcn) {
+			if (chan->lcn >= lcnlist.size()) {
+				lcnlist.resize(chan->lcn + 1);
+			}
+			lcnlist[chan->lcn] = chan;
+		}
+		
 		changed = true;
 	}
 
