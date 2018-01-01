@@ -45,7 +45,7 @@ protected:
 		delete (CHANNEL *)item;
 	}
 
-	CHANNEL *GetChannelByName(const AString& name, bool create = false);
+	CHANNEL *GetChannelByName(uint_t lcn, const AString& name, bool create = false);
 
 	static int __CompareItems(uptr_t a, uptr_t b, void *context);
 

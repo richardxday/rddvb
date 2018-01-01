@@ -23,7 +23,7 @@ ADVBChannelList::ADVBChannelList() : changed(false)
 				(line.GetFieldNumber(":", 1, _freq) >= 0) &&
 				(line.GetFieldNumber(":", 10, _pid1) >= 0) &&
 				(line.GetFieldNumber(":", 11, _pid2) >= 0)) {
-				if ((chan = GetChannelByName(name, true)) != NULL) {
+				if ((chan = GetChannelByName(0, name, true)) != NULL) {
 					chan->lcn = 0;
 					chan->freq = (uint32_t)_freq;
 					chan->pidlist.clear();
@@ -45,13 +45,10 @@ ADVBChannelList::ADVBChannelList() : changed(false)
 					name = name.Mid(name.Pos("]") + 1);
 				}
 
-				if ((chan = GetChannelByName(name, true)) != NULL) {
-					chan->lcn = lcn;
+				if ((chan = GetChannelByName(lcn, name, true)) != NULL) {
 					chan->freq = (uint32_t)_freq;
 					chan->pidlist.clear();
 
-					debug("Channel %03u: %s\n", lcn, name.str());
-					
 					uint_t i, n = line.CountColumns();
 					for (i = 2; (i < n); i++) {
 						AString col = line.Column(i);
@@ -137,7 +134,7 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString&
 	return chan;
 }
 
-ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name, bool create)
+ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(uint_t lcn, const AString& name, bool create)
 {
 	CHANNELMAP::const_iterator it;
 	const AString chname = name.SearchAndReplace("_", " ");
@@ -148,6 +145,7 @@ ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name,
 	}
 
 	if (!chan && create && ((chan = new CHANNEL) != NULL)) {
+		chan->lcn = lcn;
 		chan->name = chname;
 		chan->convertedname = ConvertDVBChannel(chname);
 
@@ -205,7 +203,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 					service += line + "\n";
 
 					if (line == "</service>") {
-						CHANNEL *chan = GetChannelByName(servname, true);
+						CHANNEL *chan = GetChannelByName(0, servname, true);
 
 						if (chan) {
 							std::map<AString,bool> pidhash;
