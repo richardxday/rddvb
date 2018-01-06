@@ -275,6 +275,7 @@ public:
 	AString GetFilenameTemplate(const AString& user, const AString& title, const AString category) const; // extractconfig("<name>", "<title>", "<category>")
 	AString GetListingsFile()		   		 const; // extractconfig()
 	AString GetDVBChannelsFile()	   		 const; // extractconfig()
+	AString GetDVBChannelsJSONFile()		 const; // extractconfig()
 	AString GetPatternsFile()		   		 const; // extractconfig()
 	AString GetUserPatternsPattern()		 const; // extractconfig()
 	AString GetRecordedFile()		   		 const; // extractconfig()

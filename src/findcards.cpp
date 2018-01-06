@@ -27,7 +27,7 @@ void findcards(void)
 	else {
 		static const AString str = "using dvb card";
 		const ADVBChannelList::CHANNEL *channel = ADVBChannelList::Get().GetChannel(0);
-		const uint32_t freq = channel ? channel->freq : (uint32_t)((double)config.GetDVBFrequencyRange().Column(0) * 1.0e6);
+		const uint32_t freq = channel ? channel->dvb.freq : (uint32_t)((double)config.GetDVBFrequencyRange().Column(0) * 1.0e6);
 		AString file;
 		AString oldcards, newcards;
 		uint_t i;

@@ -2123,11 +2123,11 @@ bool ADVBProg::GetRecordPIDs(AString& pids, bool update) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBChannelList& channellist = ADVBChannelList::Get();
-	AString dvbchannel = GetDVBChannel();
+	AString channel = GetDVBChannel();
 
-	if (dvbchannel.Empty()) dvbchannel = GetChannel();
+	if (channel.Empty()) channel = GetChannel();
 
-	return channellist.GetPIDList(config.GetPhysicalDVBCard(GetDVBCard()), dvbchannel, pids, update);
+	return channellist.GetPIDList(config.GetPhysicalDVBCard(GetDVBCard()), channel, pids, update);
 }
 
 AString ADVBProg::GenerateStreamCommand(uint_t card, uint_t nsecs, const AString& pids, const AString& logfile)

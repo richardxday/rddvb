@@ -17,44 +17,56 @@ public:
 
 	bool GetPIDList(uint_t card, const AString& channel, AString& pids, bool update = false);
 
-	AString LookupDVBChannel(const AString& channel) const;
-
-	uint_t GetChannelCount() const {return list.size();}
-
 	typedef std::vector<uint_t> PIDLIST;
 	typedef struct {
-		uint_t   lcn;
-		AString  name;
-		AString  convertedname;
-		uint32_t freq;
-		PIDLIST  pidlist;
+		struct {
+			uint_t   lcn;
+			AString  channelname;
+			AString  convertedchannelname;
+			uint32_t freq;
+			PIDLIST  pidlist;
+		} dvb;
+		struct {
+			uint_t   sdchannelid;
+			AString  channelid;
+			AString  channelname;
+			AString  convertedchannelname;
+		} xmltv;
 	} CHANNEL;
-	const CHANNEL *GetChannel(uint_t n)      const {return (n < list.size()) ? (const CHANNEL *)list[n] : NULL;}
+
+	uint_t GetChannelCount() const {return list.size();}
+	const CHANNEL *GetChannel(uint_t n)      const {return (n < list.size())    ? (const CHANNEL *)list[n]    : NULL;}
 	const CHANNEL *GetChannelByLCN(uint_t n) const {return (n < lcnlist.size()) ? (const CHANNEL *)lcnlist[n] : NULL;}
+
+	const CHANNEL *GetChannelByDVBChannelName(const AString& name)   const;
+	const CHANNEL *GetChannelByXMLTVChannelName(const AString& name) const;
 	const CHANNEL *GetChannelByName(const AString& name) const;
+	
+	const CHANNEL *AssignOrAddXMLTVChannel(uint_t lcn, const AString& name, const AString& id);
+	bool ValidChannelID(const AString& channelid) const;
+	
+	AString LookupDVBChannel(const AString& channel)   const;
+	AString LookupXMLTVChannel(const AString& channel) const;
 
 private:
 	ADVBChannelList();
 	~ADVBChannelList();
 
+	static bool __SortChannels(const CHANNEL *chan1, const CHANNEL *chan2);
+
 	static AString ConvertDVBChannel(const AString& str);
+	static AString ConvertXMLTVChannel(const AString& str);
 
 protected:
-	static void __DeleteChannel(uptr_t item, void *context) {
-		UNUSED(context);
-		delete (CHANNEL *)item;
-	}
-
-	CHANNEL *GetChannelByName(uint_t lcn, const AString& name, bool create = false);
-
-	static int __CompareItems(uptr_t a, uptr_t b, void *context);
+	CHANNEL *GetChannelByDVBChannelName(const AString& name, bool create, uint_t lcn = 0);
 
 	typedef std::vector<CHANNEL *>       CHANNELLIST;
 	typedef std::map<AString, CHANNEL *> CHANNELMAP;
 protected:
 	CHANNELLIST list;
 	CHANNELLIST lcnlist;
-	CHANNELMAP  map;
+	CHANNELMAP  dvbchannelmap;
+	CHANNELMAP  xmltvchannelmap;
 	bool        changed;
 };
 

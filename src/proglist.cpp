@@ -27,14 +27,12 @@ uint_t ADVBProgList::writefiledepth = 0;
 
 ADVBProgList::ADVBProgList() : useproghash(false)
 {
-	channellist.SetDestructor(&DeleteChannel);
 	proglist.SetDestructor(&DeleteProg);
 	proglist.EnableDuplication(true);
 }
 
 ADVBProgList::ADVBProgList(const ADVBProgList& list) : useproghash(false)
 {
-	channellist.SetDestructor(&DeleteChannel);
 	proglist.SetDestructor(&DeleteProg);
 	proglist.EnableDuplication(true);
 
@@ -49,8 +47,6 @@ void ADVBProgList::DeleteAll()
 {
 	proghash.Delete();
 	proglist.DeleteList();
-	channelhash.Delete();
-	channellist.DeleteList();
 }
 
 ADVBProgList& ADVBProgList::operator = (const ADVBProgList& list)
@@ -58,12 +54,6 @@ ADVBProgList& ADVBProgList::operator = (const ADVBProgList& list)
 	uint_t i;
 
 	DeleteAll();
-
-	for (i = 0; i < channellist.Count(); i++) {
-		const CHANNEL *channel = (const CHANNEL *)list.channellist[i];
-
-		AddChannel(channel->id, channel->name);
-	}
 
 	for (i = 0; (i < list.Count()) && !HasQuit(); i++) {
 		const ADVBProg& prog = list[i];
@@ -144,118 +134,38 @@ int ADVBProgList::SortProgs(uptr_t item1, uptr_t item2, void *pContext)
 	return ADVBProg::Compare((const ADVBProg *)item1, (const ADVBProg *)item2, (const bool *)pContext);
 }
 
-int ADVBProgList::SortChannels(uptr_t item1, uptr_t item2, void *pContext)
-{
-	const AString& name1 = ((const CHANNEL *)item1)->name;
-	const AString& name2 = ((const CHANNEL *)item2)->name;
-
-	UNUSED(pContext);
-
-	return CompareNoCase(name1, name2);
-}
-
 void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
 {
-	static std::vector<REPLACEMENT> replacements;
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString id   = channel.GetAttribute("id");
-	AString name = channel.GetChildValue("display-name");
+	AString channelid = channel.GetAttribute("id");
+	std::vector<AString> displaynames;
+	const AStructuredNode *node = NULL;
+	AString xmltvchannelname;
 
-	if (!replacements.size()) config.ReadReplacementsFile(replacements, config.GetXMLTVReplacementsFile());
+	// collect all entries of display-name
+	while ((node = channel.FindChild("display-name", node)) != NULL) {
+		displaynames.push_back(node->Value);
+	}
 
-	if (id.Valid() && name.Valid()) {
+	if (channelid.Valid() && (displaynames.size() > 0) && ((xmltvchannelname = displaynames[0]).Valid())) {
+		ADVBChannelList& channellist = ADVBChannelList::Get();
 		const AStructuredNode *iconnode;
 		AString icon;
+		uint_t lcn = 0;
+
+		// channel number is represented as a n-digit displayname (why??) in the last display name
+		// attempt to decode channel number
+		if ((displaynames.size() >= 2) &&
+			(sscanf(displaynames[displaynames.size() - 1].str(), "%u", &lcn) < 1)) {
+			config.logit("Failed to decode channel number from '%s'", displaynames[displaynames.size() - 1].str());
+		}
 
 		if ((iconnode = channel.FindChild("icon")) != NULL) icon = iconnode->GetAttribute("src");
 
-		name = ReplaceStrings(name, &replacements[0], (uint_t)replacements.size());
+		channellist.AssignOrAddXMLTVChannel(lcn, xmltvchannelname, channelid);
 
-		(void)config;
-		//config.logit("Channel %s=%s icon=%s\n", id.str(), name.str(), icon.str());
-
-		AddChannel(id, name);
-
-		ADVBIconCache::Get().SetIcon("channel", name, icon);
+		ADVBIconCache::Get().SetIcon("channel", xmltvchannelname, icon);
 	}
-}
-
-void ADVBProgList::AddChannel(const AString& id, const AString& name)
-{
-	CHANNEL *channel = NULL;
-
-	if (id.Valid() && ((channel = GetChannelWritable(id)) == NULL)) {
-		if ((channel = new CHANNEL) != NULL) {
-			channel->id   = id;
-			channel->name = name;
-
-			//debug("Added channel id '%s' name '%s'\n", channel->id.str(), channel->name.str());
-
-			channelhash.Insert(id, (uptr_t)channel);
-			channellist.Add((uptr_t)channel);
-
-			channellist.Sort(&SortChannels);
-		}
-	}
-
-	if (channel && name.Valid() && (name != channel->name)) {
-		channel->name = name;
-		channellist.Sort(&SortChannels);
-	}
-}
-
-void ADVBProgList::DeleteChannel(const AString& id)
-{
-	CHANNEL *channel;
-
-	if ((channel = GetChannelWritable(id)) != NULL) {
-		channelhash.Remove(id);
-		channellist.Remove((uptr_t)channel);
-	}
-}
-
-AString ADVBProgList::LookupXMLTVChannel(const AString& id) const
-{
-	const CHANNEL *channel;
-
-	if ((channel = GetChannelByID(id)) != NULL) return channel->name;
-
-	return "";
-}
-
-bool ADVBProgList::ValidChannelID(const AString& channelid) const
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	AString regionalchannels = config.GetRegionalChannels();
-	uint_t  i, n = regionalchannels.CountColumns();
-	bool    valid = true;
-
-	for (i = 0; i < n; i++) {
-		AString channel = regionalchannels.Column(i).Words(0);
-		AString suffix  = "." + channel.Line(0, "=");
-
-		if (channelid.EndsWithNoCase(suffix)) {
-			//debug("Channel ID '%s' is invalid (suffix='%s')\n", channelid.str(), suffix.str());
-			valid = false;
-			break;
-		}
-	}
-
-	if (!valid) {
-		for (i = 0; i < n; i++) {
-			AString channel = regionalchannels.Column(i).Words(0);
-			AString suffix  = "." + channel.Line(0, "=");
-			AString region  = channel.Line(1, "=") + suffix;
-
-			if (channelid.EndsWithNoCase(region)) {
-				//debug("Channel ID '%s' is valid again (region='%s')\n", channelid.str(), region.str());
-				valid = true;
-				break;
-			}
-		}
-	}
-
-	return valid;
 }
 
 void ADVBProgList::AssignEpisodes(bool ignorerepeats)
@@ -296,7 +206,7 @@ void ADVBProgList::GetProgrammeValues(AString& str, const AStructuredNode *pNode
 bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AHash     channelidvalidhash;
+	std::map<AString, bool> channelidvalidhash;
 	AString   data;
 	FILE_INFO info;
 	bool      success = false;
@@ -306,7 +216,7 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 		const AString programmestr = "<programme ";
 		AString   line, channel, programme;
 		ADateTime now;
-		uint_t len = data.len();
+		uint_t len = data.len(), nrejected = 0;
 		int  p = 0, p1 = 0;
 
 		success = true;
@@ -326,7 +236,7 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 					if (DecodeXML(_node, channel) && ((pNode = _node.GetChildren()) != NULL)) {
 						AddXMLTVChannel(*pNode);
 					}
-					else config.printf("Failed to decode channel data ('%s')", channel.str());
+					//else config.printf("Failed to decode channel data ('%s')", channel.str());
 
 					channel.Delete();
 				}
@@ -338,19 +248,20 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 					AStructuredNode _node;
 
 					if (DecodeXML(_node, programme) && ((pNode = _node.GetChildren()) != NULL)) {
+						const ADVBChannelList& channellist = ADVBChannelList::Get();
 						AString channelid = pNode->GetAttribute("channel");
-						AString channel   = LookupXMLTVChannel(channelid);
-						const CHANNEL *chandata;
+						AString channel   = channellist.LookupXMLTVChannel(channelid);
+						const ADVBChannelList::CHANNEL *chandata;
 
-						if (!channelidvalidhash.Exists(channelid)) {
-							bool valid = ValidChannelID(channelid);
+						if (channelidvalidhash.find(channelid) == channelidvalidhash.end()) {
+							bool valid = channellist.ValidChannelID(channelid);
 
-							channelidvalidhash.Insert(channelid, (uint_t)valid);
+							channelidvalidhash[channelid] = valid;
 
 							if (!valid) debug("Channel ID '%s' (channel '%s') is%s valid\n", channelid.str(), channel.str(), valid ? "" : " NOT");
 						}
 
-						if ((chandata = GetChannelByID(channelid)) != NULL) {
+						if ((chandata = channellist.GetChannelByXMLTVChannelName(channelid)) != NULL) {
 							ADateTime start, stop;
 							AString   str;
 
@@ -372,8 +283,9 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 							str.printf("start=%s\n", ADVBProg::GetHex(start).str());
 							str.printf("stop=%s\n",  ADVBProg::GetHex(stop).str());
 
-							str.printf("channel=%s\n", channel.str());
 							str.printf("channelid=%s\n", channelid.str());
+							str.printf("channel=%s\n", chandata->xmltv.convertedchannelname.str());
+							str.printf("dvbchannel=%s\n", chandata->dvb.channelname.str());
 
 							GetProgrammeValues(str, pNode->GetChildren());
 
@@ -395,6 +307,10 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 								}
 							}
 						}
+						else {
+							nrejected++;
+							//config.printf("Failed to find channel data for channel ID '%s'", channelid.str());
+						}
 					}
 					else config.printf("Failed to decode programme data ('%s')", programme.str());
 
@@ -411,8 +327,9 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 			p = p1 + 1;
 
 			if (HasQuit()) break;
-		}
-		while (p1 < (int)len);
+		} while (p1 < (int)len);
+
+		if (nrejected) config.printf("%u programmes rejected during read", nrejected);
 	}
 
 	return success;
@@ -990,11 +907,8 @@ int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	uint_t i;
-	int  index = -1;
+	int index = -1;
 
-	AddChannel(prog->GetChannelID(), prog->GetChannel());
-
-	(void)i;
 	(void)config;
 
 	if (removeoverlaps && Count()) {

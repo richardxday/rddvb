@@ -833,6 +833,11 @@ AString ADVBConfig::GetDVBChannelsFile() const
 	return CatPath(GetDataDir(), GetConfigItem("dvbchannelsfile", "channels.dat"));
 }
 
+AString ADVBConfig::GetDVBChannelsJSONFile() const
+{
+	return CatPath(GetDataDir(), GetConfigItem("dvbchannelsjsonfile", "channels.json"));
+}
+
 AString ADVBConfig::GetPatternsFile() const
 {
 	return CatPath(GetConfigDir(), GetConfigItem("patternsfile", "patterns.txt"));

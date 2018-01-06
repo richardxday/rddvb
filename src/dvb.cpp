@@ -532,7 +532,7 @@ int main(int argc, const char *argv[])
 				uint_t j, n = channellist.GetChannelCount();
 
 				for (j = 0; j < n; j++) {
-					dvbchannels[channellist.GetChannel(j)->name] = 0;
+					dvbchannels[channellist.GetChannel(j)->dvb.channelname] = 0;
 				}
 
 				for (j = 0; j < proglist.Count(); j++) {
@@ -838,17 +838,16 @@ int main(int argc, const char *argv[])
 			}
 			else if (strcmp(argv[i], "--list-channels") == 0) {
 				const ADVBChannelList& list = ADVBChannelList::Get();
-				uint_t j, ndvb = 0;
+				uint_t j, nnodvb = 0;
 
-				for (j = 0; j < proglist.ChannelCount(); j++) {
-					const ADVBProgList::CHANNEL *channel = proglist.GetChannelIndex(j);
-					AString dvbchannel = list.LookupDVBChannel(channel->name);
+				for (j = 0; j < list.GetChannelCount(); j++) {
+					const ADVBChannelList::CHANNEL *channel = list.GetChannel(j);
 
-					printf("Channel %u/%u: '%s' (DVB '%s', XMLTV channel-id '%s')\n", j + 1, proglist.ChannelCount(), channel->name.str(), dvbchannel.str(), channel->id.str());
+					printf("Channel %u/%u (LCN %u): '%s' (DVB '%s', XMLTV channel-id '%s')\n", j + 1, list.GetChannelCount(), channel->dvb.lcn, channel->xmltv.channelname.str(), channel->dvb.channelname.str(), channel->xmltv.channelid.str());
 
-					ndvb += dvbchannel.Empty();
+					nnodvb += channel->dvb.channelname.Empty();
 				}
-				printf("%u/%u channels have NO DVB channel\n", ndvb, proglist.ChannelCount());
+				printf("%u/%u channels have NO DVB channel\n", nnodvb, list.GetChannelCount());
 			}
 			else if (strcmp(argv[i], "--cut-head") == 0) {
 				uint_t n = (uint_t)AString(argv[++i]);

@@ -69,14 +69,6 @@ public:
 	uint_t CountOccurances(const ADVBProg& prog) const {return CountOccurances(prog.GetUUID());}
 	uint_t CountOccurances(const AString& uuid) const;
 	
-	typedef struct {
-		AString id;
-		AString name;
-	} CHANNEL;
-	uint_t ChannelCount() const {return channellist.Count();}
-	const CHANNEL *GetChannelIndex(uint_t n)		 const {return (const CHANNEL *)channellist[n];}
-	const CHANNEL *GetChannelByID(const AString& id) const {return (const CHANNEL *)channelhash.Read(id);}
-
 	void CreateHash();
 	const ADVBProg *FindUUID(const ADVBProg& prog) const {return FindUUID(prog.GetUUID());}
 	const ADVBProg *FindUUID(const AString& uuid) const;
@@ -173,17 +165,9 @@ public:
 	static bool RemoveFromRecordLists(const AString& uuid);
 
 protected:
-	CHANNEL *GetChannelWritable(const AString& id) const {return (CHANNEL *)channelhash.Read(id);}
-	void DeleteChannel(const AString& id);
-
-	AString LookupXMLTVChannel(const AString& id) const;
-
 	bool ReadFromJobQueue(int queue, bool runningonly = false);
 
-	bool ValidChannelID(const AString& channelid) const;
-
 	void AddXMLTVChannel(const AStructuredNode& channel);
-	void AddChannel(const AString& id, const AString& name);
 	int  AddProg(const ADVBProg *prog, bool sort = true, bool removeoverlaps = false);
 
 	void GetProgrammeValues(AString& str, const AStructuredNode *pNode, const AString& prefix = "") const;
@@ -201,12 +185,6 @@ protected:
 
 	bool ReadFromBinaryFile(const AString& filename, bool sort = false, bool removeoverlaps = false);
 	
-	static void DeleteChannel(uptr_t item, void *context) {
-		CHANNEL *channel = (CHANNEL *)item;
-		UNUSED(context);
-		delete channel;
-	}
-
 	static void DeleteProg(uptr_t item, void *context) {
 		UNUSED(context);
 		delete (ADVBProg *)item;
@@ -244,10 +222,8 @@ protected:
 	static int  __ComparePopularity(const AListNode *pNode1, const AListNode *pNode2, void *pContext);
 
 protected:
-	AHash     channelhash;
 	AHash	  proghash;
 	ADataList proglist;
-	ADataList channellist;
 	bool	  useproghash;
 
 	static uint_t writefiledepth;
