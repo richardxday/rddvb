@@ -13,7 +13,7 @@ foreach (@devices)
 my $dvb = Linux::DVB::DVBT->new();
 
 # Scan for channels - using frequency file
-#$dvb->scan_from_country('gb');
+$dvb->scan_from_country('GB');
 
 # show the logical channel numbers
 my $tuning_aref = $dvb->get_tuning_info();
@@ -27,7 +27,7 @@ open(my $fh, '>', $filename) or die "Could not open file '$filename' $!";
 foreach my $ch_href (@$channels_aref)
 {
 	my $chan = $ch_href->{'channel'};
-	printf $fh "[%d]%s,%d", 
+	printf $fh "[%03d]%s,%d", 
 		$ch_href->{'channel_num'},
 		$chan,
 		$tuning_aref->{'ts'}{$tuning_aref->{'pr'}{$chan}{'tsid'}}{'frequency'};
