@@ -1,0 +1,133 @@
+1 BBC One North West
+10 ITV3
+101 BBC One HD (England no regional news)
+102 BBC Two HD (England)
+103 ITV HD (ITV Granada)
+104 Channel 4 HD North ads
+105 Channel 5 HD
+11 pick
+12 Dave
+13 Channel 4 +1 North ads
+14 More4
+15 Film4
+16 QVC
+17 Really
+18 4Music
+19 Yesterday
+2 BBC Two England
+20 Drama
+201 CBBC
+202 CBeebies
+203 CITV
+204 CBBC HD
+206 Pop
+21 5 USA
+211 Ketchup TV
+22 Ideal World
+23 Create and Craft
+231 BBC News
+232 BBC Parliament
+233 Sky News
+234 RT
+24 ITV4
+25 Home
+250 BBC Red Button
+252 Kiss Me TV
+253 Proud Dating
+26 ITV Be
+260 CCTV
+261 Racing UK
+262 CONNECT 4
+263 SonLife
+264 VisionTV
+265 Planet Knowledge
+269 Arise News
+27 ITV 2 +1
+270 Loveworld
+28 E4
+29 E4 +1
+3 ITV (Granada)
+30 5STAR
+31 5Spike
+32 Sony Movie Ch
+33 ITV +1 (Granada)
+34 ITV3 +1
+35 QVC Beauty
+36 QVC Style
+37 Quest
+38 Quest Red
+39 CBS Action
+4 Channel 4 North ads
+41 Food Network
+42 Travel Channel
+43 Gems TV
+44 Channel 5 +1
+45 Film4 +1
+46 Challenge
+47 4seven
+48 Movies4Men
+49 TJC
+5 Channel 5
+54 My5
+58 ITV Be +1
+59 ITV4 +1
+59 ITV4 +1
+6 ITV 2
+60 Sony Crime Channel 2
+601 BBC RB 1
+61 True Entertainment
+62 True Movies
+63 Blaze
+65 TBN UK
+66 CBS Reality
+670 ADULT Section (start)
+671 Television X
+672 ADULT smileTV2
+673 ADULT smileTV3
+674 Babestation
+675 ADULT PARTY
+678 Xpanded TV promo
+699 ADULT Section (end)
+70 Horror Channel
+700 BBC Radio 1
+701 BBC Radio 1Xtra
+702 BBC Radio 2
+703 BBC Radio 3
+704 BBC Radio 4
+705 BBC Radio 5 Live
+706 BBC Radio 5 Live Sports Extra
+707 BBC Radio 6 Music
+708 BBC Radio 4 Extra
+709 BBC Asian Network
+71 CBS Reality 1
+710 BBC World Service
+711 The Hits radio
+712 KISS FRESH
+713 Kiss
+714 KISSTORY
+715 Magic
+716 heat
+717 Kerrang!
+718 Smooth Radio
+719 BBC Manchester (BBC local radio)
+72 YourTV
+720 BBC Lancashire (BBC local radio)
+721 BBC Cumbria (BBC local radio)
+722 BBC Merseyside (BBC local radio)
+723 talkSPORT
+724 Capital
+725 Premier Radio
+727 Absolute Radio
+728 Heart
+73 YourTV +1
+730 RNIB Connect
+731 Classic FM
+732 LBC
+734 BBC Stoke (BBC local radio)
+78 Sewing Quarter
+79 Dave ja vu
+80 Blaze +1
+81 Talking Pictures TV
+83 Quest +1
+85 Hochanda
+9 BBC Four

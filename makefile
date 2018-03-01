@@ -112,6 +112,10 @@ endif
 
 CLEANFILES  += $(HEADERSSRC)/config.extract.h $(DEFAULTCONFIG)
 
+APPLICATION := comparechannels
+OBJECTS     := $(APPLICATION:%=%.o)
+include $(MAKEFILEDIR)/makefile.app
+
 APPLICATION := sdfetch
 OBJECTS     := $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
