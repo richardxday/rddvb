@@ -191,6 +191,8 @@ int main(int argc, char *argv[])
 	TABLE table;
 	size_t j;
 
+	table.headerscentred = false;
+
 	{
 		TABLEROW row;
 

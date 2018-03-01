@@ -11,6 +11,7 @@
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
 #include <rdlib/simpleeval.h>
+#include <rdlib/printtable.h>
 
 #include "config.h"
 #include "dvblock.h"
@@ -109,6 +110,7 @@ int main(int argc, const char *argv[])
 		{"--fix-pound",							   "<file>",						  "Fix pound symbols in file"},
 		{"--update-dvb-channels",				   "",								  "Update DVB channel assignments"},
 		{"--update-dvb-channels-output-list",	   "",								  "Update DVB channel assignments and output list of SchedulesDirect channel ID's"},
+		{"--print-channels",					   "",								  "Output all channels"},
 		{"--find-unused-channels",				   "",								  "Find listings and DVB channels that are unused"},
 		{"--update-uuid",						   "",								  "Set UUID's on every programme"},
 		{"--update-combined",					   "",								  "Create a combined list of recorded and scheduled programmes"},
@@ -524,6 +526,73 @@ int main(int argc, const char *argv[])
 					}
 					printf("----Channel ID's----\n");
 				}
+			}
+			else if (strcmp(argv[i], "--print-channels") == 0) {
+				const ADVBChannelList& channellist = ADVBChannelList::Get();
+				TABLE table;
+				size_t j;
+				uint_t i;
+
+				table.headerscentred = true;
+
+				{
+					TABLEROW row;
+
+					row.push_back("LCN");
+					row.push_back("SD Channel");
+					row.push_back("XMLTV Channel ID");
+					row.push_back("XMLTV Channel Name");
+					row.push_back("XMLTV Converted Name");
+					row.push_back("DVB Channel Name");
+					row.push_back("DVB Converted Name");
+					row.push_back("DVB Frequency");
+					row.push_back("DVB PID List");
+
+					table.rows.push_back(row);
+
+					table.justify.resize(row.size());
+
+#if 0
+					for (j = 0; j < table.justify.size(); j++) {
+						table.justify[j] = 2;
+					}
+#endif
+				}
+
+				for (i = 0; i < channellist.GetLCNCount(); i++) {
+					const ADVBChannelList::CHANNEL *chan;
+
+					if ((chan = channellist.GetChannelByLCN(i)) != NULL) {
+						TABLEROW row;
+
+						table.justify[row.size()] = 2;
+						row.push_back(chan->dvb.lcn ? AString("%;").Arg(chan->dvb.lcn) : "");
+						table.justify[row.size()] = 2;
+						row.push_back(chan->xmltv.sdchannelid ? AString("%;").Arg(chan->xmltv.sdchannelid) : "");
+						row.push_back(chan->xmltv.channelid);
+						row.push_back(chan->xmltv.channelname);
+						row.push_back(chan->xmltv.convertedchannelname);
+						row.push_back(chan->dvb.channelname);
+						row.push_back(chan->dvb.convertedchannelname);
+
+						table.justify[row.size()] = 1;
+						row.push_back(chan->dvb.freq ? AString("%;").Arg(chan->dvb.freq) : "");
+
+						AString pidlist;
+						for (j = 0; j < chan->dvb.pidlist.size(); j++) {
+							if (j == 0) {
+								pidlist.printf("%u", chan->dvb.pidlist[j]);
+							}
+							else pidlist.printf(", %u", chan->dvb.pidlist[j]);
+						}
+						table.justify[row.size()] = 2;
+						row.push_back(pidlist);
+
+						table.rows.push_back(row);
+					}
+				}
+
+				PrintTable(*Stdout, table);
 			}
 			else if (strcmp(argv[i], "--find-unused-channels") == 0) {
 				const ADVBChannelList& channellist = ADVBChannelList::Get();
