@@ -338,30 +338,22 @@ ADVBChannelList& ADVBChannelList::Get()
 
 AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 {
-#if 0
 	static std::vector<REPLACEMENT> replacements;
 	const ADVBConfig& config = ADVBConfig::Get();
 
 	if (!replacements.size()) config.ReadReplacementsFile(replacements, config.GetDVBReplacementsFile());
 
 	return ReplaceStrings(str, &replacements[0], (uint_t)replacements.size());
-#else
-	return str;
-#endif
 }
 
 AString ADVBChannelList::ConvertXMLTVChannel(const AString& str)
 {
-#if 0
 	static std::vector<REPLACEMENT> replacements;
 	const ADVBConfig& config = ADVBConfig::Get();
 
 	if (!replacements.size()) config.ReadReplacementsFile(replacements, config.GetXMLTVReplacementsFile());
 
 	return ReplaceStrings(str, &replacements[0], (uint_t)replacements.size());
-#else
-	return str;
-#endif
 }
 
 const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByDVBChannelName(const AString& name) const
@@ -451,7 +443,7 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t 
 	else if ((it = dvbchannelmap.find(cname.ToLower())) != dvbchannelmap.end()) {
 		chan = it->second;
 	}
-	else if (lcn && (lcn < lcnlist.size()) && ((chan = lcnlist[lcn]) != NULL)) {
+	else if ((lcn > 0) && (lcn < lcnlist.size()) && ((chan = lcnlist[lcn]) != NULL)) {
 		report = true;
 	}
 
@@ -490,9 +482,6 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t 
 				xmltvchannelmap.erase(it);
 			}
 
-			// update xmltv map
-			xmltvchannelmap[id.ToLower()] = chan;
-
 			// update ID
 			chan->xmltv.channelid = id;
 			
@@ -517,29 +506,29 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t 
 
 			// update channel name
 			chan->xmltv.channelname = name;
-
-			// update xmltv map
-			xmltvchannelmap[name.ToLower()] = chan;
 			
 			changed1 = true;
 		}
 
 		if (cname != chan->xmltv.convertedchannelname) {
+			// erase old entry from xmltv map
 			if (chan->xmltv.convertedchannelname.Valid() && ((it = xmltvchannelmap.find(chan->xmltv.convertedchannelname.ToLower())) != xmltvchannelmap.end())) {
 				xmltvchannelmap.erase(it);
 			}
 
 			// update channel name
 			chan->xmltv.convertedchannelname = cname;
-
-			// update xmltv map
-			xmltvchannelmap[cname.ToLower()] = chan;
 			
 			changed1 = true;
 		}
 
 		//report = true;
 	}
+
+	// update xmltv map using multiple entries
+	xmltvchannelmap[id.ToLower()] = chan;
+	xmltvchannelmap[name.ToLower()] = chan;
+	xmltvchannelmap[cname.ToLower()] = chan;
 
 	if (report && changed1) {
 		if (lcn > 0) {
@@ -726,7 +715,8 @@ AString ADVBChannelList::LookupDVBChannel(const AString& channel) const
 	const CHANNEL *chan;
 	AString channel1;
 
-	if ((chan = GetChannelByDVBChannelName(channel)) != NULL) {
+	if (((chan = GetChannelByDVBChannelName(channel))   != NULL) ||
+		((chan = GetChannelByXMLTVChannelName(channel)) != NULL)) {
 		channel1 = chan->dvb.channelname;
 	}
 

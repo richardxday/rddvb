@@ -35,6 +35,7 @@ public:
 	} CHANNEL;
 
 	uint_t GetChannelCount() const {return list.size();}
+	uint_t GetLCNCount() const {return lcnlist.size();}
 	const CHANNEL *GetChannel(uint_t n)      const {return (n < list.size())    ? (const CHANNEL *)list[n]    : NULL;}
 	const CHANNEL *GetChannelByLCN(uint_t n) const {return (n < lcnlist.size()) ? (const CHANNEL *)lcnlist[n] : NULL;}
 
