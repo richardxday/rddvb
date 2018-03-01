@@ -29,7 +29,7 @@ foreach my $ch_href (@$channels_aref)
 	my $chan = $ch_href->{'channel'};
 
 	# format is [<lcn>]<name>,<freq>,<audio>,<video>
-	printf $fh "[%d]%s,%d", 
+	printf $fh "[%03d]%s,%d", 
 		$ch_href->{'channel_num'},
 		$chan,
 		$tuning_aref->{'ts'}{$tuning_aref->{'pr'}{$chan}{'tsid'}}{'frequency'};
