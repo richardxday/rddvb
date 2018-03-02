@@ -71,3 +71,6 @@
 "Rocks and Co 1"="Rocks & Co 1"
 "Film 4"="Film4"
 "ITV BE"="ITVBe"
+"Premier - PREMIER"="Premier Radio"
+"True Movies 1"="True Movies"
+"More 4"="More4"

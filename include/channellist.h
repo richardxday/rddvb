@@ -1,6 +1,8 @@
 #ifndef __DVB_CHANNEL_LIST__
 #define __DVB_CHANNEL_LIST__
 
+#include <rapidjson/document.h>
+
 #include <rdlib/DataList.h>
 #include <rdlib/Hash.h>
 
@@ -48,6 +50,8 @@ public:
 	
 	AString LookupDVBChannel(const AString& channel)   const;
 	AString LookupXMLTVChannel(const AString& channel) const;
+
+	void GenerateChanneList(rapidjson::Document& doc, bool incconverted = false) const;
 
 private:
 	ADVBChannelList();

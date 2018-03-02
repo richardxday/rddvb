@@ -10,7 +10,6 @@
 #define PREFER_JSON 1
 
 #if PREFER_JSON
-#include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #endif
 
@@ -194,65 +193,8 @@ ADVBChannelList::~ADVBChannelList()
 		
 #if PREFER_JSON
 		rapidjson::Document doc;
-        rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 
-		doc.SetArray();
-		
-		for (i = 0; i < list.size(); i++) {
-			const CHANNEL& chan = *list[i];
-			rapidjson::Value chanobj;
-			rapidjson::Value dvbobj;
-			rapidjson::Value xmltvobj;
-
-			chanobj.SetObject();
-			dvbobj.SetObject();
-			xmltvobj.SetObject();
-			
-			if (chan.dvb.channelname.Valid()) {
-				dvbobj.AddMember("name", rapidjson::Value(chan.dvb.channelname.str(), allocator), allocator);
-			}
-
-			if (chan.dvb.lcn) {
-				dvbobj.AddMember("lcn", rapidjson::Value(chan.dvb.lcn), allocator);
-			}
-			
-			if (chan.dvb.freq) {
-				dvbobj.AddMember("frequency", rapidjson::Value(chan.dvb.freq), allocator);
-			}
-
-			if (chan.dvb.pidlist.size() > 0) {
-				rapidjson::Value pidlist;
-				size_t j;
-				
-				pidlist.SetArray();
-				for (j = 0; j < chan.dvb.pidlist.size(); j++) {
-					pidlist.PushBack(chan.dvb.pidlist[j], allocator);
-				}
-
-				dvbobj.AddMember("pidlist", pidlist, allocator);
-			}
-
-			if (chan.xmltv.sdchannelid) {
-				xmltvobj.AddMember("sdchannelid", rapidjson::Value(chan.xmltv.sdchannelid), allocator);
-			}
-			if (chan.xmltv.channelid.Valid()) {
-				xmltvobj.AddMember("id", rapidjson::Value(chan.xmltv.channelid.str(), allocator), allocator);
-			}
-			if (chan.xmltv.channelname.Valid()) {
-				xmltvobj.AddMember("name", rapidjson::Value(chan.xmltv.channelname.str(), allocator), allocator);
-			}
-
-			if (dvbobj.MemberCount() > 0) {
-				chanobj.AddMember("dvb", dvbobj, allocator);
-			}
-			if (xmltvobj.MemberCount() > 0) {
-				chanobj.AddMember("xmltv", xmltvobj, allocator);
-			}
-
-			if (chanobj.MemberCount() > 0) {
-				doc.PushBack(chanobj, allocator);
-			}
-		}
+		GenerateChanneList(doc);
 
 		if (fp.open(config.GetDVBChannelsJSONFile(), "w")) {
 			rapidjson::PrettyWriter<AStdData> writer(fp);
@@ -348,6 +290,77 @@ ADVBChannelList& ADVBChannelList::Get()
 {
 	static ADVBChannelList channellist;
 	return channellist;
+}
+
+void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, bool incconverted) const
+{
+	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+	size_t i;
+	
+	doc.SetArray();
+		
+	for (i = 0; i < list.size(); i++) {
+		const CHANNEL& chan = *list[i];
+		rapidjson::Value chanobj;
+		rapidjson::Value dvbobj;
+		rapidjson::Value xmltvobj;
+
+		chanobj.SetObject();
+		dvbobj.SetObject();
+		xmltvobj.SetObject();
+			
+		if (chan.dvb.channelname.Valid()) {
+			dvbobj.AddMember("name", rapidjson::Value(chan.dvb.channelname.str(), allocator), allocator);
+		}
+
+		if (incconverted && chan.dvb.convertedchannelname.Valid()) {
+			dvbobj.AddMember("convertedname", rapidjson::Value(chan.dvb.convertedchannelname.str(), allocator), allocator);
+		}
+
+		if (chan.dvb.lcn) {
+			dvbobj.AddMember("lcn", rapidjson::Value(chan.dvb.lcn), allocator);
+		}
+			
+		if (chan.dvb.freq) {
+			dvbobj.AddMember("frequency", rapidjson::Value(chan.dvb.freq), allocator);
+		}
+
+		if (chan.dvb.pidlist.size() > 0) {
+			rapidjson::Value pidlist;
+			size_t j;
+				
+			pidlist.SetArray();
+			for (j = 0; j < chan.dvb.pidlist.size(); j++) {
+				pidlist.PushBack(chan.dvb.pidlist[j], allocator);
+			}
+
+			dvbobj.AddMember("pidlist", pidlist, allocator);
+		}
+
+		if (chan.xmltv.sdchannelid) {
+			xmltvobj.AddMember("sdchannelid", rapidjson::Value(chan.xmltv.sdchannelid), allocator);
+		}
+		if (chan.xmltv.channelid.Valid()) {
+			xmltvobj.AddMember("id", rapidjson::Value(chan.xmltv.channelid.str(), allocator), allocator);
+		}
+		if (chan.xmltv.channelname.Valid()) {
+			xmltvobj.AddMember("name", rapidjson::Value(chan.xmltv.channelname.str(), allocator), allocator);
+		}
+		if (incconverted && chan.xmltv.convertedchannelname.Valid()) {
+			xmltvobj.AddMember("convertedname", rapidjson::Value(chan.xmltv.convertedchannelname.str(), allocator), allocator);
+		}
+
+		if (dvbobj.MemberCount() > 0) {
+			chanobj.AddMember("dvb", dvbobj, allocator);
+		}
+		if (xmltvobj.MemberCount() > 0) {
+			chanobj.AddMember("xmltv", xmltvobj, allocator);
+		}
+
+		if (chanobj.MemberCount() > 0) {
+			doc.PushBack(chanobj, allocator);
+		}
+	}
 }
 
 AString ADVBChannelList::ConvertDVBChannel(const AString& str)

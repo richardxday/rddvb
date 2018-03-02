@@ -5,7 +5,7 @@
 "BBC FOUR"="BBC4"
 "BBC R1X"="BBC Radio 1 Xtra"
 "BBC Radio 4 Ex"="BBC Radio 4 Extra"
-"BBC RB 1"="BBC Red Button One"
+"BBC RB 1"="BBC Red Button 1"
 "BBC R5SX"="BBC Radio 5 Live Sports Xtra"
 "BBC R5L"="BBC Radio 5 Live"
 "CBBC Channel"="CBBC"

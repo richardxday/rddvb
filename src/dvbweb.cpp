@@ -5,6 +5,8 @@
 
 #include <sys/statvfs.h>
 
+#include <rapidjson/prettywriter.h>
+
 #include <rdlib/Hash.h>
 #include <rdlib/Recurse.h>
 #include <rdlib/Regex.h>
@@ -14,6 +16,7 @@
 #include "proglist.h"
 #include "dvbpatterns.h"
 #include "findcards.h"
+#include "channellist.h"
 
 typedef struct {
 	AString title;
@@ -627,6 +630,20 @@ int main(int argc, char *argv[])
 				}
 			}
 
+			if (::GetFileInfo(config.GetDVBChannelsJSONFile(), &info)) {
+				if (!Value(vars, val, "channelsref") || ((uint64_t)info.WriteTime > (uint64_t)val)) {
+					rapidjson::Document doc;
+					rapidjson::Writer<AStdData> writer(*Stdout);
+
+					ADVBChannelList::Get().GenerateChanneList(doc, true);
+
+					printf(",\"channelsref\":%s", AValue((uint64_t)info.WriteTime).ToString().str());
+					printf(",\"channels\":");
+					
+					doc.Accept(writer);
+				}
+			}
+			
 			switch (datasource) {
 				default:
 				case DataSource_Progs:

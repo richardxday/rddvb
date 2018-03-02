@@ -70,6 +70,7 @@ var searches = null;
 var stats    = null;
 var link     = null;
 var globals  = null;
+var channels = null;
 var proglistelement = '';
 
 window.onpopstate = function(event)
@@ -514,7 +515,7 @@ function populateprogs(id)
 						else headerstr += '&nbsp;';
 					}
 					headerstr += '</td><td>';
-					headerstr += find('channel', prog.channel, 'Seach for programmes on this channel');
+					headerstr += find('channel', prog.channel, 'Search for programmes on this channel');
 
 					headerstr += '</td><td>';
 					headerstr += '<span style="font-size:90%;">';
@@ -1820,6 +1821,13 @@ function dvbrequest(filter, postdata, stackrequest)
 							document.getElementById("usersearches").innerHTML = str;
 						}
 
+						if (typeof response.channels != 'undefined') {
+							channels = {
+								ref:response.channelsref,
+								channels:response.channels,
+							};
+						}
+						
 						document.getElementById("errormsg").innerHTML = '';
 						if (typeof response.counts != 'undefined') {
 							if ((typeof response.counts.rejected != 'undefined') && (response.counts.rejected > 0)) {
@@ -1856,6 +1864,9 @@ function dvbrequest(filter, postdata, stackrequest)
 		data += "pagesize=" + filter.pagesize + "\n";
 		if (searches != null) {
 			data += "searchesref=" + searches.ref + "\n";
+		}
+		if (channels != null) {
+			data += "channelsref=" + channels.ref + "\n";
 		}
 		if (stats != null) {
 			data += "statsref=" + stats.ref + "\n";
@@ -2018,4 +2029,103 @@ function reschedule()
 	if (confirm("Schedule all programmes?")) {
 		dvbrequest({from:"Combined",titlefilter:"",timefilter:defaulttimefilter,expanded:-1,fetch:true}, 'schedule=commit');
 	}
+}
+
+function showchannels()
+{
+	var str = '', i, j;
+
+	str += '<table class="channellist"><tr>';
+	str += '<th>LCN</th>';
+	str += '<th style="text-align:left">XMLTV Channel</th>';
+	str += '<th style="text-align:left">DVB Channel</th>';
+	str += '<th>DVB Frequency</th>';
+	str += '<th>DVB PID List</th>';
+	str += '</tr>';
+
+	if (typeof channels != 'undefined') {
+		for (i = 0; i < channels.channels.length; i++) {
+			var channel = channels.channels[i];
+
+			// if ((typeof channel.dvb != 'undefined') &&
+			// 	(typeof channel.dvb.frequency != 'undefined') &&
+			// 	(typeof channel.dvb.pidlist != 'undefined') &&
+			// 	(channel.dvb.pidlist.length > 0)) {
+			{
+				str += '<tr';
+
+				if ((typeof channel.dvb == 'undefined') ||
+					(typeof channel.dvb.convertedname == 'undefined') ||
+					(typeof channel.xmltv == 'undefined') ||
+					(typeof channel.xmltv.convertedname == 'undefined') ||
+					(channel.xmltv.convertedname.toLowerCase() != channel.dvb.convertedname.toLowerCase())) {
+					str += ' class="mismatched"';
+				}
+
+				str += '>';
+				if ((typeof channel.dvb != 'undefined') &&
+					(typeof channel.dvb.lcn != 'undefined')) {
+					str += '<td>' + channel.dvb.lcn + '</td>';
+				}
+				else str += '<td>&nbsp;</td>';
+				
+				if (typeof channel.xmltv != 'undefined') {
+					str += '<td style="text-align:left"';
+					if ((typeof channel.xmltv.name != 'undefined') &&
+						((typeof channel.xmltv.convertednamename == 'undefined') ||
+						 (channel.xmltv.name != channel.xmltv.convertedname))) {
+						str += ' title="Original: ' + channel.xmltv.name + '"';
+					}
+					str += '>';
+					if (typeof channel.xmltv.convertedname != 'undefined') {
+						str += channel.xmltv.convertedname;
+					}
+					else str += '&nbsp;';
+					str += '</td>';
+				}
+				else str += '<td>&nbsp;</td>';
+				
+				if (typeof channel.dvb != 'undefined') {
+					str += '<td style="text-align:left"';
+					if ((typeof channel.dvb.name != 'undefined') &&
+						((typeof channel.dvb.convertednamename == 'undefined') ||
+						 (channel.dvb.name != channel.dvb.convertedname))) {
+						str += ' title="Original: ' + channel.dvb.name + '"';
+					}
+					str += '>';
+					if (typeof channel.dvb.convertedname != 'undefined') {
+						str += channel.dvb.convertedname;
+					}
+					else str += '&nbsp;';
+					str += '</td>';
+				}
+				else str += '<td>&nbsp;</td>';
+				
+				if ((typeof channel.dvb != 'undefined') &&
+					(typeof channel.dvb.frequency != 'undefined')) {
+					str += '<td>' + channel.dvb.frequency + '</td>';
+				}
+				else str += '<td>&nbsp;</td>';
+
+				if ((typeof channel.dvb != 'undefined') &&
+					(typeof channel.dvb.pidlist != 'undefined') &&
+					(channel.dvb.pidlist.length > 0)) {
+					str += '<td>';
+					for (j = 0; j < channel.dvb.pidlist.length; j++) {
+						if (j > 0) str += ', ';
+						str += channel.dvb.pidlist[j];
+					}
+					str += '</td>';
+				}
+				else str += '<td>&nbsp;</td>';
+				
+				str += '</tr>';
+			}
+		}
+	}
+	
+	str += '</table>';
+	
+	document.getElementById("status").innerHTML = '';
+	document.getElementById("list").innerHTML = str;
 }

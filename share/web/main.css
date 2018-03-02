@@ -55,11 +55,11 @@ div.sidebar button
 	padding-left:20px;
 	padding-right:20px;
 }
-table.proglist,table.patternlist,table.titlelist
+table.proglist,table.patternlist,table.titlelist,table.channellist
 {
 	width:100%;
 }
-table.proglist,table.patternlist,table.patternlist th
+table.proglist,table.patternlist,table.patternlist th,table.channellist,table.channellist th
 {
 	background-color:#eee;
 }
@@ -71,7 +71,7 @@ table.proglist td
 	vertical-align:middle;
 	width:1%;
 }
-table.patternlist th,table.patternlist td,table.titlelist td
+table.patternlist th,table.patternlist td,table.titlelist td,table.channellist th,table.channellist td
 {
 	border-top:1px solid #aaa;
 	padding:4px;
@@ -123,6 +123,22 @@ table.proglist tr.recorded:hover
 table.proglist tr.scheduled,table.patternlist tr.enabled,table.titlelist tr
 {
 	background-color:#8f8;
+}
+table.channellist tr
+{
+	background-color:#beb;
+}
+table.channellist tr:hover
+{
+	background-color:#ada;
+}
+table.channellist tr.mismatched
+{
+	background-color:#ebb;
+}
+table.channellist tr.mismatched:hover
+{
+	background-color:#daa;
 }
 table.proglist tr.scheduled:hover,table.patternlist tr.enabled:hover,table.titlelist tr:hover
 {
