@@ -2072,7 +2072,7 @@ function showchannels()
 				if (typeof channel.xmltv != 'undefined') {
 					str += '<td style="text-align:left"';
 					if ((typeof channel.xmltv.name != 'undefined') &&
-						((typeof channel.xmltv.convertednamename == 'undefined') ||
+						((typeof channel.xmltv.convertedname == 'undefined') ||
 						 (channel.xmltv.name != channel.xmltv.convertedname))) {
 						str += ' title="Original: ' + channel.xmltv.name + '"';
 					}
@@ -2088,7 +2088,7 @@ function showchannels()
 				if (typeof channel.dvb != 'undefined') {
 					str += '<td style="text-align:left"';
 					if ((typeof channel.dvb.name != 'undefined') &&
-						((typeof channel.dvb.convertednamename == 'undefined') ||
+						((typeof channel.dvb.convertedname == 'undefined') ||
 						 (channel.dvb.name != channel.dvb.convertedname))) {
 						str += ' title="Original: ' + channel.dvb.name + '"';
 					}
