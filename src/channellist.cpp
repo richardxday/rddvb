@@ -16,6 +16,7 @@
 
 #include "channellist.h"
 #include "dvblock.h"
+#include "dvbmisc.h"
 
 ADVBChannelList::ADVBChannelList() : changed(false)
 {
@@ -259,6 +260,13 @@ ADVBChannelList::~ADVBChannelList()
 			doc.Accept(writer);
 
 			fp.close();
+
+			// send updated file to recording slave
+			if (config.GetRecordingSlave().Valid()) {
+				if (!SendFileToRecordingSlave(config.GetDVBChannelsJSONFile())) {
+					config.printf("Failed to update channels on recording slave");
+				}
+			}
 		}
 #else
 		std::vector<AString> strlist;
@@ -292,9 +300,15 @@ ADVBChannelList::~ADVBChannelList()
 			}
 
 			fp.close();
+
+			// send updated file to recording slave
+			if (config.GetRecordingSlave().Valid()) {
+				if (!SendFileToRecordingSlave(config.GetDVBChannelsFile())) {
+					config.printf("Failed to update channels on recording slave");
+				}
+			}
 		}
 #endif
-
 	}
 
 	for (i = 0; i < list.size(); i++) {
