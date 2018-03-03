@@ -2034,7 +2034,8 @@ function reschedule()
 function showchannels()
 {
 	var str = '', i, j;
-
+	var validchannels = 0;
+	
 	str += '<table class="channellist"><tr>';
 	str += '<th>LCN</th>';
 	str += '<th style="text-align:left">XMLTV Channel</th>';
@@ -2043,24 +2044,30 @@ function showchannels()
 	str += '<th>DVB PID List</th>';
 	str += '</tr>';
 
+	document.getElementById("statusbottom").innerHTML = '';
+	document.getElementById("status").innerHTML = '';
+
 	if (typeof channels != 'undefined') {
 		for (i = 0; i < channels.channels.length; i++) {
 			var channel = channels.channels[i];
-
+			var valid = false;
+			
 			// if ((typeof channel.dvb != 'undefined') &&
 			// 	(typeof channel.dvb.frequency != 'undefined') &&
 			// 	(typeof channel.dvb.pidlist != 'undefined') &&
 			// 	(channel.dvb.pidlist.length > 0)) {
 			{
 				str += '<tr';
-
+				
 				if ((typeof channel.dvb == 'undefined') ||
+					(typeof channel.dvb.lcn == 'undefined') ||
 					(typeof channel.dvb.convertedname == 'undefined') ||
 					(typeof channel.xmltv == 'undefined') ||
 					(typeof channel.xmltv.convertedname == 'undefined') ||
 					(channel.xmltv.convertedname.toLowerCase() != channel.dvb.convertedname.toLowerCase())) {
-					str += ' class="mismatched"';
+					str += ' class="error"';
 				}
+				else valid = true;
 
 				str += '>';
 				if ((typeof channel.dvb != 'undefined') &&
@@ -2120,12 +2127,15 @@ function showchannels()
 				else str += '<td>&nbsp;</td>';
 				
 				str += '</tr>';
+
+				if (valid) validchannels++;
 			}
 		}
+
+		document.getElementById("statusbottom").innerHTML = validchannels + ' valid channels, ' +  channels.channels.length + ' total channels';
 	}
 	
 	str += '</table>';
 	
-	document.getElementById("status").innerHTML = '';
 	document.getElementById("list").innerHTML = str;
 }

@@ -132,11 +132,11 @@ table.channellist tr:hover
 {
 	background-color:#ada;
 }
-table.channellist tr.mismatched
+table.channellist tr.error
 {
 	background-color:#ebb;
 }
-table.channellist tr.mismatched:hover
+table.channellist tr.error:hover
 {
 	background-color:#daa;
 }
