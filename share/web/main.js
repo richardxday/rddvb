@@ -2134,6 +2134,9 @@ function showchannels()
 
 		document.getElementById("statusbottom").innerHTML = validchannels + ' valid channels, ' +  channels.channels.length + ' total channels';
 	}
+	else {
+		document.getElementById("statusbottom").innerHTML = 'No channel data';
+	}
 	
 	str += '</table>';
 	
