@@ -59,8 +59,8 @@ ADVBChannelList::ADVBChannelList() : changed(false)
 
 									if (chan->dvb.channelname.Valid()) {
 										chan->dvb.convertedchannelname = ConvertDVBChannel(chan->dvb.channelname);
-										dvbchannelmap[chan->dvb.channelname] = chan;
-										dvbchannelmap[chan->dvb.convertedchannelname] = chan;
+										dvbchannelmap[chan->dvb.channelname.ToLower()] = chan;
+										dvbchannelmap[chan->dvb.convertedchannelname.ToLower()] = chan;
 									}
 								}
 
