@@ -1133,7 +1133,7 @@ int main(int argc, const char *argv[])
 				uint_t j, n = freqs.CountColumns();
 
 				for (j = 0; j < n; j++) {
-					list.Update(dvbcard, (uint32_t)(1.0e6 * (double)freqs.Column(j)), true);
+					list.Update(dvbcard, (uint32_t)(1.0e6 * (double)freqs.Column(j) + .5), true);
 				}
 			}
 			else if (strcmp(argv[i], "--scan-all") == 0) {
@@ -1149,7 +1149,7 @@ int main(int argc, const char *argv[])
 				double f;
 
 				for (f = f1; f <= f2; f += step) {
-					list.Update(dvbcard, (uint32_t)(1.0e6 * f), true);
+					list.Update(dvbcard, (uint32_t)(1.0e6 * f + .5), true);
 				}
 			}
 			else if (strcmp(argv[i], "--find-cards") == 0) {
