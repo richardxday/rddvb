@@ -27,7 +27,6 @@ ADVBChannelList::ADVBChannelList() : changed(false)
 	AString json;
 
 	if (AStdFile::exists(config.GetDVBChannelsJSONFile()) &&
-		!FileNewerThan(config.GetDVBChannelsFile(), config.GetDVBChannelsJSONFile()) &&
 		json.ReadFromFile(config.GetDVBChannelsJSONFile())) {
 		rapidjson::Document doc;
 
@@ -122,8 +121,9 @@ ADVBChannelList::ADVBChannelList() : changed(false)
 	}
 #endif
 
-	// old .dat method
-	if ((list.size() == 0) && fp.open(config.GetDVBChannelsFile()) /*|| fp.open(config.GetChannelsConfFile())*/) {
+	// merge in dat file if it is newer
+	if (FileNewerThan(config.GetDVBChannelsFile(), config.GetDVBChannelsJSONFile()) &&
+		fp.open(config.GetDVBChannelsFile())) {
 		AString line;
 
 		config.printf("Reading channels from '%s'...", config.GetDVBChannelsFile().str());
@@ -136,7 +136,7 @@ ADVBChannelList::ADVBChannelList() : changed(false)
 				(line.GetFieldNumber(":", 1, _freq) >= 0) &&
 				(line.GetFieldNumber(":", 10, _pid1) >= 0) &&
 				(line.GetFieldNumber(":", 11, _pid2) >= 0)) {
-				if ((chan = GetChannelByDVBChannelName(name, true)) != NULL) {
+				if ((chan = GetChannelByName(name, true)) != NULL) {
 					chan->dvb.freq = (uint32_t)_freq;
 					chan->dvb.pidlist.clear();
 
@@ -157,7 +157,7 @@ ADVBChannelList::ADVBChannelList() : changed(false)
 					name = name.Mid(name.Pos("]") + 1);
 				}
 
-				if ((chan = GetChannelByDVBChannelName(name, true, lcn)) != NULL) {
+				if ((chan = GetChannelByName(name, true, lcn)) != NULL) {
 					chan->dvb.freq = (uint32_t)_freq;
 					chan->dvb.pidlist.clear();
 
