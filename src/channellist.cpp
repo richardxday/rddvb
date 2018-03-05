@@ -196,6 +196,8 @@ ADVBChannelList::~ADVBChannelList()
 
 		GenerateChanneList(doc);
 
+		config.printf("Writing channels to '%s'...", config.GetDVBChannelsJSONFile().str());
+		
 		if (fp.open(config.GetDVBChannelsJSONFile(), "w")) {
 			rapidjson::PrettyWriter<AStdData> writer(fp);
 
@@ -205,6 +207,8 @@ ADVBChannelList::~ADVBChannelList()
 
 			// send updated file to recording slave
 			if (config.GetRecordingSlave().Valid()) {
+				config.printf("Sending channels file to '%s'...", config.GetRecordingSlave().str());
+		
 				if (!SendFileToRecordingSlave(config.GetDVBChannelsJSONFile())) {
 					config.printf("Failed to update channels on recording slave");
 				}
@@ -236,6 +240,8 @@ ADVBChannelList::~ADVBChannelList()
 
 		std::sort(strlist.begin(), strlist.end());
 
+		config.printf("Writing channels to '%s'...", config.GetDVBChannelsFile().str());
+		
 		if (fp.open(config.GetDVBChannelsFile(), "w")) {
 			for (i = 0; i < strlist.size(); i++) {
 				fp.printf("%s\n", strlist[i].str());
@@ -245,6 +251,8 @@ ADVBChannelList::~ADVBChannelList()
 
 			// send updated file to recording slave
 			if (config.GetRecordingSlave().Valid()) {
+				config.printf("Sending channels file to '%s'...", config.GetRecordingSlave().str());
+
 				if (!SendFileToRecordingSlave(config.GetDVBChannelsFile())) {
 					config.printf("Failed to update channels on recording slave");
 				}
