@@ -63,6 +63,7 @@ private:
 	static AString ConvertXMLTVChannel(const AString& str);
 
 protected:
+	CHANNEL *GetChannelByName(const AString& name, bool create, uint_t lcn = 0);
 	CHANNEL *GetChannelByDVBChannelName(const AString& name, bool create, uint_t lcn = 0);
 
 	typedef std::vector<CHANNEL *>       CHANNELLIST;

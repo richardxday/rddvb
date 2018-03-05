@@ -417,10 +417,26 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByXMLTVChannelName(co
 
 const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name) const
 {
-	const CHANNEL *chan = NULL;
+	const CHANNEL *chan;
 
 	if ((chan = GetChannelByDVBChannelName(name)) == NULL) {
 		chan = GetChannelByXMLTVChannelName(name);
+	}
+
+	return chan;
+}
+
+ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name, bool create, uint_t lcn)
+{
+	CHANNEL *chan = NULL;
+
+	if ((chan = GetChannelByDVBChannelName(name, false)) == NULL) {
+		CHANNELMAP::iterator it;
+		
+		if ((it = xmltvchannelmap.find(name.ToLower())) != xmltvchannelmap.end()) {
+			chan = it->second;
+		}
+		else chan = GetChannelByDVBChannelName(name, create, lcn);
 	}
 
 	return chan;
@@ -613,8 +629,8 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 					service += line + "\n";
 
 					if (line == "</service>") {
-						CHANNEL *chan = GetChannelByDVBChannelName(servname, true);
-
+						CHANNEL *chan = GetChannelByName(servname, true);
+						
 						if (chan) {
 							std::map<AString,bool> pidhash;
 							PIDLIST				   pidlist;
