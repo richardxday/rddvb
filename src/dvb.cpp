@@ -1128,7 +1128,8 @@ int main(int argc, const char *argv[])
 					// MUST write channels if they have been updated
 					list.Write();
 
-					RunRemoteCommandGetFile(AString("dvb --pids \"%;\"").Arg(channel).EndArgs(), config.GetDVBChannelsJSONFile());
+					printf("Fetching PIDs from recording slave '%s'\n", config.GetRecordingSlave().str());
+					RunRemoteCommandGetFile(AString("dvb --dvbcard %; --pids \"%;\"").Arg(dvbcard).Arg(channel).EndArgs(), config.GetDVBChannelsJSONFile());
 
 					// force re-reading after remote command
 					list.Read();
@@ -1147,7 +1148,8 @@ int main(int argc, const char *argv[])
 					// MUST write channels if they have been updated
 					list.Write();
 
-					RunRemoteCommandGetFile(AString("dvb --scan \"%;\"").Arg(freqs).EndArgs(), config.GetDVBChannelsJSONFile());
+					printf("Scanning on recording slave '%s'\n", config.GetRecordingSlave().str());
+					RunRemoteCommandGetFile(AString("dvb --dvbcard %; --scan \"%;\"").Arg(dvbcard).Arg(freqs).EndArgs(), config.GetDVBChannelsJSONFile());
 
 					// force re-reading after remote command
 					list.Read();
@@ -1166,7 +1168,8 @@ int main(int argc, const char *argv[])
 					// MUST write channels if they have been updated
 					list.Write();
 
-					RunRemoteCommandGetFile("dvb --scan-all", config.GetDVBChannelsJSONFile());
+					printf("Scanning on recording slave '%s'\n", config.GetRecordingSlave().str());
+					RunRemoteCommandGetFile(AString("dvb --dvbcard %; --scan-all").Arg(dvbcard).EndArgs(), config.GetDVBChannelsJSONFile());
 
 					// force re-reading after remote command
 					list.Read();
@@ -1183,7 +1186,8 @@ int main(int argc, const char *argv[])
 					// MUST write channels if they have been updated
 					list.Write();
 
-					RunRemoteCommandGetFile(AString("dvb --scan-range %; %; %;").Arg(f1str).Arg(f2str).Arg(ststr).EndArgs(), config.GetDVBChannelsJSONFile());
+					printf("Scanning on recording slave '%s'\n", config.GetRecordingSlave().str());
+					RunRemoteCommandGetFile(AString("dvb --dvbcard %; --scan-range %; %; %;").Arg(dvbcard).Arg(f1str).Arg(f2str).Arg(ststr).EndArgs(), config.GetDVBChannelsJSONFile());
 
 					// force re-reading after remote command
 					list.Read();
@@ -1206,6 +1210,8 @@ int main(int argc, const char *argv[])
 					// MUST write channels if they have been updated
 					list.Write();
 					
+					printf("Finding channels on recording slave '%s'\n", config.GetRecordingSlave().str());
+
 					// run update script on recording slave then pull the results back
 					RunRemoteCommandGetFile("updatedvbchannels.pl", config.GetDVBChannelsFile());
 				}
