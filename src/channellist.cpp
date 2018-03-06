@@ -760,14 +760,21 @@ bool ADVBChannelList::Update(uint_t card, const AString& channel, bool verbose)
 void ADVBChannelList::UpdateAll(uint_t card, bool verbose)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString range = config.GetDVBFrequencyRange();
-	double  f1    = (double)range.Column(0);
-	double  f2    = (double)range.Column(1);
-	double  step  = (double)range.Column(2);
-	double  f;
+	std::map<uint32_t,bool> freqs;
+	size_t i;
 
-	for (f = f1; f <= f2; f += step) {
-		Update(card, (uint32_t)(f * 1.0e6), verbose);
+	// create list of frequencies
+	for (i = 0; i < list.size(); i++) {
+		if (list[i]->dvb.freq) {
+			freqs[list[i]->dvb.freq] = true;
+		}
+	}
+
+	if (verbose) config.printf("Found %u frequencies to scan", (uint_t)freqs.size());
+	
+	std::map<uint32_t,bool>::iterator it;
+	for (it = freqs.begin(); it != freqs.end(); ++it) {
+		Update(card, it->first, verbose);
 	}
 }
 
