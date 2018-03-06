@@ -1121,45 +1121,91 @@ int main(int argc, const char *argv[])
 			}
 			else if (strcmp(argv[i], "--pids") == 0) {
 				ADVBChannelList& list = ADVBChannelList::Get();
-				const AString channel = argv[++i];
-				AString pids;
+				const AString 	 channel = argv[++i];
+				AString 	  	 pids;
+				
+				if (config.GetRecordingSlave().Valid()) {
+					// MUST write channels if they have been updated
+					list.Write();
 
-				list.GetPIDList(dvbcard, channel, pids, true);
+					RunRemoteCommandGetFile(AString("dvb --pids \"%;\"").Arg(channel).EndArgs(), config.GetDVBChannelsJSONFile());
+
+					// force re-reading after remote command
+					list.Read();
+				}
+
+				// get PIDs (only update if recording slave is invalid)
+				list.GetPIDList(dvbcard, channel, pids, config.GetRecordingSlave().Empty());
 
 				printf("pids for '%s': %s\n", channel.str(), pids.str());
 			}
 			else if (strcmp(argv[i], "--scan") == 0) {
 				ADVBChannelList& list = ADVBChannelList::Get();
 				const AString freqs = argv[++i];
-				uint_t j, n = freqs.CountColumns();
 
-				for (j = 0; j < n; j++) {
-					list.Update(dvbcard, (uint32_t)(1.0e6 * (double)freqs.Column(j) + .5), true);
+				if (config.GetRecordingSlave().Valid()) {
+					// MUST write channels if they have been updated
+					list.Write();
+
+					RunRemoteCommandGetFile(AString("dvb --scan \"%;\"").Arg(freqs).EndArgs(), config.GetDVBChannelsJSONFile());
+
+					// force re-reading after remote command
+					list.Read();
+				}
+				else {
+					uint_t j, n = freqs.CountColumns();
+					for (j = 0; j < n; j++) {
+						list.Update(dvbcard, (uint32_t)(1.0e6 * (double)freqs.Column(j) + .5), true);
+					}
 				}
 			}
 			else if (strcmp(argv[i], "--scan-all") == 0) {
 				ADVBChannelList& list = ADVBChannelList::Get();
 
-				list.UpdateAll(dvbcard, true);
+				if (config.GetRecordingSlave().Valid()) {
+					// MUST write channels if they have been updated
+					list.Write();
+
+					RunRemoteCommandGetFile("dvb --scan-all", config.GetDVBChannelsJSONFile());
+
+					// force re-reading after remote command
+					list.Read();
+				}
+				else list.UpdateAll(dvbcard, true);
 			}
 			else if (strcmp(argv[i], "--scan-range") == 0) {
 				ADVBChannelList& list = ADVBChannelList::Get();
-				const double f1   = (double)AString(argv[++i]);
-				const double f2   = (double)AString(argv[++i]);
-				const double step = (double)AString(argv[++i]);
-				double f;
+				const AString f1str = AString(argv[++i]);
+				const AString f2str = AString(argv[++i]);
+				const AString ststr = AString(argv[++i]);
 
-				for (f = f1; f <= f2; f += step) {
-					list.Update(dvbcard, (uint32_t)(1.0e6 * f + .5), true);
+				if (config.GetRecordingSlave().Valid()) {
+					// MUST write channels if they have been updated
+					list.Write();
+
+					RunRemoteCommandGetFile(AString("dvb --scan-range %; %; %;").Arg(f1str).Arg(f2str).Arg(ststr).EndArgs(), config.GetDVBChannelsJSONFile());
+
+					// force re-reading after remote command
+					list.Read();
+				}
+				else {
+					const double f1   = (double)f1str;
+					const double f2   = (double)f2str;
+					const double step = (double)ststr;
+					double f;
+
+					for (f = f1; f <= f2; f += step) {
+						list.Update(dvbcard, (uint32_t)(1.0e6 * f + .5), true);
+					}
 				}
 			}
 			else if (strcmp(argv[i], "--find-channels") == 0) {
-				// MUST write channels if they have been updated
-				if (ADVBChannelList::IsSingletonValid()) {
-					ADVBChannelList::Get().Write();
-				}
-
+				ADVBChannelList& list = ADVBChannelList::Get();
+				
 				if (config.GetRecordingSlave().Valid()) {
+					// MUST write channels if they have been updated
+					list.Write();
+					
 					// run update script on recording slave then pull the results back
 					RunRemoteCommandGetFile("updatedvbchannels.pl", config.GetDVBChannelsFile());
 				}
@@ -1169,7 +1215,7 @@ int main(int argc, const char *argv[])
 				}
 
 				// read and merge updated channels
-				ADVBChannelList::Get().Read();
+				list.Read();
 			}
 			else if (strcmp(argv[i], "--find-cards") == 0) {
 				findcards();
