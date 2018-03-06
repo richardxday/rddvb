@@ -11,7 +11,12 @@
 class ADVBChannelList {
 public:
 	static ADVBChannelList& Get();
-
+	static bool IsSingletonValid() {return GetSingleton();}
+	
+	bool Read();
+	bool Write();
+	void DeleteAll();
+	
 	bool Update(uint_t card, uint32_t freq, bool verbose = false);
 	bool Update(uint_t card, const AString& channel, bool verbose = false);
 
@@ -66,8 +71,14 @@ protected:
 	CHANNEL *GetChannelByName(const AString& name, bool create, uint_t lcn = 0);
 	CHANNEL *GetChannelByDVBChannelName(const AString& name, bool create, uint_t lcn = 0);
 
+	static bool& GetSingleton() {
+		static bool valid = false;
+		return valid;
+	}
+	
 	typedef std::vector<CHANNEL *>       CHANNELLIST;
 	typedef std::map<AString, CHANNEL *> CHANNELMAP;
+
 protected:
 	CHANNELLIST list;
 	CHANNELLIST lcnlist;

@@ -155,6 +155,7 @@ int main(int argc, const char *argv[])
 		{"--scan",								   "<freq>[,<freq>...]",			  "Scan frequencies <freq>MHz for DVB channels"},
 		{"--scan-all",							   "",								  "Scan all known frequencies for DVB channels"},
 		{"--scan-range",						   "<start-freq> <end-freq> <step>",  "Scan frequencies <freq>MHz for DVB channels"},
+		{"--find-channels",						   "",								  "Run Perl update channels script and update channels accordingly"},
 		{"--find-cards",						   "",								  "Find DVB cards"},
 		{"--change-filename",					   "<filename1> <filename2>",		  "Change filename of recorded progamme with filename <filename1> to <filename2>"},
 		{"--change-filename-regex",				   "<filename1> <filename2>",		  "Change filename of recorded progamme with filename <filename1> to <filename2> (where <filename1> can be a regex and <filename2> can be an expansion)"},
@@ -1151,6 +1152,24 @@ int main(int argc, const char *argv[])
 				for (f = f1; f <= f2; f += step) {
 					list.Update(dvbcard, (uint32_t)(1.0e6 * f + .5), true);
 				}
+			}
+			else if (strcmp(argv[i], "--find-channels") == 0) {
+				// MUST write channels if they have been updated
+				if (ADVBChannelList::IsSingletonValid()) {
+					ADVBChannelList::Get().Write();
+				}
+
+				if (config.GetRecordingSlave().Valid()) {
+					// run update script on recording slave then pull the results back
+					RunRemoteCommandGetFile("updatedvbchannels.pl", config.GetDVBChannelsFile());
+				}
+				else {
+					// run update script locally
+					RunAndLogCommand("updatedvbchannels.pl");
+				}
+
+				// read and merge updated channels
+				ADVBChannelList::Get().Read();
 			}
 			else if (strcmp(argv[i], "--find-cards") == 0) {
 				findcards();

@@ -19,10 +19,63 @@
 
 ADVBChannelList::ADVBChannelList() : changed(false)
 {
+	Read();
+}
+
+ADVBChannelList::~ADVBChannelList()
+{
+	Write();
+
+	size_t i;
+	for (i = 0; i < list.size(); i++) {
+		delete list[i];
+	}
+}
+
+bool ADVBChannelList::__SortChannels(const CHANNEL *chan1, const CHANNEL *chan2)
+{
+	bool chan1beforechan2 = false;
+	
+	if ((chan1->dvb.lcn == 0) && (chan2->dvb.lcn == 0)) {
+		// neither has LCN, sort alphabetically by DVB channel 
+		chan1beforechan2 = (CompareNoCase(chan1->dvb.channelname, chan2->dvb.channelname) < 0);
+	}
+	else if (chan1->dvb.lcn == 0) {
+		// chan2 has LCN, chan2 must be before chan1
+		chan1beforechan2 = false;
+	}
+	else if (chan2->dvb.lcn == 0) {
+		// chan1 has LCN, chan1 must be before chan2
+		chan1beforechan2 = true;
+	}
+	else if (chan1->dvb.lcn != chan2->dvb.lcn) {
+		// LCN's are different, sort by LCN
+		chan1beforechan2 = (chan1->dvb.lcn < chan2->dvb.lcn);
+	}
+	else {
+		// both LCN's are the same, sort alphabetically by DVB channel 
+		chan1beforechan2 = (CompareNoCase(chan1->dvb.channelname, chan2->dvb.channelname) < 0);
+	}
+
+	return chan1beforechan2;
+}
+
+ADVBChannelList& ADVBChannelList::Get()
+{
+	static ADVBChannelList channellist;
+	GetSingleton() = true;
+	return channellist;
+}
+
+bool ADVBChannelList::Read()
+{
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBLock lock("dvbfiles");
 	AStdFile fp;
-
+	bool     success = false;
+	
+	DeleteAll();
+	
 #if PREFER_JSON
 	AString json;
 
@@ -36,6 +89,8 @@ ADVBChannelList::ADVBChannelList() : changed(false)
 			if (doc.IsArray()) {
 				size_t i;
 
+				success = true;
+				
 				for (i = 0; i < doc.Size(); i++) {
 					if (doc[i].IsObject()) {
 						const rapidjson::Value& chanobj = doc[i];
@@ -173,21 +228,27 @@ ADVBChannelList::ADVBChannelList() : changed(false)
 
 		fp.close();
 
+		success = true;
+
 		// force re-writing as JSON
 		changed = true;
 	}
 
 	std::sort(list.begin(), list.end(), __SortChannels);
+
+	return success;
 }
 
-ADVBChannelList::~ADVBChannelList()
+bool ADVBChannelList::Write()
 {
-	size_t i;
+	bool success = false;
 
 	if (changed) {
 		const ADVBConfig& config = ADVBConfig::Get();
 		ADVBLock lock("dvbfiles");
 		AStdFile fp;
+
+		success = true;
 
 		std::sort(list.begin(), list.end(), __SortChannels);
 		
@@ -211,9 +272,15 @@ ADVBChannelList::~ADVBChannelList()
 		
 				if (!SendFileToRecordingSlave(config.GetDVBChannelsJSONFile())) {
 					config.printf("Failed to update channels on recording slave");
+					success = false;
 				}
 			}
 		}
+		else {
+			config.printf("Failed to open file '%s' for writing", config.GetDVBChannelsJSONFile().str());
+			success = false;
+		}
+		
 #else
 		std::vector<AString> strlist;
 
@@ -255,49 +322,30 @@ ADVBChannelList::~ADVBChannelList()
 
 				if (!SendFileToRecordingSlave(config.GetDVBChannelsFile())) {
 					config.printf("Failed to update channels on recording slave");
+					success = false;
 				}
 			}
 		}
+		else {
+			config.printf("Failed to open file '%s' for writing", config.GetDVBChannelsFile().str());
+			success = false;
+		}
 #endif
-	}
 
-	for (i = 0; i < list.size(); i++) {
-		delete list[i];
+		changed &= !success;
 	}
+	else success = true;
+
+	return success;
 }
 
-bool ADVBChannelList::__SortChannels(const CHANNEL *chan1, const CHANNEL *chan2)
+void ADVBChannelList::DeleteAll()
 {
-	bool chan1beforechan2 = false;
-	
-	if ((chan1->dvb.lcn == 0) && (chan2->dvb.lcn == 0)) {
-		// neither has LCN, sort alphabetically by DVB channel 
-		chan1beforechan2 = (CompareNoCase(chan1->dvb.channelname, chan2->dvb.channelname) < 0);
-	}
-	else if (chan1->dvb.lcn == 0) {
-		// chan2 has LCN, chan2 must be before chan1
-		chan1beforechan2 = false;
-	}
-	else if (chan2->dvb.lcn == 0) {
-		// chan1 has LCN, chan1 must be before chan2
-		chan1beforechan2 = true;
-	}
-	else if (chan1->dvb.lcn != chan2->dvb.lcn) {
-		// LCN's are different, sort by LCN
-		chan1beforechan2 = (chan1->dvb.lcn < chan2->dvb.lcn);
-	}
-	else {
-		// both LCN's are the same, sort alphabetically by DVB channel 
-		chan1beforechan2 = (CompareNoCase(chan1->dvb.channelname, chan2->dvb.channelname) < 0);
-	}
-
-	return chan1beforechan2;
-}
-
-ADVBChannelList& ADVBChannelList::Get()
-{
-	static ADVBChannelList channellist;
-	return channellist;
+	list.clear();
+	lcnlist.clear();
+	dvbchannelmap.clear();
+	xmltvchannelmap.clear();
+	changed = false;
 }
 
 void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, bool incconverted) const
