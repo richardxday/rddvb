@@ -2247,6 +2247,9 @@ void ADVBProg::Record()
 				GetRecordPIDs(pids, true);
 			}
 
+			// write updated channels to file, if changed
+			ADVBChannelList::Get().Write();
+			
 			if (pids.CountWords() < 2) {
 				config.printf("No pids for '%s'", GetQuickDescription().str());
 				failed = true;

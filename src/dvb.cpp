@@ -110,6 +110,7 @@ int main(int argc, const char *argv[])
 		{"--fix-pound",							   "<file>",						  "Fix pound symbols in file"},
 		{"--update-dvb-channels",				   "",								  "Update DVB channel assignments"},
 		{"--update-dvb-channels-output-list",	   "",								  "Update DVB channel assignments and output list of SchedulesDirect channel ID's"},
+		{"--update-dvb-channels-file",			   "",								  "Update DVB channels file from recording slave if it is newer"},
 		{"--print-channels",					   "",								  "Output all channels"},
 		{"--find-unused-channels",				   "",								  "Find listings and DVB channels that are unused"},
 		{"--update-uuid",						   "",								  "Set UUID's on every programme"},
@@ -527,6 +528,28 @@ int main(int argc, const char *argv[])
 					}
 					printf("----Channel ID's----\n");
 				}
+			}
+			else if (strcmp(argv[i], "--update-dvb-channels-file") == 0) {
+				if (config.GetRecordingSlave().Valid()) {
+					ADVBLock lock("dvbfiles");
+					AString filename    = config.GetDVBChannelsJSONFile();
+					AString dstfilename = config.GetTempFile(filename.FilePart().Prefix(), "." + filename.Suffix());
+
+					if (GetFileFromRecordingSlave(filename, dstfilename)) {
+						FILE_INFO info1, info2;
+
+						if (::GetFileInfo(filename,    &info1) &&
+							::GetFileInfo(dstfilename, &info2) &&
+							(info2.WriteTime > info1.WriteTime)) {
+							// replace local channels file with remote one
+							::remove(filename);
+							::rename(dstfilename, filename);
+							config.printf("Replaced local channels file with one from recording slave");
+						}
+						else config.printf("Local channels file up to date");
+					}
+				}
+				else printf("No need to update DVB channels file: no recording slave\n");
 			}
 			else if (strcmp(argv[i], "--print-channels") == 0) {
 				const ADVBChannelList& channellist = ADVBChannelList::Get();

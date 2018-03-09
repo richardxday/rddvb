@@ -325,6 +325,8 @@ bool ADVBChannelList::Write()
 					success = false;
 				}
 			}
+			// if slave, trigger update of channels file
+			else TriggerServerCommand("dvbupdatechannels");
 		}
 		else {
 			config.printf("Failed to open file '%s' for writing", config.GetDVBChannelsFile().str());
@@ -651,8 +653,8 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 	AString  cmd;
 	bool success = false;
 
-	if (verbose) config.printf("Scanning %uHz...", freq);
-
+	config.printf("Scanning %uHz...", freq);
+	
 	sifilename = config.GetTempFile("pids", ".txt");
 
 	cmd.printf("timeout 20s dvbtune -c %u -f %u -i >%s 2>>%s", card, (uint_t)freq, sifilename.str(), config.GetLogFile(ADateTime().GetDays()).str());
@@ -684,6 +686,9 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 							PIDLIST				   pidlist;
 							uint_t i, n = service.CountLines("\n", 0);
 
+							config.printf("Channel '%s' at frequency %uHz:", chan->dvb.channelname.str(), freq);
+
+							changed |= (freq != chan->dvb.freq);
 							chan->dvb.freq = freq;
 
 							for (i = 0; i < n; i++) {
@@ -713,20 +718,28 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 
 							std::sort(pidlist.begin(), pidlist.end(), std::less<uint_t>());
 
-							if (pidlist.size() && (pidlist != chan->dvb.pidlist)) {
+							if (pidlist.size()) {
 								AString str;
 
-								str.printf("Changing PID list for '%s' from '", chan->dvb.channelname.str());
-								for (i = 0; i < chan->dvb.pidlist.size(); i++) str.printf(" %s", AValue(chan->dvb.pidlist[i]).ToString().str());
+								if (pidlist != chan->dvb.pidlist) {
+									str.printf("Changing PID list for '%s' from ", chan->dvb.channelname.str());
+									for (i = 0; i < chan->dvb.pidlist.size(); i++) {
+										str.printf("%s%s", (i > 0) ? ", " : "", AValue(chan->dvb.pidlist[i]).ToString().str());
+									}
 
-								str.printf("' to '");
-								for (i = 0; i < pidlist.size(); i++) str.printf(" %s", AValue(pidlist[i]).ToString().str());
-								str.printf("'");
+									str.printf("' to '");
+
+									changed = true;
+								}
+								else str.printf("PID list for '%s' is '", chan->dvb.channelname.str());
+								
+								for (i = 0; i < pidlist.size(); i++) {
+									str.printf("%s%s", (i > 0) ? ", " : "", AValue(pidlist[i]).ToString().str());
+								}
 
 								config.printf("%s", str.str());
 
 								chan->dvb.pidlist = pidlist;
-								changed = true;
 							}
 						}
 
