@@ -1469,6 +1469,11 @@ int main(int argc, const char *argv[])
 			}
 			else if (stricmp(argv[i], "--check-recording-file") == 0) {
 				ADVBProgList::CheckRecordingFile();
+
+				// make sure the same is done on the recording slave
+				if (config.GetRecordingSlave().Valid()) {
+					RunAndLogRemoteCommand("dvb --check-recording-file");
+				}
 			}
 			else if (stricmp(argv[i], "--list-flags") == 0) {
 				std::vector<AString> flags;
