@@ -74,25 +74,44 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 	// ensure no changes are saved
 	config.EnableWrite(false);
 
-	CreateDirectory(GetConfigDir());
-	CreateDirectory(GetDataDir());
-	CreateDirectory(GetLogDir());
-	CreateDirectory(GetRecordingsStorageDir());
-	CreateDirectory(GetRecordingsDir());
-	CreateDirectory(GetTempDir());
-
+	// map of directory to create -> name of directory
+	std::map<AString, AString> dirs;
+	AString dir;
+	
+	dirs[GetConfigDir()] = "config";
+	dirs[GetDataDir()] = "data";
+	dirs[GetLogDir()] = "log";
+	dirs[GetRecordingsStorageDir()] = "recording storage";
+	dirs[GetRecordingsDir()] = "recordings";
+	dirs[GetTempDir()] = "temp";
+	if (((dir = GetRecordingsArchiveDir()).Valid()) && (dir.Pos("{") < 0)) {
+		dirs[dir] = "archive";
+	}
+	
 	if (CommitScheduling()) {
-		AList   users;
-		AString dir;
+		AList users;
 
 		ListUsers(users);
 
 		const AString *user = AString::Cast(users.First());
 		while (user) {
-			if (((dir = GetRecordingsDir(*user)).Valid())   && (dir.Pos("{") < 0)) CreateDirectory(dir);
-			if (((dir = GetRecordingsArchiveDir()).Valid()) && (dir.Pos("{") < 0)) CreateDirectory(dir);
-
+			if (((dir = GetRecordingsDir(*user)).Valid())   && (dir.Pos("{") < 0)) {
+				dirs[dir] = "user " + *user + " recordings";
+			}
+			
 			user = user->Next();
+		}
+	}
+
+	std::map<AString, AString>::iterator it;
+	for (it = dirs.begin(); it != dirs.end(); ++it)
+	{
+		if (!CreateDirectory(it->first)) {
+			if (dircreationerrors.Valid()) {
+				dircreationerrors.printf("\n");
+			}
+			
+			dircreationerrors.printf("Unable to create %s directory ('%s')", it->second.str(), it->first.str());
 		}
 	}
 }
@@ -129,6 +148,39 @@ void ADVBConfig::CheckUpdate() const
 {
 	ASettingsHandler *wrconfig = const_cast<ASettingsHandler *>(&config);
 	if (wrconfig->CheckRead()) wrconfig->Read();
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Report errors during directory creation process
+ *
+ * @return true if there were some errors during directory creation
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADVBConfig::ReportDirectoryCreationErrors(const AString& errors)
+{
+	if (errors.Valid()) {
+		const ADVBConfig& config = ADVBConfig::Get();
+		AString cmd = config.GetConfigItem("createdirfailcmd");
+
+		if (cmd.Valid()) {
+			AString  tempfile = config.GetTempFileEx("/tmp", "dir-creation-errors", ".txt");
+			AStdFile fp;
+			
+			if (fp.open(tempfile, "w")) {
+				fp.printf("%s\n", errors.str());
+				fp.close();
+			}
+
+			cmd = cmd.SearchAndReplace("{logfile}", tempfile);
+			RunAndLogCommand(cmd);
+
+			remove(tempfile);
+		}
+
+		config.printf("%s", errors.str());
+	}
+
+	return errors.Valid();
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -443,8 +495,23 @@ AString ADVBConfig::GetShareDir() const
 /*--------------------------------------------------------------------------------*/
 AString ADVBConfig::GetTempFile(const AString& name, const AString& suffix) const
 {
+	return GetTempFileEx(GetTempDir(), name, suffix);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Return unique filename of temporary file with prefix and suffix
+ *
+ * @param tempdir temporary directory
+ * @param name filename prefix
+ * @param suffix filename suffix
+ *
+ * @return unique filename
+ */
+/*--------------------------------------------------------------------------------*/
+AString ADVBConfig::GetTempFileEx(const AString& tempdir, const AString& name, const AString& suffix) const
+{
 	static uint32_t filenumber = 0U;
-	return GetTempDir().CatPath(name + AString("_%08x_%08x_%u").Arg(getpid()).Arg(::GetTickCount()).Arg(filenumber++) + suffix);
+	return tempdir.CatPath(name + AString("_%08x_%08x_%u").Arg(getpid()).Arg(::GetTickCount()).Arg(filenumber++) + suffix);
 }
 
 const AString& ADVBConfig::GetDefaultInterRecTime() const
@@ -800,7 +867,7 @@ AString ADVBConfig::GetRecordingsArchiveDir() const
 
 AString ADVBConfig::GetTempDir() const
 {
-	return GetConfigItem("tempdir", GetDataDir().CatPath("temp"));
+	return GetConfigItem("tempdir", "/tmp");
 }
 
 AString ADVBConfig::GetQueue() const
@@ -981,11 +1048,6 @@ AString ADVBConfig::GetSearchesFile() const
 AString ADVBConfig::GetIconCacheFilename() const
 {
 	return CatPath(GetDataDir(), GetConfigItem("iconcache", "iconcache.txt"));
-}
-
-AString ADVBConfig::GetRegionalChannels() const
-{
-	return GetConfigItem("regionalchannels", "bbc1.bbc.co.uk=north-west,bbc2.bbc.co.uk=north-west,bbc2.bbc.co.uk=england,itv1.itv.co.uk=granada");
 }
 
 AString ADVBConfig::GetConvertedFileSuffix(const AString& user, const AString& def) const

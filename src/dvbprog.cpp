@@ -2352,9 +2352,15 @@ void ADVBProg::Record()
 			AString cmd;
 			int     res;
 
-			CreateDirectory(GetTempFilename().PathPart());
-			CreateDirectory(filename.PathPart());
-
+			if (!CreateDirectory(GetTempFilename().PathPart())) {
+				if (dircreationerrors.Valid()) dircreationerrors.printf("\n");
+				dircreationerrors.printf("Failed to create directory '%s' for temporary file", GetTempFilename().PathPart().str());
+			}
+			if (!CreateDirectory(filename.PathPart())) {
+				if (dircreationerrors.Valid()) dircreationerrors.printf("\n");
+				dircreationerrors.printf("Failed to create directory '%s' for final file", filename.PathPart().str());
+			}
+			
 			config.printf("Recording '%s' for %u seconds (%u minutes) to '%s' using freq %uHz PIDs %s",
 						  GetTitleAndSubtitle().str(),
 						  nsecs, ((nsecs + 59) / 60),
@@ -2478,6 +2484,9 @@ void ADVBProg::Record()
 		config.printf("------------------------------------------------------------------------------------------------------------------------");
 
 		ClearRunning();
+
+		ADVBConfig::ReportDirectoryCreationErrors(dircreationerrors);
+		dircreationerrors.Delete();
 	}
 }
 
@@ -2699,15 +2708,24 @@ void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const st
 	FILE_INFO info;
 	AString subsdir = dst.PathPart().CatPath("subs");
 
-	if (config.ForceSubs(GetUser())) CreateDirectory(subsdir);
-
+	if (config.ForceSubs(GetUser())) {
+		if (!CreateDirectory(subsdir)) {
+			if (dircreationerrors.Valid()) dircreationerrors.printf("\n");
+			dircreationerrors.printf("Failed to create directory '%s' for subs", subsdir.str());
+		}
+	}
+	
 	if (GetFileInfo(subsdir, &info)) {
 		AString srcsubfile = src.Prefix() + ".sup.idx";
 		AString dstsubfile = dst.PathPart().CatPath("subs", dst.FilePart().Prefix() + ".sup.idx");
 		AStdFile fp1, fp2;
 
 		if (fp1.open(srcsubfile)) {
-			CreateDirectory(dstsubfile.PathPart());
+			if (!CreateDirectory(dstsubfile.PathPart())) {
+				if (dircreationerrors.Valid()) dircreationerrors.printf("\n");
+				dircreationerrors.printf("Failed to create directory '%s' for subs files", dstsubfile.PathPart().str());
+			}
+			
 			if (fp2.open(dstsubfile, "w")) {
 				AString line;
 
@@ -2848,7 +2866,10 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	AString 	  dst  	     		 = GenerateFilename(true);
 	AString 	  archivedst 		 = ReplaceFilenameTerms(config.GetRecordingsArchiveDir(), false).CatPath(src.FilePart());
 
-	CreateDirectory(archivedst.PathPart());
+	if (!CreateDirectory(archivedst.PathPart())) {
+		if (dircreationerrors.Valid()) dircreationerrors.printf("\n");
+		dircreationerrors.printf("Failed to create directory '%s' for archived file", archivedst.PathPart().str());
+	}
 
 	if (IsConverted() || SameFile(src, dst)) return true;
 
@@ -2881,7 +2902,10 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 	AString   args     = config.GetEncodeArgs(GetUser(), GetModifiedCategory());
 	bool      success  = true;
 
-	CreateDirectory(dst.PathPart());
+	if (!CreateDirectory(dst.PathPart())) {
+		if (dircreationerrors.Valid()) dircreationerrors.printf("\n");
+		dircreationerrors.printf("Failed to create directory '%s' for destination file", dst.PathPart().str());
+	}
 
 	if (AStdFile::exists(src) &&
 		!AStdFile::exists(logfile)) {

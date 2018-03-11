@@ -21,5 +21,5 @@ if [ ! -f "$LISTINGSFILE.gz" ] ; then
   gzip "$LISTINGSFILE"
 fi
 
-dvb --check-recording-file --find-cards
+dvb --update-dvb-channels-file --check-recording-file --find-cards
 dvb --schedule

@@ -135,9 +135,9 @@ $(INSTALLBINDST)/%: scripts/%
 all: $(DEFAULTCONFIG)
 
 ifdef DEBUG
-RUNDVB=$(DEBUG_BINDIR)/dvb
+RUNDVB=$(DEBUG_BINDIR)/dvb --no-report-errors
 else
-RUNDVB=$(RELEASE_BINDIR)/dvb
+RUNDVB=$(RELEASE_BINDIR)/dvb --no-report-errors
 endif
 
 include $(MAKEFILEDIR)/makefile.post

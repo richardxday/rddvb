@@ -38,6 +38,15 @@ public:
 	bool IsOutputDisabled() const {return disableoutput;}
 
 	/*--------------------------------------------------------------------------------*/
+	/** Report errors during directory creation process
+	 *
+	 * @return true if there were some errors during directory creation
+	 */
+	/*--------------------------------------------------------------------------------*/
+	bool ReportDirectoryCreationErrors() const {return ReportDirectoryCreationErrors(dircreationerrors);}
+	static bool ReportDirectoryCreationErrors(const AString& errors);
+	
+	/*--------------------------------------------------------------------------------*/
 	/** Configuration item access functions
 	 *
 	 * These functions use a hierarchy to decide what to return, the order is *always*:
@@ -269,6 +278,19 @@ public:
 	 */
 	/*--------------------------------------------------------------------------------*/
 	AString GetTempFile(const AString& name, const AString& suffix = "") const;
+
+	/*--------------------------------------------------------------------------------*/
+	/** Return unique filename of temporary file with prefix and suffix
+	 *
+	 * @param tempdir temporary directory
+	 * @param name filename prefix
+	 * @param suffix filename suffix
+	 *
+	 * @return unique filename
+	 */
+	/*--------------------------------------------------------------------------------*/
+	AString GetTempFileEx(const AString& tempdir, const AString& name, const AString& suffix = "") const;
+	
 	AString GetQueue()						 const; // extractconfig()
 	AString GetRecordingsSubDir(const AString& user, const AString& category = "") const; // extractconfig("<name>", "<category>")
 	AString GetRecordingsDir(const AString& user, const AString& category = "")    const; // extractconfig("<name>", "<category>")
@@ -309,7 +331,6 @@ public:
 	AString GetEpisodesFile()				 const; // extractconfig()
 	AString GetSearchesFile()				 const; // extractconfig()
 	AString GetIconCacheFilename()           const; // extractconfig()
-	AString GetRegionalChannels()            const; // extractconfig()
 
 	AString GetNamedFile(const AString& name) const;
 
@@ -456,6 +477,7 @@ protected:
 	AHash			 	 defaults;
 	std::vector<uint_t>  dvbcards;
 	std::vector<AString> *configrecorder;
+	AString				 dircreationerrors;
 	bool				 disableoutput;
 };
 

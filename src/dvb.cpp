@@ -82,6 +82,7 @@ static bool argsvalid(int argc, const char *argv[], int i, const OPTION& option)
 int main(int argc, const char *argv[])
 {
 	static const OPTION options[] = {
+		{"--no-report-errors",                     "",                                "Do NOT report any errors during directory creation (MUST be first argument)"},
 		{"-v[<n>]",								   "",								  "Increase verbosity by <n> or by 1"},
 		{"--confdir",							   "",								  "Print conf directory"},
 		{"--datadir",							   "",								  "Print data directory"},
@@ -209,6 +210,11 @@ int main(int argc, const char *argv[])
 
 	(void)prog;
 
+	if (((argc < 2) || (strcmp(argv[1], "--no-report-errors") != 0)) &&
+		config.ReportDirectoryCreationErrors()) {
+		res = -1;
+	}
+	
 #if 0
 	if (argc == 1) {
 		ADVBLock lock("dvbfiles");

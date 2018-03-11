@@ -853,38 +853,3 @@ AString ADVBChannelList::LookupXMLTVChannel(const AString& channel) const
 
 	return channel1;
 }
-
-bool ADVBChannelList::ValidChannelID(const AString& channelid) const
-{
-	const ADVBConfig& config = ADVBConfig::Get();
-	const AString regionalchannels = config.GetRegionalChannels();
-	uint_t i, n = regionalchannels.CountColumns();
-	bool   valid = true;
-
-	for (i = 0; i < n; i++) {
-		const AString channel = regionalchannels.Column(i).Words(0);
-		const AString suffix  = "." + channel.Line(0, "=");
-
-		if (channelid.EndsWithNoCase(suffix)) {
-			//debug("Channel ID '%s' is invalid (suffix='%s')\n", channelid.str(), suffix.str());
-			valid = false;
-			break;
-		}
-	}
-
-	if (!valid) {
-		for (i = 0; i < n; i++) {
-			const AString channel = regionalchannels.Column(i).Words(0);
-			const AString suffix  = "." + channel.Line(0, "=");
-			const AString region  = channel.Line(1, "=") + suffix;
-
-			if (channelid.EndsWithNoCase(region)) {
-				//debug("Channel ID '%s' is valid again (region='%s')\n", channelid.str(), region.str());
-				valid = true;
-				break;
-			}
-		}
-	}
-
-	return valid;
-}

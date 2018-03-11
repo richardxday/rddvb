@@ -253,13 +253,7 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 						AString channel   = channellist.LookupXMLTVChannel(channelid);
 						const ADVBChannelList::CHANNEL *chandata;
 
-						if (channelidvalidhash.find(channelid) == channelidvalidhash.end()) {
-							bool valid = channellist.ValidChannelID(channelid);
-
-							channelidvalidhash[channelid] = valid;
-
-							if (!valid) debug("Channel ID '%s' (channel '%s') is%s valid\n", channelid.str(), channel.str(), valid ? "" : " NOT");
-						}
+						channelidvalidhash[channelid] = true;
 
 						if ((chandata = channellist.GetChannelByXMLTVChannelName(channelid)) != NULL) {
 							ADateTime start, stop;

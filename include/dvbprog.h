@@ -596,7 +596,8 @@ protected:
 	PROGLIST		   *list;
 	double   		   priority_score;
 	uint_t	 		   overlaps;
-
+	AString			   dircreationerrors;
+	
 	static AHash       	 fieldhash;
 	static const FIELD 	 fields[];
 	static AString     	 dayformat;

@@ -51,7 +51,6 @@ public:
 	const CHANNEL *GetChannelByName(const AString& name) const;
 	
 	const CHANNEL *AssignOrAddXMLTVChannel(uint_t lcn, const AString& name, const AString& id);
-	bool ValidChannelID(const AString& channelid) const;
 	
 	AString LookupDVBChannel(const AString& channel)   const;
 	AString LookupXMLTVChannel(const AString& channel) const;
