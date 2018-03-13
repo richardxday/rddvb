@@ -722,7 +722,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 								AString str;
 
 								if (pidlist != chan->dvb.pidlist) {
-									str.printf("Changing PID list for '%s' from ", chan->dvb.channelname.str());
+									str.printf("Changing PID list for '%s' from '", chan->dvb.channelname.str());
 									for (i = 0; i < chan->dvb.pidlist.size(); i++) {
 										str.printf("%s%s", (i > 0) ? ", " : "", AValue(chan->dvb.pidlist[i]).ToString().str());
 									}
@@ -737,6 +737,8 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 									str.printf("%s%s", (i > 0) ? ", " : "", AValue(pidlist[i]).ToString().str());
 								}
 
+								str.printf("'");
+								
 								config.printf("%s", str.str());
 
 								chan->dvb.pidlist = pidlist;
