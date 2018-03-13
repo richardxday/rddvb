@@ -41,8 +41,8 @@ var filters = [
 		filter:{from:"Combined",titlefilter:"recorded=1",timefilter:defaulttimefilter,expanded:-1,fetch:true},
 	},
 	{
-		title:"Failures",
-		filter:{from:"Combined",titlefilter:"failed=1",timefilter:defaulttimefilter,expanded:-1,fetch:true},
+		title:"Failed",
+		filter:{from:"Failures",titlefilter:"",timefilter:defaulttimefilter,expanded:-1,fetch:true},
 	},
 	{
 		title:"Titles",

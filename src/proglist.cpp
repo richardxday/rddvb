@@ -610,7 +610,6 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 			CheckFile(filename, config.GetScheduledFile(), 	  	fileinfo)  ||
 			CheckFile(filename, config.GetRecordingFile(), 	  	fileinfo)  ||
 			CheckFile(filename, config.GetRejectedFile(),  	  	fileinfo)  ||
-			CheckFile(filename, config.GetRecordFailuresFile(), fileinfo)  ||
 			CheckFile(filename, config.GetProcessingFile(),     fileinfo)) {
 			CreateCombinedFile();
 			CreateGraphs();
@@ -2872,12 +2871,6 @@ void ADVBProgList::EnhanceListings()
 		Modify(list, added, modified, Prog_ModifyAndAdd);
 	}
 	else config.logit("Failed to read processing programme list for enhancing listings");
-
-	list.DeleteAll();
-	if (list.ReadFromBinaryFile(config.GetRecordFailuresFile())) {
-		Modify(list, added, modified, Prog_ModifyAndAdd);
-	}
-	else config.logit("Failed to read record failures list for enhancing listings");
 
 	list.DeleteAll();
 	if (list.ReadFromBinaryFile(config.GetRejectedFile())) {

@@ -114,6 +114,14 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 			dircreationerrors.printf("Unable to create %s directory ('%s')", it->second.str(), it->first.str());
 		}
 	}
+
+	if (!AStdFile::exists(GetRecordFailuresFile())) {
+		// create empty record failures file if none exists
+		AStdFile fp;
+
+		fp.open(GetRecordFailuresFile(), "w");
+		fp.close();
+	}
 }
 
 ADVBConfig::~ADVBConfig()

@@ -2907,8 +2907,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 		dircreationerrors.printf("Failed to create directory '%s' for destination file", dst.PathPart().str());
 	}
 
-	if (AStdFile::exists(src) &&
-		!AStdFile::exists(logfile)) {
+	if (AStdFile::exists(src)) {
 		AString cmd;
 
 		cmd.printf("nice projectx -ini %s/X.ini \"%s\"", config.GetConfigDir().str(), src.str());

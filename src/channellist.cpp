@@ -703,7 +703,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 									if	    (RANGE(type, 1, 2)) id = "video";
 									else if (RANGE(type, 3, 4)) id = "audio";
 									//else if (type == 5)			include = true;
-									else if (type == 6)			include = true;
+									//else if (type == 6)			include = true;
 
 									if (id.Valid() && (pidhash.find(id) == pidhash.end())) {
 										pidhash[id] = true;
