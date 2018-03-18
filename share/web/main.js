@@ -617,8 +617,17 @@ function populateprogs(id)
 
 							detailsstr += '</span><br><br>';
 						}
-						else if (prog.flags.failed) {
+						else if (prog.flags.recordfailed) {
 							detailsstr += '<span style="font-size:150%;">-- Recording Failed --</span><br><br>';
+						}
+						else if (prog.flags.postprocessfailed) {
+							detailsstr += '<span style="font-size:150%;">-- Post-Processing Failed --</span><br><br>';
+						}
+						else if (prog.flags.conversionfailed) {
+							detailsstr += '<span style="font-size:150%;">-- Conversion Failed --</span><br><br>';
+						}
+						else if (prog.flags.failed) {
+							detailsstr += '<span style="font-size:150%;">-- Failed --</span><br><br>';
 						}
 						else if (prog.flags.rejected) {
 							detailsstr += '<span style="font-size:150%;">-- Rejected --</span><br><br>';

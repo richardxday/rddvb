@@ -210,12 +210,14 @@ public:
 		Flag_dvbcardspecified,
 		Flag_incompleterecording,
 		Flag_ignorerecording,
-		Flag_recordingfailed,
+		Flag_recordfailed,
 		Flag_notify,
 		Flag_partialpattern,
 		Flag_ignorelatestart,
 		Flag_recordifmissing,
-
+		Flag_postprocessfailed,
+		Flag_conversionfailed,
+		
 		Flag_count,
 
 		_Flag_extra_start = 32,
@@ -226,7 +228,8 @@ public:
 		Flag_convertedexists,
 		Flag_unconvertedexists,
 		Flag_archived,
-
+		Flag_failed,
+		
 		Flag_total,
 	};
 	void     SetFlags(uint32_t flags)	{data->flags = flags;}
@@ -272,9 +275,17 @@ public:
 	void   SetRecordingComplete();
 	bool   IgnoreRecording()	  const {return GetFlag(Flag_ignorerecording);}
 	void   SetIgnoreRecording(bool set = true) {SetFlag(Flag_ignorerecording, set);}
-	bool   HasRecordingFailed()   const {return GetFlag(Flag_recordingfailed);}
-	void   SetRecordingFailed()         {SetFlag(Flag_recordingfailed);}
-	void   ClearRecordingFailed()       {ClrFlag(Flag_recordingfailed);}
+	bool   HasRecordFailed()   	  const {return GetFlag(Flag_recordfailed);}
+	void   SetRecordFailed()   	        {SetFlag(Flag_recordfailed);}
+	void   ClearRecordFailed() 	        {ClrFlag(Flag_recordfailed);}
+	bool   HasPostProcessFailed() const {return GetFlag(Flag_postprocessfailed);}
+	void   SetPostProcessFailed()   	{SetFlag(Flag_postprocessfailed);}
+	void   ClearPostProcessFailed() 	{ClrFlag(Flag_postprocessfailed);}
+	bool   HasConversionFailed()  const {return GetFlag(Flag_conversionfailed);}
+	void   SetConversionFailed()   		{SetFlag(Flag_conversionfailed);}
+	void   ClearConversionFailed() 		{ClrFlag(Flag_conversionfailed);}
+	bool   HasFailed()   	      const {return (GetFlag(Flag_recordfailed) || GetFlag(Flag_postprocessfailed) || GetFlag(Flag_conversionfailed));}
+	void   ClearFailed()				{data->flags &= ~(GetFlagMask(Flag_recordfailed) | GetFlagMask(Flag_postprocessfailed) | GetFlagMask(Flag_conversionfailed));}
 	bool   IsNotifySet()		  const {return GetFlag(Flag_notify);}
 	void   SetNotify()	  		  		{SetFlag(Flag_notify);}
 	bool   IsAvailable()		  const {return (IsConverted() && AStdFile::exists(GetFilename()));}

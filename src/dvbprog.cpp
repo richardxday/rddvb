@@ -40,102 +40,105 @@ const ADVBProg::DVBPROG *ADVBProg::nullprog = (const ADVBProg::DVBPROG *)NULL;
 const ADVBProg::FIELD ADVBProg::fields[] = {
 	{"prog", ADVBPatterns::FieldType_prog, false, 0, "Encoded Programme"},
 
-	DEFINE_STRING(channel, "TV channel"),
+	DEFINE_STRING(channel,     "TV channel"),
 	DEFINE_STRING(basechannel, "Base channel"),
-	DEFINE_STRING(channelid, "XMLTV channel ID"),
-	DEFINE_STRING(dvbchannel, "DVB channel ID"),
-	DEFINE_STRING(title, "Programme title"),
-	DEFINE_STRING(subtitle, "Programme sub-title"),
-	DEFINE_STRING(desc, "Programme description"),
-	DEFINE_STRING(category, "Programme category"),
-	DEFINE_STRING(director, "Director"),
-	DEFINE_STRING(episodenum, "Episode ID (XMLTV)"),
-	DEFINE_STRING(uuid, "UUID"),
-	DEFINE_STRING(filename, "Recorded filename"),
-	DEFINE_STRING(pattern, "Pattern used to find programme"),
-	DEFINE_FIELD(actor, strings.actors, string, "Actor(s)"),
+	DEFINE_STRING(channelid,   "XMLTV channel ID"),
+	DEFINE_STRING(dvbchannel,  "DVB channel ID"),
+	DEFINE_STRING(title,       "Programme title"),
+	DEFINE_STRING(subtitle,    "Programme sub-title"),
+	DEFINE_STRING(desc,        "Programme description"),
+	DEFINE_STRING(category,    "Programme category"),
+	DEFINE_STRING(director,    "Director"),
+	DEFINE_STRING(episodenum,  "Episode ID (XMLTV)"),
+	DEFINE_STRING(uuid,        "UUID"),
+	DEFINE_STRING(filename,    "Recorded filename"),
+	DEFINE_STRING(pattern,     "Pattern used to find programme"),
+	DEFINE_FIELD(actor,        strings.actors, string, "Actor(s)"),
 
 #if DVBDATVERSION > 1
-	DEFINE_STRING(episodeid, "Episode ID"),
-	DEFINE_STRING(icon, "Programme icon"),
-	DEFINE_STRING(rating, "Age rating"),
+	DEFINE_STRING(episodeid,   "Episode ID"),
+	DEFINE_STRING(icon,        "Programme icon"),
+	DEFINE_STRING(rating,      "Age rating"),
 	DEFINE_STRING(subcategory, "Programme subcategor(ies)"),
 #endif
 
-	DEFINE_FIELD(on, start, date, "Day"),
-	DEFINE_FIELD(day, start, date, "Day"),
-	DEFINE_FIELD(age, stop, age, "Age"),
-	DEFINE_SIMPLE(start, date, "Start"),
-	DEFINE_SIMPLE(stop, date, "Stop"),
-	DEFINE_SIMPLE(recstart, date, "Record start"),
-	DEFINE_SIMPLE(recstop, date, "Record stop"),
-	DEFINE_SIMPLE(actstart, date, "Actual record start"),
-	DEFINE_SIMPLE(actstop, date, "Actual record stop"),
-	DEFINE_FIELD(length, start, span, "Programme length"),
-	DEFINE_FIELD(reclength, recstart, span, "Record length"),
-	DEFINE_FIELD(actlength, actstart, span, "Actual record length"),
+	DEFINE_FIELD(on,        start,    date,    "Day"),
+	DEFINE_FIELD(day,       start,    date,    "Day"),
+	DEFINE_FIELD(age,       stop,     age,     "Age"),
+	DEFINE_SIMPLE(start,    date,     		   "Start"),
+	DEFINE_SIMPLE(stop,     date,     		   "Stop"),
+	DEFINE_SIMPLE(recstart, date,     		   "Record start"),
+	DEFINE_SIMPLE(recstop,  date,     		   "Record stop"),
+	DEFINE_SIMPLE(actstart, date,     		   "Actual record start"),
+	DEFINE_SIMPLE(actstop,  date,     		   "Actual record stop"),
+	DEFINE_FIELD(length,    start,    span,    "Programme length"),
+	DEFINE_FIELD(reclength, recstart, span,    "Record length"),
+	DEFINE_FIELD(actlength, actstart, span,    "Actual record length"),
 
-	DEFINE_SIMPLE(year, uint16_t, "Year"),
+	DEFINE_SIMPLE(year,     uint16_t,          "Year"),
 
-	DEFINE_FIELD(card, dvbcard, uint8_t, "DVB card"),
+	DEFINE_FIELD(card,      dvbcard,  uint8_t, "DVB card"),
 
-	DEFINE_FLAG(repeat,    		   	 Flag_repeat,    	 	   "Programme is a repeat"),
-	DEFINE_FLAG(plus1,     		   	 Flag_plus1,     	 	   "Programme is on +1"),
-	DEFINE_FLAG(running,			 Flag_running,  	 	   "Programme job running"),
-	DEFINE_FLAG(onceonly,  		   	 Flag_onceonly,  	 	   "Programme to be recorded and then the pattern deleted"),
-	DEFINE_FLAG(rejected,  		   	 Flag_rejected,  	 	   "Programme rejected"),
-	DEFINE_FLAG(recorded,  		   	 Flag_recorded,  	 	   "Programme recorded"),
-	DEFINE_FLAG(scheduled, 		   	 Flag_scheduled, 	 	   "Programme scheduled"),
-	DEFINE_FLAG(dvbcardspecified, 	 Flag_dvbcardspecified,    "Programme to be recorded on specified DVB card"),
-	DEFINE_FLAG(incompleterecording, Flag_incompleterecording, "Programme recorded is incomplete"),
-	DEFINE_FLAG(ignorerecording,     Flag_ignorerecording,     "Programme recorded should be ignored when scheduling"),
-	DEFINE_FLAG(failed,				 Flag_recordingfailed,     "Programme recording failed"),
-	DEFINE_FLAG(recording,  		 Flag_recording,  	 	   "Programme recording"),
-	DEFINE_FLAG(postprocessing,		 Flag_postprocessing,	   "Programme recording being processing"),
-	DEFINE_FLAG(exists,				 Flag_exists,    	 	   "Programme exists"),
-	DEFINE_FLAG(convertedexists,	 Flag_convertedexists,     "Converted programme exists"),
-	DEFINE_FLAG(unconvertedexists,	 Flag_unconvertedexists,   "Unconverted programme exists (pre-converted)"),
-	DEFINE_FLAG(archived,			 Flag_archived,			   "Programme has been archived (pre-converted)"),
-	DEFINE_FLAG(available,			 Flag_exists,    	 	   "Programme is available"),
-	DEFINE_FLAG(notify,				 Flag_notify,    	 	   "Notify by when programme has recorded"),
-	DEFINE_FLAG(converted,			 Flag_converted,    	   "Programme has been converted"),
-	DEFINE_FLAG(film,				 Flag_film,				   "Programme is a film"),
-	DEFINE_FLAG(recordable,			 Flag_recordable,		   "Programme is recordable"),
-	DEFINE_FLAG(partial,			 Flag_partialpattern,      "Pattern is partial and not complete"),
-	DEFINE_FLAG(ignorelatestart,	 Flag_ignorelatestart,     "Allow programme to be recorded even if is late starting"),
+	DEFINE_FLAG(repeat,    		   	 	Flag_repeat,    	 	   	"Programme is a repeat"),
+	DEFINE_FLAG(plus1,     		   	 	Flag_plus1,     	 	   	"Programme is on +1"),
+	DEFINE_FLAG(running,			 	Flag_running,  	 	   		"Programme job running"),
+	DEFINE_FLAG(onceonly,  		   	 	Flag_onceonly,  	 	   	"Programme to be recorded and then the pattern deleted"),
+	DEFINE_FLAG(rejected,  		   	 	Flag_rejected,  	 	   	"Programme rejected"),
+	DEFINE_FLAG(recorded,  		   	 	Flag_recorded,  	 	   	"Programme recorded"),
+	DEFINE_FLAG(scheduled, 		   	 	Flag_scheduled, 	 	   	"Programme scheduled"),
+	DEFINE_FLAG(dvbcardspecified, 	 	Flag_dvbcardspecified,    	"Programme to be recorded on specified DVB card"),
+	DEFINE_FLAG(incompleterecording, 	Flag_incompleterecording, 	"Programme recorded is incomplete"),
+	DEFINE_FLAG(ignorerecording,     	Flag_ignorerecording,     	"Programme recorded should be ignored when scheduling"),
+	DEFINE_FLAG(recordfailed,		 	Flag_recordfailed,        	"Programme recording failed"),
+	DEFINE_FLAG(recording,  		 	Flag_recording,  	 	   	"Programme recording"),
+	DEFINE_FLAG(postprocessing,		 	Flag_postprocessing,	   	"Programme recording being processing"),
+	DEFINE_FLAG(exists,				 	Flag_exists,    	 	   	"Programme exists"),
+	DEFINE_FLAG(convertedexists,	 	Flag_convertedexists,     	"Converted programme exists"),
+	DEFINE_FLAG(unconvertedexists,	 	Flag_unconvertedexists,   	"Unconverted programme exists (pre-converted)"),
+	DEFINE_FLAG(archived,			 	Flag_archived,			   	"Programme has been archived (pre-converted)"),
+	DEFINE_FLAG(available,			 	Flag_exists,    	 	   	"Programme is available"),
+	DEFINE_FLAG(notify,				 	Flag_notify,    	 	   	"Notify by when programme has recorded"),
+	DEFINE_FLAG(converted,			 	Flag_converted,    	   		"Programme has been converted"),
+	DEFINE_FLAG(film,				 	Flag_film,				   	"Programme is a film"),
+	DEFINE_FLAG(recordable,			 	Flag_recordable,		   	"Programme is recordable"),
+	DEFINE_FLAG(partial,			 	Flag_partialpattern,      	"Pattern is partial and not complete"),
+	DEFINE_FLAG(ignorelatestart,	 	Flag_ignorelatestart,     	"Allow programme to be recorded even if is late starting"),
+	DEFINE_FLAG(postprocessfailed,	 	Flag_postprocessfailed,   	"Programme post-processing failed"),
+	DEFINE_FLAG(conversionfailed,	 	Flag_conversionfailed,    	"Programme conversion failed"),
+	DEFINE_FLAG(failed,					Flag_failed,				"Programme record, post-process or conversion failed"),
 
-	DEFINE_FIELD(epvalid,  	  episode.valid,    uint8_t,  "Series/episode valid"),
-	DEFINE_FIELD(series,   	  episode.series,   uint8_t,  "Series"),
-	DEFINE_FIELD(episode,  	  episode.episode,  uint16_t, "Episode"),
-	DEFINE_FIELD(episodes, 	  episode.episodes, uint16_t, "Number of episodes in series"),
+	DEFINE_FIELD(epvalid,  	            episode.valid,    uint8_t,  "Series/episode valid"),
+	DEFINE_FIELD(series,   	            episode.series,   uint8_t,  "Series"),
+	DEFINE_FIELD(episode,  	            episode.episode,  uint16_t, "Episode"),
+	DEFINE_FIELD(episodes, 	            episode.episodes, uint16_t, "Number of episodes in series"),
 
-	DEFINE_FIELD(assignedepisode, assignedepisode, uint16_t, "Assigned episode"),
+	DEFINE_FIELD(assignedepisode,       assignedepisode,  uint16_t, "Assigned episode"),
 
-	DEFINE_FLAG_ASSIGN(usedesc,		  	Flag_usedesc,       	"Use description"),
-	DEFINE_FLAG_ASSIGN(allowrepeats,  	Flag_allowrepeats,  	"Allow repeats to be recorded"),
-	DEFINE_FLAG_ASSIGN(urgent,		  	Flag_urgent,   	  	    "Record as soon as possible"),
-	DEFINE_FLAG_ASSIGN(markonly,	  	Flag_markonly, 	  	    "Do not record, just mark as recorded"),
-	DEFINE_FLAG_ASSIGN(postprocess,	  	Flag_postprocess,   	"Post process programme"),
-	DEFINE_FLAG_ASSIGN(onceonly,	  	Flag_onceonly,      	"Once recorded, delete the pattern"),
-	DEFINE_FLAG_ASSIGN(notify,		  	Flag_notify,        	"Once recorded, run 'notifycmd'"),
-	DEFINE_FLAG_ASSIGN(partial,		  	Flag_partialpattern,    "Pattern is partial and not complete"),
-	DEFINE_FLAG_ASSIGN(ignorelatestart, Flag_ignorelatestart,	"Allow programme to be recorded even if is late starting"),
-	DEFINE_FLAG_ASSIGN(recordifmissing, Flag_recordifmissing,	"Allow programme to be recorded if it has been recorded already but the file doesn't exist"),
+	DEFINE_FLAG_ASSIGN(usedesc,		  	Flag_usedesc,       		"Use description"),
+	DEFINE_FLAG_ASSIGN(allowrepeats,  	Flag_allowrepeats,  		"Allow repeats to be recorded"),
+	DEFINE_FLAG_ASSIGN(urgent,		  	Flag_urgent,   	  	    	"Record as soon as possible"),
+	DEFINE_FLAG_ASSIGN(markonly,	  	Flag_markonly, 	  	    	"Do not record, just mark as recorded"),
+	DEFINE_FLAG_ASSIGN(postprocess,	  	Flag_postprocess,   		"Post process programme"),
+	DEFINE_FLAG_ASSIGN(onceonly,	  	Flag_onceonly,      		"Once recorded, delete the pattern"),
+	DEFINE_FLAG_ASSIGN(notify,		  	Flag_notify,        		"Once recorded, run 'notifycmd'"),
+	DEFINE_FLAG_ASSIGN(partial,		  	Flag_partialpattern,    	"Pattern is partial and not complete"),
+	DEFINE_FLAG_ASSIGN(ignorelatestart, Flag_ignorelatestart,		"Allow programme to be recorded even if is late starting"),
+	DEFINE_FLAG_ASSIGN(recordifmissing, Flag_recordifmissing,		"Allow programme to be recorded if it has been recorded already but the file doesn't exist"),
 	
-	DEFINE_ASSIGN(pri,        pri,        	 	sint8_t,  "Scheduling priority"),
-	DEFINE_ASSIGN(score,	  score,			sint16_t, "Record score"),
-	DEFINE_ASSIGN(prehandle,  prehandle,  	 	uint16_t, "Record pre-handle (minutes)"),
-	DEFINE_ASSIGN(posthandle, posthandle, 	 	uint16_t, "Record post-handle (minutes)"),
-	DEFINE_ASSIGN(user,		  strings.user,  	string,   "User"),
-	DEFINE_ASSIGN(dir,		  strings.dir,  	string,   "Directory to store file in"),
-	DEFINE_ASSIGN(prefs,	  strings.prefs, 	string,   "Misc prefs"),
-	DEFINE_ASSIGN(dvbcard,    dvbcard,        	uint8_t,  "DVB card to record from"),
+	DEFINE_ASSIGN(pri,        			pri,        	sint8_t,  	"Scheduling priority"),
+	DEFINE_ASSIGN(score,	  			score,			sint16_t, 	"Record score"),
+	DEFINE_ASSIGN(prehandle,  			prehandle,  	uint16_t, 	"Record pre-handle (minutes)"),
+	DEFINE_ASSIGN(posthandle, 			posthandle, 	uint16_t, 	"Record post-handle (minutes)"),
+	DEFINE_ASSIGN(user,		  			strings.user,  	string,   	"User"),
+	DEFINE_ASSIGN(dir,		  			strings.dir,  	string,   	"Directory to store file in"),
+	DEFINE_ASSIGN(prefs,	  			strings.prefs, 	string,   	"Misc prefs"),
+	DEFINE_ASSIGN(dvbcard,    			dvbcard,        uint8_t,  	"DVB card to record from"),
 #if DVBDATVERSION>1
-	DEFINE_ASSIGN(tags,		  strings.tags, 	string,   "Programme tags"),
+	DEFINE_ASSIGN(tags,		  			strings.tags, 	string,   	"Programme tags"),
 #endif
 
-	DEFINE_EXTERNAL(brate,	  Compare_brate,  	uint32_t, "Encoded file bit rate (bits/s)"),
-	DEFINE_EXTERNAL(kbrate,   Compare_kbrate, 	uint32_t, "Encoded file bit rate (kbits/s)"),
+	DEFINE_EXTERNAL(brate,	  			Compare_brate,  uint32_t, 	"Encoded file bit rate (bits/s)"),
+	DEFINE_EXTERNAL(kbrate,   			Compare_kbrate, uint32_t, 	"Encoded file bit rate (kbits/s)"),
 };
 
 AString ADVBProg::dayformat;
@@ -457,6 +460,10 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 
 		case Flag_archived:
 			set = IsArchived();
+			break;
+
+		case Flag_failed:
+			set = HasFailed();
 			break;
 	}
 
@@ -1439,7 +1446,15 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 			if (!IsConverted()) str1.printf(" (will be converted to '%s')", GenerateFilename(true).str());
 			str1.printf(".");
 
-			if (IsPostProcessing()) str1.printf(" Current being post-processed.");
+			if (HasFailed()) {
+				str1.printf(" ** ");
+				if (HasRecordFailed())      str1.printf("Record");
+				if (HasPostProcessFailed()) str1.printf("Post-process");
+				if (HasConversionFailed())  str1.printf("Conversion");
+				str1.printf(" failed ** ");
+			}
+			
+			if (IsPostProcessing()) str1.printf(" Currently being post-processed.");
 
 			bool exists = AStdFile::exists(GetFilename());
 			str1.printf(" File %sexists",  exists ? "" : "does *not* ");
@@ -2439,9 +2454,19 @@ void ADVBProg::Record()
 							reschedule |= config.RescheduleAfterDeletingPattern(GetUser(), GetModifiedCategory());
 						}
 
-						bool success = PostRecord();
-						if (success) success = PostProcess();
-						if (success) success = ConvertVideoEx();
+						bool success = true;
+						if (!PostRecord()) {
+							SetRecordFailed();
+							success = false;
+						}
+						if (success && !PostProcess()) {
+							SetPostProcessFailed();
+							success = false;
+						}
+						if (success && !ConvertVideoEx()) {
+							SetConversionFailed();
+							success = false;
+						}
 						if (success) OnRecordSuccess();
 						else		 failed  = true;
 					}
@@ -2449,12 +2474,14 @@ void ADVBProg::Record()
 				else {
 					remove(GetTempFilename());
 					config.printf("Unable to rename '%s' to '%s'", GetTempFilename().str(), GetFilename());
+					SetRecordFailed();
 					failed = true;
 				}
 			}
 			else {
 				remove(GetTempFilename());
 				config.printf("Unable to start record of '%s'", GetTitleAndSubtitle().str());
+				SetRecordFailed();
 				failed = true;
 			}
 		}
@@ -2465,7 +2492,6 @@ void ADVBProg::Record()
 			reschedule = true;
 
 			ClearScheduled();
-			SetRecordingFailed();
 
 			{
 				FlagsSaver saver(this);
@@ -3315,7 +3341,7 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup, bool force)
 		OnRecordFailure();
 
 		ClearScheduled();
-		SetRecordingFailed();
+		SetRecordFailed();
 
 		{
 			FlagsSaver saver(this);

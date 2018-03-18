@@ -1547,7 +1547,7 @@ int main(int argc, const char *argv[])
 						ADVBProg& prog = failureslist.GetProgWritable(j);
 
 						prog.ClearScheduled();
-						prog.SetRecordingFailed();
+						prog.SetRecordFailed();
 					}
 
 					if (HasQuit() || !failureslist.WriteToFile(config.GetRecordFailuresFile())) {
