@@ -1291,6 +1291,11 @@ AString ADVBConfig::GetServerRescheduleCommand() const
 	return GetConfigItem("serverreschedulecommand", "dvbreschedule");
 }
 
+AString ADVBConfig::GetVideoErrorCheckCommand() const
+{
+	return GetConfigItem("videocheckcmd", "avconv -t 60 -v error -i \"{filename}\" -f null - 2>&1 | wc -l >{logfile}}");
+}
+
 uint_t ADVBConfig::GetMinimalDataRate(const AString& filesuffix) const
 {
 	AString val = GetConfigItem("mindatarate:" + filesuffix);

@@ -2454,6 +2454,11 @@ void ADVBProg::Record()
 							reschedule |= config.RescheduleAfterDeletingPattern(GetUser(), GetModifiedCategory());
 						}
 
+						uint_t nerrors;
+						if (!config.IsRecordingSlave() && GetVideoErrorCount(nerrors)) {
+							config.printf("'%s': %u video errors", GetQuickDescription().str(), nerrors);
+						}
+						
 						bool success = true;
 						if (!PostRecord()) {
 							SetRecordFailed();
@@ -3405,6 +3410,46 @@ bool ADVBProg::DeleteEncodedFiles() const
 		success &= filedeleted;
 
 		file = file->Next();
+	}
+
+	return success;
+}
+
+bool ADVBProg::GetVideoErrorCount(uint_t& count) const
+{
+	const ADVBConfig& config = ADVBConfig::Get();
+	AString cmd;
+	bool success = false;
+
+	if ((cmd = config.GetVideoErrorCheckCommand()).Valid()) {
+		AString filename = GetArchiveRecordingFilename();
+
+		if (AStdFile::exists(filename)) {
+			AString tempfile = config.GetTempFile("errorcheck", ".txt");
+
+			cmd = cmd.SearchAndReplace("{filename}", filename).SearchAndReplace("{logfile}", tempfile);
+
+			if (system(cmd) == 0) {
+				AStdFile fp;
+
+				if (fp.open(tempfile)) {
+					AString line;
+
+					if (line.ReadLn(fp) >= 0) {
+						if (sscanf(line, "%u", &count) > 0) {
+							success = true;
+						}
+						else config.logit("'%s': failed to extract count from '%s'", GetQuickDescription().str(), line.str());
+					}
+					else config.logit("'%s': failed to read line from log file '%s'", GetQuickDescription().str(), tempfile.str());
+				}
+				else config.logit("'%s': failed to open log file '%s'", GetQuickDescription().str(), tempfile.str());
+			}
+			else config.logit("'%s': failed to run command '%s'", GetQuickDescription().str(), cmd.str());
+			
+			remove(tempfile);
+		}
+		else config.logit("'%s': archive file '%s' doesn't exist", GetQuickDescription().str(), filename.str());
 	}
 
 	return success;

@@ -386,10 +386,13 @@ public:
 	void GetEncodedFiles(AList& files) const;
 	bool DeleteEncodedFiles() const;
 
+	bool GetVideoErrorCount(uint_t& count) const;
+
 	bool FixData();
 
 	AString GetConvertedDestinationDirectory() const;
 
+	
 	static AString GenerateStreamCommand(uint_t card, uint_t nsecs, const AString& pids, const AString& logfile = "/dev/null");
 
 	static bool FilePatternExists(const AString& filename);

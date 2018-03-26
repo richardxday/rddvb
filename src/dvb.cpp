@@ -194,6 +194,7 @@ int main(int argc, const char *argv[])
 		{"--count-hours",						   "",								  "Count total hours of programmes in current list"},
 		{"--find-gaps",							   "",								  "Find gap from now until the next working for each card"},
 		{"--find-new-programmes",				   "",								  "Find programmes that have been scheduled that are either new or from a new series"},
+		{"--check-video-files",					   "",								  "Check archived video files for errors"},
 		{"--stream",							   "<text>",						  "Stream DVB channel or programme being recorded <text> to mplayer (or other player)"},
 		{"--rawstream",							   "<text>",						  "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
 		{"--return-count",						   "",								  "Return programme list count in error code"},
@@ -1957,6 +1958,18 @@ int main(int argc, const char *argv[])
 					else fprintf(stderr, "Failed to read scheduled programmes list\n");
 				}
 				else fprintf(stderr, "Failed to read recorded programmes list\n");
+			}
+			else if (stricmp(argv[i], "--check-video-files") == 0) {
+				uint_t i;
+				
+				for (i = 0; i < proglist.Count(); i++) {
+					const ADVBProg& prog = proglist.GetProg(i);
+					uint_t nerrors;
+					
+					if (prog.GetVideoErrorCount(nerrors)) {
+						printf("%s: %u\n", prog.GetQuickDescription().str(), nerrors);
+					}
+				}				
 			}
 			else if ((stricmp(argv[i], "--stream") == 0) ||
 					 (stricmp(argv[i], "--rawstream") == 0)) {
