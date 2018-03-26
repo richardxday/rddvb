@@ -3439,17 +3439,17 @@ bool ADVBProg::GetVideoErrorCount(uint_t& count) const
 						if (sscanf(line, "%u", &count) > 0) {
 							success = true;
 						}
-						else config.logit("'%s': failed to extract count from '%s'", GetQuickDescription().str(), line.str());
+						else config.logit("'%s': failed to extract count from '%s'", GetTitleAndSubtitle().str(), line.str());
 					}
-					else config.logit("'%s': failed to read line from log file '%s'", GetQuickDescription().str(), tempfile.str());
+					else config.logit("'%s': failed to read line from log file '%s'", GetTitleAndSubtitle().str(), tempfile.str());
 				}
-				else config.logit("'%s': failed to open log file '%s'", GetQuickDescription().str(), tempfile.str());
+				else config.logit("'%s': failed to open log file '%s'", GetTitleAndSubtitle().str(), tempfile.str());
 			}
-			else config.logit("'%s': failed to run command '%s'", GetQuickDescription().str(), cmd.str());
+			else config.logit("'%s': failed to run command '%s'", GetTitleAndSubtitle().str(), cmd.str());
 			
 			remove(tempfile);
 		}
-		else config.logit("'%s': archive file '%s' doesn't exist", GetQuickDescription().str(), filename.str());
+		else config.logit("'%s': archive file '%s' doesn't exist", GetTitleAndSubtitle().str(), filename.str());
 	}
 
 	return success;

@@ -1774,7 +1774,7 @@ int main(int argc, const char *argv[])
 			else if (stricmp(argv[i], "--record-success") == 0) {
 				uint_t j;
 
-				for (j = 0; j < proglist.Count(); j++) {
+				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
 					ADVBProg& prog = proglist.GetProgWritable(j);
 
 					printf("Running record success for '%s'\n", prog.GetQuickDescription().str());
@@ -1787,7 +1787,7 @@ int main(int argc, const char *argv[])
 			else if (stricmp(argv[i], "--force-convert-files") == 0) {
 				uint_t j;
 
-				for (j = 0; j < proglist.Count(); j++) {
+				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
 					ADVBProg& prog = proglist.GetProgWritable(j);
 
 					prog.ForceConvertVideo(true);
@@ -1820,21 +1820,20 @@ int main(int argc, const char *argv[])
 				proglist.AssignEpisodes();
 			}
 			else if (stricmp(argv[i], "--reset-assigned-episodes") == 0) {
-				uint_t i;
+				uint_t j;
 
-				for (i = 0; i < proglist.Count(); i++)
-				{
-					proglist.GetProgWritable(i).SetAssignedEpisode(0);
+				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
+					proglist.GetProgWritable(j).SetAssignedEpisode(0);
 				}
 			}
 			else if (stricmp(argv[i], "--find-episode-sequences") == 0) {
 				std::map<AString, std::map<AString, std::vector<AString> > > programmes;
 				std::map<AString, const std::vector<AString> *> bestlist;
 				std::map<AString, uint16_t> episodeids;
-				uint_t i;
+				uint_t j;
 
-				for (i = 0; i < proglist.Count(); i++) {
-					const ADVBProg& prog = proglist.GetProg(i);
+				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
+					const ADVBProg& prog = proglist.GetProg(j);
 					AString epid = prog.GetEpisodeID();
 
 					if ((epid.Left(2) == "EP") && !prog.GetEpisode().valid) {
@@ -1879,8 +1878,8 @@ int main(int argc, const char *argv[])
 					else printf("No list for '%s'!\n", it->first.str());
 				}
 
-				for (i = 0; i < proglist.Count(); i++) {
-					ADVBProg& prog = proglist.GetProgWritable(i);
+				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
+					ADVBProg& prog = proglist.GetProgWritable(j);
 					AString   epid = prog.GetEpisodeID();
 					std::map<AString, uint16_t>::iterator it;
 
@@ -1891,11 +1890,10 @@ int main(int argc, const char *argv[])
 			}
 			else if (stricmp(argv[i], "--count-hours") == 0) {
 				uint64_t ms = 0;
-				uint_t   i;
+				uint_t   j;
 
-				for (i = 0; i < proglist.Count(); i++)
-				{
-					const ADVBProg& prog = proglist.GetProg(i);
+				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
+					const ADVBProg& prog = proglist.GetProg(j);
 
 					if		(prog.GetActualLength()) ms += prog.GetActualLength();
 					else if (prog.GetRecordLength()) ms += prog.GetRecordLength();
@@ -1943,7 +1941,7 @@ int main(int argc, const char *argv[])
 				if (reclist.ReadFromFile(config.GetRecordedFile())) {
 					if (schlist.ReadFromFile(config.GetScheduledFile())) {
 						ADVBProgList::SERIESLIST serieslist;
-						uint_t i;
+						uint_t j;
 
 						lock.ReleaseLock();
 
@@ -1951,8 +1949,8 @@ int main(int argc, const char *argv[])
 						schlist.StripFilmsAndSeries(serieslist);
 
 						printf("Found %u new programmes\n", schlist.Count());
-						for (i = 0; i < schlist.Count(); i++) {
-							printf("%s\n", schlist[i].GetDescription(verbosity).str());
+						for (j = 0; (j < schlist.Count()) && !HasQuit(); j++) {
+							printf("%s\n", schlist[j].GetDescription(verbosity).str());
 						}
 					}
 					else fprintf(stderr, "Failed to read scheduled programmes list\n");
@@ -1960,14 +1958,14 @@ int main(int argc, const char *argv[])
 				else fprintf(stderr, "Failed to read recorded programmes list\n");
 			}
 			else if (stricmp(argv[i], "--check-video-files") == 0) {
-				uint_t i;
+				uint_t j;
 				
-				for (i = 0; i < proglist.Count(); i++) {
-					const ADVBProg& prog = proglist.GetProg(i);
+				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
+					const ADVBProg& prog = proglist.GetProg(j);
 					uint_t nerrors;
 					
 					if (prog.GetVideoErrorCount(nerrors)) {
-						printf("%s: %u\n", prog.GetQuickDescription().str(), nerrors);
+						printf("%s: %u\n", prog.GetTitleAndSubtitle().str(), nerrors);
 					}
 				}				
 			}
