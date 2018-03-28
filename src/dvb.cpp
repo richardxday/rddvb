@@ -36,6 +36,8 @@ typedef struct {
 
 bool forcelogging = false;
 
+AQuitHandler QuitHandler;
+
 static void DisplaySeries(const ADVBProgList::SERIES& series)
 {
 	uint_t j;
@@ -151,6 +153,7 @@ int main(int argc, const char *argv[])
 		{"--record-title",						   "<title>",						  "Schedule to record programme by title that has already started or starts within the next hour"},
 		{"--schedule-record",					   "<base64>",						  "Schedule specified programme (Base64 encoded)"},
 		{"--add-recorded",						   "<prog>",						  "Add recorded programme <prog> to recorded list (Base64 encoded)"},
+		{"--recover-recorded-from-temp",		   "",								  "Create recorded programme entries from files in temp folder"},
 		{"--card",								   "<card>",						  "Set VIRTUAL card for subsequent scanning and PID operations (default 0)"},
 		{"--dvbcard",							   "<card>",						  "Set PHYSICAL card for subsequent scanning and PID operations (default 0)"},
 		{"--pids",								   "<channel>",						  "Find PIDs (all streams) associated with channel <channel>"},
@@ -1130,6 +1133,84 @@ int main(int argc, const char *argv[])
 					ADVBProgList::AddToList(config.GetRecordedFile(), prog, true, true);
 				}
 				else config.printf("Failed to decode programme '%s'\n", progstr.str());
+			}
+			else if (strcmp(argv[i], "--recover-recorded-from-temp") == 0) {
+				ADVBLock     dvblock("files");
+				ADVBProgList reclist;
+				AString      reclistfilename = config.GetRecordedFile();
+				uint_t       nchanges = 0;
+				
+				if (reclist.ReadFromFile(reclistfilename)) {
+					AList files;
+
+					reclist.CreateHash();
+
+					CollectFiles(config.GetRecordingsStorageDir(), "*." + config.GetRecordedFileSuffix(), 0, files, FILE_FLAG_IS_DIR, 0, &QuitHandler);
+
+					printf("--------------------------------------------------------------------------------\n");
+					
+					// iterate through files
+					const AString *str = AString::Cast(files.First());
+					while (str && !HasQuit()) {
+						// for each file, attempt to find a file in the current list whose's unconverted file has the same filename
+						const AString& filename = *str;
+						uint_t j;
+
+						printf("Looking for programme for '%s'...\n\n", filename.str());
+						for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
+							// ensure programme is already marked as recorded
+							// and the unconverted filenames match
+							if (!proglist[j].IsRecorded() &&
+								(filename == proglist[j].GenerateFilename())) {
+								const ADVBProg *sprog;
+							
+								// make sure it's not already in the recorded list
+								if ((sprog = reclist.FindUUID(proglist[j])) != NULL) {
+									printf("Already recorded as '%s'\n", sprog->GetQuickDescription().str());
+									printf("--------------------------------------------------------------------------------\n");
+									break;
+								}
+								else {
+									ADVBProg prog = proglist[j];	// note: take copy of prog
+
+									printf("Found as '%s':\n", prog.GetQuickDescription().str());
+
+									prog.ClearScheduled();
+									prog.ClearRecording();
+									prog.ClearRunning();
+									prog.SetRecorded();
+									prog.GenerateRecordData(0);
+									prog.SetFilename(filename);	// must set the filename as GenerateRecordData() will set a different one
+									prog.SetActualStart(prog.GetRecordStart());
+									prog.SetActualStop(prog.GetRecordStop());
+									prog.SetRecordingComplete();
+									prog.UpdateFileSize();
+								
+									reclist.AddProg(prog);
+
+									printf("\nAdded programme:\n\n%s", prog.GetDescription(2).str());
+								
+									nchanges++;
+									break;
+								}
+							}
+						}
+
+						printf("\n");
+
+						str = str->Next();
+					}
+
+					if (nchanges) {
+						printf("%u programmes added to recorded list\n", nchanges);
+						if (!reclist.WriteToFile(reclistfilename)) {
+							fprintf(stderr, "Failed to write recorded list\n");
+						}
+					}
+					else if (files.Count() > 0) printf("No suitable programmes found\n");
+				}
+				else fprintf(stderr, "Failed to read recorded file list\n");
+
 			}
 			else if (strcmp(argv[i], "--card") == 0) {
 				const uint_t newcard = (uint_t)AString(argv[++i]);

@@ -2453,11 +2453,6 @@ void ADVBProg::Record()
 
 							reschedule |= config.RescheduleAfterDeletingPattern(GetUser(), GetModifiedCategory());
 						}
-
-						uint_t nerrors;
-						if (!config.IsRecordingSlave() && GetVideoErrorCount(nerrors)) {
-							config.printf("'%s': %u video errors", GetQuickDescription().str(), nerrors);
-						}
 						
 						bool success = true;
 						if (!PostRecord()) {
@@ -2909,6 +2904,13 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 		return false;
 	}
 
+	{
+		uint_t nerrors;
+		if (!config.IsRecordingSlave() && GetVideoErrorCount(nerrors)) {
+			config.printf("'%s': %u video errors", GetQuickDescription().str(), nerrors);
+		}
+	}
+		
 	if (!force && AStdFile::exists(dst)) {
 		config.printf("Warning: destination '%s' exists, assuming conversion is complete", dst.str());
 		SetFilename(dst);
