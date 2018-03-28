@@ -3424,8 +3424,13 @@ bool ADVBProg::GetVideoErrorCount(uint_t& count) const
 	bool success = false;
 
 	if ((cmd = config.GetVideoErrorCheckCommand()).Valid()) {
-		AString filename = GetArchiveRecordingFilename();
+		AString filename = GenerateFilename();
 
+		if (!AStdFile::exists(filename)) {
+			config.logit("File '%s' doesn't exist, trying archive filename '%s'", filename.str(), GetArchiveRecordingFilename().str());
+			filename = GetArchiveRecordingFilename();
+		}
+		
 		if (AStdFile::exists(filename)) {
 			AString tempfile = config.GetTempFile("errorcheck", ".txt");
 
