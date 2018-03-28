@@ -206,8 +206,9 @@ int main(int argc, const char *argv[])
 	uint_t dvbcard   = 0;
 	uint_t verbosity = 0;
 	uint_t nopt, nsubopt;
-	int  i;
-	int  res = 0;
+	bool   dvbcardspecified = false;
+	int    i;
+	int    res = 0;
 
 	(void)prog;
 
@@ -1137,6 +1138,7 @@ int main(int argc, const char *argv[])
 				if (config.GetMaxDVBCards()) {
 					if (newcard < config.GetMaxDVBCards()) {
 						dvbcard = config.GetPhysicalDVBCard(newcard);
+						dvbcardspecified = true;
 						printf("Switched to using virtual card %u which is phsical card %u\n", newcard, dvbcard);
 					}
 					else fprintf(stderr, "Illegal virtual DVB card specified, must be 0..%u\n", config.GetMaxDVBCards() - 1);
@@ -1145,7 +1147,8 @@ int main(int argc, const char *argv[])
 			}
 			else if (strcmp(argv[i], "--dvbcard") == 0) {
 				dvbcard = (uint_t)AString(argv[++i]);
-
+				dvbcardspecified = true;
+				
 				config.GetPhysicalDVBCard(0);
 				printf("Switched to using physical card %u\n", dvbcard);
 			}
@@ -1979,7 +1982,7 @@ int main(int argc, const char *argv[])
 				if (config.GetRecordingSlave().Valid()) {
 					AString cmd1, cmd2;
 
-					cmd1.printf("dvb --stream \"%s\"", text.str());
+					cmd1.printf("dvb %s --stream \"%s\"", dvbcardspecified ? AString("--dvbcard %").Arg(dvbcard).str() : "", text.str());
 
 					if (!rawstream) {
 						cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
@@ -2003,6 +2006,10 @@ int main(int argc, const char *argv[])
 							list.Sort();
 
 							best = list.FindGaps(ADateTime().TimeStamp(true), gaps);
+							if (dvbcardspecified) {
+								// ignore the best gap, use the one specified by dvbcard
+								best = gaps[dvbcard];
+							}
 							maxseconds = ((uint64_t)best.end - (uint64_t)best.start) / 1000U;
 
 							if ((best.card < config.GetMaxDVBCards()) && (maxseconds > 10U)) {
