@@ -2421,15 +2421,6 @@ void ADVBProg::Record()
 						// force reschedule
 						failed = true;
 					}
-					else if (!IsRecordingComplete()) {
-						config.printf("Warning: '%s' is incomplete! (%ss missing from the start, %ss missing from the end)",
-									  GetTitleAndSubtitle().str(),
-									  AValue(MAX((sint64_t)(data->actstart - MIN(data->start, data->recstart)), 0) / 1000).ToString().str(),
-									  AValue(MAX((sint64_t)(data->recstop  - data->actstop), 0) / 1000).ToString().str());
-
-						// force reschedule
-						failed = true;
-					}
 					else if (!UpdateFileSize()) {
 						config.printf("Record of '%s' ('%s') is not valid or doesn't exist", GetTitleAndSubtitle().str(), GetFilename());
 
@@ -2441,6 +2432,16 @@ void ADVBProg::Record()
 
 						ClearScheduled();
 						SetRecorded();
+
+						if (!IsRecordingComplete()) {
+							config.printf("Warning: '%s' is incomplete! (%ss missing from the start, %ss missing from the end)",
+										  GetTitleAndSubtitle().str(),
+										  AValue(MAX((sint64_t)(data->actstart - MIN(data->start, data->recstart)), 0) / 1000).ToString().str(),
+										  AValue(MAX((sint64_t)(data->recstop  - data->actstop), 0) / 1000).ToString().str());
+							
+							// force reschedule
+							reschedule = true;
+						}
 
 						{
 							FlagsSaver saver(this);
