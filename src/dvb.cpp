@@ -2049,7 +2049,7 @@ int main(int argc, const char *argv[])
 					uint_t nerrors;
 					
 					if (prog.GetVideoErrorCount(nerrors)) {
-						printf("%s: %u\n", prog.GetTitleAndSubtitle().str(), nerrors);
+						printf("%s: %u\n", prog.GetQuickDescription().str(), nerrors);
 					}
 				}				
 			}
