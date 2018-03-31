@@ -1135,8 +1135,11 @@ function recordprogramme(id)
 		postdata += "editpattern=add\n";
 		postdata += "newuser=" + user + "\n";
 		postdata += "newpattern=" + pattern + "\n";
-		postdata += "schedule=commit\n";
 
+		if (confirm("Re-schedule after adding programme?")) {
+			postdata += "schedule=commit\n";
+		}
+		
 		dvbrequest({from:"Combined", titlefilter:pattern, timefilter:defaulttimefilter}, postdata);
 	}
 }
@@ -1154,7 +1157,10 @@ function recordseries(id)
 		postdata += "editpattern=add\n";
 		postdata += "newuser=" + user + "\n";
 		postdata += "newpattern=" + pattern + "\n";
-		postdata += "schedule=commit\n";
+
+		if (confirm("Re-schedule after adding programme?")) {
+			postdata += "schedule=commit\n";
+		}
 
 		dvbrequest({from:"Combined", titlefilter:pattern, timefilter:defaulttimefilter}, postdata);
 	}
