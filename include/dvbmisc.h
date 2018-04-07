@@ -5,9 +5,7 @@
 
 extern AString CatPath(const AString& dir1, const AString& dir2);
 
-extern AString  JSONFormat(const AString& str);
 extern uint64_t JSONTimeOffset(uint64_t dt);
-extern AString  JSONTime(uint64_t dt);
 
 typedef struct {
 	AString search;
