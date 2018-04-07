@@ -11,6 +11,7 @@
 
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
+#include <rapidjson/prettywriter.h>
 
 #include "config.h"
 #include "dvbprog.h"
@@ -825,201 +826,206 @@ AString ADVBProg::ExportToText() const
 	return str;
 }
 
-AString ADVBProg::ExportToJSON(bool includebase64) const
+void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, bool includebase64) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	AString str;
+	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 	const char *p;
+		
+	obj.SetObject();
 
-	str.printf("\"start\":%s", JSONTime(data->start).str());
-	str.printf(",\"stop\":%s", JSONTime(data->stop).str());
+	obj.AddMember("start", rapidjson::Value(JSONTimeOffset(data->start)), allocator);
+	obj.AddMember("stop", rapidjson::Value(JSONTimeOffset(data->stop)), allocator);
 	if (data->recstart || data->recstop) {
-		str.printf(",\"recstart\":%s", JSONTime(data->recstart).str());
-		str.printf(",\"recstop\":%s", JSONTime(data->recstop).str());
+		obj.AddMember("recstart", rapidjson::Value(JSONTimeOffset(data->recstart)), allocator);
+		obj.AddMember("recstop", rapidjson::Value(JSONTimeOffset(data->recstop)), allocator);
 	}
 	if (data->actstart || data->actstop) {
-		str.printf(",\"actstart\":%s", JSONTime(data->actstart).str());
-		str.printf(",\"actstop\":%s", JSONTime(data->actstop).str());
+		obj.AddMember("actstart", rapidjson::Value(JSONTimeOffset(data->actstart)), allocator);
+		obj.AddMember("actstop", rapidjson::Value(JSONTimeOffset(data->actstop)), allocator);
 	}
-	str.printf(",\"channel\":\"%s\"", JSONFormat(GetString(data->strings.channel)).str());
-	str.printf(",\"basechannel\":\"%s\"", JSONFormat(GetString(data->strings.basechannel)).str());
-	str.printf(",\"channelid\":\"%s\"", JSONFormat(GetString(data->strings.channelid)).str());
-	if ((p = GetString(data->strings.dvbchannel))[0]) str.printf(",\"dvbchannel\":\"%s\"", JSONFormat(p).str());
-	str.printf(",\"title\":\"%s\"", JSONFormat(GetString(data->strings.title)).str());
-	if ((p = GetString(data->strings.subtitle))[0]) str.printf(",\"subtitle\":\"%s\"", JSONFormat(p).str());
-	if ((p = GetString(data->strings.desc))[0]) str.printf(",\"desc\":\"%s\"", JSONFormat(p).str());
-	if ((p = GetString(data->strings.category))[0]) str.printf(",\"category\":\"%s\"", JSONFormat(p).str());
+	obj.AddMember("channel", rapidjson::Value(GetString(data->strings.channel), allocator), allocator);
+	obj.AddMember("basechannel", rapidjson::Value(GetString(data->strings.basechannel), allocator), allocator);
+	obj.AddMember("channelid", rapidjson::Value(GetString(data->strings.channelid), allocator), allocator);
+	if ((p = GetString(data->strings.dvbchannel))[0]) obj.AddMember("dvbchannel", rapidjson::Value(p, allocator), allocator);
+	obj.AddMember("title", rapidjson::Value(GetString(data->strings.title), allocator), allocator);
+	if ((p = GetString(data->strings.subtitle))[0]) obj.AddMember("subtitle", rapidjson::Value(p, allocator), allocator);
+	if ((p = GetString(data->strings.desc))[0]) obj.AddMember("desc", rapidjson::Value(p, allocator), allocator);
+	if ((p = GetString(data->strings.category))[0]) obj.AddMember("category", rapidjson::Value(p, allocator), allocator);
 	if ((p = GetString(data->strings.subcategory))[0]) {
-		str.printf(",\"subcategory\":[");
+		rapidjson::Value subobj;
+
+		subobj.SetArray();
 
 		AString subcategory = p;
 		uint_t  i, n = subcategory.CountLines();
 		for (i = 0; i < n; i++) {
-			if (i) str.printf(",");
-			str.printf("\"%s\"", JSONFormat(subcategory.Line(i)).str());
+			subobj.PushBack(rapidjson::Value(subcategory.Line(i).str(), allocator), allocator);
 		}
 
-		str.printf("]");
+		obj.AddMember("subcategory", subobj, allocator);
 	}
-	if ((p = GetString(data->strings.director))[0]) str.printf(",\"director\":\"%s\"", JSONFormat(p).str());
-	if ((p = GetString(data->strings.episodenum))[0]) str.printf(",\"episodenum\":\"%s\"", JSONFormat(p).str());
-	if ((p = GetString(data->strings.user))[0]) str.printf(",\"user\":\"%s\"", JSONFormat(p).str());
-	str.printf(",\"dir\":\"%s\"", JSONFormat(GetString(data->strings.dir)).str());
-	if ((p = GetString(data->strings.filename))[0]) str.printf(",\"filename\":\"%s\"", JSONFormat(p).str());
-	if (!IsConverted()) str.printf(",\"convertedfilename\":\"%s\"", JSONFormat(GenerateFilename(true)).str());
-	if ((p = GetString(data->strings.pattern))[0]) str.printf(",\"pattern\":\"%s\"", JSONFormat(p).str());
-	str.printf(",\"uuid\":\"%s\"", JSONFormat(GetString(data->strings.uuid)).str());
+	if ((p = GetString(data->strings.director))[0]) obj.AddMember("director", rapidjson::Value(p, allocator), allocator);
+	if ((p = GetString(data->strings.episodenum))[0]) obj.AddMember("episodenum", rapidjson::Value(p, allocator), allocator);
+	if ((p = GetString(data->strings.user))[0]) obj.AddMember("user", rapidjson::Value(p, allocator), allocator);
+	obj.AddMember("dir", rapidjson::Value(GetString(data->strings.dir), allocator), allocator);
+	if ((p = GetString(data->strings.filename))[0]) obj.AddMember("filename", rapidjson::Value(p, allocator), allocator);
+	if (!IsConverted()) obj.AddMember("convertedfilename", rapidjson::Value(GenerateFilename(true), allocator), allocator);
+	if ((p = GetString(data->strings.pattern))[0]) obj.AddMember("pattern", rapidjson::Value(p, allocator), allocator);
+	obj.AddMember("uuid", rapidjson::Value(GetString(data->strings.uuid), allocator), allocator);
 	if ((p = GetString(data->strings.actors))[0]) {
+		rapidjson::Value subobj;
 		AString _actors = AString(p);
 		uint_t i, n = _actors.CountLines("\n", 0);
 
-		str.printf(",\"actors\":[");
+		subobj.SetArray();
 
 		for (i = 0; i < n; i++) {
-			if (i) str.printf(",");
-			str.printf("\"%s\"", JSONFormat(_actors.Line(i, "\n", 0)).str());
+			subobj.PushBack(rapidjson::Value(_actors.Line(i, "\n", 0).str(), allocator), allocator);
 		}
 
-		str.printf("]");
+		obj.AddMember("actors", subobj, allocator);
 	}
 	if ((p = GetString(data->strings.prefs))[0]) {
+		rapidjson::Value subobj;
 		AString _prefs = AString(p);
 		uint_t i, n = _prefs.CountLines("\n", 0);
 
-		str.printf(",\"prefs\":[");
+		subobj.SetArray();
 
 		for (i = 0; i < n; i++) {
-			if (i) str.printf(",");
-			str.printf("\"%s\"", JSONFormat(_prefs.Line(i, "\n", 0)).str());
+			subobj.PushBack(rapidjson::Value(_prefs.Line(i, "\n", 0).str(), allocator), allocator);
 		}
 
-		str.printf("]");
+		obj.AddMember("prefs", subobj, allocator);
 	}
 
 #if DVBDATVERSION > 1
 	if ((p = GetString(data->strings.tags))[0]) {
+		rapidjson::Value subobj;
 		AString _tags = AString(p);
 		uint_t i, n = _tags.CountLines("||", 0);
 
-		str.printf(",\"tags\":[");
+		subobj.SetArray();
 
 		for (i = 0; i < n; i++) {
 			AString tag = _tags.Line(i, "||");
 			if (tag.FirstChar() == '|') tag = tag.Mid(1);
 			if (tag.LastChar()  == '|') tag = tag.Left(tag.len() - 1);
-			if (i) str.printf(",");
-			str.printf("\"%s\"", JSONFormat(tag).str());
+			subobj.PushBack(rapidjson::Value(tag.str(), allocator), allocator);
 		}
 
-		str.printf("]");
+		obj.AddMember("tags", subobj, allocator);
 	}
 #endif
 
 	if (data->episode.valid) {
-		str.printf(",\"episode\":{");
+		rapidjson::Value subobj;
 
-		bool flag = true;
+		subobj.SetObject();
+
 		if (data->episode.series) {
-			str.printf("\"series\":%u", (uint_t)data->episode.series);
-			flag = false;
+			subobj.AddMember("series", rapidjson::Value(data->episode.series), allocator);
 		}
 		if (data->episode.episode) {
-			str.printf("%s\"episode\":%u", flag ? "" : ",", (uint_t)data->episode.episode);
-			flag = false;
+			subobj.AddMember("episode", rapidjson::Value(data->episode.episode), allocator);
 		}
 		if (data->episode.episodes) {
-			str.printf("%s\"episodes\":%u", flag ? "" : ",", (uint_t)data->episode.episodes);
+			subobj.AddMember("episodes", rapidjson::Value(data->episode.episodes), allocator);
 		}
-		str.printf("}");
+
+		obj.AddMember("episode", subobj, allocator);
 	}
 
 #if DVBDATVERSION > 1
-	if (GetString(data->strings.episodeid)[0]) str.printf(",\"episodeid\":\"%s\"", GetString(data->strings.episodeid));
+	if (GetString(data->strings.episodeid)[0]) obj.AddMember("episodeid", rapidjson::Value(GetString(data->strings.episodeid), allocator), allocator);
 
 	AString icon = GetString(data->strings.icon);
 	if (icon.Empty() && config.UseOldProgrammeIcon(GetTitle(), GetModifiedCategory())) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
-	if (icon.Valid()) str.printf(",\"icon\":\"%s\"", JSONFormat(icon).str());
+	if (icon.Valid()) obj.AddMember("icon", rapidjson::Value(icon, allocator), allocator);
 
 	icon = ADVBIconCache::Get().GetIcon("channel", GetChannel());
 	if (icon.Empty() && config.UseOldChannelIcon(GetTitle(), GetModifiedCategory())) icon = ADVBIconCache::Get().GetIcon("channel", GetDVBChannel());
-	if (icon.Valid()) str.printf(",\"channelicon\":\"%s\"", JSONFormat(icon).str());
+	if (icon.Valid()) obj.AddMember("channelicon", rapidjson::Value(icon, allocator), allocator);
 
-	if ((p = GetString(data->strings.rating))[0]) str.printf(",\"rating\":\"%s\"", JSONFormat(p).str());
+	if ((p = GetString(data->strings.rating))[0]) obj.AddMember("rating", rapidjson::Value(p, allocator), allocator);
 #endif
 
-	str.printf(",\"flags\":{");
-	str.printf("\"bitmap\":%s", AValue(data->flags).ToString().str());
 	{
-		uint_t i;
+		rapidjson::Value subobj;
 		AHash hash;
+		uint_t i;
+
+		subobj.SetObject();
+
+		subobj.AddMember("bitmap", rapidjson::Value(data->flags), allocator);
+
 		for (i = 0; i < NUMBEROF(fields); i++) {
 			if (RANGE(fields[i].type, ADVBPatterns::FieldType_flag, ADVBPatterns::FieldType_lastflag) && !hash.Exists(fields[i].name)) {
 				hash.Insert(fields[i].name, 0);
-				str.printf(",\"%s\":%u", fields[i].name, (uint_t)GetFlag(fields[i].type - ADVBPatterns::FieldType_flag));
+				subobj.AddMember(rapidjson::Value(fields[i].name, allocator), rapidjson::Value(GetFlag(fields[i].type - ADVBPatterns::FieldType_flag)), allocator);
 			}
 		}
+		
+		obj.AddMember("flags", subobj, allocator);
 	}
-	str.printf("}");
 
 	if (data->filesize) {
-		str.printf(",\"filesize\":%s", AValue(data->filesize).ToString().str());
+		obj.AddMember("filesize", rapidjson::Value(data->filesize), allocator);
 
 		uint_t rate = GetRate() / 1024;
-		if (rate) str.printf(",\"rate\":%u", rate);
+		if (rate) obj.AddMember("rate", rapidjson::Value(rate), allocator);
 	}
-	if (data->assignedepisode) str.printf(",\"assignedepisode\":%u", data->assignedepisode);
-	if (data->year) str.printf(",\"year\":%u", (uint_t)data->year);
+	
+	if (data->assignedepisode) obj.AddMember("assignedepisode", rapidjson::Value(data->assignedepisode), allocator);
+	if (data->year) obj.AddMember("year", rapidjson::Value(data->year), allocator);
 
 	if (GetString(data->strings.pattern)[0]) {
-		str.printf(",\"score\":%d", (sint_t)data->score);
-		str.printf(",\"prehandle\":%u", (uint_t)data->prehandle);
-		str.printf(",\"posthandle\":%u", (uint_t)data->posthandle);
-		str.printf(",\"pri\":%d", (int)data->pri);
+		obj.AddMember("score", rapidjson::Value(data->score), allocator);
+		obj.AddMember("prehandle", rapidjson::Value(data->prehandle), allocator);
+		obj.AddMember("posthandle", rapidjson::Value(data->posthandle), allocator);
+		obj.AddMember("pri", rapidjson::Value(data->pri), allocator);
 	}
 
 	if (RecordDataValid()) {
-		str.printf(",\"jobid\":%u", data->jobid);
-		str.printf(",\"dvbcard\":%u", (uint_t)data->dvbcard);
+		obj.AddMember("jobid", rapidjson::Value(data->jobid), allocator);
+		obj.AddMember("dvbcard", rapidjson::Value(data->dvbcard), allocator);
 
 		const AString filename = GetString(data->strings.filename);
 		AString relpath;
 		if (data->actstart && data->actstop && filename[0] && IsConverted() && (relpath = config.GetRelativePath(filename)).Valid()) {
 			bool exists = AStdFile::exists(filename);
 
-			str.printf(",\"exists\":%u", (uint_t)exists);
+			obj.AddMember("exists", rapidjson::Value(exists), allocator);
 			if (exists) {
+				rapidjson::Value subobj;
 				AList subfiles;
 
 				CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, subfiles);
 
-				str.printf(",\"file\":\"%s\"", JSONFormat(relpath).str());
+				obj.AddMember("file", rapidjson::Value(relpath, allocator), allocator);
 
+				subobj.SetArray();
+				
 				const AString *subfile = AString::Cast(subfiles.First());
-				bool first = true;
 				while (subfile) {
 					if ((*subfile != filename) && (relpath = config.GetRelativePath(*subfile)).Valid()) {
-						if (first) {
-							str.printf(",\"subfiles\":[");
-							first = false;
-						}
-						else str.printf(",");
-
-						str.printf("\"%s\"", JSONFormat(relpath).str());
+						subobj.PushBack(rapidjson::Value(relpath.str(), allocator), allocator);
 					}
 
 					subfile = subfile->Next();
 				}
 
-				if (!first) str.printf("]");
+				if (subobj.Size()) {
+					obj.AddMember("subfiles", subobj, allocator);
+				}
 			}
 		}
 	}
 
 	if (includebase64) {
-		str.printf(",\"base64\":\"%s\"", Base64Encode().str());
+		obj.AddMember("base64", rapidjson::Value(Base64Encode().str(), allocator), allocator);
 	}
-
-	return str;
 }
 
 void ADVBProg::Delete()

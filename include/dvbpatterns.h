@@ -1,6 +1,8 @@
 #ifndef __DVB_PATTERN__
 #define __DVB_PATTERN__
 
+#include <rapidjson/document.h>
+
 #include "config.h"
 
 class ADVBProg;
@@ -43,8 +45,8 @@ public:
 	static void AssignValues(ADVBProg& prog, const PATTERN& pattern);
 	static void UpdateValues(ADVBProg& prog, const PATTERN& pattern);
 
-	static AString GetPatternDefinitionsJSON();
-
+	static rapidjson::Value GetPatternDefinitionJSON(rapidjson::Document& doc);
+	
 	static const char *GetOperatorText(const PATTERN& pattern, uint_t term);
 	static const char *GetOperatorDescription(const PATTERN& pattern, uint_t term);
 	static bool       OperatorIsAssign(const PATTERN& pattern, uint_t term);

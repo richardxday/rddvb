@@ -5,6 +5,7 @@
 
 #include <sys/statvfs.h>
 
+#include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 
 #include <rdlib/Hash.h>
@@ -41,12 +42,16 @@ bool Value(const AHash& vars, AString& val, const AString& var)
 	return (p != NULL);
 }
 
-void printuserdetails(const AString& user)
+rapidjson::Value getuserdetails(rapidjson::Document& doc, const AString& user)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
+	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+	rapidjson::Value obj;
 	double lowlimit = config.GetLowSpaceWarningLimit();
 
-	printf("{\"user\":\"%s\"", JSONFormat(user).str());
+	obj.SetObject();
+	
+	obj.AddMember("user", rapidjson::Value(user.str(), allocator), allocator);
 
 	AString dir  = config.GetRecordingsSubDir(user);
 	AString rdir = config.GetRecordingsDir(user);
@@ -55,50 +60,63 @@ void printuserdetails(const AString& user)
 	if ((p = dir.Pos("/{"))  >= 0) dir  = dir.Left(p);
 	if ((p = rdir.Pos("/{")) >= 0) rdir = rdir.Left(p);
 
-	printf(",\"folder\":\"%s\"", JSONFormat(dir).str());
-	printf(",\"fullfolder\":\"%s\"", JSONFormat(rdir).str());
-
+	obj.AddMember("folder", rapidjson::Value(dir.str(), allocator), allocator);
+	obj.AddMember("fullfolder", rapidjson::Value(rdir.str(), allocator), allocator);
+	
 	struct statvfs fiData;
 	if (statvfs(rdir, &fiData) >= 0) {
 		double gb = (double)fiData.f_bavail * (double)fiData.f_bsize / ((uint64_t)1024.0 * (uint64_t)1024.0 * (uint64_t)1024.0);
 
-		printf(",\"freespace\":\"%0.1lfG\"", gb);
-		printf(",\"level\":%u", (uint_t)(gb / lowlimit));
+		obj.AddMember("freespace", rapidjson::Value(gb), allocator);
+		obj.AddMember("level", rapidjson::Value((int)(gb / lowlimit)), allocator);
 	}
 
-	printf("}");
+	return obj;
 }
 
-void printpattern(const ADVBPatterns::PATTERN& pattern)
+rapidjson::Value getpattern(rapidjson::Document& doc, const ADVBPatterns::PATTERN& pattern)
 {
+	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+	rapidjson::Value obj, subobj;
 	uint_t i;
 
-	printf("{\"user\":\"%s\"", 	  JSONFormat(pattern.user).str());
-	printf(",\"enabled\":%s",     pattern.enabled ? "true" : "false");
-	printf(",\"pri\":%d",      	  pattern.pri);
-	printf(",\"pattern\":\"%s\"", JSONFormat(pattern.pattern).str());
-	printf(",\"errors\":\"%s\"",  JSONFormat(pattern.errors).str());
-	printf(",\"terms\":[");
+	obj.SetObject();
+
+	obj.AddMember("user", rapidjson::Value(pattern.user, allocator), allocator);
+	obj.AddMember("enabled", rapidjson::Value(pattern.enabled), allocator);
+	obj.AddMember("pri", rapidjson::Value(pattern.pri), allocator);
+	obj.AddMember("pattern", rapidjson::Value(pattern.pattern, allocator), allocator);
+	obj.AddMember("errors", rapidjson::Value(pattern.errors, allocator), allocator);
+
+	subobj.SetArray();
+	
 	for (i = 0; i < pattern.list.Count(); i++) {
 		const ADVBPatterns::TERMDATA *data = ADVBPatterns::GetTermData(pattern, i);
+		rapidjson::Value subobj2;
+		
+		subobj2.SetObject();
 
-		if (i) printf(",");
-		printf("{\"start\":\%u",       data->start);
-		printf(",\"length\":\%u",      data->length);
-		printf(",\"field\":%u",		   (uint_t)data->field);
-		printf(",\"opcode\":%u",  	   (uint_t)data->opcode);
-		printf(",\"opindex\":%u",  	   (uint_t)data->opindex);
-		printf(",\"value\":\"%s\"",    JSONFormat(data->value).str());
-		printf(",\"quotes\":%s",       (data->value.Pos(" ") >= 0) ? "true" : "false");
-		printf(",\"assign\":%s",	   ADVBPatterns::OperatorIsAssign(pattern, i) ? "true" : "false");
-		printf(",\"orflag\":%u",	   (uint_t)data->orflag);
-		printf("}");
+		subobj2.AddMember("start", rapidjson::Value(data->start), allocator);
+		subobj2.AddMember("length", rapidjson::Value(data->length), allocator);
+		subobj2.AddMember("field", rapidjson::Value(data->field), allocator);
+		subobj2.AddMember("opcode", rapidjson::Value(data->opcode), allocator);
+		subobj2.AddMember("opindex", rapidjson::Value(data->opindex), allocator);
+		subobj2.AddMember("value", rapidjson::Value(data->value.str(), allocator), allocator);
+		subobj2.AddMember("quotes", rapidjson::Value((data->value.Pos(" ") >= 0)), allocator);
+		subobj2.AddMember("assign", rapidjson::Value(ADVBPatterns::OperatorIsAssign(pattern, i)), allocator);
+		subobj2.AddMember("orflag", rapidjson::Value(data->orflag), allocator);
+
+		subobj.PushBack(subobj2, allocator);
 	}
-	printf("]}");
+
+	obj.AddMember("terms", subobj, allocator);
+
+	return obj;
 }
 
-void printpattern(AHash& patterns, const ADVBProg& prog)
+void addpattern(rapidjson::Document& doc, rapidjson::Value& obj, AHash& patterns, const ADVBProg& prog)
 {
+	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 	AString str;
 
 	if ((str = prog.GetPattern()).Valid()) {
@@ -109,30 +127,50 @@ void printpattern(AHash& patterns, const ADVBProg& prog)
 		}
 
 		if (pattern) {
-			printf(",\"patternparsed\":");
-			printpattern(*pattern);
+			obj.AddMember("patternparsed", getpattern(doc, *pattern), allocator);
 		}
 	}
 }
 
-void printseries(const ADVBProgList::SERIES& serieslist)
+void addseries(rapidjson::Document& doc, rapidjson::Value& obj, const ADVBProgList::SERIES& serieslist)
 {
+	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+	rapidjson::Value subobj;
 	uint_t j;
 
-	printf(",\"series\":[");
+	subobj.SetArray();
+	
 	for (j = 0; j < serieslist.list.size(); j++) {
+		rapidjson::Value subobj2;
 		const AString& str = serieslist.list[j];
 
-		if (j > 0) printf(",");
-		printf("{\"state\":");
+		subobj2.SetObject();
+		
 		if (str.Valid()) {
-			if (str.Pos("-") >= 0) printf("\"incomplete\"");
-			else	 			   printf("\"complete\"");
+			subobj2.AddMember("state", rapidjson::Value((str.Pos("-") >= 0) ? "incomplete" : "complete", allocator), allocator);
 		}
-		else printf("\"empty\"");
-		printf(",\"episodes\":\"%s\"}", str.str());
+		else subobj2.AddMember("state", "empty", allocator);
+
+		subobj2.AddMember("episodes", rapidjson::Value(str.str(), allocator), allocator);
+		
+		subobj.PushBack(subobj2, allocator);
 	}
-	printf("]");
+
+	obj.AddMember("series", subobj, allocator);
+}
+
+rapidjson::Value gettrend(rapidjson::Document& doc, const ADVBProgList::TREND& trend)
+{
+	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+	rapidjson::Value obj;
+
+	obj.SetObject();
+
+	obj.AddMember("offset", rapidjson::Value(trend.offset), allocator);
+	obj.AddMember("rate", rapidjson::Value(trend.rate), allocator);
+	obj.AddMember("timeoffset", rapidjson::Value(trend.timeoffset), allocator);
+
+	return obj;
 }
 
 int inserttitle(uptr_t value1, uptr_t value2, void *context)
@@ -153,12 +191,14 @@ void deletetitle(uptr_t value, void *context)
 
 int main(int argc, char *argv[])
 {
-	const ADVBConfig& config = ADVBConfig::Get(true);
-	ADVBProg		  prog;	// ensure ADVBProg initialisation takes place
-	AStdFile          log; //("/home/richard/dvbweb.log", "w");
-	AHash 			  vars(&AString::DeleteString);
-	AString   		  val, logdata, errors;
-	bool 			  base64encoded = true;
+	const ADVBConfig&   config = ADVBConfig::Get(true);
+	rapidjson::Document doc;
+	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+	ADVBProg		  	prog;	// ensure ADVBProg initialisation takes place
+	AStdFile          	log;	//("/home/richard/dvbweb.log", "w");
+	AHash 			  	vars(&AString::DeleteString);
+	AString   		  	val, logdata, errors;
+	bool 			  	base64encoded = true;
 	int i;
 
 	(void)prog;
@@ -239,13 +279,13 @@ int main(int argc, char *argv[])
 
 		ADVBPatterns::ParsePattern(val, pattern, user);
 		AString newpattern = ADVBPatterns::RemoveDuplicateTerms(pattern);
+		
+		doc.SetObject();
 
-		printf("{");
-		printf("\"newpattern\":\"%s\"", JSONFormat(newpattern).str());
 		ADVBPatterns::ParsePattern(newpattern, pattern, pattern.user);
-		printf(",\"parsedpattern\":");
-		printpattern(pattern);
-		printf("}");
+
+		doc.AddMember("newpattern", rapidjson::Value(newpattern.str(), allocator), allocator);
+		doc.AddMember("parsedpattern", getpattern(doc, pattern), allocator);
 	}
 	else {
 		enum {
@@ -523,8 +563,8 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		printf("{");
-
+		doc.SetObject();
+		
 		{
 			uint_t i, nitems, offset, count = pagesize;
 
@@ -580,19 +620,16 @@ int main(int argc, char *argv[])
 			}
 			count = MIN(count, SUBZ(nitems, offset));
 
-			//printf("\n\npage: %u\npagesize: %u\ncount: %u\nnitems: %u\n\n", page, pagesize, count, nitems);
-
-			printf("\"total\":%u", nitems);
-			printf(",\"page\":%u", page);
-			printf(",\"pagesize\":%u", pagesize);
-			printf(",\"from\":%u", offset);
-			printf(",\"for\":%u", count);
-			printf(",\"parsedpattern\":");
-			printpattern(filterpattern);
-			printf(",\"errors\":\"%s\"", JSONFormat(errors).str());
+			doc.AddMember("total", rapidjson::Value(nitems), allocator);
+			doc.AddMember("page", rapidjson::Value(page), allocator);
+			doc.AddMember("pagesize", rapidjson::Value(pagesize), allocator);
+			doc.AddMember("from", rapidjson::Value(offset), allocator);
+			doc.AddMember("for", rapidjson::Value(count), allocator);
+			doc.AddMember("parsedpattern", getpattern(doc, filterpattern), allocator);
+			doc.AddMember("errors", rapidjson::Value(errors, allocator), allocator);
 
 			if (Value(vars, val, "patterndefs")) {
-				printf(",%s", ADVBPatterns::GetPatternDefinitionsJSON().str());
+				doc.AddMember("patterndefs", ADVBPatterns::GetPatternDefinitionJSON(doc), allocator);
 			}
 
 			FILE_INFO info;
@@ -601,29 +638,37 @@ int main(int argc, char *argv[])
 					AStdFile fp;
 
 					if (fp.open(config.GetSearchesFile())) {
+						rapidjson::Value subobj;
 						AString line;
 
-						printf(",\"searchesref\":%s", AValue((uint64_t)info.WriteTime).ToString().str());
-						printf(",\"searches\":[");
-						bool needscomma = false;
+						doc.AddMember("searchesref", rapidjson::Value((uint64_t)info.WriteTime), allocator);
+
+						subobj.SetArray();
+						
 						while (line.ReadLn(fp) >= 0) {
 							int p;
 
 							if (IsSymbolChar(line[0]) && ((p = line.Pos("=")) > 0)) {
+								rapidjson::Value subobj2, subobj3;
 								AString title  = line.Left(p).Words(0);
 								AString search = line.Mid(p + 1).Words(0);
 								AString from   = search.Word(0);
 								AString filter = search.Words(1);
 
-								if (needscomma) printf(",");
-								printf("{\"title\":\"%s\"", JSONFormat(title).str());
-								printf(",\"search\":{");
-								if (from.Valid()) printf("\"from\":\"%s\",", JSONFormat(from).str());
-								printf("\"titlefilter\":\"%s\"}}", JSONFormat(filter).str());
-								needscomma = true;
+								subobj2.SetObject();
+								subobj3.SetObject();
+
+								subobj2.AddMember("title", rapidjson::Value(title.str(), allocator), allocator);
+
+								if (from.Valid()) subobj3.AddMember("from", rapidjson::Value(from.str(), allocator), allocator);
+								subobj3.AddMember("titlefilter", rapidjson::Value(filter.str(), allocator), allocator);
+								subobj2.AddMember("search", subobj3, allocator);
+
+								subobj.PushBack(subobj2, allocator);
 							}
 						}
-						printf("]");
+
+						doc.AddMember("searches", subobj, allocator);
 
 						fp.close();
 					}
@@ -632,29 +677,29 @@ int main(int argc, char *argv[])
 
 			if (::GetFileInfo(config.GetDVBChannelsJSONFile(), &info)) {
 				if (!Value(vars, val, "channelsref") || ((uint64_t)info.WriteTime > (uint64_t)val)) {
-					rapidjson::Document doc;
-					rapidjson::Writer<AStdData> writer(*Stdout);
+					rapidjson::Value obj;
 
-					ADVBChannelList::Get().GenerateChanneList(doc, true);
+					ADVBChannelList::Get().GenerateChanneList(doc, obj, true);
 
-					printf(",\"channelsref\":%s", AValue((uint64_t)info.WriteTime).ToString().str());
-					printf(",\"channels\":");
-					
-					doc.Accept(writer);
+					doc.AddMember("channelsref", rapidjson::Value((uint64_t)info.WriteTime), allocator);
+					doc.AddMember("channels", obj, allocator);
 				}
 			}
 			
 			switch (datasource) {
 				default:
-				case DataSource_Progs:
-					printf(",\"progs\":[\n");
+				case DataSource_Progs: {
+					rapidjson::Value obj;
 
+					obj.SetArray();
+					
 					for (i = 0; (i < count) && !HasQuit(); i++) {
 						ADVBProg& prog = proglist->GetProgWritable(offset + i);
+						rapidjson::Value subobj;
 						const ADVBProg *prog2;
 
-						if (i > 0) printf(",\n");
-
+						prog.ExportToJSON(doc, subobj, true);
+						
 						if (from == "listings") {
 							if		((prog2 = processinglist.FindUUID(prog)) != NULL) prog.Modify(*prog2);
 							else if ((prog2 = recordinglist.FindUUID(prog))  != NULL) prog.Modify(*prog2);
@@ -664,112 +709,123 @@ int main(int argc, char *argv[])
 							else if ((prog2 = recordedlist.FindUUID(prog))   != NULL) prog.Modify(*prog2);
 						}
 
-						printf("{");
-						printf("%s", prog.ExportToJSON(true).str());
-						printpattern(patterns, prog);
+						addpattern(doc, subobj, patterns, prog);
 
 						if (((prog2 = recordedlist.FindLastSimilar(prog)) != NULL) && (prog2 != &prog)) {
-							printf(",\"recorded\":{");
-							printf("%s", prog2->ExportToJSON(true).str());
-							printpattern(patterns, *prog2);
-							printf("}");
+							rapidjson::Value subobj2;
+
+							prog2->ExportToJSON(doc, subobj2, true);
+
+							addpattern(doc, subobj2, patterns, *prog2);
+
+							subobj.AddMember("recorded", subobj2, allocator);
 						}
 
 						ADVBProgList::SERIESLIST::const_iterator it;
 						if ((it = fullseries.find(prog.GetTitle())) != fullseries.end()) {
-							printseries(it->second);
+							addseries(doc, subobj, it->second);
 						}
-						
-						printf("}");
+
+						obj.PushBack(subobj, allocator);
 					}
 
-					printf("]\n");
+					doc.AddMember("progs", obj, allocator);
 					break;
+				}
+					
+				case DataSource_Titles: {
+					rapidjson::Value obj;
 
-				case DataSource_Titles:
-					printf(",\"titles\":[\n");
-
+					obj.SetArray();
+					
 					for (i = 0; i < count; i++) {
+						rapidjson::Value subobj;
 						const PROGTITLE& title = *(const PROGTITLE *)titleslist[i + offset];
 
-						if (i) printf(",");
-						printf("{\"title\":\"%s\"", title.title.str());
-						printf(",\"scheduled\":%u", title.counts.scheduled);
-						printf(",\"recorded\":%u", title.counts.recorded);
-						printf(",\"available\":%u", title.counts.available);
-						printf(",\"failed\":%u", title.counts.failed);
-						printf(",\"isfilm\":%u", title.counts.isfilm);
-						printf(",\"notfilm\":%u", title.counts.notfilm);
-						printf(",\"total\":%u", title.counts.total);
+						subobj.AddMember("title", rapidjson::Value(title.title.str(), allocator), allocator);
+						subobj.AddMember("scheduled", rapidjson::Value(title.counts.scheduled), allocator);
+						subobj.AddMember("recorded", rapidjson::Value(title.counts.recorded), allocator);
+						subobj.AddMember("available", rapidjson::Value(title.counts.available), allocator);
+						subobj.AddMember("failed", rapidjson::Value(title.counts.failed), allocator);
+						subobj.AddMember("isfilm", rapidjson::Value(title.counts.isfilm), allocator);
+						subobj.AddMember("notfilm", rapidjson::Value(title.counts.notfilm), allocator);
+						subobj.AddMember("total", rapidjson::Value(title.counts.total), allocator);
 
 						ADVBProgList::SERIESLIST::const_iterator it;
 						if ((it = fullseries.find(prog.GetTitle())) != fullseries.end()) {
-							printseries(it->second);
+							addseries(doc, subobj, it->second);
 						}
 
-						printf("}");
+						obj.PushBack(subobj, allocator);
 					}
 
-					printf("]\n");
+					doc.AddMember("titles", obj, allocator);
 					break;
+				}
+					
+				case DataSource_Patterns: {
+					rapidjson::Value obj;
 
-				case DataSource_Patterns:
-					printf(",\"patterns\":[\n");
+					obj.SetArray();
 
 					for (i = 0; (i < count) && !HasQuit(); i++) {
 						const ADVBPatterns::PATTERN& pattern = *(const ADVBPatterns::PATTERN *)patternlist[offset + i];
 
-						if (i > 0) printf(",\n");
-
-						printpattern(pattern);
+						obj.PushBack(getpattern(doc, pattern), allocator);
 					}
 
-					printf("]");
+					doc.AddMember("patterns", obj, allocator);
 					break;
+				}
+					
+				case DataSource_Logs: {
+					rapidjson::Value obj;
 
-				case DataSource_Logs:
-					printf(",\"loglines\":[");
+					obj.SetArray();
 
 					for (i = 0; (i < count) && !HasQuit(); i++) {
-						if (i > 0) printf(",");
-						printf("\"%s\"", JSONFormat(logdata.Line(offset + i, "\n", 0).SearchAndReplace("\t", " ").StripUnprintable()).str());
+						obj.PushBack(rapidjson::Value(logdata.Line(offset + i, "\n", 0).SearchAndReplace("\t", " ").StripUnprintable().str(), allocator), allocator);
 					}
 
-					printf("]\n");
+					doc.AddMember("loglines", obj, allocator);
 					break;
+				}
 			}
 
 			{
+				rapidjson::Value obj;
 				AList users;
-				
-				printf(",\"users\":[");
 
-				printuserdetails("");
+				obj.SetArray();
+
+				obj.PushBack(getuserdetails(doc, ""), allocator);
 
 				config.ListUsers(users);
 
 				const AString *str = AString::Cast(users.First());
 				while (str) {
-					printf(",");
-
-					printuserdetails(*str);
+					obj.PushBack(getuserdetails(doc, *str), allocator);
 
 					str = str->Next();
 				}
 
-				printf("]");
+				doc.AddMember("users", obj, allocator);
 			}
 
-			ADVBProgList::CheckDiskSpace(false, true);
+			ADVBProgList::CheckDiskSpace(false, &doc);
 
 			{
-				printf(",\"counts\":{");
-				printf("\"scheduled\":%u", scheduledlist.Count());
-				printf(",\"recorded\":%u", recordedlist.Count());
-				printf(",\"requested\":%u", requestedlist.Count());
-				printf(",\"rejected\":%u", rejectedlist.Count());
-				printf(",\"combined\":%u", combinedlist.Count());
-				printf("}");
+				rapidjson::Value obj;
+
+				obj.SetObject();
+
+				obj.AddMember("scheduled", rapidjson::Value(scheduledlist.Count()), allocator);
+				obj.AddMember("recorded", rapidjson::Value(recordedlist.Count()), allocator);
+				obj.AddMember("requested", rapidjson::Value(requestedlist.Count()), allocator);
+				obj.AddMember("rejected", rapidjson::Value(rejectedlist.Count()), allocator);
+				obj.AddMember("combined", rapidjson::Value(combinedlist.Count()), allocator);
+
+				doc.AddMember("counts", obj, allocator);
 			}
 
 			{
@@ -780,38 +836,46 @@ int main(int argc, char *argv[])
 					 ::GetFileInfo(config.GetCombinedFile(), &info2)) &&
 					((writetime = std::max((uint64_t)info1.WriteTime, (uint64_t)info2.WriteTime)) > (uint64_t)ADateTime::MinDateTime) &&
 					(!Value(vars, val, "statsref") || (writetime > (uint64_t)val))) {
+					rapidjson::Value obj;
 					ADVBProgList::TREND trend;
-				
-					printf(",\"stats\":{");
-					printf("\"ref\":%s", AValue(writetime).ToString().str());
+
+					obj.SetObject();
+
+					obj.AddMember("ref", rapidjson::Value(writetime), allocator);
 
 					if ((trend = recordedlist.CalculateTrend(ADateTime("utc midnight-4w"))).valid) {
-						printf(",\"last4weeks\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", trend.offset, trend.rate, trend.timeoffset);
+						obj.AddMember("last4weeks", gettrend(doc, trend), allocator);
 					}
 					if ((trend = recordedlist.CalculateTrend(ADateTime("utc midnight-1w"))).valid) {
-						printf(",\"lastweek\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", trend.offset, trend.rate, trend.timeoffset);
+						obj.AddMember("lastweek", gettrend(doc, trend), allocator);
 					}
 					if ((trend = recordedlist.CalculateTrend(ADateTime("utc midnight-6M"))).valid) {
-						printf(",\"last6months\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", trend.offset, trend.rate, trend.timeoffset);
+						obj.AddMember("last6months", gettrend(doc, trend), allocator);
 					}
 					if ((trend = recordedlist.CalculateTrend(ADateTime("utc midnight-1Y"))).valid) {
-						printf(",\"lastyear\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", trend.offset, trend.rate, trend.timeoffset);
+						obj.AddMember("lastyear", gettrend(doc, trend), allocator);
 					}
 					if ((trend = combinedlist.CalculateTrend(ADateTime("utc midnight"))).valid) {
-						printf(",\"scheduled\":{\"offset\":%0.9lf,\"rate\":%0.9lf,\"timeoffset\":%0.14le}", trend.offset, trend.rate, trend.timeoffset);
+						obj.AddMember("scheduled", gettrend(doc, trend), allocator);
 					}
-					printf("}");
+
+					doc.AddMember("stats", obj, allocator);
 				}
 			}
 			
 			{
-				printf(",\"globals\":{");
-				printf("\"candelete\":%s", (uint_t)config.GetConfigItem("webcandelete", "0") ? "true" : "false");
-				printf("}");
+				rapidjson::Value obj;
+
+				obj.SetObject();
+
+				obj.AddMember("candelete", rapidjson::Value((uint_t)config.GetConfigItem("webcandelete", "0") != 0), allocator);
+
+				doc.AddMember("globals", obj, allocator);
 			}
 		}
 
-		printf("}");
+		rapidjson::Writer<AStdData> writer(*Stdout);
+		doc.Accept(writer);
 	}
 
 	return 0;

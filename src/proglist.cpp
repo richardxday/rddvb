@@ -1596,18 +1596,20 @@ int ADVBProgList::SortProgsByUserThenDir(uptr_t item1, uptr_t item2, void *pCont
 	return strcmp(prog1.GetFilename(), prog2.GetFilename());
 }
 
-bool ADVBProgList::CheckDiskSpace(bool runcmd, bool report)
+bool ADVBProgList::CheckDiskSpace(bool runcmd, rapidjson::Document *doc)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProgList proglist;
 
 	proglist.ReadFromFile(config.GetScheduledFile());
 
-	return proglist.CheckDiskSpaceList(runcmd, report);
+	return proglist.CheckDiskSpaceList(runcmd, doc);
 }
 
-bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
+bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) const
 {
+	rapidjson::Document::AllocatorType *allocator = doc ? &doc->GetAllocator() : NULL;
+	rapidjson::Value  obj;
 	const ADVBConfig& config = ADVBConfig::Get();
 	AStdFile fp;
 	AHash    hash;
@@ -1616,8 +1618,8 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 	uint_t   i, userlen = 0;
 	bool     okay  = true;
 
-	if (report) printf(",\"diskspace\":[");
-
+	obj.SetArray();
+	
 	if (runcmd) {
 		filename = config.GetTempFile("patterndiskspace", ".txt");
 		if (fp.open(filename, "w")) {
@@ -1628,12 +1630,11 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 	AString fmt;
 	fmt.printf("%%-%us %%6.1lfG %%s", userlen);
 
-	AList reportlist;
 	const AString recdir = config.GetRecordingsDir();
 	for (i = 0; i < Count(); i++) {
 		const ADVBProg& prog = GetProg(i);
-		const AString user = prog.GetUser();
-		const AString rdir = (prog.IsConverted() || config.IsRecordingSlave()) ? AString(prog.GetFilename()).PathPart() : prog.GetConvertedDestinationDirectory();
+		const AString   user = prog.GetUser();
+		const AString   rdir = (prog.IsConverted() || config.IsRecordingSlave()) ? AString(prog.GetFilename()).PathPart() : prog.GetConvertedDestinationDirectory();
 		AString dir;
 
 		if (rdir.StartsWith(recdir)) dir = rdir.Mid(recdir.len() + 1);
@@ -1652,19 +1653,18 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 				AString str;
 				double  gb = (double)fiData.f_bavail * (double)fiData.f_bsize / ((uint64_t)1024.0 * (uint64_t)1024.0 * (uint64_t)1024.0);
 
-				if (report) {
-					AString *reportstr = new AString;
+				if (allocator) {
+					rapidjson::Value subobj;
+					
+					subobj.SetObject();
 
-					if (reportstr) {
-						reportstr->printf("{\"user\":\"%s\"", JSONFormat(user).str());
-						reportstr->printf(",\"folder\":\"%s\"", JSONFormat(dir).str());
-						reportstr->printf(",\"fullfolder\":\"%s\"", JSONFormat(rdir).str());
-						reportstr->printf(",\"freespace\":\"%0.1lfG\"", gb);
-						reportstr->printf(",\"level\":%u", (uint_t)(gb / lowlimit));
-						reportstr->printf("}");
+					subobj.AddMember("user", rapidjson::Value(user.str(), *allocator), *allocator);
+					subobj.AddMember("folder", rapidjson::Value(dir.str(), *allocator), *allocator);
+					subobj.AddMember("fullfolder", rapidjson::Value(rdir.str(), *allocator), *allocator);
+					subobj.AddMember("freespace", rapidjson::Value(gb), *allocator);
+					subobj.AddMember("level", rapidjson::Value((uint_t)(gb / lowlimit)), *allocator);
 
-						reportlist.Add(reportstr, &AString::AlphaCompareNoCase);
-					}
+					obj.PushBack(subobj, *allocator);
 				}
 
 				str.printf(fmt, prog.GetUser(), gb, dir.str());
@@ -1679,20 +1679,6 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 
 				//config.printf("%s", str.str());
 			}
-		}
-	}
-
-	{
-		const AString *str = AString::Cast(reportlist.First());
-		bool  first = true;
-
-		while (str) {
-			if (first) first = false;
-			else	   printf(",");
-
-			printf("%s", str->str());
-
-			str = str->Next();
 		}
 	}
 
@@ -1719,8 +1705,10 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, bool report) const
 		remove(filename);
 	}
 
-	if (report) printf("]");
-
+	if (allocator) {
+		doc->AddMember("diskspace", obj, *allocator);
+	}
+	
 	return okay;
 }
 

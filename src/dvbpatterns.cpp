@@ -415,76 +415,108 @@ bool ADVBPatterns::OperatorIsAssign(const PATTERN& pattern, uint_t term)
 	return (pterm && pterm->field) ? RANGE(pterm->data.opcode, Operator_First_Assignable, Operator_Last_Assignable) : false;
 }
 
-AString ADVBPatterns::GetPatternDefinitionsJSON()
+rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc)
 {
+	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+	rapidjson::Value obj, subobj;
 	AString str;
 	uint_t i, j, nfields;
 	const FIELD *fields = ADVBProg::GetFields(nfields);
 
-	str.printf("\"patterndefs\":");
-	str.printf("{\"fields\":[");
+	obj.SetObject();
 
-	for (i = 0; i < nfields; i++) {
-		const FIELD& field = fields[i];
+	{
+		rapidjson::Value subobj;
 
-		if (i) str.printf(",");
-		str.printf("{\"name\":\"%s\"", 	 JSONFormat(field.name).str());
-		str.printf(",\"desc\":\"%s\"", 	 JSONFormat(field.desc).str());
-		str.printf(",\"type\":%u",     	 field.type);
-		str.printf(",\"assignable\":%s", field.assignable ? "true" : "false");
-		str.printf(",\"operators\":[");
+		subobj.SetArray();
+	
+		for (i = 0; i < nfields; i++) {
+			rapidjson::Value subobj2, subobj3;
+			const FIELD& field = fields[i];
 
-		bool flag = false;
-		for (j = 0; j < NUMBEROF(operators); j++) {
-			const OPERATOR& oper = operators[j];
+			subobj2.SetObject();
+			
+			subobj2.AddMember("name", rapidjson::Value(field.name, allocator), allocator);
+			subobj2.AddMember("desc", rapidjson::Value(field.desc, allocator), allocator);
+			subobj2.AddMember("type", rapidjson::Value(field.type), allocator);
+			subobj2.AddMember("assignable", rapidjson::Value(field.assignable), allocator);
 
-			if ((field.assignable == oper.assign) &&
-				(oper.fieldtypes & (1U << field.type))) {
-				if (flag) str.printf(",");
-				str.printf("%u", j);
-				flag = true;
+			subobj3.SetArray();
+
+			for (j = 0; j < NUMBEROF(operators); j++) {
+				const OPERATOR& oper = operators[j];
+
+				if ((field.assignable == oper.assign) &&
+					(oper.fieldtypes & (1U << field.type))) {
+					subobj3.PushBack(rapidjson::Value(j), allocator);
+				}
 			}
+
+			subobj2.AddMember("operators", subobj3, allocator);
+
+			subobj.PushBack(subobj2, allocator);
 		}
 
-		str.printf("]}");
+		obj.AddMember("fields", subobj, allocator);
 	}
 
-	str.printf("]");
-	str.printf(",\"fieldnames\":{");
+	{
+		rapidjson::Value subobj;
 
-	for (i = 0; i < nfields; i++) {
-		const FIELD& field = fields[i];
+		subobj.SetObject();
+		
+		for (i = 0; i < nfields; i++) {
+			const FIELD& field = fields[i];
 
-		if (i) str.printf(",");
-		str.printf("\"%s\":%u", JSONFormat(field.name).str(), i);
+			subobj.AddMember(rapidjson::Value(field.name, allocator), rapidjson::Value(i), allocator);
+		}
+
+		obj.AddMember("fieldnames", subobj, allocator);
 	}
 
-	str.printf("}");
-	str.printf(",\"operators\":[");
+	{
+		rapidjson::Value subobj;
 
-	for (j = 0; j < NUMBEROF(operators); j++) {
-		const OPERATOR& oper = operators[j];
+		subobj.SetArray();
 
-		if (j) str.printf(",");
-		str.printf("{\"text\":\"%s\"", JSONFormat(oper.str).str());
-		str.printf(",\"desc\":\"%s\"", JSONFormat(oper.desc).str());
-		str.printf(",\"opcode\":%u",   (uint_t)oper.opcode);
-		str.printf(",\"assign\":%s}",  oper.assign ? "true" : "false");
+		for (j = 0; j < NUMBEROF(operators); j++) {
+			rapidjson::Value subobj2;
+			const OPERATOR& oper = operators[j];
+
+			subobj2.SetObject();
+			
+			subobj2.AddMember("text", rapidjson::Value(oper.str, allocator), allocator);
+			subobj2.AddMember("desc", rapidjson::Value(oper.desc, allocator), allocator);
+			subobj2.AddMember("opcode", rapidjson::Value(oper.opcode), allocator);
+			subobj2.AddMember("assign", rapidjson::Value(oper.assign), allocator);
+
+			subobj.PushBack(subobj2, allocator);
+		}
+		
+		obj.AddMember("operators", subobj, allocator);
 	}
 
-	str.printf("]");
-	str.printf(",\"orflags\":[");
+	{
+		rapidjson::Value subobj;
 
-	for (j = 0; j < 2; j++) {
-		if (j) str.printf(",");
-		str.printf("{\"text\":\"%s\"", JSONFormat(j ? "or" : "and").str());
-		str.printf(",\"desc\":\"%s\"", JSONFormat(j ? "Or the next term" : "And the next term").str());
-		str.printf(",\"value\":%u}",   j);
+		subobj.SetArray();
+
+		for (j = 0; j < 2; j++) {
+			rapidjson::Value subobj2;
+
+			subobj2.SetObject();
+
+			subobj2.AddMember("text", rapidjson::Value(j ? "or" : "and", allocator), allocator);
+			subobj2.AddMember("desc", rapidjson::Value(j ? "Or the next term" : "And the next term", allocator), allocator);
+			subobj2.AddMember("value", rapidjson::Value(j), allocator);
+
+			subobj.PushBack(subobj2, allocator);
+		}
+		
+		obj.AddMember("orflags", subobj, allocator);
 	}
 
-	str.printf("]}");
-
-	return str;
+	return obj;
 }
 
 int ADVBPatterns::SortTermsByAssign(uptr_t item1, uptr_t item2, void *context)

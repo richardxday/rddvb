@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <rapidjson/document.h>
+#include <rapidjson/prettywriter.h>
+
 #include "config.h"
 #include "dvbprog.h"
 #include "dvbmisc.h"
@@ -10,12 +13,16 @@
 
 int main(int argc, char *argv[])
 {
-	const ADVBConfig& config = ADVBConfig::Get();
+	const ADVBConfig&   config = ADVBConfig::Get();
+	rapidjson::Document doc;
+	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 	ADVBProg prog;	// ensure ADVBProg initialisation takes place
 
+	doc.SetObject();
+	
 	if (argc > 1) {
 		if (prog.Base64Decode(argv[1])) {
-			printf("{%s", prog.ExportToJSON().str());
+			prog.ExportToJSON(doc, doc);
 
 			const ADVBProg::EPISODE& episode = prog.GetEpisode();
 			if (episode.valid) {
@@ -23,6 +30,7 @@ int main(int argc, char *argv[])
 				AString		 pattern, errors;
 
 				pattern.printf("title=\"%s\" available", prog.GetTitle());
+
 				reclist.ReadFromFile(config.GetRecordedFile());
 				reclist.FindProgrammes(list, pattern, errors);
 
@@ -31,23 +39,40 @@ int main(int argc, char *argv[])
 				int p;
 				if ((p = list.FindUUIDIndex(prog)) >= 0) {
 					if (p > 0) {
+						rapidjson::Value obj;
 						const ADVBProg& prog1 = list.GetProg(p - 1);
 
-						printf(",\"previous\":{\"prog\":\"%s\",\"desc\":\"%s\"}", JSONFormat(prog1.Base64Encode()).str(), JSONFormat(prog1.GetTitleAndSubtitle()).str());
+						obj.SetObject();
+
+						obj.AddMember("prog", rapidjson::Value(prog1.Base64Encode().str(), allocator), allocator);
+						obj.AddMember("desc", rapidjson::Value(prog1.GetTitleAndSubtitle().str(), allocator), allocator);
+
+						doc.AddMember("previous", obj, allocator);
 					}
 					if (p < (int)(list.Count() - 1)) {
+						rapidjson::Value obj;
 						const ADVBProg& prog1 = list.GetProg(p + 1);
 
-						printf(",\"next\":{\"prog\":\"%s\",\"desc\":\"%s\"}", JSONFormat(prog1.Base64Encode()).str(), JSONFormat(prog1.GetTitleAndSubtitle()).str());
+						obj.SetObject();
+
+						obj.AddMember("prog", rapidjson::Value(prog1.Base64Encode().str(), allocator), allocator);
+						obj.AddMember("desc", rapidjson::Value(prog1.GetTitleAndSubtitle().str(), allocator), allocator);
+
+						doc.AddMember("next", obj, allocator);
 					}
 				}
 			}
-
-			printf("}");
 		}
-		else printf("{\"error\": \"Unable to decode Base64 programme\"}");
+		else {
+			doc.AddMember("error", "Unable to decode Base64 programme", allocator);
+		}
+
+		rapidjson::PrettyWriter<AStdData> writer(*Stdout);
+		doc.Accept(writer);		
 	}
-	else printf("Usage: dvbdecodeprog <base64-programme>\n");
+	else {
+		printf("Usage: dvbdecodeprog <base64-programme>\n");
+	}
 
 	return 0;
 }

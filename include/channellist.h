@@ -55,7 +55,7 @@ public:
 	AString LookupDVBChannel(const AString& channel)   const;
 	AString LookupXMLTVChannel(const AString& channel) const;
 
-	void GenerateChanneList(rapidjson::Document& doc, bool incconverted = false) const;
+	void GenerateChanneList(rapidjson::Document& doc, rapidjson::Value& obj, bool incconverted = false) const;
 
 private:
 	ADVBChannelList();

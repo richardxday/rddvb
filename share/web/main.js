@@ -333,7 +333,7 @@ function populateusers()
 			str += '<tr class="diskspacelevel' + level + '"><td>' + username + '</td><td style="text-align:left;">' + user.fullfolder + '</td>';
 
 			if (typeof user.freespace != 'undefined') {
-				str += '<td>' + user.freespace + '</td>';
+				str += '<td>' + (Math.round(user.freespace * 100.0) / 100.0) + 'G</td>';
 			}
 			else str += '<td>Unknown</td>';
 
@@ -368,7 +368,7 @@ function populateusers()
 				str += '<tr class="diskspacelevel' + level + '"><td>' + username + '</td><td style="text-align:left;">' + diskspace.fullfolder + '</td>';
 
 				if (typeof diskspace.freespace != 'undefined') {
-					str += '<td>' + diskspace.freespace;
+					str += '<td>' + (Math.round(diskspace.freespace * 100.0) / 100.0) + 'G';
 				}
 				else str += '<td>Unknown';
 

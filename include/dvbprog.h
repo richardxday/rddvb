@@ -5,6 +5,8 @@
 
 #include <vector>
 
+#include <rapidjson/document.h>
+
 #include <rdlib/strsup.h>
 #include <rdlib/DateTime.h>
 #include <rdlib/DataList.h>
@@ -39,7 +41,7 @@ public:
 
 	AString ExportToText() const;
 
-	AString ExportToJSON(bool includebase64 = false) const;
+	void ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, bool includebase64 = false) const;
 
 	bool Overlaps(const ADVBProg& prog)              const {return ((data->stop > prog.data->start) && (data->start < prog.data->stop));}
 	bool OverlapsOnSameChannel(const ADVBProg& prog) const {return (Overlaps(prog) && (CompareNoCase(GetChannelID(), prog.GetChannelID()) == 0));}
