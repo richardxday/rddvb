@@ -104,7 +104,7 @@ rapidjson::Value getpattern(rapidjson::Document& doc, const ADVBPatterns::PATTER
 		subobj2.AddMember("value", rapidjson::Value(data->value.str(), allocator), allocator);
 		subobj2.AddMember("quotes", rapidjson::Value((data->value.Pos(" ") >= 0)), allocator);
 		subobj2.AddMember("assign", rapidjson::Value(ADVBPatterns::OperatorIsAssign(pattern, i)), allocator);
-		subobj2.AddMember("orflag", rapidjson::Value(data->orflag), allocator);
+		subobj2.AddMember("orflag", rapidjson::Value(data->orflag ? 1 : 0), allocator);
 
 		subobj.PushBack(subobj2, allocator);
 	}
