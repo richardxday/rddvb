@@ -742,6 +742,8 @@ int main(int argc, char *argv[])
 						rapidjson::Value subobj;
 						const PROGTITLE& title = *(const PROGTITLE *)titleslist[i + offset];
 
+						subobj.SetObject();
+						
 						subobj.AddMember("title", rapidjson::Value(title.title.str(), allocator), allocator);
 						subobj.AddMember("scheduled", rapidjson::Value(title.counts.scheduled), allocator);
 						subobj.AddMember("recorded", rapidjson::Value(title.counts.recorded), allocator);
