@@ -1,11 +1,11 @@
 #!/usr/bin/perl
 use Linux::DVB::DVBT;
-  
+
 # get list of installed adapters
 my @devices = Linux::DVB::DVBT->device_list();
 foreach (@devices)
 {
-	printf "%s : adapter number: %d, frontend number: %d\n", 
+	printf "%s : adapter number: %d, frontend number: %d\n",
 		$_->{name}, $_->{adapter_num}, $_->{frontend_num};
 }
 
@@ -29,15 +29,15 @@ foreach my $ch_href (@$channels_aref)
 	my $chan = $ch_href->{'channel'};
 
 	# format is [<lcn>]<name>,<freq>,<audio>,<video>
-	printf $fh "[%03d]%s,%d", 
+	printf $fh "[%03d]%s,%d",
 		$ch_href->{'channel_num'},
 		$chan,
 		$tuning_aref->{'ts'}{$tuning_aref->{'pr'}{$chan}{'tsid'}}{'frequency'};
-	if ($tuning_aref->{'pr'}{$chan}{'audio'} != 0) {
-		printf $fh ",%d", $tuning_aref->{'pr'}{$chan}{'audio'};
-	}
 	if ($tuning_aref->{'pr'}{$chan}{'video'} != 0) {
 		printf $fh ",%d", $tuning_aref->{'pr'}{$chan}{'video'};
+	}
+	if ($tuning_aref->{'pr'}{$chan}{'audio'} != 0) {
+		printf $fh ",%d", $tuning_aref->{'pr'}{$chan}{'audio'};
 	}
 	printf $fh "\n";
 }
