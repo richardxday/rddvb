@@ -46,7 +46,7 @@ public:
 	static void UpdateValues(ADVBProg& prog, const PATTERN& pattern);
 
 	static rapidjson::Value GetPatternDefinitionJSON(rapidjson::Document& doc);
-	
+
 	static const char *GetOperatorText(const PATTERN& pattern, uint_t term);
 	static const char *GetOperatorDescription(const PATTERN& pattern, uint_t term);
 	static bool       OperatorIsAssign(const PATTERN& pattern, uint_t term);
@@ -72,7 +72,7 @@ public:
 	} FIELD;
 
 	static const TERMDATA *GetTermData(const PATTERN& pattern, uint_t term) {return &(((const TERM *)pattern.list[term])->data);}
-	
+
 protected:
 	friend class ADVBProg;
 
@@ -112,7 +112,7 @@ protected:
 		Operator_StartsWithGT,
 		Operator_EndsWithLT,
 		Operator_EndsWithGT,
-		
+
 		Operator_Assign,
 		Operator_Concat,
 		Operator_Remove,
@@ -122,7 +122,7 @@ protected:
 		Operator_Divide,
 		Operator_Maximum,
 		Operator_Minimum,
-		
+
 		Operator_NE 		 	  = Operator_Inverted | Operator_EQ,
 		Operator_LE 		 	  = Operator_Inverted | Operator_GT,
 		Operator_GE 		 	  = Operator_Inverted | Operator_LT,
@@ -218,7 +218,7 @@ protected:
 
 	static uint_t Skip(const AString& line, uint_t i, char terminator = ')');
 	static uint_t CheckOrStatement(const AString& line, uint_t i, bool& orflag);
-	
+
 protected:
 	static OPERATOR operators[];
 };

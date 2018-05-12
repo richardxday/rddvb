@@ -77,7 +77,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 	// map of directory to create -> name of directory
 	std::map<AString, AString> dirs;
 	AString dir;
-	
+
 	dirs[GetConfigDir()] = "config";
 	dirs[GetDataDir()] = "data";
 	dirs[GetLogDir()] = "log";
@@ -87,7 +87,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 	if (((dir = GetRecordingsArchiveDir()).Valid()) && (dir.Pos("{") < 0)) {
 		dirs[dir] = "archive";
 	}
-	
+
 	if (CommitScheduling()) {
 		AList users;
 
@@ -98,7 +98,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 			if (((dir = GetRecordingsDir(*user)).Valid())   && (dir.Pos("{") < 0)) {
 				dirs[dir] = "user " + *user + " recordings";
 			}
-			
+
 			user = user->Next();
 		}
 	}
@@ -110,7 +110,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 			if (dircreationerrors.Valid()) {
 				dircreationerrors.printf("\n");
 			}
-			
+
 			dircreationerrors.printf("Unable to create %s directory ('%s')", it->second.str(), it->first.str());
 		}
 	}
@@ -173,7 +173,7 @@ bool ADVBConfig::ReportDirectoryCreationErrors(const AString& errors)
 		if (cmd.Valid()) {
 			AString  tempfile = config.GetTempFileEx("/tmp", "dir-creation-errors", ".txt");
 			AStdFile fp;
-			
+
 			if (fp.open(tempfile, "w")) {
 				fp.printf("%s\n", errors.str());
 				fp.close();
@@ -272,7 +272,7 @@ AString ADVBConfig::GetConfigItem(const AString& name, const AString& defval) co
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Get value from list of config items, a specified default or system default 
+/** Get value from list of config items, a specified default or system default
  *
  * @param list list of config items
  * @param defval an explicit default value
@@ -308,7 +308,7 @@ AString ADVBConfig::GetConfigItem(const std::vector<AString>& list, const AStrin
 			for (i = 0; i < list.size(); i++) {
 				const AString& name = list[i];
 				const AString *def;
-			
+
 				if ((def = GetDefaultItemEx(name)) != NULL) {
 					res = *def;
 					break;
@@ -772,6 +772,81 @@ void ADVBConfig::ListUsers(AList& list) const
 	}
 
 	list.Sort(&AString::AlphaCompareCase);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Add user
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADVBConfig::AddUser(const AString& user) const
+{
+	AString filename = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", user));
+	AStdFile fp;
+	bool success = false;
+
+	if (fp.open(filename, "a")) {
+		logit("Created user '%s'", user.str());
+		fp.close();
+		success = true;
+	}
+
+	return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Rename one user to another
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADVBConfig::ChangeUser(const AString& olduser, const AString& newuser) const
+{
+	AString filename1 = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", olduser));
+	AString filename2 = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", newuser));
+	bool success = false;
+
+	if (rename(filename1, filename2) == 0) {
+		logit("Renamed user '%s' to '%s'", olduser.str(), newuser.str());
+		success = true;
+	}
+
+	return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Delete user
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADVBConfig::DeleteUser(const AString& user) const
+{
+	AString filename    = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", user));
+	AString delfilename = filename + ".deleted";
+	bool success = false;
+
+	remove(delfilename);
+	if (rename(filename, delfilename) == 0) {
+		logit("Deleted user '%s'", user.str());
+		success = true;
+	}
+
+	return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Undelete deleted user
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADVBConfig::UnDeleteUser(const AString& user) const
+{
+	AString filename    = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", user));
+	AString delfilename = filename + ".deleted";
+	bool success = false;
+
+	remove(filename);
+	if (rename(delfilename, filename) == 0) {
+		logit("Undeleted user '%s'", user.str());
+		success = true;
+	}
+
+	return success;
 }
 
 bool ADVBConfig::ReadReplacementsFile(std::vector<REPLACEMENT>& replacements, const AString& filename) const

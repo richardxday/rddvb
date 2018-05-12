@@ -50,7 +50,7 @@ rapidjson::Value getuserdetails(rapidjson::Document& doc, const AString& user)
 	double lowlimit = config.GetLowSpaceWarningLimit();
 
 	obj.SetObject();
-	
+
 	obj.AddMember("user", rapidjson::Value(user.str(), allocator), allocator);
 
 	AString dir  = config.GetRecordingsSubDir(user);
@@ -62,7 +62,7 @@ rapidjson::Value getuserdetails(rapidjson::Document& doc, const AString& user)
 
 	obj.AddMember("folder", rapidjson::Value(dir.str(), allocator), allocator);
 	obj.AddMember("fullfolder", rapidjson::Value(rdir.str(), allocator), allocator);
-	
+
 	struct statvfs fiData;
 	if (statvfs(rdir, &fiData) >= 0) {
 		double gb = (double)fiData.f_bavail * (double)fiData.f_bsize / ((uint64_t)1024.0 * (uint64_t)1024.0 * (uint64_t)1024.0);
@@ -89,11 +89,11 @@ rapidjson::Value getpattern(rapidjson::Document& doc, const ADVBPatterns::PATTER
 	obj.AddMember("errors", rapidjson::Value(pattern.errors, allocator), allocator);
 
 	subobj.SetArray();
-	
+
 	for (i = 0; i < pattern.list.Count(); i++) {
 		const ADVBPatterns::TERMDATA *data = ADVBPatterns::GetTermData(pattern, i);
 		rapidjson::Value subobj2;
-		
+
 		subobj2.SetObject();
 
 		subobj2.AddMember("start", rapidjson::Value(data->start), allocator);
@@ -139,20 +139,20 @@ void addseries(rapidjson::Document& doc, rapidjson::Value& obj, const ADVBProgLi
 	uint_t j;
 
 	subobj.SetArray();
-	
+
 	for (j = 0; j < serieslist.list.size(); j++) {
 		rapidjson::Value subobj2;
 		const AString& str = serieslist.list[j];
 
 		subobj2.SetObject();
-		
+
 		if (str.Valid()) {
 			subobj2.AddMember("state", rapidjson::Value((str.Pos("-") >= 0) ? "incomplete" : "complete", allocator), allocator);
 		}
 		else subobj2.AddMember("state", "empty", allocator);
 
 		subobj2.AddMember("episodes", rapidjson::Value(str.str(), allocator), allocator);
-		
+
 		subobj.PushBack(subobj2, allocator);
 	}
 
@@ -264,7 +264,19 @@ int main(int argc, char *argv[])
 			ADVBPatterns::DeletePattern(user, pattern);
 		}
 	}
-	
+
+	if (Value(vars, val, "edituser")) {
+		AString edit = val.ToLower();
+		AString user, newuser;
+
+		Value(vars, user, "user");
+		Value(vars, newuser, "newuser");
+
+		if (edit == "add") {
+
+		}
+	}
+
 	if (Value(vars, val, "schedule")) {
 		bool commit = (val == "commit");
 
@@ -279,7 +291,7 @@ int main(int argc, char *argv[])
 
 		ADVBPatterns::ParsePattern(val, pattern, user);
 		AString newpattern = ADVBPatterns::RemoveDuplicateTerms(pattern);
-		
+
 		doc.SetObject();
 
 		ADVBPatterns::ParsePattern(newpattern, pattern, pattern.user);
@@ -432,7 +444,7 @@ int main(int argc, char *argv[])
 				proglist->ReadFromFile(config.GetListingsFile());
 				index = (index + 1) % NUMBEROF(list);
 			}
-			
+
 			ADVBProgList *reslist = list + index;
 			index = (index + 1) % NUMBEROF(list);
 
@@ -564,7 +576,7 @@ int main(int argc, char *argv[])
 		}
 
 		doc.SetObject();
-		
+
 		{
 			uint_t i, nitems, offset, count = pagesize;
 
@@ -644,7 +656,7 @@ int main(int argc, char *argv[])
 						doc.AddMember("searchesref", rapidjson::Value((uint64_t)info.WriteTime), allocator);
 
 						subobj.SetArray();
-						
+
 						while (line.ReadLn(fp) >= 0) {
 							int p;
 
@@ -685,21 +697,21 @@ int main(int argc, char *argv[])
 					doc.AddMember("channels", obj, allocator);
 				}
 			}
-			
+
 			switch (datasource) {
 				default:
 				case DataSource_Progs: {
 					rapidjson::Value obj;
 
 					obj.SetArray();
-					
+
 					for (i = 0; (i < count) && !HasQuit(); i++) {
 						ADVBProg& prog = proglist->GetProgWritable(offset + i);
 						rapidjson::Value subobj;
 						const ADVBProg *prog2;
 
 						prog.ExportToJSON(doc, subobj, true);
-						
+
 						if (from == "listings") {
 							if		((prog2 = processinglist.FindUUID(prog)) != NULL) prog.Modify(*prog2);
 							else if ((prog2 = recordinglist.FindUUID(prog))  != NULL) prog.Modify(*prog2);
@@ -732,18 +744,18 @@ int main(int argc, char *argv[])
 					doc.AddMember("progs", obj, allocator);
 					break;
 				}
-					
+
 				case DataSource_Titles: {
 					rapidjson::Value obj;
 
 					obj.SetArray();
-					
+
 					for (i = 0; i < count; i++) {
 						rapidjson::Value subobj;
 						const PROGTITLE& title = *(const PROGTITLE *)titleslist[i + offset];
 
 						subobj.SetObject();
-						
+
 						subobj.AddMember("title", rapidjson::Value(title.title.str(), allocator), allocator);
 						subobj.AddMember("scheduled", rapidjson::Value(title.counts.scheduled), allocator);
 						subobj.AddMember("recorded", rapidjson::Value(title.counts.recorded), allocator);
@@ -764,7 +776,7 @@ int main(int argc, char *argv[])
 					doc.AddMember("titles", obj, allocator);
 					break;
 				}
-					
+
 				case DataSource_Patterns: {
 					rapidjson::Value obj;
 
@@ -779,7 +791,7 @@ int main(int argc, char *argv[])
 					doc.AddMember("patterns", obj, allocator);
 					break;
 				}
-					
+
 				case DataSource_Logs: {
 					rapidjson::Value obj;
 
@@ -833,7 +845,7 @@ int main(int argc, char *argv[])
 			{
 				FILE_INFO info1, info2;
 				uint64_t writetime;
-				
+
 				if ((::GetFileInfo(config.GetRecordedFile(), &info1) ||
 					 ::GetFileInfo(config.GetCombinedFile(), &info2)) &&
 					((writetime = std::max((uint64_t)info1.WriteTime, (uint64_t)info2.WriteTime)) > (uint64_t)ADateTime::MinDateTime) &&
@@ -864,7 +876,7 @@ int main(int argc, char *argv[])
 					doc.AddMember("stats", obj, allocator);
 				}
 			}
-			
+
 			{
 				rapidjson::Value obj;
 
