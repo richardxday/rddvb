@@ -255,7 +255,7 @@ bool ADVBChannelList::Write()
 #if PREFER_JSON
 		rapidjson::Document doc;
 
-		GenerateChanneList(doc);
+		GenerateChanneList(doc, doc);
 
 		config.printf("Writing channels to '%s'...", config.GetDVBChannelsJSONFile().str());
 		
@@ -350,12 +350,12 @@ void ADVBChannelList::DeleteAll()
 	changed = false;
 }
 
-void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, bool incconverted) const
+void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, rapidjson::Value& obj, bool incconverted) const
 {
 	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 	size_t i;
 	
-	doc.SetArray();
+	obj.SetArray();
 		
 	for (i = 0; i < list.size(); i++) {
 		const CHANNEL& chan = *list[i];
@@ -416,7 +416,7 @@ void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, bool incconve
 		}
 
 		if (chanobj.MemberCount() > 0) {
-			doc.PushBack(chanobj, allocator);
+			obj.PushBack(chanobj, allocator);
 		}
 	}
 }

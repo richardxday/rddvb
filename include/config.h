@@ -45,7 +45,7 @@ public:
 	/*--------------------------------------------------------------------------------*/
 	bool ReportDirectoryCreationErrors() const {return ReportDirectoryCreationErrors(dircreationerrors);}
 	static bool ReportDirectoryCreationErrors(const AString& errors);
-	
+
 	/*--------------------------------------------------------------------------------*/
 	/** Configuration item access functions
 	 *
@@ -86,7 +86,7 @@ public:
 	 */
 	/*--------------------------------------------------------------------------------*/
 	AString GetConfigItem(const AString& name) const;
-	
+
 	/*--------------------------------------------------------------------------------*/
 	/** Return config item value or the specified default
 	 *
@@ -101,7 +101,7 @@ public:
 	AString GetConfigItem(const AString& name, const AString& defval) const;
 
 	/*--------------------------------------------------------------------------------*/
-	/** Get value from list of config items, a specified default or system default 
+	/** Get value from list of config items, a specified default or system default
 	 *
 	 * @param list list of config items
 	 * @param defval an explicit default value
@@ -158,7 +158,7 @@ public:
 	 */
 	/*--------------------------------------------------------------------------------*/
 	AString GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post, const AString& defval) const;
-		
+
 	/*--------------------------------------------------------------------------------*/
 	/** Return user based config item or system default
 	 *
@@ -227,7 +227,31 @@ public:
 	 */
 	/*--------------------------------------------------------------------------------*/
 	void    ListUsers(AList& list) const;
-	
+
+	/*--------------------------------------------------------------------------------*/
+	/** Add user
+	 */
+	/*--------------------------------------------------------------------------------*/
+	bool   	AddUser(const AString& user) const;
+
+	/*--------------------------------------------------------------------------------*/
+	/** Rename one user to another
+	 */
+	/*--------------------------------------------------------------------------------*/
+	bool   	ChangeUser(const AString& olduser, const AString& newuser) const;
+
+	/*--------------------------------------------------------------------------------*/
+	/** Delete user
+	 */
+	/*--------------------------------------------------------------------------------*/
+	bool   	DeleteUser(const AString& user) const;
+
+	/*--------------------------------------------------------------------------------*/
+	/** Undelete deleted user
+	 */
+	/*--------------------------------------------------------------------------------*/
+	bool   	UnDeleteUser(const AString& user) const;
+
 	/*--------------------------------------------------------------------------------*/
 	/** Return configuration directory
 	 */
@@ -290,7 +314,7 @@ public:
 	 */
 	/*--------------------------------------------------------------------------------*/
 	AString GetTempFileEx(const AString& tempdir, const AString& name, const AString& suffix = "") const;
-	
+
 	AString GetQueue()						 const; // extractconfig()
 	AString GetRecordingsSubDir(const AString& user, const AString& category = "") const; // extractconfig("<name>", "<category>")
 	AString GetRecordingsDir(const AString& user, const AString& category = "")    const; // extractconfig("<name>", "<category>")
@@ -319,7 +343,7 @@ public:
 
 	AString GetXMLTVDownloadCommand()		 const; // extractconfig()
 	AString GetXMLTVDownloadArguments(const AString& destfile) const; // extractconfig("<destfile>")
-	
+
 	AString GetExtraRecordFile()			 const; // extractconfig()
 	AString GetDVBCardsFile()                const; // extractconfig()
 	AString GetLogBase()				     const;
@@ -365,7 +389,7 @@ public:
 	bool    CommitScheduling()				 const; // extractconfig()
 
 	bool	AssignEpisodes()				 const; // extractconfig()
-	
+
 	bool    RescheduleAfterDeletingPattern(const AString& user, const AString& category) const; // extractconfig("<user>", "<category>")
 
 	bool    IsRecordingSlave()				 const; // extractconfig()
@@ -376,7 +400,7 @@ public:
 	bool    UseOldProgrammeIcon(const AString& user, const AString& category) const; // extractconfig("<user>", "<category>")
 
 	bool    MonitorDVBSignal()			     const;
-	
+
 	AString GetPriorityDVBPIDs()			 const; // extractconfig()
 	AString GetExtraDVBPIDs()				 const; // extractconfig()
 
@@ -399,7 +423,7 @@ public:
 	AString GetSCPArgs()					 const; // extractconfig()
 	AString GetRsyncArgs()					 const; // extractconfig()
 	AString GetRsyncBandwidthLimit()		 const; // extractconfig()
-	
+
 	AString GetServerHost()                  const; // extractconfig()
 	uint_t  GetServerPort()                  const; // extractconfig()
 	AString GetServerGetAndConvertCommand()  const; // extractconfig()
@@ -407,7 +431,7 @@ public:
 	AString GetServerRescheduleCommand()     const; // extractconfig()
 
 	AString GetVideoErrorCheckCommand()		 const; // extractconfig()
-	
+
 	uint_t  GetMinimalDataRate(const AString& filesuffix) const; // extractconfig("<filesuffix>")
 
 	uint_t  GetScheduleReportVerbosity(const AString& type = "") const; // extractconfig("<type>")
@@ -415,7 +439,7 @@ public:
 	uint_t  GetMaxRecordLag(const AString& user, const AString& category) const;
 
 	bool    DeleteProgrammesWithNoDVBChannel() const; // extractconfig()
-	
+
 	// NOTE: function cheats 'const'!
 	void Set(const AString& var, const AString& val) const;
 
@@ -442,7 +466,7 @@ public:
 	static AString Combine(const char     *str1, const AString&  str2) {return AString(str1) + ":" + str2;}
 	static AString Combine(const AString&  str1, const char     *str2) {return str1 + ":" + AString(str2);}
 	static AString Combine(const AString&  str1, const AString&  str2) {return str1 + ":" + str2;}
-	
+
 protected:
 	/*--------------------------------------------------------------------------------*/
 	/** Return system default value for config item or NULL
@@ -473,7 +497,7 @@ protected:
 private:
 	ADVBConfig();
 	~ADVBConfig();
-	
+
 protected:
 	ASettingsHandler 	 config;
 	AHash			 	 defaults;

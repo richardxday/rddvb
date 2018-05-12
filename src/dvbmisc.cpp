@@ -9,16 +9,11 @@
 #include "config.h"
 #include "dvbmisc.h"
 
-AString JSONFormat(const AString& str)
-{
-	return str.SearchAndReplace("/", "\\/").SearchAndReplace("\"", "\\\"").SearchAndReplace("\n", "\\n");
-}
-
-AString JSONTime(uint64_t dt)
+uint64_t JSONTimeOffset(uint64_t dt)
 {
 	// calculate number of milliseconds between midnight 1-jan-1970 to midnight 1-jan-1980 (1972 and 1976 were leap years)
 	static const uint64_t offset = ADateTime::DaysSince1970 * (uint64_t)24 * (uint64_t)3600 * (uint64_t)1000;
-	return AValue(dt + offset).ToString();
+	return offset + dt;
 }
 
 AString CatPath(const AString& dir1, const AString& dir2)
