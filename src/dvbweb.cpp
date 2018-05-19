@@ -710,8 +710,6 @@ int main(int argc, char *argv[])
 						rapidjson::Value subobj;
 						const ADVBProg *prog2;
 
-						prog.ExportToJSON(doc, subobj, true);
-
 						if (from == "listings") {
 							if		((prog2 = processinglist.FindUUID(prog)) != NULL) prog.Modify(*prog2);
 							else if ((prog2 = recordinglist.FindUUID(prog))  != NULL) prog.Modify(*prog2);
@@ -720,6 +718,8 @@ int main(int argc, char *argv[])
 							else if ((prog2 = scheduledlist.FindUUID(prog))  != NULL) prog.Modify(*prog2);
 							else if ((prog2 = recordedlist.FindUUID(prog))   != NULL) prog.Modify(*prog2);
 						}
+
+						prog.ExportToJSON(doc, subobj, true);
 
 						addpattern(doc, subobj, patterns, prog);
 
