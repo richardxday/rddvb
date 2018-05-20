@@ -452,6 +452,33 @@ int main(int argc, char *argv[])
 			ADVBPatterns::ParsePattern(filter, filterpattern, errors);
 			proglist->FindProgrammes(*reslist, filter, errors, (filter.Pos("\n") >= 0) ? "\n" : ";");
 			proglist = reslist;
+
+			if (from == "listings") {
+				uint_t i;
+
+				// modify programmes from other lists and eliminate those
+				// that no longer match
+				for (i = 0; i < proglist->Count(); ) {
+					ADVBProg& prog = proglist->GetProgWritable(i);
+					const ADVBProg *prog2;
+
+					if (((prog2 = processinglist.FindUUID(prog)) != NULL) ||
+						((prog2 = recordinglist.FindUUID(prog))  != NULL) ||
+						((prog2 = failureslist.FindUUID(prog))   != NULL) ||
+						((prog2 = rejectedlist.FindUUID(prog))   != NULL) ||
+						((prog2 = scheduledlist.FindUUID(prog))  != NULL) ||
+						((prog2 = recordedlist.FindUUID(prog))   != NULL)) {
+						prog.Modify(*prog2);
+						// check again in case modification means it should be removed
+						if (!ADVBPatterns::Match(prog, filterpattern)) {
+							// delete programme from list
+							proglist->DeleteProg(i);
+						}
+						else i++;
+					}
+					else i++;
+				}
+			}
 		}
 
 		if (Value(vars, val, "pagesize")) {
@@ -702,28 +729,22 @@ int main(int argc, char *argv[])
 				default:
 				case DataSource_Progs: {
 					rapidjson::Value obj;
-
+					bool testsimilar = ((uint_t)config.GetConfigItem("testsimilarprogrammes", "0") != 0);
+					
 					obj.SetArray();
 
 					for (i = 0; (i < count) && !HasQuit(); i++) {
-						ADVBProg& prog = proglist->GetProgWritable(offset + i);
-						rapidjson::Value subobj;
+						const ADVBProg& prog = proglist->GetProg(offset + i);
 						const ADVBProg *prog2;
-
-						if (from == "listings") {
-							if		((prog2 = processinglist.FindUUID(prog)) != NULL) prog.Modify(*prog2);
-							else if ((prog2 = recordinglist.FindUUID(prog))  != NULL) prog.Modify(*prog2);
-							else if	((prog2 = failureslist.FindUUID(prog))   != NULL) prog.Modify(*prog2);
-							else if ((prog2 = rejectedlist.FindUUID(prog))   != NULL) prog.Modify(*prog2);
-							else if ((prog2 = scheduledlist.FindUUID(prog))  != NULL) prog.Modify(*prog2);
-							else if ((prog2 = recordedlist.FindUUID(prog))   != NULL) prog.Modify(*prog2);
-						}
+						rapidjson::Value subobj;
 
 						prog.ExportToJSON(doc, subobj, true);
 
 						addpattern(doc, subobj, patterns, prog);
 
-						if (((prog2 = recordedlist.FindLastSimilar(prog)) != NULL) && (prog2 != &prog)) {
+						if (((prog2 = recordedlist.FindLastSimilar(prog)) != NULL) &&
+							(prog2 != &prog) &&
+							(!testsimilar || ADVBPatterns::Match(*prog2, filterpattern))) {
 							rapidjson::Value subobj2;
 
 							prog2->ExportToJSON(doc, subobj2, true);
@@ -731,6 +752,18 @@ int main(int argc, char *argv[])
 							addpattern(doc, subobj2, patterns, *prog2);
 
 							subobj.AddMember("recorded", subobj2, allocator);
+						}
+						
+						if (((prog2 = scheduledlist.FindSimilar(prog)) != NULL) &&
+							(prog2 != &prog) &&
+							(!testsimilar || ADVBPatterns::Match(*prog2, filterpattern))) {
+							rapidjson::Value subobj2;
+							
+							prog2->ExportToJSON(doc, subobj2, true);
+
+							addpattern(doc, subobj2, patterns, *prog2);
+
+							subobj.AddMember("scheduled", subobj2, allocator);
 						}
 
 						ADVBProgList::SERIESLIST::const_iterator it;
@@ -888,8 +921,14 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		rapidjson::Writer<AStdData> writer(*Stdout);
-		doc.Accept(writer);
+		if (base64encoded) {
+			rapidjson::Writer<AStdData> writer(*Stdout);
+			doc.Accept(writer);
+		}
+		else {
+			rapidjson::PrettyWriter<AStdData> writer(*Stdout);
+			doc.Accept(writer);
+		}
 	}
 
 	return 0;
