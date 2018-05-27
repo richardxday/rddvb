@@ -479,6 +479,7 @@ function populateprogs(id)
 					populatedates(response.progs[i]);
 
 					if (typeof response.progs[i].recorded != 'undefined') populatedates(response.progs[i].recorded);
+					if (typeof response.progs[i].scheduled != 'undefined') populatedates(response.progs[i].scheduled);
 				}
 
 				var prog     = response.progs[i];
