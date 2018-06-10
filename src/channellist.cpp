@@ -718,6 +718,11 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 							changed |= (freq != chan->dvb.freq);
 							chan->dvb.freq = freq;
 
+							bool hadvideo = chan->dvb.hasvideo;
+							bool hadaudio = chan->dvb.hasaudio;
+
+							chan->dvb.hasvideo = chan->dvb.hasaudio = false;
+							
 							for (i = 0; i < n; i++) {
 								line = service.Line(i, "\n", 0);
 
@@ -739,12 +744,10 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 												break;
 
 											case Type_video:
-												changed |= !chan->dvb.hasvideo;
 												chan->dvb.hasvideo = true;
 												break;
 
 											case Type_audio:
-												changed |= !chan->dvb.hasaudio;
 												chan->dvb.hasaudio = true;
 												break;
 										}
@@ -753,6 +756,8 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 									if (verbose) config.printf("Service %s Stream type %u pid %u (%s)", servname.str(), type, pid, (id != Type_none) ? "included" : "EXCLUDED");
 								}
 							}
+
+							changed |= ((chan->dvb.hasvideo != hadvideo) || (chan->dvb.hasaudio != hadaudio));
 
 							std::sort(pidlist.begin(), pidlist.end(), std::less<uint_t>());
 
