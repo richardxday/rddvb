@@ -220,6 +220,15 @@ bool ADVBChannelList::Read()
 						chan->dvb.pidlist.push_back((uint_t)_pid2);
 					}
 
+					if (chan->dvb.pidlist.size() >= 2) {
+						// ASSUME for now that a PID list of 2 or more means both audio and video are available
+						chan->dvb.hasvideo = chan->dvb.hasaudio = true;
+					}
+					else if (chan->dvb.pidlist.size() >= 1) {
+						// ASSUME for now that a PID list of 1 or more means at least audio is available
+						chan->dvb.hasaudio = true;
+					}
+					
 					changed = true;
 				}
 			}
@@ -525,6 +534,8 @@ ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByDVBChannelName(const AStr
 	if (!chan && create && ((chan = new CHANNEL) != NULL)) {
 		chan->dvb.lcn = lcn;
 		chan->dvb.freq = 0;
+		chan->dvb.hasvideo = false;
+		chan->dvb.hasaudio = false;
 		chan->xmltv.sdchannelid = 0;
 		chan->dvb.channelname = name;
 		chan->dvb.convertedchannelname = ConvertDVBChannel(name);
@@ -757,8 +768,6 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 								}
 							}
 
-							changed |= ((chan->dvb.hasvideo != hadvideo) || (chan->dvb.hasaudio != hadaudio));
-
 							std::sort(pidlist.begin(), pidlist.end(), std::less<uint_t>());
 
 							if (pidlist.size()) {
@@ -785,7 +794,18 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 								config.printf("%s", str.str());
 
 								chan->dvb.pidlist = pidlist;
+
+								if (chan->dvb.pidlist.size() >= 2) {
+									// ASSUME for now that a PID list of 2 or more means both audio and video are available
+									chan->dvb.hasvideo = chan->dvb.hasaudio = true;
+								}
+								else if (chan->dvb.pidlist.size() >= 1) {
+									// ASSUME for now that a PID list of 1 or more means at least audio is available
+									chan->dvb.hasaudio = true;
+								}
 							}
+
+							changed |= ((chan->dvb.hasvideo != hadvideo) || (chan->dvb.hasaudio != hadaudio));
 						}
 
 						service.Delete();
