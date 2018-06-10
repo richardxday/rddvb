@@ -231,6 +231,8 @@ public:
 		Flag_unconvertedexists,
 		Flag_archived,
 		Flag_failed,
+		Flag_radioprogramme,
+		Flag_tvprogramme,
 		
 		Flag_total,
 	};

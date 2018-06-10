@@ -100,6 +100,8 @@ bool ADVBChannelList::Read()
 							chan->dvb.lcn = 0;
 							chan->xmltv.sdchannelid = 0;
 							chan->dvb.freq = 0;
+							chan->dvb.hasaudio = false;
+							chan->dvb.hasvideo = false;
 							
 							if (chanobj.HasMember("dvb")) {
 								const rapidjson::Value& subobj = chanobj["dvb"];
@@ -120,6 +122,22 @@ bool ADVBChannelList::Read()
 
 								if (subobj.HasMember("frequency") && subobj["frequency"].IsNumber()) {
 									chan->dvb.freq = subobj["frequency"].GetUint();
+								}
+
+								if (subobj.HasMember("hasvideo") && subobj["hasvideo"].IsBool()) {
+									chan->dvb.hasvideo = subobj["hasvideo"].GetBool();
+								}
+								else {
+									chan->dvb.hasvideo = true;
+									changed = true;
+								}
+								
+								if (subobj.HasMember("hasaudio") && subobj["hasaudio"].IsBool()) {
+									chan->dvb.hasaudio = subobj["hasaudio"].GetBool();
+								}
+								else {
+									chan->dvb.hasaudio = true;
+									changed = true;
 								}
 
 								if (subobj.HasMember("pidlist") && subobj["pidlist"].IsArray()) {
@@ -383,6 +401,9 @@ void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, rapidjson::Va
 			dvbobj.AddMember("frequency", rapidjson::Value(chan.dvb.freq), allocator);
 		}
 
+		dvbobj.AddMember("hasvideo", rapidjson::Value(chan.dvb.hasvideo), allocator);
+		dvbobj.AddMember("hasaudio", rapidjson::Value(chan.dvb.hasaudio), allocator);
+		
 		if (chan.dvb.pidlist.size() > 0) {
 			rapidjson::Value pidlist;
 			size_t j;
@@ -503,6 +524,7 @@ ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByDVBChannelName(const AStr
 
 	if (!chan && create && ((chan = new CHANNEL) != NULL)) {
 		chan->dvb.lcn = lcn;
+		chan->dvb.freq = 0;
 		chan->xmltv.sdchannelid = 0;
 		chan->dvb.channelname = name;
 		chan->dvb.convertedchannelname = ConvertDVBChannel(name);
@@ -682,8 +704,13 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 						CHANNEL *chan = GetChannelByName(servname, true);
 						
 						if (chan) {
-							std::map<AString,bool> pidhash;
-							PIDLIST				   pidlist;
+							typedef enum {
+								Type_none = 0,
+								Type_video,
+								Type_audio,
+							} pidtype_t;
+							std::map<pidtype_t,bool> pidhash;
+							PIDLIST				     pidlist;
 							uint_t i, n = service.CountLines("\n", 0);
 
 							config.printf("Channel '%s' at frequency %uHz:", chan->dvb.channelname.str(), freq);
@@ -695,24 +722,35 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 								line = service.Line(i, "\n", 0);
 
 								if (line.Left(8) == "<stream ") {
-									uint_t  type = (uint_t)line.GetField("type=\"", "\"");
-									uint_t  pid  = (uint_t)line.GetField("pid=\"", "\"");
-									AString id;
-									bool    include = false;
+									uint_t    type = (uint_t)line.GetField("type=\"", "\"");
+									uint_t    pid  = (uint_t)line.GetField("pid=\"", "\"");
+									pidtype_t id   = Type_none;
 
-									if	    (RANGE(type, 1, 2)) id = "video";
-									else if (RANGE(type, 3, 4)) id = "audio";
-									//else if (type == 5)			include = true;
-									//else if (type == 6)			include = true;
+									if	    (RANGE(type, 1, 2)) id = Type_video;
+									else if (RANGE(type, 3, 4)) id = Type_audio;
 
-									if (id.Valid() && (pidhash.find(id) == pidhash.end())) {
+									if ((id != Type_none) && (pidhash.find(id) == pidhash.end())) {
 										pidhash[id] = true;
-										include = true;
+
+										pidlist.push_back(pid);
+
+										switch (id) {
+											default:
+												break;
+
+											case Type_video:
+												changed |= !chan->dvb.hasvideo;
+												chan->dvb.hasvideo = true;
+												break;
+
+											case Type_audio:
+												changed |= !chan->dvb.hasaudio;
+												chan->dvb.hasaudio = true;
+												break;
+										}
 									}
-
-									if (include) pidlist.push_back(pid);
-
-									if (verbose) config.printf("Service %s Stream type %u pid %u (%s)", servname.str(), type, pid, include ? "included" : "EXCLUDED");
+									
+									if (verbose) config.printf("Service %s Stream type %u pid %u (%s)", servname.str(), type, pid, (id != Type_none) ? "included" : "EXCLUDED");
 								}
 							}
 

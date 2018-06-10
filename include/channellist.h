@@ -31,6 +31,8 @@ public:
 			AString  channelname;
 			AString  convertedchannelname;
 			uint32_t freq;
+			bool	 hasvideo;
+			bool	 hasaudio;
 			PIDLIST  pidlist;
 		} dvb;
 		struct {

@@ -107,6 +107,8 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG(postprocessfailed,	 	Flag_postprocessfailed,   	"Programme post-processing failed"),
 	DEFINE_FLAG(conversionfailed,	 	Flag_conversionfailed,    	"Programme conversion failed"),
 	DEFINE_FLAG(failed,					Flag_failed,				"Programme record, post-process or conversion failed"),
+	DEFINE_FLAG(radioprogramme,			Flag_radioprogramme,		"Programme is a radio programme (audio but no video)"),
+	DEFINE_FLAG(tvprogramme,			Flag_tvprogramme,			"Programme is a TV programme (audio and video)"),
 
 	DEFINE_FIELD(epvalid,  	            episode.valid,    uint8_t,  "Series/episode valid"),
 	DEFINE_FIELD(series,   	            episode.series,   uint8_t,  "Series"),
@@ -466,6 +468,22 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 		case Flag_failed:
 			set = HasFailed();
 			break;
+
+		case Flag_radioprogramme: {
+			const ADVBChannelList& channelist = ADVBChannelList::Get();
+			const ADVBChannelList::CHANNEL *channel = channelist.GetChannelByName(GetDVBChannel());
+			
+			set = (channel && channel->dvb.hasaudio && !channel->dvb.hasvideo);
+			break;
+		}			
+
+		case Flag_tvprogramme: {
+			const ADVBChannelList& channelist = ADVBChannelList::Get();
+			const ADVBChannelList::CHANNEL *channel = channelist.GetChannelByName(GetDVBChannel());
+			
+			set = (channel && channel->dvb.hasaudio && channel->dvb.hasvideo);
+			break;
+		}			
 	}
 
 	return set;

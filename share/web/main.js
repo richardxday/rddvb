@@ -2060,6 +2060,7 @@ function showchannels()
 	str += '<th style="text-align:left">DVB Channel</th>';
 	str += '<th>DVB Frequency</th>';
 	str += '<th>DVB PID List</th>';
+	str += '<th>Type</th>';
 	str += '</tr>';
 
 	document.getElementById("statusbottom").innerHTML = '';
@@ -2144,6 +2145,17 @@ function showchannels()
 				}
 				else str += '<td>&nbsp;</td>';
 				
+				if ((typeof channel.dvb != 'undefined') &&
+					(typeof channel.dvb.hasvideo != 'undefined') &&
+					(typeof channel.dvb.hasaudio != 'undefined')) {
+					str += '<td>';
+					if (channel.dvb.hasvideo && channel.dvb.hasaudio) str += "TV";
+					else if (channel.dvb.hasaudio)					  str += "Radio";
+					else											  str += "&nbsp;";
+					str += '</td>';
+				}
+				else str += '<td>&nbsp;</td>';
+
 				str += '</tr>';
 
 				if (valid) validchannels++;
