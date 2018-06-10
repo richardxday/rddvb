@@ -63,7 +63,7 @@ private:
 	ADVBChannelList();
 	~ADVBChannelList();
 
-	bool FinaliseChannel(CHANNEL *channel);
+	bool ForceChannelAudioAndVideoFlags(CHANNEL *channel);
 
 	static bool __SortChannels(const CHANNEL *chan1, const CHANNEL *chan2);
 

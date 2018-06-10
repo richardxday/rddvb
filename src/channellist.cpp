@@ -67,7 +67,7 @@ ADVBChannelList& ADVBChannelList::Get()
 	return channellist;
 }
 
-bool ADVBChannelList::FinaliseChannel(CHANNEL *channel)
+bool ADVBChannelList::ForceChannelAudioAndVideoFlags(CHANNEL *channel)
 {
 	bool hadvideo = channel->dvb.hasvideo;
 	bool hadaudio = channel->dvb.hasaudio;
@@ -206,9 +206,6 @@ bool ADVBChannelList::Read()
 								}
 								lcnlist[chan->dvb.lcn] = chan;
 							}
-
-
-							changed |= FinaliseChannel(chan);
 						}
 					}
 				}
@@ -239,12 +236,15 @@ bool ADVBChannelList::Read()
 
 					if ((uint_t)_pid1) {
 						chan->dvb.pidlist.push_back((uint_t)_pid1);
+						chan->dvb.hasvideo = true;
 					}
+					else chan->dvb.hasvideo = false;
+					
 					if ((uint_t)_pid2) {
 						chan->dvb.pidlist.push_back((uint_t)_pid2);
+						chan->dvb.hasaudio = true;
 					}
-
-					FinaliseChannel(chan);
+					else chan->dvb.hasaudio = false;
  
 					changed = true;
 				}
@@ -266,6 +266,9 @@ bool ADVBChannelList::Read()
 
 						chan->dvb.pidlist.push_back((uint_t)col);
 					}
+
+					// set video and audio flags based on number of PIDs in list
+					changed |= ForceChannelAudioAndVideoFlags(chan);
 				}
 			}
 		}
@@ -746,11 +749,9 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 							changed |= (freq != chan->dvb.freq);
 							chan->dvb.freq = freq;
 
-							bool hadvideo = chan->dvb.hasvideo;
-							bool hadaudio = chan->dvb.hasaudio;
+							bool hasvideo = false;
+							bool hasaudio = false;
 
-							chan->dvb.hasvideo = chan->dvb.hasaudio = false;
-							
 							for (i = 0; i < n; i++) {
 								line = service.Line(i, "\n", 0);
 
@@ -772,11 +773,11 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 												break;
 
 											case Type_video:
-												chan->dvb.hasvideo = true;
+												hasvideo = true;
 												break;
 
 											case Type_audio:
-												chan->dvb.hasaudio = true;
+												hasaudio = true;
 												break;
 										}
 									}
@@ -785,10 +786,10 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 								}
 							}
 
-							std::sort(pidlist.begin(), pidlist.end(), std::less<uint_t>());
-
-							if (pidlist.size()) {
+							if (pidlist.size() > 0) {
 								AString str;
+
+								std::sort(pidlist.begin(), pidlist.end(), std::less<uint_t>());
 
 								if (pidlist != chan->dvb.pidlist) {
 									str.printf("Changing PID list for '%s' from '", chan->dvb.channelname.str());
@@ -812,10 +813,15 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 
 								chan->dvb.pidlist = pidlist;
 
-								FinaliseChannel(chan);
+								// only update video and audio flags if a new pidlist is available
+								changed |= ((hasvideo != chan->dvb.hasvideo) || (hasaudio != chan->dvb.hasaudio));
+								chan->dvb.hasvideo = hasvideo;
+								chan->dvb.hasaudio = hasaudio;
 							}
-
-							changed |= ((chan->dvb.hasvideo != hadvideo) || (chan->dvb.hasaudio != hadaudio));
+							else if (!chan->dvb.hasvideo && !chan->dvb.hasaudio) {
+								// no video and audio flags yet, guess them based on number of PIDs in pidlist
+								changed |= ForceChannelAudioAndVideoFlags(chan);
+							}
 						}
 
 						service.Delete();
