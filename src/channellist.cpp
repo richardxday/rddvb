@@ -80,7 +80,11 @@ bool ADVBChannelList::FinaliseChannel(CHANNEL *channel)
 		// ASSUME for now that a PID list of 1 or more means at least audio is available
 		channel->dvb.hasaudio = true;
 	}
-
+	else {
+		// no PIDS, no audio or video
+		channel->dvb.hasvideo = channel->dvb.hasaudio = false;
+	}
+	
 	return ((channel->dvb.hasvideo != hadvideo) || (channel->dvb.hasaudio != hadaudio));
 }
 
