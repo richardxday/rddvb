@@ -63,11 +63,13 @@ private:
 	ADVBChannelList();
 	~ADVBChannelList();
 
+	bool FinaliseChannel(CHANNEL *channel);
+
 	static bool __SortChannels(const CHANNEL *chan1, const CHANNEL *chan2);
 
 	static AString ConvertDVBChannel(const AString& str);
 	static AString ConvertXMLTVChannel(const AString& str);
-
+	
 protected:
 	CHANNEL *GetChannelByName(const AString& name, bool create, uint_t lcn = 0);
 	CHANNEL *GetChannelByDVBChannelName(const AString& name, bool create, uint_t lcn = 0);

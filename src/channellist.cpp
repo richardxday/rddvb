@@ -67,6 +67,23 @@ ADVBChannelList& ADVBChannelList::Get()
 	return channellist;
 }
 
+bool ADVBChannelList::FinaliseChannel(CHANNEL *channel)
+{
+	bool hadvideo = channel->dvb.hasvideo;
+	bool hadaudio = channel->dvb.hasaudio;
+
+	if (channel->dvb.pidlist.size() >= 2) {
+		// ASSUME for now that a PID list of 2 or more means both audio and video are available
+		channel->dvb.hasvideo = channel->dvb.hasaudio = true;
+	}
+	else if (channel->dvb.pidlist.size() >= 1) {
+		// ASSUME for now that a PID list of 1 or more means at least audio is available
+		channel->dvb.hasaudio = true;
+	}
+
+	return ((channel->dvb.hasvideo != hadvideo) || (channel->dvb.hasaudio != hadaudio));
+}
+
 bool ADVBChannelList::Read()
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -185,6 +202,9 @@ bool ADVBChannelList::Read()
 								}
 								lcnlist[chan->dvb.lcn] = chan;
 							}
+
+
+							changed |= FinaliseChannel(chan);
 						}
 					}
 				}
@@ -220,15 +240,8 @@ bool ADVBChannelList::Read()
 						chan->dvb.pidlist.push_back((uint_t)_pid2);
 					}
 
-					if (chan->dvb.pidlist.size() >= 2) {
-						// ASSUME for now that a PID list of 2 or more means both audio and video are available
-						chan->dvb.hasvideo = chan->dvb.hasaudio = true;
-					}
-					else if (chan->dvb.pidlist.size() >= 1) {
-						// ASSUME for now that a PID list of 1 or more means at least audio is available
-						chan->dvb.hasaudio = true;
-					}
-					
+					FinaliseChannel(chan);
+ 
 					changed = true;
 				}
 			}
@@ -795,14 +808,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 
 								chan->dvb.pidlist = pidlist;
 
-								if (chan->dvb.pidlist.size() >= 2) {
-									// ASSUME for now that a PID list of 2 or more means both audio and video are available
-									chan->dvb.hasvideo = chan->dvb.hasaudio = true;
-								}
-								else if (chan->dvb.pidlist.size() >= 1) {
-									// ASSUME for now that a PID list of 1 or more means at least audio is available
-									chan->dvb.hasaudio = true;
-								}
+								FinaliseChannel(chan);
 							}
 
 							changed |= ((chan->dvb.hasvideo != hadvideo) || (chan->dvb.hasaudio != hadaudio));
