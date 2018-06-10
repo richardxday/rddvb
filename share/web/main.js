@@ -570,7 +570,10 @@ function populateprogs(id)
 					headerstr += '</span>';
 
 					headerstr += '</td><td>';
-					if (typeof prog1.user != 'undefined') {
+					if (typeof prog.user != 'undefined') {
+						headerstr += find('user', getusername(prog.user), 'Seach for programmes assigned to this user');
+					}
+					else if (typeof prog1.user != 'undefined') {
 						headerstr += find('user', getusername(prog1.user), 'Seach for programmes assigned to this user');
 					}
 					else headerstr += '&nbsp;';
