@@ -39,8 +39,9 @@ public:
 	}
 
 	static AString ParsePattern(const AString& _line, PATTERN& pattern, const AString& user = "");
+	static void    AppendTerms(PATTERN& dstpattern, const PATTERN& srcpattern, bool excludeduplicatefields = true);
 	static AString RemoveDuplicateTerms(PATTERN& pattern);
-
+	
 	static bool Match(const ADVBProg& prog, const PATTERN& pattern);
 	static void AssignValues(ADVBProg& prog, const PATTERN& pattern);
 	static void UpdateValues(ADVBProg& prog, const PATTERN& pattern);
@@ -192,8 +193,7 @@ protected:
 		VALUE 		value;
 		PATTERN     *pattern;
 	} TERM;
-
-protected:
+	
 	static bool UpdatePatternInFile(const AString& filename, const AString& pattern, const AString& newpattern);
 	static bool AddPatternToFile(const AString& filename, const AString& pattern);
 
@@ -203,6 +203,7 @@ protected:
 	static const OPERATOR *FindOperator(const PATTERN& pattern, uint_t term);
 
 	static int SortTermsByAssign(uptr_t item1, uptr_t item2, void *context);
+	static TERM *DuplicateTerm(const TERM *term);
 
 	static bool MatchString(const TERM& term, const char *str, bool ignoreinvert = false);
 

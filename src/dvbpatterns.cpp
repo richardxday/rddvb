@@ -682,8 +682,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 
 					i = CheckOrStatement(line, i, orflag);
 
-					if ((subpattern = new PATTERN) != NULL)
-					{
+					if ((subpattern = new PATTERN) != NULL) {
 						AString suberrors = ParsePattern(subline, *subpattern, user);
 
 						if (suberrors.Empty()) {
@@ -1092,6 +1091,33 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 	}
 
 	return errors;
+}
+
+void ADVBPatterns::AppendTerms(PATTERN& dstpattern, const PATTERN& srcpattern, bool excludeduplicatefields)
+{
+	const ADataList& srcterms = srcpattern.list;
+	ADataList& dstterms = dstpattern.list;
+	uint_t i, j = 0;
+
+	for (i = 0; i < srcterms.Count(); i++) {
+		const TERM *srcterm = (const TERM *)srcterms[i];
+
+		if (excludeduplicatefields) {
+			for (j = 0; j < dstterms.Count(); j++) {
+				const TERM *dstterm = (const TERM *)dstterms[j];
+
+				if (srcterm->field == dstterm->field) break;
+			}
+		}
+		
+		if (!excludeduplicatefields || (j == dstterms.Count())) {
+			TERM *dstterm;
+
+			if ((dstterm = DuplicateTerm(srcterm)) != NULL) {
+				dstterms.Add((uptr_t)dstterm);
+			}
+		}
+	}
 }
 
 sint64_t ADVBPatterns::TermTypeToInt64s(const void *p, uint_t termtype)
@@ -1542,6 +1568,30 @@ void ADVBPatterns::UpdateValues(ADVBProg& prog, const PATTERN& pattern)
 	}
 }
 
+ADVBPatterns::TERM *ADVBPatterns::DuplicateTerm(const TERM *term)
+{
+	TERM *term1;
+
+	if ((term1 = new TERM) != NULL) {
+		*term1 = *term;
+
+		switch (term1->field->type) {
+			default:
+				break;
+
+			case FieldType_string:
+				term1->value.str = strdup(term1->value.str);
+				break;
+
+			case FieldType_prog:
+				term1->value.prog = new ADVBProg(*term1->value.prog);
+				break;
+		}
+	}
+
+	return term1;
+}
+
 AString ADVBPatterns::ToString(const VALUE& val, uint8_t fieldtype, uint8_t datetype)
 {
 	ADateTime dt;
@@ -1574,10 +1624,12 @@ AString ADVBPatterns::ToString(const VALUE& val, uint8_t fieldtype, uint8_t date
 			}
 			break;
 		case FieldType_uint32_t:
+		case FieldType_external_uint32_t:
 			str.printf("%lu", (ulong_t)val.u32);
 			break;
 		case FieldType_sint32_t:
-			str.printf("%ld", (slong_t)val.u32);
+		case FieldType_external_sint32_t:
+			str.printf("%ld", (slong_t)val.s32);
 			break;
 		case FieldType_uint16_t:
 			str.printf("%u", (uint_t)val.u16);

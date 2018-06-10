@@ -1741,6 +1741,7 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 
 		if (proglist.ReadFromFile(filename)) {
 			ADVBProgList reslist;
+			uint_t i;
 
 			config.printf("Loaded %u programmes from '%s'", proglist.Count(), filename.str());
 
@@ -1754,9 +1755,34 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 			AString   errors;
 			ReadPatterns(patternlist, errors, false);
 
-			if (errors.Valid()) {
-				uint_t i;
+			std::map<AString, ADVBPatterns::PATTERN> extraterms;
+			AString str;
+			if ((str = config.GetConfigItem("extraterms")).Valid()) {
+				AString errs = ADVBPatterns::ParsePattern(str, extraterms[""]);
+				if (errs.Valid()) {
+					errors += errs + "\n";
+				}
+			}
+			
+			for (i = 0; i < patternlist.Count(); i++) {
+				PATTERN& pattern = *(PATTERN *)patternlist[i];
+				const AString& user = pattern.user;
+								
+				if (user.Valid()) {
+					if ((extraterms.find(user) == extraterms.end()) &&
+						((str = config.GetConfigItem("extraterms:" + user)).Valid())) {
+						AString errs = ADVBPatterns::ParsePattern(str, extraterms[user]);
+						if (errs.Valid()) {
+							errors += errs + "\n";
+						}
+					}
+				}
 
+				ADVBPatterns::AppendTerms(pattern, extraterms[user]);
+				ADVBPatterns::AppendTerms(pattern, extraterms[""]);
+			}
+			
+			if (errors.Valid()) {
 				config.printf("Errors found during parsing:");
 
 				for (i = 0; i < patternlist.Count(); i++) {
@@ -1766,10 +1792,18 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 						config.printf("Parsing '%s': %s", pattern.pattern.str(), pattern.errors.str());
 					}
 				}
+
+				std::map<AString, ADVBPatterns::PATTERN>::iterator it;
+				for (it = extraterms.begin(); it != extraterms.end(); ++it) {
+					const PATTERN& pattern = it->second;
+
+					if (pattern.errors.Valid()) {
+						config.printf("Parsing '%s': %s", pattern.pattern.str(), pattern.errors.str());
+					}
+				}
 			}
 
 			config.printf("Finding programmes using %u patterns", patternlist.Count());
-
 			proglist.FindProgrammes(reslist, patternlist);
 
 			config.logit("Found %u programmes from %u patterns", reslist.Count(), patternlist.Count());
