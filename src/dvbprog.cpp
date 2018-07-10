@@ -852,6 +852,7 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
 		
 	obj.SetObject();
 
+	// NOTE: times are local to PC, NOT UTC
 	obj.AddMember("start", rapidjson::Value(JSONTimeOffset(data->start)), allocator);
 	obj.AddMember("stop", rapidjson::Value(JSONTimeOffset(data->stop)), allocator);
 	if (data->recstart || data->recstop) {

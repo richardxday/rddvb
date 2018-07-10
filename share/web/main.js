@@ -398,39 +398,43 @@ function strpad(num, len)
 	return ('0000' + numstr).slice(-Math.max(len, numstr.length));
 }
 
-function getdatestring(datems)
-{
-	var date = new Date(datems);
-	return daynames[date.getDay()] + ' ' + strpad(date.getDate(), 2) + '-' + monthnames[date.getMonth()] + '-' + date.getFullYear();
-}
-
 function populatedates(prog)
 {
-	if ((typeof prog.start != 'undefined') &&
-		(typeof prog.stop  != 'undefined')) {
-		prog.starttime    = new Date(prog.start).toTimeString().substr(0, 5);
-		prog.stoptime     = new Date(prog.stop).toTimeString().substr(0, 5);
-		prog.startdate    = getdatestring(prog.start);
-	}
+    var locale      = 'en-GB';
+    var timeoptions = {timeZone: 'UTC', hour: '2-digit', minute: '2-digit'};
+    var dateoptions = {timeZone: 'UTC', weekday: 'short', year: 'numeric', month: 'short', day: '2-digit'};
 
-	if ((typeof prog.recstart != 'undefined') &&
-		(typeof prog.recstop  != 'undefined')) {
-		prog.recstarttime = new Date(prog.recstart).toTimeString().substr(0, 5);
-		prog.recstoptime  = new Date(prog.recstop).toTimeString().substr(0, 5);
-		prog.recstartdate = getdatestring(prog.recstart);
-	}
+    if ((typeof prog.start != 'undefined') &&
+        (typeof prog.stop  != 'undefined')) {
+        var startdate = new Date(prog.start);
+        var stopdate  = new Date(prog.stop);
+        prog.starttime    = startdate.toLocaleString(locale, timeoptions);
+        prog.stoptime     = stopdate.toLocaleString(locale, timeoptions);
+        prog.startdate    = startdate.toLocaleString(locale, dateoptions).replace(/, /g, '#').replace(/ /g, '-').replace(/#/g, ' ');
+    }
 
-	if ((typeof prog.actstart != 'undefined') &&
-		(typeof prog.actstop  != 'undefined')) {
-		prog.actstarttime = new Date(prog.actstart).toTimeString().substr(0, 5);
-		prog.actstoptime  = new Date(prog.actstop).toTimeString().substr(0, 5);
-		prog.actstartdate = getdatestring(prog.actstart);
-	}
+    if ((typeof prog.recstart != 'undefined') &&
+        (typeof prog.recstop  != 'undefined')) {
+        var startdate = new Date(prog.recstart);
+        var stopdate  = new Date(prog.recstop);
+        prog.recstarttime    = startdate.toLocaleString(locale, timeoptions);
+        prog.recstoptime     = stopdate.toLocaleString(locale, timeoptions);
+        prog.recstartdate    = startdate.toLocaleString(locale, dateoptions).replace(/, /g, '#').replace(/ /g, '-').replace(/#/g, ' ');
+    }
+
+    if ((typeof prog.actstart != 'undefined') &&
+        (typeof prog.actstop  != 'undefined')) {
+        var startdate = new Date(prog.actstart);
+        var stopdate  = new Date(prog.actstop);
+        prog.actstarttime    = startdate.toLocaleString(locale, timeoptions);
+        prog.actstoptime     = stopdate.toLocaleString(locale, timeoptions);
+        prog.actstartdate    = startdate.toLocaleString(locale, dateoptions).replace(/, /g, '#').replace(/ /g, '-').replace(/#/g, ' ');
+    }
 }
 
 function gettimesearchstring(datems)
 {
-	return (new Date(datems)).toISOString() + ',utctolocal';
+	return (new Date(datems)).toISOString();
 }
 
 function adddownloadlink(prog)
@@ -1145,7 +1149,7 @@ function recordprogramme(id)
 		if (confirm("Re-schedule after adding programme?")) {
 			postdata += "schedule=commit\n";
 		}
-		
+
 		dvbrequest({from:"Combined", titlefilter:pattern, timefilter:defaulttimefilter}, postdata);
 	}
 }
@@ -1781,7 +1785,7 @@ function dvbrequest(filter, postdata, stackrequest)
 		var link = JSON.stringify(filter);
 		document.getElementById("link").innerHTML = '<a href="?' + encodeURIComponent(link) + '">Link</a>';
 	}
-	
+
 	if (((currentfilter == null) ||
 		 (typeof postdata    != 'undefined') ||
 		 ((typeof filter.fetch != 'undefined') && filter.fetch) ||
@@ -1791,7 +1795,7 @@ function dvbrequest(filter, postdata, stackrequest)
 		 (filter.page        != currentfilter.page) ||
 		 (filter.pagesize    != currentfilter.pagesize)) &&
 		!((typeof filter.fetch != 'undefined') && !filter.fetch)) {
-		
+
 		document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
 
 		if ((xmlhttp != null) && (xmlhttp.readState < 4)) {
@@ -1848,7 +1852,7 @@ function dvbrequest(filter, postdata, stackrequest)
 								channels:response.channels,
 							};
 						}
-						
+
 						document.getElementById("errormsg").innerHTML = '';
 						if (typeof response.counts != 'undefined') {
 							if ((typeof response.counts.rejected != 'undefined') && (response.counts.rejected > 0)) {
@@ -2056,7 +2060,7 @@ function showchannels()
 {
 	var str = '', i, j;
 	var validchannels = 0;
-	
+
 	str += '<table class="channellist"><tr>';
 	str += '<th>LCN</th>';
 	str += '<th style="text-align:left">XMLTV Channel</th>';
@@ -2073,14 +2077,14 @@ function showchannels()
 		for (i = 0; i < channels.channels.length; i++) {
 			var channel = channels.channels[i];
 			var valid = false;
-			
+
 			// if ((typeof channel.dvb != 'undefined') &&
 			// 	(typeof channel.dvb.frequency != 'undefined') &&
 			// 	(typeof channel.dvb.pidlist != 'undefined') &&
 			// 	(channel.dvb.pidlist.length > 0)) {
 			{
 				str += '<tr';
-				
+
 				if ((typeof channel.dvb == 'undefined') ||
 					(typeof channel.dvb.lcn == 'undefined') ||
 					(typeof channel.dvb.convertedname == 'undefined') ||
@@ -2097,7 +2101,7 @@ function showchannels()
 					str += '<td>' + channel.dvb.lcn + '</td>';
 				}
 				else str += '<td>&nbsp;</td>';
-				
+
 				if (typeof channel.xmltv != 'undefined') {
 					str += '<td style="text-align:left"';
 					if ((typeof channel.xmltv.name != 'undefined') &&
@@ -2113,7 +2117,7 @@ function showchannels()
 					str += '</td>';
 				}
 				else str += '<td>&nbsp;</td>';
-				
+
 				if (typeof channel.dvb != 'undefined') {
 					str += '<td style="text-align:left"';
 					if ((typeof channel.dvb.name != 'undefined') &&
@@ -2129,7 +2133,7 @@ function showchannels()
 					str += '</td>';
 				}
 				else str += '<td>&nbsp;</td>';
-				
+
 				if ((typeof channel.dvb != 'undefined') &&
 					(typeof channel.dvb.frequency != 'undefined')) {
 					str += '<td>' + channel.dvb.frequency + '</td>';
@@ -2147,7 +2151,7 @@ function showchannels()
 					str += '</td>';
 				}
 				else str += '<td>&nbsp;</td>';
-				
+
 				if ((typeof channel.dvb != 'undefined') &&
 					(typeof channel.dvb.hasvideo != 'undefined') &&
 					(typeof channel.dvb.hasaudio != 'undefined')) {
@@ -2170,8 +2174,8 @@ function showchannels()
 	else {
 		document.getElementById("statusbottom").innerHTML = 'No channel data';
 	}
-	
+
 	str += '</table>';
-	
+
 	document.getElementById("list").innerHTML = str;
 }

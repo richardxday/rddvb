@@ -1641,7 +1641,8 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) con
 		else						 dir = rdir;
 
 		//printf("\nUser '%s' dir '%s' rdir '%s'\n", user.str(), dir.str(), rdir.str());
-
+		//fflush(stdout);
+		
 		CreateDirectory(rdir);
 
 		if (!hash.Exists(rdir)) {
