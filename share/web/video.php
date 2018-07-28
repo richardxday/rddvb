@@ -36,7 +36,7 @@ else {
 	echo "</h1><br>\n";
 
 	//print_r($prog);
-	
+
 	echo '<center><video autoplay controls>' . "\n";
 	echo '<source src="' . $prog['file'] . '" />' . "\n";
 	echo '</video></center>' . "\n";

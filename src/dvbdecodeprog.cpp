@@ -13,7 +13,7 @@
 
 int main(int argc, char *argv[])
 {
-	const ADVBConfig&   config = ADVBConfig::Get();
+	const ADVBConfig&   config = ADVBConfig::Get(true);
 	rapidjson::Document doc;
 	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 	ADVBProg prog;	// ensure ADVBProg initialisation takes place
