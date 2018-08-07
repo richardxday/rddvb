@@ -87,11 +87,11 @@ table.patternlist input
 {
 	width:100%;
 }
-table.proglist tr,table.patternlist tr,table.patternlist input
+table.proglist tr,table.patternlist tr,table.patternlist input,table.titlelist tr
 {
 	background-color:#eee;
 }
-table.proglist tr:hover,table.patternlist tr:hover
+table.proglist tr:hover,table.patternlist tr:hover,table.titlelist tr:hover
 {
 	background-color:#ddd;
 }
@@ -120,7 +120,7 @@ table.proglist tr.recorded:hover
 {
 	background-color:#88e;
 }
-table.proglist tr.scheduled,table.patternlist tr.enabled,table.titlelist tr
+table.proglist tr.scheduled,table.patternlist tr.enabled
 {
 	background-color:#8f8;
 }
@@ -140,7 +140,7 @@ table.channellist tr.error:hover
 {
 	background-color:#daa;
 }
-table.proglist tr.scheduled:hover,table.patternlist tr.enabled:hover,table.titlelist tr:hover
+table.proglist tr.scheduled:hover,table.patternlist tr.enabled:hover
 {
 	background-color:#7e7;
 }

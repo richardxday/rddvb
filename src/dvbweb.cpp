@@ -635,7 +635,7 @@ int main(int argc, char *argv[])
 						if (title) {
 							if (prog.IsRecorded() || (recordedlist.FindSimilar(prog) != NULL))   title->counts.recorded++;
 							if (AStdFile::exists(prog.GetFilename()))                            title->counts.available++;
-							if (prog.IsScheduled() || (scheduledlist.FindSimilar(prog) != NULL)) title->counts.scheduled++;
+							if (prog.IsScheduled() || (scheduledlist.FindUUID(prog) != NULL))    title->counts.scheduled++;
 							if (prog.HasRecordFailed())               						  	 title->counts.failed++;
 							if (prog.IsFilm())			              						  	 title->counts.isfilm++;
 							else						              						  	 title->counts.notfilm++;
