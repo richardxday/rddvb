@@ -45,8 +45,12 @@ var filters = [
 		filter:{from:"Failures",titlefilter:"",timefilter:defaulttimefilter,expanded:-1,fetch:true},
 	},
 	{
-		title:"Titles",
-		filter:{from:"Titles",titlefilter:"",timefilter:"",expanded:-1,fetch:true},
+		title:"Titles (Combined)",
+		filter:{from:"Titles (Combined)",titlefilter:"",timefilter:"",expanded:-1,fetch:true},
+	},
+	{
+		title:"Titles (Listings)",
+		filter:{from:"Titles (Listings)",titlefilter:"",timefilter:"",expanded:-1,fetch:true},
 	},
 	{
 		title:"Patterns",
@@ -1088,6 +1092,13 @@ function populatetitles(id)
 	if ((typeof response.titles != 'undefined') && (response.for > 0)) {
 		var status = showstatus('titles');
 		var pattern = '';
+		var from = 'Combined';
+		var p1, p2;
+
+		if (((p1 = currentfilter.from.search("\\(")) >= 0) &&
+			((p2 = currentfilter.from.search("\\)", p1)) >= 0)) {
+			from = currentfilter.from.substr(p1 + 1, p2 - p1 - 1);
+		}
 
 		proglistelement = '';
 
@@ -1107,12 +1118,13 @@ function populatetitles(id)
 				str += '<tr';
 
 				if ((title.isfilm > 0) && (title.notfilm == 0)) str += ' class="film"';
-				str += '><td style="text-align:left;">' + findfromfilter('Combined', 'title="' + title.title + '"', '', title.title, 'Find all versions of this title') + '</td>';
-				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '"', '', title.total + ' In Total', 'Find recorded, available, scheduled and failed versions of this title') + '</td>';
-				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" recorded', '', title.recorded + ' Recorded', 'Find recorded versions of this title') + '</td>';
-				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" available', '', title.available + ' Available', 'Find recorded versions of this title that are available') + '</td>';
-				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" scheduled', '', title.scheduled + ' Scheduled', 'Find scheduled versions of this title') + '</td>';
-				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" failed', '', title.failed + ' Failed', 'Find failed versions of this title') + '</td>';
+				str += '><td style="text-align:left;">';
+				str +=          findfromfilter(from, 'title="' + title.title + '"', '', title.title, 'Find all versions of this title') + '</td>';
+				str += '<td>' + findfromfilter(from, pattern + 'title="' + title.title + '"', '', title.total + ' In Total', 'Find recorded, available, scheduled and failed versions of this title') + '</td>';
+				str += '<td>' + findfromfilter(from, pattern + 'title="' + title.title + '" recorded', '', title.recorded + ' Recorded', 'Find recorded versions of this title') + '</td>';
+				str += '<td>' + findfromfilter(from, pattern + 'title="' + title.title + '" available', '', title.available + ' Available', 'Find recorded versions of this title that are available') + '</td>';
+				str += '<td>' + findfromfilter(from, pattern + 'title="' + title.title + '" scheduled', '', title.scheduled + ' Scheduled', 'Find scheduled versions of this title') + '</td>';
+				str += '<td>' + findfromfilter(from, pattern + 'title="' + title.title + '" failed', '', title.failed + ' Failed', 'Find failed versions of this title') + '</td>';
 
 				str += '</tr>';
 			}
@@ -1869,9 +1881,9 @@ function dvbrequest(filter, postdata, stackrequest)
 							patterns[0] = searchpattern;
 						}
 
-						populate(filter.expanded);
-
 						updatecurrentfilter(filter);
+
+						populate(filter.expanded);
 					}
 					else document.getElementById("status").innerHTML = "<h1>Server returned error " + xmlhttp.status + "</h1>";
 				}

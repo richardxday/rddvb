@@ -406,8 +406,11 @@ int main(int argc, char *argv[])
 		else if (from == "processing") {
 			proglist = &processinglist;
 		}
-		else if (from == "titles") {
+		else if (from == "titles (combined)") {
 			proglist   = &combinedlist;
+			datasource = DataSource_Titles;
+		}
+		else if (from == "titles (listings)") {
 			datasource = DataSource_Titles;
 		}
 		else if (from == "patterns") {
@@ -630,12 +633,12 @@ int main(int argc, char *argv[])
 						}
 
 						if (title) {
-							if (prog.IsRecorded())  	              title->counts.recorded++;
-							if (AStdFile::exists(prog.GetFilename())) title->counts.available++;
-							if (prog.IsScheduled()) 	              title->counts.scheduled++;
-							if (prog.HasRecordFailed())               title->counts.failed++;
-							if (prog.IsFilm())			              title->counts.isfilm++;
-							else						              title->counts.notfilm++;
+							if (prog.IsRecorded() || (recordedlist.FindSimilar(prog) != NULL))   title->counts.recorded++;
+							if (AStdFile::exists(prog.GetFilename()))                            title->counts.available++;
+							if (prog.IsScheduled() || (scheduledlist.FindSimilar(prog) != NULL)) title->counts.scheduled++;
+							if (prog.HasRecordFailed())               						  	 title->counts.failed++;
+							if (prog.IsFilm())			              						  	 title->counts.isfilm++;
+							else						              						  	 title->counts.notfilm++;
 							title->counts.total++;
 						}
 					}
@@ -691,7 +694,7 @@ int main(int argc, char *argv[])
 								rapidjson::Value subobj2, subobj3;
 								AString title  = line.Left(p).Words(0);
 								AString search = line.Mid(p + 1).Words(0);
-								AString from   = search.Word(0);
+								AString from   = search.Word(0).DeQuotify();
 								AString filter = search.Words(1);
 
 								subobj2.SetObject();
