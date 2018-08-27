@@ -84,7 +84,7 @@ void findcards(void)
 							}
 						}
 					}
-					
+
 					if (cardname.Valid() && locked) break;
 				}
 

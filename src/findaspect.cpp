@@ -103,7 +103,7 @@ static void newsubtable(dvbpsi_t *p_dvbpsi, uint8_t table_id, uint16_t extension
 {
 	(void)p_zero;
 
-	
+
 	if ((table_id >= 0x4e) && (table_id <= 0x5f))
 	{
 		if (!dvbpsi_eit_attach(p_dvbpsi, table_id, extension, dumpeit, NULL))
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
 				if (pid == 0x12) dvbpsi_packet_push(p_dvbpsi, data);
 				b_ok = ReadPacket(*fp, data, sizeof(data));
 			}
-			
+
 			dvbpsi_DetachDemux(p_dvbpsi);
 		}
 		else fprintf(stderr, "Failed to attach demux to dvbpsi handler\n");

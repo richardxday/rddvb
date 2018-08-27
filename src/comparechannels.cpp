@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
 						channel.lcn = 0;
 						channel.othernames.resize(argc - 2);
-						
+
 						if ((_id = node->FindAttribute("id")) != NULL) {
 							channel.xmltv.id = _id->Value;
 						}
@@ -99,14 +99,14 @@ int main(int argc, char *argv[])
 		const ADVBChannelList& channellist = ADVBChannelList::Get();
 		uint_t i;
 		size_t j;
-		
+
 		for (i = 0; i < 1000; i++) {
 			const ADVBChannelList::CHANNEL *chan;
 
 			if ((chan = channellist.GetChannelByLCN(i)) != NULL) {
 				for (j = 0; j < channels.size(); j++) {
 					channel_t& channel = channels[j];
-					
+
 					if (channel.lcn == chan->dvb.lcn) {
 						channel.dvb.name = chan->dvb.channelname;
 						break;
@@ -115,11 +115,11 @@ int main(int argc, char *argv[])
 
 				if (j == channels.size()) {
 					channel_t channel;
-								
+
 					channel.lcn = chan->dvb.lcn,
 					channel.othernames.resize(argc - 2);
 					channel.dvb.name = chan->dvb.channelname;
-								
+
 					channels.push_back(channel);
 				}
 			}
@@ -138,11 +138,11 @@ int main(int argc, char *argv[])
 
 			for (round = 0; !done && (round < 3); round++) {
 				AString line;
-				
+
 				fp.rewind();
 
 				done = true;
-			
+
 				while (line.ReadLn(fp) >= 0) {
 					if (line.CountWords() > 1) {
 						uint_t  lcn  = line.Word(0);
@@ -168,11 +168,11 @@ int main(int argc, char *argv[])
 
 							if ((j == channels.size() && (round == 2))) {
 								channel_t channel;
-								
+
 								channel.lcn = lcn,
 								channel.othernames.resize(argc - 2);
 								channel.othernames[index] = name;
-								
+
 								channels.push_back(channel);
 								channelsdone[name] = true;
 								done = false;
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 
 		table.rows.push_back(row);
 	}
-	
+
 	for (j = 0; j < channels.size(); j++) {
 		const channel_t& channel = channels[j];
 		TABLEROW row;
@@ -225,6 +225,6 @@ int main(int argc, char *argv[])
 	}
 
 	PrintTable(table);
-	
+
 	return 0;
 }

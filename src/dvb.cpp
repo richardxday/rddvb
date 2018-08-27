@@ -219,7 +219,7 @@ int main(int argc, const char *argv[])
 		config.ReportDirectoryCreationErrors()) {
 		res = -1;
 	}
-	
+
 #if 0
 	if (argc == 1) {
 		ADVBLock lock("dvbfiles");
@@ -1139,7 +1139,7 @@ int main(int argc, const char *argv[])
 				ADVBProgList reclist;
 				AString      reclistfilename = config.GetRecordedFile();
 				uint_t       nchanges = 0;
-				
+
 				if (reclist.ReadFromFile(reclistfilename)) {
 					AList files;
 
@@ -1148,7 +1148,7 @@ int main(int argc, const char *argv[])
 					CollectFiles(config.GetRecordingsStorageDir(), "*." + config.GetRecordedFileSuffix(), 0, files, FILE_FLAG_IS_DIR, 0, &QuitHandler);
 
 					printf("--------------------------------------------------------------------------------\n");
-					
+
 					// iterate through files
 					const AString *str = AString::Cast(files.First());
 					while (str && !HasQuit()) {
@@ -1163,7 +1163,7 @@ int main(int argc, const char *argv[])
 							if (!proglist[j].IsRecorded() &&
 								(filename == proglist[j].GenerateFilename())) {
 								const ADVBProg *sprog;
-							
+
 								// make sure it's not already in the recorded list
 								if ((sprog = reclist.FindUUID(proglist[j])) != NULL) {
 									printf("Already recorded as '%s'\n", sprog->GetQuickDescription().str());
@@ -1185,11 +1185,11 @@ int main(int argc, const char *argv[])
 									prog.SetActualStop(prog.GetRecordStop());
 									prog.SetRecordingComplete();
 									prog.UpdateFileSize();
-								
+
 									reclist.AddProg(prog);
 
 									printf("\nAdded programme:\n\n%s", prog.GetDescription(2).str());
-								
+
 									nchanges++;
 									break;
 								}
@@ -1229,7 +1229,7 @@ int main(int argc, const char *argv[])
 			else if (strcmp(argv[i], "--dvbcard") == 0) {
 				dvbcard = (uint_t)AString(argv[++i]);
 				dvbcardspecified = true;
-				
+
 				config.GetPhysicalDVBCard(0);
 				printf("Switched to using physical card %u\n", dvbcard);
 			}
@@ -1237,7 +1237,7 @@ int main(int argc, const char *argv[])
 				ADVBChannelList& list = ADVBChannelList::Get();
 				const AString 	 channel = argv[++i];
 				AString 	  	 pids;
-				
+
 				if (config.GetRecordingSlave().Valid()) {
 					// MUST write channels if they have been updated
 					list.Write();
@@ -1319,11 +1319,11 @@ int main(int argc, const char *argv[])
 			}
 			else if (strcmp(argv[i], "--find-channels") == 0) {
 				ADVBChannelList& list = ADVBChannelList::Get();
-				
+
 				if (config.GetRecordingSlave().Valid()) {
 					// MUST write channels if they have been updated
 					list.Write();
-					
+
 					printf("Finding channels on recording slave '%s'\n", config.GetRecordingSlave().str());
 
 					// run update script on recording slave then pull the results back
@@ -2043,15 +2043,15 @@ int main(int argc, const char *argv[])
 			}
 			else if (stricmp(argv[i], "--check-video-files") == 0) {
 				uint_t j;
-				
+
 				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
 					const ADVBProg& prog = proglist.GetProg(j);
 					uint_t nerrors;
-					
+
 					if (prog.GetVideoErrorCount(nerrors)) {
 						printf("%s: %u\n", prog.GetQuickDescription().str(), nerrors);
 					}
-				}				
+				}
 			}
 			else if ((stricmp(argv[i], "--stream") == 0) ||
 					 (stricmp(argv[i], "--rawstream") == 0)) {

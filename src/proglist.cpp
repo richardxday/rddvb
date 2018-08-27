@@ -1619,7 +1619,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) con
 	bool     okay  = true;
 
 	obj.SetArray();
-	
+
 	if (runcmd) {
 		filename = config.GetTempFile("patterndiskspace", ".txt");
 		if (fp.open(filename, "w")) {
@@ -1642,7 +1642,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) con
 
 		//printf("\nUser '%s' dir '%s' rdir '%s'\n", user.str(), dir.str(), rdir.str());
 		//fflush(stdout);
-		
+
 		CreateDirectory(rdir);
 
 		if (!hash.Exists(rdir)) {
@@ -1656,7 +1656,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) con
 
 				if (allocator) {
 					rapidjson::Value subobj;
-					
+
 					subobj.SetObject();
 
 					subobj.AddMember("user", rapidjson::Value(user.str(), *allocator), *allocator);
@@ -1709,7 +1709,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) con
 	if (allocator) {
 		doc->AddMember("diskspace", obj, *allocator);
 	}
-	
+
 	return okay;
 }
 
@@ -1764,11 +1764,11 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 					errors += errs + "\n";
 				}
 			}
-			
+
 			for (i = 0; i < patternlist.Count(); i++) {
 				PATTERN& pattern = *(PATTERN *)patternlist[i];
 				const AString& user = pattern.user;
-								
+
 				if (user.Valid()) {
 					if ((extraterms.find(user) == extraterms.end()) &&
 						((str = config.GetConfigItem("extraterms:" + user)).Valid())) {
@@ -1782,7 +1782,7 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 				ADVBPatterns::AppendTerms(pattern, extraterms[user]);
 				ADVBPatterns::AppendTerms(pattern, extraterms[""]);
 			}
-			
+
 			if (errors.Valid()) {
 				config.printf("Errors found during parsing:");
 

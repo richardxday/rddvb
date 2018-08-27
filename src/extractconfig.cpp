@@ -15,7 +15,7 @@ int main(void)
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProg prog;
 	size_t i, j;
-	
+
 	(void)prog;
 
 	config.SetConfigRecorder(&configrecord);
@@ -32,7 +32,7 @@ int main(void)
 			else j++;
 		}
 	}
-	
+
 	for (i = 0; i < configrecord.size(); i++) {
 		printf("%s\n", configrecord[i].str());
 	}

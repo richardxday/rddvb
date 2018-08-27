@@ -47,7 +47,7 @@ bool RunAndLogCommand(const AString& cmd)
 	if (config.LogRemoteCommands()) {
 		config.logit("Running '%s'", cmd1.str());
 	}
-	
+
 	bool success = (system(cmd1) == 0);
 	if (!success) config.logit("Command '%s' failed", cmd.str());
 
@@ -206,4 +206,3 @@ bool MoveFile(const AString& src, const AString& dst, bool binary)
 
 	return success;
 }
-

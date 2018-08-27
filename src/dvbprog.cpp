@@ -127,7 +127,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
 	DEFINE_FLAG_ASSIGN(partial,		  	Flag_partialpattern,    	"Pattern is partial and not complete"),
 	DEFINE_FLAG_ASSIGN(ignorelatestart, Flag_ignorelatestart,		"Allow programme to be recorded even if is late starting"),
 	DEFINE_FLAG_ASSIGN(recordifmissing, Flag_recordifmissing,		"Allow programme to be recorded if it has been recorded already but the file doesn't exist"),
-	
+
 	DEFINE_ASSIGN(pri,        			pri,        	sint8_t,  	"Scheduling priority"),
 	DEFINE_ASSIGN(score,	  			score,			sint16_t, 	"Record score"),
 	DEFINE_ASSIGN(prehandle,  			prehandle,  	uint16_t, 	"Record pre-handle (minutes)"),
@@ -203,7 +203,7 @@ void ADVBProg::StaticInit()
 		const ADVBConfig& config = ADVBConfig::Get();
 		uint_t i;
 
-		
+
 		for (i = 0; i < NUMBEROF(fields); i++) {
 			fieldhash.Insert(fields[i].name, (uptr_t)(fields + i));
 		}
@@ -456,7 +456,7 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 		case Flag_convertedexists:
 			set = IsAvailable(true);
 			break;
-			
+
 		case Flag_unconvertedexists:
 			set = IsAvailable(false);
 			break;
@@ -472,18 +472,18 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 		case Flag_radioprogramme: {
 			const ADVBChannelList& channelist = ADVBChannelList::Get();
 			const ADVBChannelList::CHANNEL *channel = channelist.GetChannelByName(GetDVBChannel());
-			
+
 			set = (channel && channel->dvb.hasaudio && !channel->dvb.hasvideo);
 			break;
-		}			
+		}
 
 		case Flag_tvprogramme: {
 			const ADVBChannelList& channelist = ADVBChannelList::Get();
 			const ADVBChannelList::CHANNEL *channel = channelist.GetChannelByName(GetDVBChannel());
-			
+
 			set = (channel && channel->dvb.hasaudio && channel->dvb.hasvideo);
 			break;
-		}			
+		}
 	}
 
 	return set;
@@ -849,7 +849,7 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
 	const ADVBConfig& config = ADVBConfig::Get();
 	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 	const char *p;
-		
+
 	obj.SetObject();
 
 	// NOTE: times are local to PC, NOT UTC
@@ -985,7 +985,7 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
 				subobj.AddMember(rapidjson::Value(fields[i].name, allocator), rapidjson::Value(GetFlag(fields[i].type - ADVBPatterns::FieldType_flag)), allocator);
 			}
 		}
-		
+
 		obj.AddMember("flags", subobj, allocator);
 	}
 
@@ -995,7 +995,7 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
 		uint_t rate = GetRate() / 1024;
 		if (rate) obj.AddMember("rate", rapidjson::Value(rate), allocator);
 	}
-	
+
 	if (data->assignedepisode) obj.AddMember("assignedepisode", rapidjson::Value(data->assignedepisode), allocator);
 	if (data->year) obj.AddMember("year", rapidjson::Value(data->year), allocator);
 
@@ -1025,7 +1025,7 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
 				obj.AddMember("file", rapidjson::Value(relpath, allocator), allocator);
 
 				subobj.SetArray();
-				
+
 				const AString *subfile = AString::Cast(subfiles.First());
 				while (subfile) {
 					if ((*subfile != filename) && (relpath = config.GetRelativePath(*subfile)).Valid()) {
@@ -1478,7 +1478,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 				if (HasConversionFailed())  str1.printf("Conversion");
 				str1.printf(" failed ** ");
 			}
-			
+
 			if (IsPostProcessing()) str1.printf(" Currently being post-processed.");
 
 			bool exists = AStdFile::exists(GetFilename());
@@ -1764,7 +1764,7 @@ AString ADVBProg::GetAttributedConfigItem(const AString& name, const AString& de
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	std::vector<AString> list;
-	
+
 	list.push_back(ADVBConfig::Combine(name, GetUUID()));
 	list.push_back(ADVBConfig::Combine(name, GetTitle()));
 	list.push_back(ADVBConfig::Combine(GetUser(), name));
@@ -1789,7 +1789,7 @@ AString ADVBProg::SanitizeString(const AString& str, bool filesystem, bool dir)
 		}
 	}
 	else res = str;
-	
+
 	return res;
 }
 
@@ -1864,7 +1864,7 @@ AString ADVBProg::GenerateFilename(bool converted) const
 		if (subdir.Empty()) {
 			subdir = GetRecordingsSubDir();
 		}
-		
+
 		dir = CatPath(config.GetRecordingsDir(), subdir);
 	}
 	else dir = config.GetRecordingsStorageDir();
@@ -2068,7 +2068,7 @@ void ADVBProg::SetPriorityScore(const ADateTime& starttime)
 	if (list) priority_score += (double)GetAttributedConfigItem(repeatsscalename, "-1.0") * (double)(list->size() - 1);
 
 	priority_score += (double)GetAttributedConfigItem(delayscalename, "-.5") * (double)(GetStartDT().GetDays() - starttime.GetDays());
-	
+
 	if (GetRecordStart() > GetStart()) {
 		// for each minute the recording is *late* starting, drop the priority by 2
 		priority_score += (double)GetAttributedConfigItem(latescalename, "-2.0") * (double)(GetRecordStart() - GetStart()) / 60000.0;
@@ -2193,7 +2193,7 @@ AString ADVBProg::GenerateRecordCommand(uint_t nsecs, const AString& pids) const
 	cmd.printf("%s >\"%s\"",
 			   GenerateStreamCommand(GetDVBCard(),
 									 nsecs,
-									 pids, 
+									 pids,
 									 config.GetLogFile().str()).str(),
 			   GetTempFilename().str());
 
@@ -2213,10 +2213,10 @@ bool ADVBProg::UpdateFileSize()
 
 		if (GetActualLengthFallback() > 0) {
 			uint64_t divisor = (uint64_t)1024U * GetActualLengthFallback();
-			
+
 			rate = (uint32_t)(((uint64_t)1000U * info.FileSize + divisor / 2U) / divisor);
 		}
-		
+
 		config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s%s",
 					  GetFilename(),
 					  AValue(info.FileSize / ((uint64_t)1024U * (uint64_t)1024U)).ToString().str(),
@@ -2289,7 +2289,7 @@ void ADVBProg::Record()
 
 			// write updated channels to file, if changed
 			ADVBChannelList::Get().Write();
-			
+
 			if (pids.CountWords() < 2) {
 				config.printf("No pids for '%s'", GetQuickDescription().str());
 				failed = true;
@@ -2400,7 +2400,7 @@ void ADVBProg::Record()
 				if (dircreationerrors.Valid()) dircreationerrors.printf("\n");
 				dircreationerrors.printf("Failed to create directory '%s' for final file", filename.PathPart().str());
 			}
-			
+
 			config.printf("Recording '%s' for %u seconds (%u minutes) to '%s' using freq %uHz PIDs %s",
 						  GetTitleAndSubtitle().str(),
 						  nsecs, ((nsecs + 59) / 60),
@@ -2434,7 +2434,7 @@ void ADVBProg::Record()
 				AString  str;
 				uint64_t dt = GetActualStop();
 				uint64_t st = GetStop();
-				
+
 				if (rename(GetTempFilename(), GetFilename()) == 0) {
 					SetRecordingComplete();
 
@@ -2463,7 +2463,7 @@ void ADVBProg::Record()
 										  GetTitleAndSubtitle().str(),
 										  AValue(MAX((sint64_t)(data->actstart - MIN(data->start, data->recstart)), 0) / 1000).ToString().str(),
 										  AValue(MAX((sint64_t)(data->recstop  - data->actstop), 0) / 1000).ToString().str());
-							
+
 							// force reschedule
 							reschedule = true;
 						}
@@ -2479,7 +2479,7 @@ void ADVBProg::Record()
 
 							reschedule |= config.RescheduleAfterDeletingPattern(GetUser(), GetModifiedCategory());
 						}
-						
+
 						bool success = true;
 						if (!PostRecord()) {
 							SetRecordFailed();
@@ -2766,7 +2766,7 @@ void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const st
 			dircreationerrors.printf("Failed to create directory '%s' for subs", subsdir.str());
 		}
 	}
-	
+
 	if (GetFileInfo(subsdir, &info)) {
 		AString srcsubfile = src.Prefix() + ".sup.idx";
 		AString dstsubfile = dst.PathPart().CatPath("subs", dst.FilePart().Prefix() + ".sup.idx");
@@ -2777,7 +2777,7 @@ void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const st
 				if (dircreationerrors.Valid()) dircreationerrors.printf("\n");
 				dircreationerrors.printf("Failed to create directory '%s' for subs files", dstsubfile.PathPart().str());
 			}
-			
+
 			if (fp2.open(dstsubfile, "w")) {
 				AString line;
 
@@ -2891,7 +2891,7 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 			if (i) append.printf("-%u", i);
 
 			finaldst = outputfile.Prefix() + append + "." + outputfile.Suffix();
-			
+
 			config.printf("Moving file '%s' to final destination '%s'", tempdst.str(), finaldst.str());
 			success &= MoveFile(tempdst, finaldst, true);
 		}
@@ -2936,7 +2936,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 			config.printf("'%s': %u video errors", GetQuickDescription().str(), nerrors);
 		}
 	}
-		
+
 	if (!force && AStdFile::exists(dst)) {
 		config.printf("Warning: destination '%s' exists, assuming conversion is complete", dst.str());
 		SetFilename(dst);
@@ -3296,7 +3296,7 @@ bool ADVBProg::IsRecordable() const
 	const ADVBConfig& config = ADVBConfig::Get();
 	uint64_t now             = (uint64_t)ADateTime().TimeStamp(true);
 	uint64_t graceperiod = config.GetLatestStart() * (uint64_t)60 * (uint64_t)1000;
-	
+
 	return (((data->start + graceperiod) >= now) && GetDVBChannel()[0]);
 }
 
@@ -3341,7 +3341,7 @@ bool ADVBProg::SetFlag(const AString& name, bool set)
 		SetFlag((uint8_t)n, set);
 		success = true;
 	}
-	
+
 	return success;
 }
 
@@ -3354,11 +3354,11 @@ bool ADVBProg::GetFlag(const AString& name) const
 {
 	sint_t n;
 	bool state = false;
-	
+
 	if ((n = GetFlagNumber(name)) >= 0) {
 		state = GetFlag((uint8_t)n);
 	}
-	
+
 	return state;
 }
 
@@ -3456,7 +3456,7 @@ bool ADVBProg::GetVideoErrorCount(uint_t& count) const
 			config.logit("File '%s' doesn't exist, trying archive filename '%s'", filename.str(), GetArchiveRecordingFilename().str());
 			filename = GetArchiveRecordingFilename();
 		}
-		
+
 		if (AStdFile::exists(filename)) {
 			AString tempfile = config.GetTempFile("errorcheck", ".txt");
 
@@ -3479,7 +3479,7 @@ bool ADVBProg::GetVideoErrorCount(uint_t& count) const
 				else config.logit("'%s': failed to open log file '%s'", GetTitleAndSubtitle().str(), tempfile.str());
 			}
 			else config.logit("'%s': failed to run command '%s'", GetTitleAndSubtitle().str(), cmd.str());
-			
+
 			remove(tempfile);
 		}
 		else config.logit("'%s': archive file '%s' doesn't exist", GetTitleAndSubtitle().str(), filename.str());

@@ -103,5 +103,3 @@ void ADVBEpisodeHandler::AssignEpisode(ADVBProg& prog, bool ignorerepeats)
 		}
 	}
 }
-
-

@@ -17,7 +17,7 @@ ADVBDatabase::ADVBDatabase() : database(new PostgresDatabase())
 ADVBDatabase::~ADVBDatabase()
 {
 	Close();
-	
+
 	if (database) delete database;
 }
 
@@ -86,7 +86,7 @@ bool ADVBDatabase::Open()
 			debug("Failed to connect to DB server '%s' as user '%s'\n", host.str(), username.str());
 		}
 	}
-	
+
 	return IsOpen();
 }
 

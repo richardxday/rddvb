@@ -733,7 +733,7 @@ int main(int argc, char *argv[])
 				case DataSource_Progs: {
 					rapidjson::Value obj;
 					bool testsimilar = ((uint_t)config.GetConfigItem("testsimilarprogrammes", "0") != 0);
-					
+
 					obj.SetArray();
 
 					for (i = 0; (i < count) && !HasQuit(); i++) {
@@ -756,12 +756,12 @@ int main(int argc, char *argv[])
 
 							subobj.AddMember("recorded", subobj2, allocator);
 						}
-						
+
 						if (((prog2 = scheduledlist.FindSimilar(prog)) != NULL) &&
 							(prog2 != &prog) &&
 							(!testsimilar || ADVBPatterns::Match(*prog2, filterpattern))) {
 							rapidjson::Value subobj2;
-							
+
 							prog2->ExportToJSON(doc, subobj2, true);
 
 							addpattern(doc, subobj2, patterns, *prog2);

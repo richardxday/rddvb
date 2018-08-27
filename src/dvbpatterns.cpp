@@ -431,13 +431,13 @@ rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc
 		rapidjson::Value subobj;
 
 		subobj.SetArray();
-	
+
 		for (i = 0; i < nfields; i++) {
 			rapidjson::Value subobj2, subobj3;
 			const FIELD& field = fields[i];
 
 			subobj2.SetObject();
-			
+
 			subobj2.AddMember("name", rapidjson::Value(field.name, allocator), allocator);
 			subobj2.AddMember("desc", rapidjson::Value(field.desc, allocator), allocator);
 			subobj2.AddMember("type", rapidjson::Value(field.type), allocator);
@@ -466,7 +466,7 @@ rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc
 		rapidjson::Value subobj;
 
 		subobj.SetObject();
-		
+
 		for (i = 0; i < nfields; i++) {
 			const FIELD& field = fields[i];
 
@@ -486,7 +486,7 @@ rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc
 			const OPERATOR& oper = operators[j];
 
 			subobj2.SetObject();
-			
+
 			subobj2.AddMember("text", rapidjson::Value(oper.str, allocator), allocator);
 			subobj2.AddMember("desc", rapidjson::Value(oper.desc, allocator), allocator);
 			subobj2.AddMember("opcode", rapidjson::Value(oper.opcode), allocator);
@@ -494,7 +494,7 @@ rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc
 
 			subobj.PushBack(subobj2, allocator);
 		}
-		
+
 		obj.AddMember("operators", subobj, allocator);
 	}
 
@@ -514,7 +514,7 @@ rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc
 
 			subobj.PushBack(subobj2, allocator);
 		}
-		
+
 		obj.AddMember("orflags", subobj, allocator);
 	}
 
@@ -1111,7 +1111,7 @@ void ADVBPatterns::AppendTerms(PATTERN& dstpattern, const PATTERN& srcpattern, b
 				if (srcterm->field == dstterm->field) break;
 			}
 		}
-		
+
 		if (!excludeduplicatefields || (j == dstterms.Count())) {
 			TERM *dstterm;
 

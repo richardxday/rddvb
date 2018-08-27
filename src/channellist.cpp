@@ -35,9 +35,9 @@ ADVBChannelList::~ADVBChannelList()
 bool ADVBChannelList::__SortChannels(const CHANNEL *chan1, const CHANNEL *chan2)
 {
 	bool chan1beforechan2 = false;
-	
+
 	if ((chan1->dvb.lcn == 0) && (chan2->dvb.lcn == 0)) {
-		// neither has LCN, sort alphabetically by DVB channel 
+		// neither has LCN, sort alphabetically by DVB channel
 		chan1beforechan2 = (CompareNoCase(chan1->dvb.channelname, chan2->dvb.channelname) < 0);
 	}
 	else if (chan1->dvb.lcn == 0) {
@@ -53,7 +53,7 @@ bool ADVBChannelList::__SortChannels(const CHANNEL *chan1, const CHANNEL *chan2)
 		chan1beforechan2 = (chan1->dvb.lcn < chan2->dvb.lcn);
 	}
 	else {
-		// both LCN's are the same, sort alphabetically by DVB channel 
+		// both LCN's are the same, sort alphabetically by DVB channel
 		chan1beforechan2 = (CompareNoCase(chan1->dvb.channelname, chan2->dvb.channelname) < 0);
 	}
 
@@ -84,7 +84,7 @@ bool ADVBChannelList::ForceChannelAudioAndVideoFlags(CHANNEL *channel)
 		// no PIDS, no audio or video
 		channel->dvb.hasvideo = channel->dvb.hasaudio = false;
 	}
-	
+
 	return ((channel->dvb.hasvideo != hadvideo) || (channel->dvb.hasaudio != hadaudio));
 }
 
@@ -94,9 +94,9 @@ bool ADVBChannelList::Read()
 	ADVBLock lock("dvbfiles");
 	AStdFile fp;
 	bool     success = false;
-	
+
 	DeleteAll();
-	
+
 #if PREFER_JSON
 	AString json;
 
@@ -105,13 +105,13 @@ bool ADVBChannelList::Read()
 		rapidjson::Document doc;
 
 		config.printf("Reading channels from '%s'...", config.GetDVBChannelsJSONFile().str());
-		
+
 		if (!doc.Parse(json).HasParseError()) {
 			if (doc.IsArray()) {
 				size_t i;
 
 				success = true;
-				
+
 				for (i = 0; i < doc.Size(); i++) {
 					if (doc[i].IsObject()) {
 						const rapidjson::Value& chanobj = doc[i];
@@ -123,14 +123,14 @@ bool ADVBChannelList::Read()
 							chan->dvb.freq = 0;
 							chan->dvb.hasaudio = false;
 							chan->dvb.hasvideo = false;
-							
+
 							if (chanobj.HasMember("dvb")) {
 								const rapidjson::Value& subobj = chanobj["dvb"];
-								
+
 								if (subobj.HasMember("lcn") && subobj["lcn"].IsNumber()) {
 									chan->dvb.lcn = subobj["lcn"].GetUint();
 								}
-								
+
 								if (subobj.HasMember("name") && subobj["name"].IsString()) {
 									chan->dvb.channelname = subobj["name"].GetString();
 
@@ -152,7 +152,7 @@ bool ADVBChannelList::Read()
 									chan->dvb.hasvideo = true;
 									changed = true;
 								}
-								
+
 								if (subobj.HasMember("hasaudio") && subobj["hasaudio"].IsBool()) {
 									chan->dvb.hasaudio = subobj["hasaudio"].GetBool();
 								}
@@ -172,10 +172,10 @@ bool ADVBChannelList::Read()
 									}
 								}
 							}
-							
+
 							if (chanobj.HasMember("xmltv")) {
 								const rapidjson::Value& subobj = chanobj["xmltv"];
-																
+
 								if (subobj.HasMember("sdchannelid") && subobj["sdchannelid"].IsNumber()) {
 									chan->xmltv.sdchannelid = subobj["sdchannelid"].GetUint();
 								}
@@ -189,7 +189,7 @@ bool ADVBChannelList::Read()
 										xmltvchannelmap[chan->xmltv.convertedchannelname.ToLower()] = chan;
 									}
 								}
-																
+
 								if (subobj.HasMember("id") && subobj["id"].IsString()) {
 									chan->xmltv.channelid = subobj["id"].GetString();
 
@@ -239,13 +239,13 @@ bool ADVBChannelList::Read()
 						chan->dvb.hasvideo = true;
 					}
 					else chan->dvb.hasvideo = false;
-					
+
 					if ((uint_t)_pid2) {
 						chan->dvb.pidlist.push_back((uint_t)_pid2);
 						chan->dvb.hasaudio = true;
 					}
 					else chan->dvb.hasaudio = false;
- 
+
 					changed = true;
 				}
 			}
@@ -298,14 +298,14 @@ bool ADVBChannelList::Write()
 		success = true;
 
 		std::sort(list.begin(), list.end(), __SortChannels);
-		
+
 #if PREFER_JSON
 		rapidjson::Document doc;
 
 		GenerateChanneList(doc, doc);
 
 		config.printf("Writing channels to '%s'...", config.GetDVBChannelsJSONFile().str());
-		
+
 		if (fp.open(config.GetDVBChannelsJSONFile(), "w")) {
 			rapidjson::PrettyWriter<AStdData> writer(fp);
 
@@ -316,7 +316,7 @@ bool ADVBChannelList::Write()
 			// send updated file to recording slave
 			if (config.GetRecordingSlave().Valid()) {
 				config.printf("Sending channels file to '%s'...", config.GetRecordingSlave().str());
-		
+
 				if (!SendFileToRecordingSlave(config.GetDVBChannelsJSONFile())) {
 					config.printf("Failed to update channels on recording slave");
 					success = false;
@@ -327,7 +327,7 @@ bool ADVBChannelList::Write()
 			config.printf("Failed to open file '%s' for writing", config.GetDVBChannelsJSONFile().str());
 			success = false;
 		}
-		
+
 #else
 		std::vector<AString> strlist;
 
@@ -355,7 +355,7 @@ bool ADVBChannelList::Write()
 		std::sort(strlist.begin(), strlist.end());
 
 		config.printf("Writing channels to '%s'...", config.GetDVBChannelsFile().str());
-		
+
 		if (fp.open(config.GetDVBChannelsFile(), "w")) {
 			for (i = 0; i < strlist.size(); i++) {
 				fp.printf("%s\n", strlist[i].str());
@@ -401,9 +401,9 @@ void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, rapidjson::Va
 {
 	rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 	size_t i;
-	
+
 	obj.SetArray();
-		
+
 	for (i = 0; i < list.size(); i++) {
 		const CHANNEL& chan = *list[i];
 		rapidjson::Value chanobj;
@@ -413,7 +413,7 @@ void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, rapidjson::Va
 		chanobj.SetObject();
 		dvbobj.SetObject();
 		xmltvobj.SetObject();
-			
+
 		if (chan.dvb.channelname.Valid()) {
 			dvbobj.AddMember("name", rapidjson::Value(chan.dvb.channelname.str(), allocator), allocator);
 		}
@@ -425,18 +425,18 @@ void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, rapidjson::Va
 		if (chan.dvb.lcn) {
 			dvbobj.AddMember("lcn", rapidjson::Value(chan.dvb.lcn), allocator);
 		}
-			
+
 		if (chan.dvb.freq) {
 			dvbobj.AddMember("frequency", rapidjson::Value(chan.dvb.freq), allocator);
 		}
 
 		dvbobj.AddMember("hasvideo", rapidjson::Value(chan.dvb.hasvideo), allocator);
 		dvbobj.AddMember("hasaudio", rapidjson::Value(chan.dvb.hasaudio), allocator);
-		
+
 		if (chan.dvb.pidlist.size() > 0) {
 			rapidjson::Value pidlist;
 			size_t j;
-				
+
 			pidlist.SetArray();
 			for (j = 0; j < chan.dvb.pidlist.size(); j++) {
 				pidlist.PushBack(chan.dvb.pidlist[j], allocator);
@@ -532,7 +532,7 @@ ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByName(const AString& name,
 
 	if ((chan = GetChannelByDVBChannelName(name, false)) == NULL) {
 		CHANNELMAP::iterator it;
-		
+
 		if ((it = xmltvchannelmap.find(name.ToLower())) != xmltvchannelmap.end()) {
 			chan = it->second;
 		}
@@ -584,7 +584,7 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t 
 	CHANNELMAP::iterator it;
 	CHANNEL *chan = NULL;
 	bool changed1 = false, report = false;
-	
+
 	if ((it = xmltvchannelmap.find(name.ToLower())) != xmltvchannelmap.end()) {
 		chan = it->second;
 	}
@@ -609,10 +609,10 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t 
 		list.push_back(chan);
 		changed1 = true;
 	}
-	
+
 	if (chan) {
 		uint_t sdchannelid = 0;
-		
+
 		// update logical channel number if possible
 		if ((lcn > 0) && (lcn != chan->dvb.lcn)) {
 			// remove existing entry from lcnlist[]
@@ -626,7 +626,7 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t 
 				lcnlist.resize(chan->dvb.lcn + 1);
 			}
 			lcnlist[chan->dvb.lcn] = chan;
-			
+
 			changed1 = true;
 		}
 
@@ -638,7 +638,7 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t 
 
 			// update ID
 			chan->xmltv.channelid = id;
-			
+
 			changed1 = true;
 		}
 
@@ -648,7 +648,7 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t 
 			(sdchannelid != chan->xmltv.sdchannelid)) {
 			// update ID
 			chan->xmltv.sdchannelid = sdchannelid;
-			
+
 			changed1 = true;
 		}
 
@@ -660,7 +660,7 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t 
 
 			// update channel name
 			chan->xmltv.channelname = name;
-			
+
 			changed1 = true;
 		}
 
@@ -672,7 +672,7 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t 
 
 			// update channel name
 			chan->xmltv.convertedchannelname = cname;
-			
+
 			changed1 = true;
 		}
 
@@ -692,9 +692,9 @@ const ADVBChannelList::CHANNEL *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t 
 			config.printf("Assigned XMLTV channel '%s' to DVB channel '%s' (ID '%s')", chan->xmltv.channelname.str(), chan->dvb.channelname.str(), id.str());
 		}
 	}
-	
+
 	changed |= changed1;
-	
+
 	return chan;
 }
 
@@ -707,7 +707,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 	bool success = false;
 
 	config.printf("Scanning %uHz...", freq);
-	
+
 	sifilename = config.GetTempFile("pids", ".txt");
 
 	cmd.printf("timeout 20s dvbtune -c %u -f %u -i >%s 2>>%s", card, (uint_t)freq, sifilename.str(), config.GetLogFile(ADateTime().GetDays()).str());
@@ -733,7 +733,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 
 					if (line == "</service>") {
 						CHANNEL *chan = GetChannelByName(servname, true);
-						
+
 						if (chan) {
 							typedef enum {
 								Type_none = 0,
@@ -781,7 +781,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 												break;
 										}
 									}
-									
+
 									if (verbose) config.printf("Service %s Stream type %u pid %u (%s)", servname.str(), type, pid, (id != Type_none) ? "included" : "EXCLUDED");
 								}
 							}
@@ -802,13 +802,13 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 									changed = true;
 								}
 								else str.printf("PID list for '%s' is '", chan->dvb.channelname.str());
-								
+
 								for (i = 0; i < pidlist.size(); i++) {
 									str.printf("%s%s", (i > 0) ? ", " : "", AValue(pidlist[i]).ToString().str());
 								}
 
 								str.printf("'");
-								
+
 								config.printf("%s", str.str());
 
 								chan->dvb.pidlist = pidlist;
@@ -865,7 +865,7 @@ void ADVBChannelList::UpdateAll(uint_t card, bool verbose)
 	}
 
 	if (verbose) config.printf("Found %u frequencies to scan", (uint_t)freqs.size());
-	
+
 	std::map<uint32_t,bool>::iterator it;
 	for (it = freqs.begin(); it != freqs.end(); ++it) {
 		Update(card, it->first, verbose);

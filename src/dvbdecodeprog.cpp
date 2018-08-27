@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 	ADVBProg prog;	// ensure ADVBProg initialisation takes place
 
 	doc.SetObject();
-	
+
 	if (argc > 1) {
 		if (prog.Base64Decode(argv[1])) {
 			prog.ExportToJSON(doc, doc);
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 		}
 
 		rapidjson::PrettyWriter<AStdData> writer(*Stdout);
-		doc.Accept(writer);		
+		doc.Accept(writer);
 	}
 	else {
 		printf("Usage: dvbdecodeprog <base64-programme>\n");
