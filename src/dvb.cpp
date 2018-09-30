@@ -601,9 +601,9 @@ int main(int argc, const char *argv[])
 						TABLEROW row;
 
 						table.justify[row.size()] = 2;
-						row.push_back(chan->dvb.lcn ? AString("%;").Arg(chan->dvb.lcn) : "");
+						row.push_back(chan->dvb.lcn ? AString("%;").Arg(chan->dvb.lcn) : AString());
 						table.justify[row.size()] = 2;
-						row.push_back(chan->xmltv.sdchannelid ? AString("%;").Arg(chan->xmltv.sdchannelid) : "");
+						row.push_back(chan->xmltv.sdchannelid ? AString("%;").Arg(chan->xmltv.sdchannelid) : AString());
 						row.push_back(chan->xmltv.channelid);
 						row.push_back(chan->xmltv.channelname);
 						row.push_back(chan->xmltv.convertedchannelname);
@@ -611,7 +611,7 @@ int main(int argc, const char *argv[])
 						row.push_back(chan->dvb.convertedchannelname);
 
 						table.justify[row.size()] = 1;
-						row.push_back(chan->dvb.freq ? AString("%;").Arg(chan->dvb.freq) : "");
+						row.push_back(chan->dvb.freq ? AString("%;").Arg(chan->dvb.freq) : AString());
 
 						AString pidlist;
 						for (j = 0; j < chan->dvb.pidlist.size(); j++) {
@@ -833,7 +833,7 @@ int main(int argc, const char *argv[])
 					for (j = 0; j < n; j++) printf("%s", errors.Line(j).str());
 				}
 
-				for (j = 0; j < reslist.Count(); j++) {
+				for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
 					const ADVBProg& prog = reslist.GetProg(j);
 
 					if (proglist.DeleteProg(prog)) {
@@ -860,7 +860,7 @@ int main(int argc, const char *argv[])
 						for (j = 0; j < n; j++) printf("%s", errors.Line(j).str());
 					}
 
-					for (j = 0; j < reslist.Count(); j++) {
+					for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
 						const ADVBProg& prog = reslist.GetProg(j);
 
 						if (proglist.DeleteProg(prog)) {
@@ -881,7 +881,7 @@ int main(int argc, const char *argv[])
 				if (proglist2.ReadFromFile(filename)) {
 					uint_t j, ndeleted = 0;
 
-					for (j = 0; j < proglist.Count(); ) {
+					for (j = 0; (j < proglist.Count()) && !HasQuit(); ) {
 						if (proglist2.FindSimilar(proglist.GetProg(j))) {
 							proglist.DeleteProg(j);
 							ndeleted++;
@@ -896,7 +896,7 @@ int main(int argc, const char *argv[])
 			else if (strcmp(argv[i], "--delete-similar") == 0) {
 				uint_t j, ndeleted = 0;
 
-				for (j = 0; j < proglist.Count(); j++) {
+				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
 					const ADVBProg& prog = proglist.GetProg(j);
 					const ADVBProg  *sprog;
 

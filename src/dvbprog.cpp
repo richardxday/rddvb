@@ -203,7 +203,6 @@ void ADVBProg::StaticInit()
 		const ADVBConfig& config = ADVBConfig::Get();
 		uint_t i;
 
-
 		for (i = 0; i < NUMBEROF(fields); i++) {
 			fieldhash.Insert(fields[i].name, (uptr_t)(fields + i));
 		}
