@@ -419,6 +419,8 @@ public:
 	bool    LogRemoteCommands()              const; // extractconfig()
 	AString GetRecordingSlave()              const; // extractconfig()
 	uint_t  GetRecordingSlavePort()			 const; // extractconfig()
+	AString GetStreamSlave()				 const; // extractconfig()
+	uint_t  GetStreamSlavePort()			 const; // extractconfig()
 	AString GetSSHArgs()					 const; // extractconfig()
 	AString GetSCPArgs()					 const; // extractconfig()
 	AString GetRsyncArgs()					 const; // extractconfig()

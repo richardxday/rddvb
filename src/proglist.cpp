@@ -723,7 +723,7 @@ bool ADVBProgList::WriteToGNUPlotFile(const AString& filename) const
 		for (i = 0; i < Count(); i++) {
 			const ADVBProg& prog    = GetProg(i);
 			const AString   channel = prog.GetChannel();
-			const uint64_t times[] = {
+			const uint64_t  times[] = {
 				prog.GetRecordStart() ? prog.GetRecordStart() : prog.GetStart(),
 				prog.GetStart(),
 				prog.GetStop(),
@@ -2717,15 +2717,15 @@ bool ADVBProgList::CreateCombinedFile()
 	return success;
 }
 
-void ADVBProgList::CreateGraphs()
+void ADVBProgList::CreateGraphs(const AString& graphsuffix)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProgList combinedlist, scheduledlist;
 	const ADateTime dt;
-	const AString graphfileall     = config.GetDataDir().CatPath("graphs", "graph-all.png");
-	const AString graphfile6months = config.GetDataDir().CatPath("graphs", "graph-6months.png");
-	const AString graphfile1week   = config.GetDataDir().CatPath("graphs", "graph-1week.png");
-	const AString graphfilepreview = config.GetDataDir().CatPath("graphs", "graph-preview.png");
+	const AString graphfileall     = config.GetDataDir().CatPath("graphs", "graph-all." + graphsuffix);
+	const AString graphfile6months = config.GetDataDir().CatPath("graphs", "graph-6months." + graphsuffix);
+	const AString graphfile1week   = config.GetDataDir().CatPath("graphs", "graph-1week." + graphsuffix);
+	const AString graphfilepreview = config.GetDataDir().CatPath("graphs", "graph-preview." + graphsuffix);
 
 	{
 		ADVBLock lock("dvbfiles");
@@ -2746,9 +2746,9 @@ void ADVBProgList::CreateGraphs()
 	}
 
 	if (combinedlist.Count() > 0) {
-		const AString datfile = config.GetTempFile("graph", ".dat");
-		const AString gnpfile = config.GetTempFile("graph", ".gnp");
-		ADateTime firstdate = ADateTime::MinDateTime;
+		const AString datfile  = config.GetTempFile("graph", ".dat");
+		const AString gnpfile  = config.GetTempFile("graph", ".gnp");
+		ADateTime firstdate    = ADateTime::MinDateTime;
 		ADateTime firstrecdate = ADateTime::MinDateTime;
 		ADateTime lastrecdate  = ADateTime::MinDateTime;
 		ADateTime firstschdate = ADateTime::MinDateTime;
@@ -2798,7 +2798,12 @@ void ADVBProgList::CreateGraphs()
 			TREND rectrend = combinedlist.CalculateTrend(startdate, lastrecdate);
 			TREND schtrend = combinedlist.CalculateTrend(firstschdate, lastschdate);
 
-			fp.printf("set terminal pngcairo size 1280,800\n");
+			if (graphsuffix == "png") {
+				fp.printf("set terminal pngcairo size 1280,800\n");
+			}
+			if (graphsuffix == "svg") {
+				fp.printf("set terminal svg enhanced mouse size 1280,800\n");
+			}
 			fp.printf("set xdata time\n");
 			fp.printf("set timefmt '%%d-%%b-%%Y %%H:%%M'\n");
 			fp.printf("set autoscale xy\n");
@@ -2843,7 +2848,7 @@ void ADVBProgList::CreateGraphs()
 			fp.close();
 
 			if (system("gnuplot " + gnpfile) == 0) {
-				const AString datesuffix = dt.DateFormat("-%Y-%M-%D.png");
+				const AString datesuffix = dt.DateFormat("-%Y-%M-%D." + graphsuffix);
 				const AString copyfiles[] = {
 					graphfileall,
 					graphfile6months,

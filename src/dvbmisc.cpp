@@ -88,12 +88,14 @@ bool GetFileFromRecordingSlave(const AString& filename, const AString& localfile
 	return success;
 }
 
-AString GetRemoteCommand(const AString& cmd, const AString& postcmd, bool compress)
+AString GetRemoteCommand(const AString& cmd, const AString& postcmd, bool compress, bool streamslave)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
+	AString host = streamslave ? config.GetStreamSlave()     : config.GetRecordingSlave();
+	uint_t  port = streamslave ? config.GetStreamSlavePort() : config.GetRecordingSlavePort();
 	AString cmd1;
 
-	cmd1.printf("ssh %s %s -p %u %s \"%s\" %s", compress ? "-C" : "", config.GetSSHArgs().str(), config.GetRecordingSlavePort(), config.GetRecordingSlave().str(), cmd.Escapify().str(), postcmd.str());
+	cmd1.printf("ssh %s %s -p %u %s \"%s\" %s", compress ? "-C" : "", config.GetSSHArgs().str(), port, host.str(), cmd.Escapify().str(), postcmd.str());
 
 	return cmd1;
 }

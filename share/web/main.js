@@ -14,6 +14,7 @@ var searchpattern = null;
 var patterndefs = null;
 var xmlhttp = null;
 var currentfilter = null;
+var graphsuffix = 'png';
 var filters = [
 	{text:"Sources:<br>"},
 	{
@@ -118,12 +119,12 @@ function updatestats()
 {
 	var str = '';
 
-	str += '<p style="text-align:center"><a href="/dvbgraphs/graph-1week.png" target=_blank><img src="/dvbgraphs/graph-preview.png" style="max-width:240px"></a>';
+	str += '<p style="text-align:center"><a href="/dvbgraphs/graph-1week.' + graphsuffix + '" target=_blank><img src="/dvbgraphs/graph-preview.' + graphsuffix + '" style="max-width:240px"></a>';
 	str += '</p>' + "\n";
 	str += '<p style="text-align:center">';
-	str += '<a href="/dvbgraphs/graph-1week.png" target=_blank>1 Week</a>&nbsp;&nbsp;&nbsp;';
-	str += '<a href="/dvbgraphs/graph-6months.png" target=_blank>6 Months</a>&nbsp;&nbsp;&nbsp;';
-	str += '<a href="/dvbgraphs/graph-all.png" target=_blank>All</a>' + "\n";
+	str += '<a href="/dvbgraphs/graph-1week.' + graphsuffix + '" target=_blank>1 Week</a>&nbsp;&nbsp;&nbsp;';
+	str += '<a href="/dvbgraphs/graph-6months.' + graphsuffix + '" target=_blank>6 Months</a>&nbsp;&nbsp;&nbsp;';
+	str += '<a href="/dvbgraphs/graph-all.' + graphsuffix + '" target=_blank>All</a>' + "\n";
 	str += '</p>' + "\n";
 
 	if (stats != null) {

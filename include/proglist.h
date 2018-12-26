@@ -154,7 +154,7 @@ public:
 	static bool CheckFile(const AString& filename, const AString& targetfilename, const FILE_INFO& fileinfo);
 	static bool CreateCombinedFile();
 	static void CheckRecordingFile();
-	static void CreateGraphs();
+	static void CreateGraphs(const AString& graphsuffix = "png");
 	
 	static bool GetAndConvertRecordings();
 	static bool GetRecordingListFromRecordingSlave();

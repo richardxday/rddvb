@@ -2060,7 +2060,7 @@ int main(int argc, const char *argv[])
 
 				ADVBConfig::GetWriteable(true);
 
-				if (config.GetRecordingSlave().Valid()) {
+				if (config.GetStreamSlave().Valid()) {
 					AString cmd1, cmd2;
 
 					cmd1.printf("dvb %s --stream \"%s\"", dvbcardspecified ? AString("--dvbcard %").Arg(dvbcard).str() : "", text.str());
@@ -2069,7 +2069,7 @@ int main(int argc, const char *argv[])
 						cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
 					}
 
-					cmd = GetRemoteCommand(cmd1, cmd2, false);
+					cmd = GetRemoteCommand(cmd1, cmd2, false, true);
 				}
 				else {
 					ADVBChannelList& channellist = ADVBChannelList::Get();
