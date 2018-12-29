@@ -1137,7 +1137,7 @@ function populatetitles(id)
 
 			for (i = 0; i < response.titles.length; i++) {
 				var title = response.titles[i];
-				var desc  = "\n\n" + title.desc;
+				var desc  = "\n\n" + title.desc.replace(/"/g, '&quot;');
 
 				str += '<tr';
 
