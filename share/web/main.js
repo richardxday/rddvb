@@ -810,50 +810,72 @@ function populateprogs(id)
 							var dec = 3;
 							if (n > 10)  dec++;
 							if (n > 100) dec++;
+							
 							for (j = 0; j < n; j++) {
 								if (typeof prog.series == 'undefined') str1 += '&nbsp;&nbsp;&nbsp;';
 
-								if ((typeof prog.series == 'undefined') ||
-									((typeof prog.series[j] != 'undefined') && (prog.series[j].state != 'empty'))) {
-									if (series) {
-										str1 += findfromfilter('Combined', 'title="' + prog.title + '" series=' + j, '', j ? 'Series ' + strpad(j, 2) : 'Unknown', 'View series ' + j + ' scheduled/recorded of this programme');
-									}
-									else {
-										var en1 = j * 100 + 1, en2 = en1 + 99;
-										str1 += findfromfilter('Combined', 'title="' + prog.title + '" episode>=' + en1 + ' episode<=' + en2, '', 'E' + strpad(en1, dec, '0') + ' to E' + strpad(en2, dec, '0'), 'View episode range scheduled/recorded of this programme');
-									}
+								if ((typeof prog.series    != 'undefined') &&
+									(typeof prog.series[j] != 'undefined') &&
+									(prog.series[j].state != 'empty')) {
+									var valid = 0, str3 = '';
+									
+									for (k = 0; k < prog.series[j].episodes.length; k++) {
+										var pattern, alttext;
 
-									if ((typeof prog.series != 'undefined') && (typeof prog.series[j] != 'undefined')) {
-										str1 += ': <span class="episodelist">';
-										for (k = 0; k < prog.series[j].episodes.length; k++) {
-											var pattern, alttext;
+										if ((k % 100) == 0) {
+											var en1 = k + 1, en2 = Math.min(en1 + 99, prog.series[j].episodes.length);
 
-											if (series) {
-												pattern = 'series=' + j + ' episode=' + (k + 1);
-												alttext = 'Series ' + j + ' Episode ' + (k + 1);
+											if (j == 0) {
+												str3 += findfromfilter('Combined', 'title="' + prog.title + '" episode>=' + en1 + ' episode<=' + en2, '', 'E' + strpad(en1, dec, '0') + ' to E' + strpad(en2, dec, '0'), 'View episode range scheduled/recorded of this programme');
 											}
 											else {
-												pattern = 'episode=' + (j * 100 + 1 + k);
-												alttext = 'Episode ' + (j * 100 + 1 + k);
+												var dec2 = (prog.series[j].episodes.length >= 100) ? 3 : 2;
+												str3 += findfromfilter('Combined', 'title="' + prog.title + '" series=' + j + ' episode>=' + en1 + ' episode<=' + en2, '', 'S' + strpad(j, 2) + ' E' + strpad(en1, dec2) + ' to E' + strpad(en2, dec2), 'View series ' + j + ' scheduled/recorded of this programme');
+											}
+											
+											str3 += ': <span class="episodelist">';
+										}
+
+										pattern = '';
+										alttext = '';
+										if (j > 0) {
+											pattern = 'series=' + j + ' ';
+											alttext = 'Series ' + j + ' ';
+										}
+
+										pattern += 'episode=' + (k + 1);
+										alttext += 'Episode ' + (k + 1);
+
+										valid++;
+										
+										if		(prog.series[j].episodes[k] == 'r') alttext += ' (Recorded)';
+										else if (prog.series[j].episodes[k] == 'a') alttext += ' (Available)';
+										else if (prog.series[j].episodes[k] == 's') alttext += ' (Scheduled)';
+										else if (prog.series[j].episodes[k] == 'x') alttext += ' (Rejected)';
+										else if (prog.series[j].episodes[k] == '-') {
+											alttext += ' (Unknown)';
+											valid--;
+										}
+										
+										str3 += findfromfilter('Combined', 'title="' + prog.title + '" ' + pattern, '', prog.series[j].episodes[k], alttext);
+
+										if ((k % 10) == 9) str3 += ' ';
+
+										if (((k % 100) == 99) || (k == (prog.series[j].episodes.length - 1))) {
+											if (valid > 0) {
+												str3 += '</span><br>';
+												str1 += str3;
 											}
 
-											if		(prog.series[j].episodes[k] == 'r') alttext += ' (Recorded)';
-											else if (prog.series[j].episodes[k] == 'a') alttext += ' (Available)';
-											else if (prog.series[j].episodes[k] == 's') alttext += ' (Scheduled)';
-											else if (prog.series[j].episodes[k] == 'x') alttext += ' (Rejected)';
-											else if (prog.series[j].episodes[k] == '-') alttext += ' (Unknown)';
-
-											str1 += findfromfilter('Combined', 'title="' + prog.title + '" ' + pattern, '', prog.series[j].episodes[k], alttext);
-
-											if ((k % 10) == 9) str1 += ' ';
+											str3 = '';
+											valid = 0;
 										}
-										str1 += '</span><br>';
 									}
 								}
 							}
 
 							if (typeof prog.series == 'undefined') str1 += '<br>';
-
+							
 							str1 += '<br>';
 						}
 

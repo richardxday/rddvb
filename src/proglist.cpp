@@ -3280,12 +3280,14 @@ void ADVBProgList::FindSeries(SERIESLIST& serieslist) const
 			uint_t epn = episode.episode;
 			uint_t ept = episode.episodes;
 
+#if 0
 			if (!ser) {
 				if (epn >= 100) ept = 100;
 				ser = ((epn - 1) / 100);
 				epn = 1 + ((epn - 1) % 100);
 			}
-
+#endif
+			
 			SERIES& series = serieslist[prog.GetTitle()];
 			if (series.title.Empty()) series.title = prog.GetTitle();
 
