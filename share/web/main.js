@@ -167,25 +167,25 @@ function imdb(str, style)
 	return ' (<a href="http://www.imdb.com/find?s=all&q=%22' + str + '%22" target=_blank title="Look up ' + str.replace(/"/g, '&quot;') + ' on IMDB" ' + style + '>imdb</a>)';
 }
 
-function find(field, str, title, style)
+function findfilter(titlefilter, str, title, style, desc = null)
 {
-	if (typeof title == 'undefined') title = 'Search for ' + field + ' being ' + str.replace(/"/g, '&quot;');
-	if (typeof style == 'undefined') style = '';
-
-	return findfilter(field + '="' + str + '"', str, title, style);
-}
-
-function findfilter(titlefilter, str, title, style)
-{
-	if (typeof title == 'undefined') title = 'Search using filter ' + filter.replace(/"/g, '&quot;');
-	if (typeof style == 'undefined') style = '';
+	if ((title == null) || (typeof title == 'undefined')) title = 'Search using filter ' + filter.replace(/"/g, '&quot;');
+	if ((style == null) || (typeof style == 'undefined')) style = '';
 
 	titlefilter = titlefilter.replace(/"/g, '\\&quot;');
 
-	return '<a href="javascript:void(0);" onclick="dvbrequest({titlefilter:&quot;' + titlefilter + '&quot;});" ' + style + ' title="' + title + '">' + str + '</a>';
+	return '<a href="javascript:void(0);" onclick="dvbrequest({titlefilter:&quot;' + titlefilter + '&quot;});" ' + style + ' title="' + title + ((desc != null) ? "\n\n" + desc.replace(/"/g, '&quot;') : "") + '">' + str + '</a>';
 }
 
-function findfromfilter(from, titlefilter, timefilter, str, title, style)
+function find(field, str, title, style, desc = null)
+{
+	if ((title == null) || (typeof title == 'undefined')) title = 'Search for ' + field + ' being ' + str.replace(/"/g, '&quot;');
+	if ((style == null) || (typeof style == 'undefined')) style = '';
+
+	return findfilter(field + '="' + str + '"', str, title, style, desc);
+}
+
+function findfromfilter(from, titlefilter, timefilter, str, title, style, desc = null)
 {
 	if (typeof title 	  == 'undefined') title = 'Search ' + from + ' using filter ' + titlefilter.replace(/"/g, '&quot;');
 	if (typeof style 	  == 'undefined') style = '';
@@ -198,7 +198,7 @@ function findfromfilter(from, titlefilter, timefilter, str, title, style)
 			'from:&quot;'        + from        + '&quot;,' +
 			'titlefilter:&quot;' + titlefilter + '&quot;,' +
 			'timefilter:&quot;'  + timefilter  + '&quot;});" ' +
-			style + ' title="' + title + '">' + str + '</a>');
+			style + ' title="' + title + ((desc != null) ? "\n\n" + desc.replace(/"/g, '&quot;') : "") + '">' + str + '</a>');
 }
 
 function showstatus(type)
@@ -602,7 +602,7 @@ function populateprogs(id)
 					headerstr += '</td><td class="title"';
 					if (downloadlink == '') headerstr += ' colspan=2';
 					headerstr += '>';
-					headerstr += find('title', prog.title) + imdb(prog.title);
+					headerstr += find('title', prog.title, null, null, prog.desc) + imdb(prog.title);
 
 					if (typeof prog.subtitle != 'undefined') {
 						headerstr += ' / ' + find('subtitle', prog.subtitle) + imdb(prog.subtitle);
@@ -810,7 +810,7 @@ function populateprogs(id)
 							var dec = 3;
 							if (n > 10)  dec++;
 							if (n > 100) dec++;
-							
+
 							for (j = 0; j < n; j++) {
 								if (typeof prog.series == 'undefined') str1 += '&nbsp;&nbsp;&nbsp;';
 
@@ -818,7 +818,7 @@ function populateprogs(id)
 									(typeof prog.series[j] != 'undefined') &&
 									(prog.series[j].state != 'empty')) {
 									var valid = 0, str3 = '';
-									
+
 									for (k = 0; k < prog.series[j].episodes.length; k++) {
 										var pattern, alttext;
 
@@ -832,7 +832,7 @@ function populateprogs(id)
 												var dec2 = (prog.series[j].episodes.length >= 100) ? 3 : 2;
 												str3 += findfromfilter('Combined', 'title="' + prog.title + '" series=' + j + ' episode>=' + en1 + ' episode<=' + en2, '', 'S' + strpad(j, 2) + ' E' + strpad(en1, dec2) + ' to E' + strpad(en2, dec2), 'View series ' + j + ' scheduled/recorded of this programme');
 											}
-											
+
 											str3 += ': <span class="episodelist">';
 										}
 
@@ -847,7 +847,7 @@ function populateprogs(id)
 										alttext += 'Episode ' + (k + 1);
 
 										valid++;
-										
+
 										if		(prog.series[j].episodes[k] == 'r') alttext += ' (Recorded)';
 										else if (prog.series[j].episodes[k] == 'a') alttext += ' (Available)';
 										else if (prog.series[j].episodes[k] == 's') alttext += ' (Scheduled)';
@@ -856,7 +856,7 @@ function populateprogs(id)
 											alttext += ' (Unknown)';
 											valid--;
 										}
-										
+
 										str3 += findfromfilter('Combined', 'title="' + prog.title + '" ' + pattern, '', prog.series[j].episodes[k], alttext);
 
 										if ((k % 10) == 9) str3 += ' ';
@@ -875,7 +875,7 @@ function populateprogs(id)
 							}
 
 							if (typeof prog.series == 'undefined') str1 += '<br>';
-							
+
 							str1 += '<br>';
 						}
 
@@ -1137,12 +1137,14 @@ function populatetitles(id)
 
 			for (i = 0; i < response.titles.length; i++) {
 				var title = response.titles[i];
+				var desc  = "\n\n" + title.desc;
 
 				str += '<tr';
 
 				if ((title.isfilm > 0) && (title.notfilm == 0)) str += ' class="film"';
+
 				str += '><td style="text-align:left;">';
-				str +=          findfromfilter(from, 'title="' + title.title + '"', '', title.title, 'Find all versions of this title') + '</td>';
+				str +=          findfromfilter(from, 'title="' + title.title + '"', '', title.title, 'Find all versions of this title' + desc) + '</td>';
 				str += '<td>' + findfromfilter(from, pattern + 'title="' + title.title + '"', '', title.total + ' In Total', 'Find all versions of this title') + '</td>';
 				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" recorded', '', title.recorded + ' Recorded', 'Find recorded versions of this title') + '</td>';
 				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" available', '', title.available + ' Available', 'Find recorded versions of this title that are available') + '</td>';

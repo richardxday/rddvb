@@ -21,6 +21,7 @@
 
 typedef struct {
 	AString title;
+	AString desc;
 	struct {
 		uint_t  recorded;
 		uint_t  available;
@@ -626,6 +627,8 @@ int main(int argc, char *argv[])
 
 						if (((title = (PROGTITLE *)titleshash.Read(prog.GetTitle())) == NULL) && ((title = new PROGTITLE) != NULL)) {
 							title->title = prog.GetTitle();
+							title->desc  = prog.GetDesc();
+							
 							memset(&title->counts, 0, sizeof(title->counts));
 
 							titleshash.Insert(prog.GetTitle(), (uptr_t)title);
@@ -793,6 +796,7 @@ int main(int argc, char *argv[])
 						subobj.SetObject();
 
 						subobj.AddMember("title", rapidjson::Value(title.title.str(), allocator), allocator);
+						subobj.AddMember("desc", rapidjson::Value(title.desc.str(), allocator), allocator);
 						subobj.AddMember("scheduled", rapidjson::Value(title.counts.scheduled), allocator);
 						subobj.AddMember("recorded", rapidjson::Value(title.counts.recorded), allocator);
 						subobj.AddMember("available", rapidjson::Value(title.counts.available), allocator);
