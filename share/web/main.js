@@ -187,9 +187,9 @@ function find(field, str, title, style, desc = null)
 
 function findfromfilter(from, titlefilter, timefilter, str, title, style, desc = null)
 {
-	if (typeof title 	  == 'undefined') title = 'Search ' + from + ' using filter ' + titlefilter.replace(/"/g, '&quot;');
-	if (typeof style 	  == 'undefined') style = '';
-	if (typeof timefilter == 'undefined') timefilter = '';
+	if ((title 		== null) || (typeof title 	   == 'undefined')) title 	   = 'Search ' + from + ' using filter ' + titlefilter.replace(/"/g, '&quot;');
+	if ((style 		== null) || (typeof style 	   == 'undefined')) style 	   = '';
+	if ((timefilter == null) || (typeof timefilter == 'undefined')) timefilter = '';
 
 	titlefilter = titlefilter.replace(/"/g, '\\&quot;');
 	timefilter  = timefilter.replace(/"/g, '\\&quot;');
