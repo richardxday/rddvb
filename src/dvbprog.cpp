@@ -3061,7 +3061,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 				SPLIT split = {aspect, t1, 0};
 				splits.push_back(split);
 
-				config.printf("%-6s @ %s for %s", split.aspect.str(), GenTime(split.start).str(), GenTime(totallen).str());
+				config.printf("%-6s @ %s for %s", split.aspect.str(), GenTime(split.start).str(), GenTime(totallen - split.start).str());
 
 				if (totallen > 0) lengths[aspect] += totallen - t1;
 				if (bestaspect.Empty() || (lengths[aspect] > lengths[bestaspect])) bestaspect = aspect;
