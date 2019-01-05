@@ -3300,12 +3300,12 @@ void ADVBProgList::FindSeries(SERIESLIST& serieslist) const
 			uint_t ind = epn - 1;
 			char t = str[ind], t1 = t;
 
-			if		(prog.IsScheduled())	      t1 = 's';
-			else if	(prog.HasRecordFailed())      t1 = 'f';
+			if		(prog.IsScheduled())		  t1 = 's';
+			else if	(prog.HasRecordFailed())	  t1 = 'f';
 			else if	(prog.HasPostProcessFailed()) t1 = 'f';
-			else if	(prog.IsAvailable())  	      t1 = 'a';
-			else if	(prog.IsRecorded())  	      t1 = 'r';
-			else if (prog.IsRejected())  	      t1 = 'x';
+			else if	(prog.IsAvailable())		  t1 = 'a';
+			else if	(prog.IsRecorded())			  t1 = 'r';
+			else if (prog.IsRejected())			  t1 = 'x';
 
 			static const char *allowablechanges[] = {
 				"-sfarx",

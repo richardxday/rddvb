@@ -2081,7 +2081,7 @@ int main(int argc, const char *argv[])
 						if (list.ReadFromFile(config.GetScheduledFile())) {
 							std::vector<ADVBProgList::TIMEGAP> gaps;
 							ADVBProgList::TIMEGAP best;
-							uint64_t maxseconds;
+							ADateTime maxtime;
 
 							list.ReadFromFile(config.GetRecordingFile());
 							list.Sort();
@@ -2091,20 +2091,19 @@ int main(int argc, const char *argv[])
 								// ignore the best gap, use the one specified by dvbcard
 								best = gaps[dvbcard];
 							}
-							maxseconds = ((uint64_t)best.end - (uint64_t)best.start) / 1000U;
+							maxtime = (uint64_t)best.end - (uint64_t)best.start;
 
-							if ((best.card < config.GetMaxDVBCards()) && (maxseconds > 10U)) {
-								maxseconds -= 10U;
-								maxseconds  = std::min(maxseconds, (uint64_t)0xfffffffU);
+							if ((best.card < config.GetMaxDVBCards()) && (maxtime.GetSeconds() > 10U)) {
+								maxtime -= 10U * 1000U;
 
-								fprintf(stderr, "Max stream time is %s seconds, using card %u\n", AValue(maxseconds).ToString().str(), best.card);
+								fprintf(stderr, "Max stream time is %s, using card %u\n", maxtime.DateFormat("%hh %mm %ss").str(), best.card);
 
 								if (pids.Empty()) {
 									channellist.GetPIDList(best.card, text, pids, true);
 								}
 
 								if (pids.Valid()) {
-									cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)maxseconds, pids);
+									cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)std::min(maxtime.GetSeconds(), 0xffffffff), pids);
 
 									if (!config.IsRecordingSlave() && !rawstream) cmd.printf(" | %s", config.GetVideoPlayerCommand().str());
 								}
