@@ -2096,7 +2096,7 @@ int main(int argc, const char *argv[])
 							if ((best.card < config.GetMaxDVBCards()) && (maxtime.GetSeconds() > 10U)) {
 								maxtime -= 10U * 1000U;
 
-								fprintf(stderr, "Max stream time is %s, using card %u\n", maxtime.DateFormat("%hh %mm %ss").str(), best.card);
+								fprintf(stderr, "Max stream time is %s (%ss), using card %u\n", maxtime.SpanStr().str(), AValue(maxtime.GetSeconds()).ToString().str(), best.card);
 
 								if (pids.Empty()) {
 									channellist.GetPIDList(best.card, text, pids, true);
