@@ -2093,17 +2093,17 @@ int main(int argc, const char *argv[])
 							}
 							maxtime = (uint64_t)best.end - (uint64_t)best.start;
 
-							if ((best.card < config.GetMaxDVBCards()) && (maxtime.GetSeconds() > 10U)) {
+							if ((best.card < config.GetMaxDVBCards()) && (maxtime.GetAbsoluteSecond() > 10U)) {
 								maxtime -= 10U * 1000U;
 
-								fprintf(stderr, "Max stream time is %s (%ss), using card %u\n", maxtime.SpanStr().str(), AValue(maxtime.GetSeconds()).ToString().str(), best.card);
+								fprintf(stderr, "Max stream time is %s (%ss), using card %u\n", maxtime.SpanStr().str(), AValue(maxtime.GetAbsoluteSecond()).ToString().str(), best.card);
 
 								if (pids.Empty()) {
 									channellist.GetPIDList(best.card, text, pids, true);
 								}
 
 								if (pids.Valid()) {
-									cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)std::min(maxtime.GetSeconds(), 0xffffffff), pids);
+									cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)std::min(maxtime.GetAbsoluteSecond(), (uint64_t)0xffffffff), pids);
 
 									if (!config.IsRecordingSlave() && !rawstream) cmd.printf(" | %s", config.GetVideoPlayerCommand().str());
 								}
