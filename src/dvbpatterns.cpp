@@ -731,6 +731,10 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 				}
 			}
 			else {
+				char quote = 0;
+				
+				if (IsQuoteChar(line[i])) quote = line[i++];
+				
 				if (!IsSymbolStart(line[i])) {
 					if (errors.Valid()) errors += "\n";
 					errors.printf("Character '%c' (at %u) is not a legal field start character (term %u)", line[i], i, list.Count() + 1);
@@ -738,8 +742,19 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 				}
 
 				uint_t fieldstart = i++;
-				while (IsSymbolChar(line[i])) i++;
+				if (quote) {
+					while (line[i] && (line[i] != quote)) {
+						if (line[i] == '\\') i++;
+						if (line[i]) i++;
+					}
+				}
+				else {
+					while (IsSymbolChar(line[i])) i++;
+				}
+
 				AString field = line.Mid(fieldstart, i - fieldstart).ToLower();
+
+				if (quote && (line[i] == quote)) i++;
 
 				while (IsWhiteSpace(line[i])) i++;
 
@@ -1037,10 +1052,10 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 		else puretext  = line;
 
 		if (puretext.Valid()) {
-			for (i = 0; puretext[i] && (IsAlphaChar(puretext[i]) || IsNumeralChar(puretext[i]) || (puretext[i] == ' ') || (puretext[i] == '-')); i++) ;
+			for (i = 0; puretext[i] && (IsAlphaChar(puretext[i]) || IsNumeralChar(puretext[i]) || IsQuoteChar(puretext[i]) || (puretext[i] == ' ') || (puretext[i] == '-')); i++) ;
 
 			if (i == (uint_t)puretext.len()) {
-				AString newtext = "@\"" + puretext + "\"";
+				AString newtext = "@\"" + puretext.DeQuotify() + "\"";
 				AString newline = ("title" + newtext +
 								   " or subtitle" + newtext +
 								   " or desc" + newtext +
