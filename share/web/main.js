@@ -83,7 +83,6 @@ window.onpopstate = function(event)
 	var filter = event.state;
 
 	if (filter != null) {
-		//console.log("Popped filter " + JSON.stringify(filter) + ", stack length " + window.history.length);
 		dvbrequest(filter, '', false);
 	}
 };
