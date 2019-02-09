@@ -1317,7 +1317,7 @@ function displayfilter(patternid, termindex, type)
 
 		str += '<span class="' + classname + '" id="pattern' + patternid + 'term' + i + 'value" title="Search Comparison Value"';
 		if (always || ((i == termindex) && (type == 'value'))) {
-			str += '><input type="text" id="pattern' + patternid + 'term' + i + 'valuevalue" value="' + term.value.replace(/"/g, '&quot;') + '" onchange="displayfilter_changed(' + patternid + ', ' + i + ', &quot;value&quot;)" />';
+			str += '><input type="text" id="pattern' + patternid + 'term' + i + 'valuevalue" value="' + term.value.replace(/"/g, '&quot;') + '" onfocusout="displayfilter_changed(' + patternid + ', ' + i + ', &quot;value&quot;)" />';
 		}
 		else {
 			str += ' onclick="displayfilter(' + patternid + ', ' + i + ', &quot;value&quot;)">';
@@ -1512,10 +1512,10 @@ function populatepattern(pattern, index)
 	str += '</td><td class="desc">';
 	//str += '<span id="pattern' + index + 'terms">' + displayfilter(index, -1, '') + '</span>';
 	if (typeof pattern.addrec != 'undefined') {
-		str += '<input type="text" id="newrecpattern" value="' + pattern.pattern.replace(/"/g, '&quot;') + '" onchange="addrecchanged(&quot;newrec&quot;)"/>';
+		str += '<input type="text" id="newrecpattern" value="' + pattern.pattern.replace(/"/g, '&quot;') + '" onfocusout="addrecchanged(&quot;newrec&quot;)"/>';
 	}
 	else {
-		str += '<input type="text" id="pattern' + index + 'pattern" value="' + pattern.pattern.replace(/"/g, '&quot;') + '" onchange="patternchanged(' + index + ')"/>';
+		str += '<input type="text" id="pattern' + index + 'pattern" value="' + pattern.pattern.replace(/"/g, '&quot;') + '" onfocusout="patternchanged(' + index + ')"/>';
 	}
 
 	str += '</td></tr>';
@@ -1576,7 +1576,7 @@ function populatepatterns(id)
 				else				    str += defaultuser;
 			}
 			str += '</td><td class="desc">';
-			str += '<input type="text" id="newrecpattern" size=50 maxlength=10000 value="" onchange="addrecchanged(&quot;newrec&quot;)"/>';
+			str += '<input type="text" id="newrecpattern" size=50 maxlength=10000 value="" onfocusout="addrecchanged(&quot;newrec&quot;)"/>';
 			str += '</td></tr>';
 			str += '<tr class="newrec">';
 			str += '<td colspan=4 class="actions">';
