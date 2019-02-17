@@ -48,9 +48,6 @@ GLOBAL_LIBS   += $(shell pkg-config --libs jsoncpp)
 GLOBAL_CFLAGS += $(shell curl-config --cflags)
 GLOBAL_LIBS   += $(shell curl-config --libs) -lcrypto
 
-GLOBAL_CFLAGS += $(shell pkg-config --cflags libdvbpsi)
-GLOBAL_LIBS   += $(shell pkg-config --libs libdvbpsi)
-
 include $(MAKEFILEDIR)/makefile.prebuild
 
 EXTRA_CFLAGS += -DRDDVB_SHARE_DIR=\"$(INSTALLSHAREDST)\"
@@ -117,10 +114,6 @@ OBJECTS     := $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
 APPLICATION := sdfetch
-OBJECTS     := $(APPLICATION:%=%.o)
-include $(MAKEFILEDIR)/makefile.app
-
-APPLICATION := eitdecode
 OBJECTS     := $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
