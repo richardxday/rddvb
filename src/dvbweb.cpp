@@ -897,6 +897,8 @@ int main(int argc, char *argv[])
 
 					obj.AddMember("ref", rapidjson::Value(writetime), allocator);
 
+					obj.AddMember("suffix", rapidjson::Value(config.GetGraphSuffix().str(), allocator), allocator);
+
 					if ((trend = recordedlist.CalculateTrend(ADateTime("utc midnight-4w"))).valid) {
 						obj.AddMember("last4weeks", gettrend(doc, trend), allocator);
 					}

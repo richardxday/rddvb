@@ -118,6 +118,10 @@ function updatestats()
 {
 	var str = '';
 
+	if (typeof stats.suffix != 'undefined') {
+		graphsuffix = stats.suffix;
+	}
+	
 	str += '<p style="text-align:center"><a href="/dvbgraphs/graph-1week.' + graphsuffix + '" target=_blank><img src="/dvbgraphs/graph-preview.' + graphsuffix + '" style="max-width:240px"></a>';
 	str += '</p>' + "\n";
 	str += '<p style="text-align:center">';

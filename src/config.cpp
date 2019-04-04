@@ -1381,6 +1381,11 @@ AString ADVBConfig::GetVideoErrorCheckCommand() const
 	return GetConfigItem("videocheckcmd", "avconv -t 60 -v error -i \"{filename}\" -f null - 2>&1 | wc -l >{logfile}");
 }
 
+AString ADVBConfig::GetGraphSuffix() const
+{
+	return GetConfigItem("graphsuffix", "svg");
+}
+
 uint_t ADVBConfig::GetMinimalDataRate(const AString& filesuffix) const
 {
 	AString val = GetConfigItem("mindatarate:" + filesuffix);

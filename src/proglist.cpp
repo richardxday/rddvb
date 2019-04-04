@@ -2717,11 +2717,12 @@ bool ADVBProgList::CreateCombinedFile()
 	return success;
 }
 
-void ADVBProgList::CreateGraphs(const AString& graphsuffix)
+void ADVBProgList::CreateGraphs(const AString& _graphsuffix)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
 	ADVBProgList combinedlist, scheduledlist;
 	const ADateTime dt;
+	const AString graphsuffix      = _graphsuffix.Valid() ? _graphsuffix : config.GetGraphSuffix();
 	const AString graphfileall     = config.GetDataDir().CatPath("graphs", "graph-all." + graphsuffix);
 	const AString graphfile6months = config.GetDataDir().CatPath("graphs", "graph-6months." + graphsuffix);
 	const AString graphfile1week   = config.GetDataDir().CatPath("graphs", "graph-1week." + graphsuffix);
@@ -2801,8 +2802,8 @@ void ADVBProgList::CreateGraphs(const AString& graphsuffix)
 			if (graphsuffix == "png") {
 				fp.printf("set terminal pngcairo size 1280,800\n");
 			}
-			if (graphsuffix == "svg") {
-				fp.printf("set terminal svg enhanced mouse size 1280,800\n");
+			else if (graphsuffix == "svg") {
+				fp.printf("set terminal svg enhanced mouse standalone size 1280,800\n");
 			}
 			fp.printf("set xdata time\n");
 			fp.printf("set timefmt '%%d-%%b-%%Y %%H:%%M'\n");
@@ -2842,7 +2843,12 @@ void ADVBProgList::CreateGraphs(const AString& graphsuffix)
 			fp.printf("replot\n");
 			fp.printf("unset output\n");
 
-			fp.printf("set terminal pngcairo size 640,480\n");
+			if (graphsuffix == "png") {
+				fp.printf("set terminal pngcairo size 640,480\n");
+			}
+			else if (graphsuffix == "svg") {
+				fp.printf("set terminal svg enhanced mouse standalone size 640,480\n");
+			}
 			fp.printf("set output '%s'\n", graphfilepreview.str());
 			fp.printf("replot\n");
 			fp.close();
@@ -3287,7 +3293,7 @@ void ADVBProgList::FindSeries(SERIESLIST& serieslist) const
 				epn = 1 + ((epn - 1) % 100);
 			}
 #endif
-			
+
 			SERIES& series = serieslist[prog.GetTitle()];
 			if (series.title.Empty()) series.title = prog.GetTitle();
 
@@ -3384,6 +3390,7 @@ void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& p
 		const ADVBProg& prog  = GetProg(i);
 		const AString&  title = prog.GetTitle();
 		POPULARITY      *pop  = (POPULARITY *)hash.Read(title);
+
 
 		if (!pop && ((pop = new POPULARITY) != NULL)) {
 			memset(pop, 0, sizeof(*pop));
