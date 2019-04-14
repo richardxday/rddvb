@@ -1992,7 +1992,7 @@ function generatefilterdescription(filter)
 
 	str = 'Page ' + (filter.page + 1) + ' of ' + filter.from;
 	if (filter.titlefilter != '') str += ' \'' + limitstring(filter.titlefilter) + '\'';
-	if ((filter.expanded >= 0) && (response != null) && (typeof response.progs != 'undefined')) {
+	if ((filter.expanded >= 0) && (typeof title != 'undefined')) {
 		str += ' (' + title + ')';
 	}
 	filter.shortdesc = str;
