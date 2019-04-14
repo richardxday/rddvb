@@ -1812,6 +1812,7 @@ AString ADVBProg::ReplaceTerms(const AString& str, bool filesystem) const
 					 .SearchAndReplace("{titleandsubtitle}", SanitizeString(GetTitleAndSubtitle(), filesystem))
 					 .SearchAndReplace("{titlesubtitleandchannel}", SanitizeString(GetTitleSubtitleAndChannel(), filesystem))
 					 .SearchAndReplace("{subtitle}", SanitizeString(GetSubtitle(), filesystem))
+					 .SearchAndReplace("{year}", SanitizeString(GetYear() ? AString("%").Arg(GetYear()) : "", filesystem, true))
 					 .SearchAndReplace("{episode}", SanitizeString(GetEpisodeString(), filesystem))
 					 .SearchAndReplace("{episodeid}", SanitizeString(GetShortEpisodeID(), filesystem))
 					 .SearchAndReplace("{channel}", SanitizeString(GetChannel(), filesystem))

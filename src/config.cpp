@@ -57,6 +57,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		{"encodeaudioonlyargs", 		 "{conf:mp3audio}"},
 		{"episodefirstfilenametemplate", "{title}{sep}{episode}{episodeid}{sep}{date}{sep}{times}{sep}{subtitle}"},
 		{"episodelastfilenametemplate",  "{title}{sep}{episode}{sep}{date}{sep}{times}{sep}{episodeid}{sep}{subtitle}"},
+		{"filmfilenametemplate",		 "{title}{sep}{year}{sep}{date}{sep}{times}"},
 		{"dir",							 "{capitaluser}/{titledir}"},
 		{"dir:film",					 "Films"},
 		{"mindatarate:mpg",				 "12"},
