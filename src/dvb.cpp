@@ -180,12 +180,13 @@ int main(int argc, const char *argv[])
 		{"--show-file-format",					   "",								  "Show file format of encoded programme"},
 		{"--use-converted-filename",			   "",								  "Change filename to that of converted file, without actually converting file"},
 		{"--set-dir",							   "<patterns> <newdir>",			  "Change directory for programmes in current list that match <patterns> to <newdir>"},
-		{"--regenerate-filename",				   "",								  "Change filename of current list of programmes (dependant on converted state), renaming files (in original directory OR current directory)"},
-		{"--regenerate-filename-test",			   "",								  "Test version of the above, will make no changes to programme list or move files"},
+		{"--regenerate-filename",				   "<pattern>",						  "Change filename of current list of programmes that match <pattern> (dependant on converted state), renaming files (in original directory OR current directory)"},
+		{"--regenerate-filename-test",			   "<pattern>",						  "Test version of the above, will make no changes to programme list or move files"},
 		{"--delete-files",						   "",								  "Delete encoded files from programmes in current list"},
 		{"--delete-from-record-lists",			   "<uuid>",						  "Delete programme with UUID <uuid> from record lists (recorded and record failues)"},
 		{"--record-success",					   "",								  "Run recordsuccess command on programmes in current list"},
 		{"--change-user",						   "<patterns> <newuser>",			  "Change user of programmes matching <patterns> to <newuser>"},
+		{"--change-dir",						   "<patterns> <newdir>",			  "Change direcotry of programmes matching <patterns> to <newdir>"},
 		{"--get-and-convert-recorded",			   "",								  "Pull and convert any recordings from recording host"},
 		{"--force-convert-files",				   "",								  "convert files in current list, even if they have already been converted"},
 		{"--update-recordings-list",			   "",								  "Pull list of programmes being recorded"},
@@ -1583,7 +1584,7 @@ int main(int argc, const char *argv[])
 				bool    set      = (stricmp(argv[i], "--set-flag") == 0);
 				AString flagname = argv[++i];
 				AString patterns = argv[++i], errors;
-				uint_t j, changed = 0;
+				uint_t j, nchanged = 0;
 
 				if (ADVBProg::IsFlagNameValid(flagname)) {
 					proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
@@ -1593,7 +1594,7 @@ int main(int argc, const char *argv[])
 					if (errors.Valid()) {
 						printf("Errors:\n");
 
-						uint_t j, n = errors.CountLines();
+						uint_t n = errors.CountLines();
 						for (j = 0; j < n; j++) printf("%s\n", errors.Line(j).str());
 					}
 
@@ -1604,14 +1605,14 @@ int main(int argc, const char *argv[])
 							if (prog->GetFlag(flagname) != set) {
 								printf("Changing '%s'\n", prog->GetQuickDescription().str());
 								prog->SetFlag(flagname, set);
-								changed++;
+								nchanged++;
 							}
 							else printf("NOT changing '%s', flag is already %s\n", prog->GetQuickDescription().str(), prog->GetFlag(flagname) ? "set" : "clear");
 						}
 						else printf("Failed to find programme '%s' in list!\n", reslist.GetProg(j).GetQuickDescription().str());
 					}
 
-					printf("Changed %u programme%s\n", changed, (changed == 1) ? "" : "s");
+					printf("Changed %u programme%s\n", nchanged, (nchanged == 1) ? "" : "s");
 				}
 				else {
 					fprintf(stderr, "Flag name '%s' is not valid, use --list-flags to list valid flags\n", flagname.str());
@@ -1652,8 +1653,8 @@ int main(int argc, const char *argv[])
 			}
 			else if (stricmp(argv[i], "--change-user") == 0) {
 				ADVBProgList reslist;
-				AString      patterns = argv[++i], newuser = argv[++i], errors;
-				uint_t j, changed = 0;
+				AString      patterns = argv[++i], newvalue = argv[++i], errors;
+				uint_t		 j;
 
 				proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
 
@@ -1662,22 +1663,57 @@ int main(int argc, const char *argv[])
 				if (errors.Valid()) {
 					printf("Errors:");
 
-					uint_t j, n = errors.CountLines();
+					uint_t n = errors.CountLines();
 					for (j = 0; j < n; j++) config.printf("%s", errors.Line(j).str());
 				}
+				else {
+					uint_t nchanged = 0;
 
-				for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
-					ADVBProg *prog;
+					for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
+						ADVBProg *prog;
 
-					if ((prog = proglist.FindUUIDWritable(reslist.GetProg(j))) != NULL) {
-						if (prog->GetUser() != newuser) {
-							prog->SetUser(newuser);
-							changed++;
+						if ((prog = proglist.FindUUIDWritable(reslist.GetProg(j))) != NULL) {
+							if (prog->GetUser() != newvalue) {
+								prog->SetUser(newvalue);
+								nchanged++;
+							}
 						}
 					}
+				
+					printf("Changed %u programme%s\n", nchanged, (nchanged == 1) ? "" : "s");
 				}
+			}
+			else if (stricmp(argv[i], "--change-dir") == 0) {
+				ADVBProgList reslist;
+				AString      patterns = argv[++i], newvalue = argv[++i], errors;
+				uint_t		 j;
 
-				printf("Changed %u programme%s\n", changed, (changed == 1) ? "" : "s");
+				proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
+
+				printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
+
+				if (errors.Valid()) {
+					printf("Errors:");
+
+					uint_t n = errors.CountLines();
+					for (j = 0; j < n; j++) config.printf("%s", errors.Line(j).str());
+				}
+				else {
+					uint_t nchanged = 0;
+					
+					for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
+						ADVBProg *prog;
+
+						if ((prog = proglist.FindUUIDWritable(reslist.GetProg(j))) != NULL) {
+							if (prog->GetDir() != newvalue) {
+								prog->SetDir(newvalue);
+								nchanged++;
+							}
+						}
+					}
+				
+					printf("Changed %u programme%s\n", nchanged, (nchanged == 1) ? "" : "s");
+				}
 			}
 			else if (stricmp(argv[i], "--show-encoding-args") == 0) {
 				uint_t j;
@@ -1783,57 +1819,82 @@ int main(int argc, const char *argv[])
 			else if ((stricmp(argv[i], "--regenerate-filename") == 0) ||
 					 (stricmp(argv[i], "--regenerate-filename-test") == 0)) {
 				const bool test = (stricmp(argv[i], "--regenerate-filename-test") == 0);
-				uint_t j, nmatches = 0;
+				ADVBProgList reslist;
+				AString      patterns = argv[++i], errors;
+				uint_t		 j;
 
-				for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-					ADVBProg& prog = proglist.GetProgWritable(j);
+				proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
 
-					AString oldfilename = prog.GetFilename();
+				printf("Found %u programme%s\n", reslist.Count(), (reslist.Count() == 1) ? "" : "s");
 
-					if (prog.IsConverted()) {
-						AString subdir = oldfilename.PathPart().PathPart().FilePart();
+				if (errors.Valid()) {
+					printf("Errors:");
 
-						if (prog.IsFilm()) {
-							if (!test) prog.SetDir("Films");
-						}
-						else if (subdir.StartsWith("Shows")) {
-							if (!test) prog.SetDir(subdir + "/{titledir}");
-						}
-						else if (CompareCase(prog.GetDir(), AString(prog.GetUser()).InitialCapitalCase() + "/{titledir}") == 0) {
-							if (!test) prog.SetDir("");
-						}
-					}
-
-					AString newfilename  = prog.GenerateFilename(prog.IsConverted());
-					AString oldfilename1 = oldfilename.FilePart();
-					AString newfilename1 = newfilename.FilePart();
-
-					if (newfilename != oldfilename) {
-						printf("'%s' -> '%s'\n", oldfilename.str(), newfilename.str());
-
-						if (!test) {
-							prog.SetFilename(newfilename);
-
-							if (AStdFile::exists(oldfilename)) {
-								CreateDirectory(newfilename.PathPart());
-								if (MoveFile(oldfilename, newfilename)) {
-									printf("\tRenamed '%s' to '%s'\n", oldfilename.str(), newfilename.str());
-								}
-								else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename.str(), newfilename.str());
-							}
-							else if (AStdFile::exists(oldfilename1)) {
-								if (MoveFile(oldfilename1, newfilename1)) {
-									printf("\tRenamed '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
-								}
-								else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
-							}
-							else printf("\tNeither '%s' nor '%s' exists\n", oldfilename.str(), oldfilename1.str());
-						}
-					}
-					else nmatches++;
+					uint_t n = errors.CountLines();
+					for (j = 0; j < n; j++) config.printf("%s", errors.Line(j).str());
 				}
+				else {
+					uint_t ntested = 0, nchanged = 0;
+					
+					for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
+						ADVBProg *pprog;
 
-				if (nmatches) printf("%u filenames unchanged\n", nmatches);
+						if ((pprog = proglist.FindUUIDWritable(reslist.GetProg(j))) != NULL) {
+							ADVBProg& prog = *pprog;
+							AString   oldfilename = prog.GetFilename();
+
+							if (prog.IsConverted()) {
+								AString subdir = oldfilename.PathPart().PathPart().FilePart();
+
+								if (prog.IsFilm()) {
+									if (!test) prog.SetDir("Films");
+								}
+								else if (subdir.StartsWith("Shows")) {
+									if (!test) prog.SetDir(subdir + "/{titledir}");
+								}
+								else if (CompareCase(prog.GetDir(), AString(prog.GetUser()).InitialCapitalCase() + "/{titledir}") == 0) {
+									if (!test) prog.SetDir("");
+								}
+							}
+
+							AString newfilename  = prog.GenerateFilename(prog.IsConverted());
+							AString oldfilename1 = oldfilename.FilePart();
+							AString newfilename1 = newfilename.FilePart();
+
+							if (newfilename != oldfilename) {
+								printf("'%s' -> '%s'\n", oldfilename.str(), newfilename.str());
+
+								if (!test) {
+									prog.SetFilename(newfilename);
+
+									if (AStdFile::exists(oldfilename)) {
+										CreateDirectory(newfilename.PathPart());
+										if (MoveFile(oldfilename, newfilename)) {
+											printf("\tRenamed '%s' to '%s'\n", oldfilename.str(), newfilename.str());
+										}
+										else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename.str(), newfilename.str());
+									}
+									else if (AStdFile::exists(oldfilename1)) {
+										if (MoveFile(oldfilename1, newfilename1)) {
+											printf("\tRenamed '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
+										}
+										else fprintf(stderr, "Failed to rename '%s' to '%s'\n", oldfilename1.str(), newfilename1.str());
+									}
+									else printf("\tNeither '%s' nor '%s' exists\n", oldfilename.str(), oldfilename1.str());
+								}
+
+								nchanged++;
+							}
+
+							ntested++;
+						}
+					}
+				
+					printf("%u programme%s tested, %u filename%s changed (%u unchanged)\n",
+						   ntested, (ntested == 1) ? "" : "s",
+						   nchanged, (nchanged == 1) ? "" : "s",
+						   ntested - nchanged);
+				}
 			}
 			else if (stricmp(argv[i], "--delete-files") == 0) {
 				uint_t j;

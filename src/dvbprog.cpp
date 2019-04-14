@@ -1837,6 +1837,22 @@ AString ADVBProg::ReplaceTerms(const AString& str, bool filesystem) const
 	return res;
 }
 
+bool ADVBProg::Match(const ADataList& patternlist) const
+{
+	uint_t i;
+	bool match = false;
+
+	for (i = 0; (i < patternlist.Count()) && !HasQuit() && !match; i++) {
+		const PATTERN& pattern = *(const PATTERN *)patternlist[i];
+		
+		if (pattern.enabled) {
+			match |= Match(pattern);
+		}
+	}
+	
+	return match;
+}
+
 AString ADVBProg::ReplaceFilenameTerms(const AString& str, bool converted) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();

@@ -364,6 +364,7 @@ public:
 
 	typedef ADVBPatterns::PATTERN PATTERN;
 	bool Match(const PATTERN& pattern) const {return ADVBPatterns::Match(*this, pattern);}
+	bool Match(const ADataList& patternlist) const;
 	void AssignValues(const PATTERN& pattern) {ADVBPatterns::AssignValues(*this, pattern);}
 	void UpdateValues(const PATTERN& pattern) {ADVBPatterns::UpdateValues(*this, pattern);}
 
