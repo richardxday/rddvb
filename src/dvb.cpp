@@ -180,8 +180,8 @@ int main(int argc, const char *argv[])
 		{"--show-file-format",					   "",								  "Show file format of encoded programme"},
 		{"--use-converted-filename",			   "",								  "Change filename to that of converted file, without actually converting file"},
 		{"--set-dir",							   "<patterns> <newdir>",			  "Change directory for programmes in current list that match <patterns> to <newdir>"},
-		{"--regenerate-filename",				   "<pattern>",						  "Change filename of current list of programmes that match <pattern> (dependant on converted state), renaming files (in original directory OR current directory)"},
-		{"--regenerate-filename-test",			   "<pattern>",						  "Test version of the above, will make no changes to programme list or move files"},
+		{"--regenerate-filename",				   "<patterns>",					  "Change filename of current list of programmes that match <pattern> (dependant on converted state), renaming files (in original directory OR current directory)"},
+		{"--regenerate-filename-test",			   "<patterns>",					  "Test version of the above, will make no changes to programme list or move files"},
 		{"--delete-files",						   "",								  "Delete encoded files from programmes in current list"},
 		{"--delete-from-record-lists",			   "<uuid>",						  "Delete programme with UUID <uuid> from record lists (recorded and record failues)"},
 		{"--record-success",					   "",								  "Run recordsuccess command on programmes in current list"},
@@ -669,7 +669,9 @@ int main(int argc, const char *argv[])
 				}
 			}
 			else if (strcmp(argv[i], "--update-combined") == 0) {
-				ADVBProgList::CreateCombinedFile();
+				if (!ADVBProgList::CreateCombinedFile()) {
+					res = -1;
+				}
 			}
 			else if ((strcmp(argv[i], "--find") == 0) || (strcmp(argv[i], "-f") == 0)) {
 				ADVBProgList reslist;

@@ -16,4 +16,4 @@
 -std=c++11
 -D__EXTRADIR=src
 -D__EXTRADIR=../rdlib/src
-
+-D__EXTRADIR=../rdlib/include

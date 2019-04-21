@@ -39,7 +39,7 @@ var filters = [
 	},
 	{
 		title:"Recorded",
-		filter:{from:"Combined",titlefilter:"recorded=1",timefilter:defaulttimefilter,expanded:-1,fetch:true},
+		filter:{from:"Recorded",titlefilter:"",timefilter:defaulttimefilter,expanded:-1,fetch:true},
 	},
 	{
 		title:"Failed",

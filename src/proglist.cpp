@@ -611,7 +611,7 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 			CheckFile(filename, config.GetRecordingFile(), 	  	fileinfo)  ||
 			CheckFile(filename, config.GetRejectedFile(),  	  	fileinfo)  ||
 			CheckFile(filename, config.GetProcessingFile(),     fileinfo)) {
-			CreateCombinedFile();
+			success &= CreateCombinedFile();
 			CreateGraphs();
 		}
 		//else config.printf("No need to update combined file");
@@ -2708,6 +2708,14 @@ bool ADVBProgList::CreateCombinedFile()
 	config.printf("Creating combined listings");
 
 	if (list.ReadFromBinaryFile(config.GetRecordedFile())) {
+		ADateTime dt("utc midnight-1y");
+
+		config.printf("Deleting all programmes that started before %s", dt.DateToStr().str());
+		
+		while ((list.Count() > 0) && (list[0].GetStartDT() < dt)) {
+			list.DeleteProg(0);
+		}
+		
 		list.EnhanceListings();
 		if (list.WriteToFile(config.GetCombinedFile())) success = true;
 		else config.logit("Failed to write combined listings file");
@@ -2717,16 +2725,17 @@ bool ADVBProgList::CreateCombinedFile()
 	return success;
 }
 
-void ADVBProgList::CreateGraphs(const AString& _graphsuffix)
+bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBProgList combinedlist, scheduledlist;
+	ADVBProgList recordedlist, scheduledlist;
 	const ADateTime dt;
 	const AString graphsuffix      = _graphsuffix.Valid() ? _graphsuffix : config.GetGraphSuffix();
 	const AString graphfileall     = config.GetDataDir().CatPath("graphs", "graph-all." + graphsuffix);
 	const AString graphfile6months = config.GetDataDir().CatPath("graphs", "graph-6months." + graphsuffix);
 	const AString graphfile1week   = config.GetDataDir().CatPath("graphs", "graph-1week." + graphsuffix);
 	const AString graphfilepreview = config.GetDataDir().CatPath("graphs", "graph-preview." + graphsuffix);
+	bool success = false;
 
 	{
 		ADVBLock lock("dvbfiles");
@@ -2741,12 +2750,13 @@ void ADVBProgList::CreateGraphs(const AString& _graphsuffix)
 									std::min(info3.WriteTime, info4.WriteTime))) > ADateTime::MinDateTime) &&
 			 ((::GetFileInfo(config.GetRecordedFile(), &info1) && (info1.WriteTime > writetime)) ||
 			  (::GetFileInfo(config.GetScheduledFile(), &info1) && (info1.WriteTime > writetime))))) {
-			combinedlist.ReadFromBinaryFile(config.GetCombinedFile());
+			recordedlist.ReadFromBinaryFile(config.GetRecordedFile());
+			recordedlist.ReadFromBinaryFile(config.GetScheduledFile());
 			scheduledlist.ReadFromBinaryFile(config.GetScheduledFile());
 		}
 	}
 
-	if (combinedlist.Count() > 0) {
+	if (recordedlist.Count() > 0) {
 		const AString datfile  = config.GetTempFile("graph", ".dat");
 		const AString gnpfile  = config.GetTempFile("graph", ".gnp");
 		ADateTime firstdate    = ADateTime::MinDateTime;
@@ -2757,15 +2767,15 @@ void ADVBProgList::CreateGraphs(const AString& _graphsuffix)
 
 		config.printf("Updating graphs...");
 
-		CreateDirectory(graphfileall.PathPart());
+		success = CreateDirectory(graphfileall.PathPart());
 
 		AStdFile fp;
 		if (fp.open(datfile, "w")) {
 			uint_t i;
 
 			scheduledlist.CreateHash();
-			for (i = 0; i < combinedlist.Count(); i++) {
-				const ADVBProg& prog = combinedlist.GetProg(i);
+			for (i = 0; i < recordedlist.Count(); i++) {
+				const ADVBProg& prog = recordedlist.GetProg(i);
 
 				fp.printf("%s", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str());
 
@@ -2790,14 +2800,18 @@ void ADVBProgList::CreateGraphs(const AString& _graphsuffix)
 
 			fp.close();
 		}
+		else {
+			config.printf("Failed to open graph data file '%s' for writing", datfile.str());
+			success = false;
+		}
 
 		if (fp.open(gnpfile, "w")) {
 			const ADateTime startdate("utc now-6M");
 			const ADateTime enddate("utc now+2w+3d");
 			const double    pretime = 2.0 * 24.0 * 3600.0;
-			TREND allrectrend = combinedlist.CalculateTrend(firstrecdate, lastrecdate);
-			TREND rectrend = combinedlist.CalculateTrend(startdate, lastrecdate);
-			TREND schtrend = combinedlist.CalculateTrend(firstschdate, lastschdate);
+			TREND allrectrend = recordedlist.CalculateTrend(firstrecdate, lastrecdate);
+			TREND rectrend = recordedlist.CalculateTrend(startdate, lastrecdate);
+			TREND schtrend = recordedlist.CalculateTrend(firstschdate, lastschdate);
 
 			if (graphsuffix == "png") {
 				fp.printf("set terminal pngcairo size 1280,800\n");
@@ -2875,8 +2889,17 @@ void ADVBProgList::CreateGraphs(const AString& _graphsuffix)
 			remove(datfile);
 			remove(gnpfile);
 		}
+		else {
+			config.printf("Failed to open graph instruction file '%s' for writing", gnpfile.str());
+			success = false;
+		}
 	}
-	else config.printf("Graph update not required");
+	else {
+		config.printf("Graph update not required");
+		success = true;
+	}
+
+	return success;
 }
 
 
