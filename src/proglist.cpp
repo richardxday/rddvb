@@ -2717,7 +2717,9 @@ bool ADVBProgList::CreateCombinedFile()
 		}
 		
 		list.EnhanceListings();
-		if (list.WriteToFile(config.GetCombinedFile())) success = true;
+		if (list.WriteToFile(config.GetCombinedFile())) {
+			success = true;
+		}
 		else config.logit("Failed to write combined listings file");
 	}
 	else config.logit("Failed to read recorded programmes list for generating combined file");
@@ -2768,7 +2770,10 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
 		config.printf("Updating graphs...");
 
 		success = CreateDirectory(graphfileall.PathPart());
-
+		if (!success) {
+			config.printf("Create directroy '%s' failed", graphfileall.PathPart().str()); 
+		}
+		
 		AStdFile fp;
 		if (fp.open(datfile, "w")) {
 			uint_t i;

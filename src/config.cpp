@@ -50,7 +50,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 		{"filters",		 	 			 "{conf:videofilter} {conf:audiofilter}"},
 		{"encodeflags",	 	 			 "-movflags +faststart"},
 		{"h264video", 	 	 			 "-vcodec libx264 -preset {conf:h264preset} -crf {conf:h264crf} -maxrate {conf:maxvideorate} -bufsize {conf:h264bufsize} {conf:encodeflags} {conf:filters}"},
-		{"aacaudio",  	 	 			 "-acodec libfdk_aac -b:a {conf:aacbitrate}"},
+		{"aacaudio",  	 	 			 "-acodec aac -b:a {conf:aacbitrate}"},
 		{"encodecopy",   	 			 "{conf:copyvideo} {conf:mp3audio}"},
 		{"encodeh264",   	 			 "{conf:h264video} {conf:aacaudio}"},
 		{"encodeargs",   	 			 "{conf:encodeh264}"},
