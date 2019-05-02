@@ -1635,8 +1635,8 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 #endif
 		}
 #if DVBDATVERSION > 1
-		else if (prog1.GetEpisodeID()[0] || prog2.GetEpisodeID()[0]) {
-			// episodeid is in one or both -> sameness can be determined (assume when episode ID is missing from a programme, it is different from one which has an episode ID)
+		else if (prog1.GetEpisodeID()[0] && prog2.GetEpisodeID()[0]) {
+			// episodeid is in both -> sameness can be determined
 			same = (CompareNoCase(prog1.GetEpisodeID(), prog2.GetEpisodeID()) == 0);
 #if DEBUG_SAMEPROGRAMME
 			if (debugsameprogramme) debug("'%s' / '%s': episodeid '%s' / '%s': %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), prog1.GetEpisodeID(), prog2.GetEpisodeID(), same ? "same" : "different");
@@ -1649,6 +1649,15 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 			if (debugsameprogramme) debug("'%s' / '%s': episode S%uE%02u / S%uE%02u: %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), (uint_t)ep1.series, (uint_t)ep1.episode, (uint_t)ep2.series, (uint_t)ep2.episode, same ? "same" : "different");
 #endif
 		}
+#if DVBDATVERSION > 1
+		else if (prog1.GetEpisodeID()[0] || prog2.GetEpisodeID()[0]) {
+			// episodeid is in one or both -> sameness can be determined (assume when episode ID is missing from a programme, it is different from one which has an episode ID)
+			same = (CompareNoCase(prog1.GetEpisodeID(), prog2.GetEpisodeID()) == 0);
+#if DEBUG_SAMEPROGRAMME
+			if (debugsameprogramme) debug("'%s' / '%s': episodeid '%s' / '%s': %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), prog1.GetEpisodeID(), prog2.GetEpisodeID(), same ? "same" : "different");
+#endif
+		}
+#endif
 		else if (subtitle1[0] && subtitle2[0]) {
 			// sub-title supplied for both -> sameness can be determined
 			same = (CompareNoCase(subtitle1, subtitle2) == 0);
