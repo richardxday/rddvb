@@ -2711,11 +2711,11 @@ bool ADVBProgList::CreateCombinedFile()
 		ADateTime dt("utc midnight-1y");
 
 		config.printf("Deleting all programmes that started before %s", dt.DateToStr().str());
-		
+
 		while ((list.Count() > 0) && (list[0].GetStartDT() < dt)) {
 			list.DeleteProg(0);
 		}
-		
+
 		list.EnhanceListings();
 		if (list.WriteToFile(config.GetCombinedFile())) {
 			success = true;
@@ -2771,9 +2771,9 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
 
 		success = CreateDirectory(graphfileall.PathPart());
 		if (!success) {
-			config.printf("Create directroy '%s' failed", graphfileall.PathPart().str()); 
+			config.printf("Create directroy '%s' failed", graphfileall.PathPart().str());
 		}
-		
+
 		AStdFile fp;
 		if (fp.open(datfile, "w")) {
 			uint_t i;

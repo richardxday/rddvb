@@ -1634,12 +1634,6 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 										  same ? "same" : "different");
 #endif
 		}
-		else if (ep1.valid && ep2.valid) {
-			same = ((ep1.series == ep2.series) && (ep1.episode == ep2.episode));
-#if DEBUG_SAMEPROGRAMME
-			if (debugsameprogramme) debug("'%s' / '%s': episode S%uE%02u / S%uE%02u: %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), (uint_t)ep1.series, (uint_t)ep1.episode, (uint_t)ep2.series, (uint_t)ep2.episode, same ? "same" : "different");
-#endif
-		}
 #if DVBDATVERSION > 1
 		else if (prog1.GetEpisodeID()[0] || prog2.GetEpisodeID()[0]) {
 			// episodeid is in one or both -> sameness can be determined (assume when episode ID is missing from a programme, it is different from one which has an episode ID)
@@ -1649,6 +1643,12 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
 #endif
 		}
 #endif
+		else if (ep1.valid && ep2.valid) {
+			same = ((ep1.series == ep2.series) && (ep1.episode == ep2.episode));
+#if DEBUG_SAMEPROGRAMME
+			if (debugsameprogramme) debug("'%s' / '%s': episode S%uE%02u / S%uE%02u: %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), (uint_t)ep1.series, (uint_t)ep1.episode, (uint_t)ep2.series, (uint_t)ep2.episode, same ? "same" : "different");
+#endif
+		}
 		else if (subtitle1[0] && subtitle2[0]) {
 			// sub-title supplied for both -> sameness can be determined
 			same = (CompareNoCase(subtitle1, subtitle2) == 0);
@@ -1844,12 +1844,12 @@ bool ADVBProg::Match(const ADataList& patternlist) const
 
 	for (i = 0; (i < patternlist.Count()) && !HasQuit() && !match; i++) {
 		const PATTERN& pattern = *(const PATTERN *)patternlist[i];
-		
+
 		if (pattern.enabled) {
 			match |= Match(pattern);
 		}
 	}
-	
+
 	return match;
 }
 
