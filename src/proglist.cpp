@@ -2708,8 +2708,8 @@ bool ADVBProgList::CreateCombinedFile()
 	config.printf("Creating combined listings");
 
 	if (list.ReadFromBinaryFile(config.GetRecordedFile())) {
-		if ((uint_t)config.GetConfigItem("trimcombinedfile", "0")) {
-			ADateTime dt("utc midnight-1y");
+		if ((uint_t)config.GetConfigItem("trimcombinedfile", "1")) {
+			ADateTime dt("utc midnight-" + config.GetConfigItem("trimcombinedfiletime", "1y"));
 
 			config.printf("Deleting all programmes that started before %s", dt.DateToStr().str());
 
