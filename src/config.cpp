@@ -969,7 +969,7 @@ AString ADVBConfig::GetRecordingsDir(const AString& user, const AString& categor
 	return CatPath(GetRecordingsDir(), GetRecordingsSubDir(user, category));
 }
 
-AString ADVBConfig::GetFilenameTemplate(const AString& user, const AString& title, const AString category) const
+AString ADVBConfig::GetFilenameTemplate(const AString& user, const AString& title, const AString& category) const
 {
 	return GetHierarchicalConfigItem(user, category, "filename", GetUserSubItemConfigItem(user, title, "filename", "{conf:episodefirstfilenametemplate}")) + "{sep}{suffix}";
 }

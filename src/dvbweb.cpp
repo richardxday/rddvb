@@ -628,7 +628,7 @@ int main(int argc, char *argv[])
 						if (((title = (PROGTITLE *)titleshash.Read(prog.GetTitle())) == NULL) && ((title = new PROGTITLE) != NULL)) {
 							title->title = prog.GetTitle();
 							title->desc  = prog.GetDesc();
-							
+
 							memset(&title->counts, 0, sizeof(title->counts));
 
 							titleshash.Insert(prog.GetTitle(), (uptr_t)title);
