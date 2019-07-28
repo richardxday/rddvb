@@ -2321,7 +2321,9 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 	}
 	config.logit("--------------------------------------------------------------------------------");
 
-	const uint_t nchecks = nlists * 2;
+	// first round avoids programmes overlapping including their pre- and post- handles,
+	// second round allows programmes to butt up against each other
+	const uint_t nchecks = nlists * 2;	// two complete rounds
 	for (i = 0; (Count() > 0); i++) {
 		ADVBProg::PROGLIST deletelist;
 		ADVBProg& prog = GetProgWritable(0);
@@ -2330,6 +2332,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 
 		// find a list to schedule this programme on
 		for (j = 0; j < nchecks; j++) {
+			const ADVBProg *overlappedprog = NULL;
 			uint_t vcard = (i + j) % nlists;
 			ADVBProgList& schedulelist = schedulelists[vcard];
 
@@ -2338,9 +2341,18 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 			// run twice over the scheduling list for each card:
 			// once not allowing any overlapping of pre- and post- handles
 			if (!config.IgnoreDVBCard(vcard) &&
-				(((j <  nlists) && (prog.GetRecordStart() >= recstarttimes[vcard]) && !schedulelist.FindRecordOverlap(prog)) ||
-				 // and once allowing the overlapping of pre- and post- handles
-				 ((j >= nlists) && (prog.GetStart()       >= recstarttimes[vcard]) && !schedulelist.FindOverlap(prog)))) {
+				// first loop through only allow programmes to be recorded if their pre- and post- handles don't overlap
+				(((j < nlists) &&															// first round; and
+				  (prog.GetRecordStart() >= recstarttimes[vcard]) &&						// record start (including pre-handle) is after earliest record time; and
+				  (((overlappedprog  = schedulelist.FindRecordOverlap(prog)) == NULL) ||	// this programme (including pre- and post- handles) does not overlap anything scheduled for this card; or
+				   ((overlappedprog != NULL) &&												// it does overlap something on this card; but
+					!schedulelist.FindOverlap(prog) &&										// this programme (excluding pre- and post- handles) does not overlap anything scheduled for this card; and
+					(strcmp(overlappedprog->GetTitle(), prog.GetTitle()) == 0) &&			// both programmes are of the same title
+					(strcmp(overlappedprog->GetUser(),  prog.GetUser())  == 0)))) ||		// both programmes have the same user; or
+				 // second loop through allow programmes to be recorded if their pre- and post- handles *do* overlap
+				 ((j >= nlists) &&															// second round; and
+				  (prog.GetStart() >= recstarttimes[vcard]) &&								// record start (excluding pre-handle) is after earliest record time; and
+				  !schedulelist.FindOverlap(prog)))) {										// this programme (excluding pre- and post- handles) does not overlap anything scheduled for this card
 				// this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
 				const ADVBProg::PROGLIST& list = *prog.GetList();
 				uint_t entry = std::find(list.begin(), list.end(), &prog) - list.begin();
@@ -2351,11 +2363,12 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 				schedulelist.AddProg(prog);
 				deletelist.push_back(&prog);
 
-				config.logit("'%s' can be recorded (card %u, entry %u/%u)",
+				config.logit("'%s' can be recorded (card %u, entry %u/%u)%s",
 							 prog.GetQuickDescription().str(),
 							 vcard,
-							 entry,
-							 (uint_t)list.size() - 1);
+							 entry + 1,
+							 (uint_t)list.size(),
+							 (overlappedprog != NULL) ? AString(" (overlapped with %s)").Arg(overlappedprog->GetDescription()).str() : "");
 
 				// remove any programmes that do NOT have the allow repeats flag set
 				// OR that use the same base channel
