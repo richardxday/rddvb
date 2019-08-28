@@ -3434,7 +3434,6 @@ void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& p
 		const AString&  title = prog.GetTitle();
 		POPULARITY      *pop  = (POPULARITY *)hash.Read(title);
 
-
 		if (!pop && ((pop = new POPULARITY) != NULL)) {
 			memset(pop, 0, sizeof(*pop));
 
