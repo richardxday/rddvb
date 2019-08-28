@@ -71,12 +71,14 @@ var filters = [
 		filter:{from:"Logs",timefilter:"start=yesterday",expanded:-1,fetch:true},
 	},
 ];
-var searches = null;
-var stats    = null;
-var link     = null;
-var globals  = null;
-var channels = null;
+var searches        = null;
+var stats           = null;
+var link            = null;
+var globals         = null;
+var channels        = null;
 var proglistelement = '';
+var ua              = navigator.userAgent.toLowerCase();
+var isAndroid       = (ua.indexOf("android") > -1); //&& ua.indexOf("mobile");
 
 window.onpopstate = function(event)
 {
@@ -121,7 +123,7 @@ function updatestats()
 	if (typeof stats.suffix != 'undefined') {
 		graphsuffix = stats.suffix;
 	}
-	
+
 	str += '<p style="text-align:center"><a href="/dvbgraphs/graph-1week.' + graphsuffix + '" target=_blank><img src="/dvbgraphs/graph-preview.' + graphsuffix + '" style="max-width:240px"></a>';
 	str += '</p>' + "\n";
 	str += '<p style="text-align:center">';
@@ -450,7 +452,7 @@ function adddownloadlink(prog)
 	var str = '';
 
 	str += '<a href="' + prog.file + '" download title="Download ' + prog.title + ' to computer">Download</a>';
-	str += ' or <a href="' + '/dvb/video.php?prog=' + encodeURIComponent(prog.base64) + '" title="Watch ' + prog.title + ' in browser" target=_blank>Watch</a>';
+	str += '&nbsp;&nbsp;&nbsp;<a href="' + '/dvb/video.php?prog=' + encodeURIComponent(prog.base64) + '" title="Watch ' + prog.title + ' in browser" target=_blank>Watch</a>';
 	if ((typeof prog.subfiles != 'undefined') && (prog.subfiles.length > 0)) {
 		var i;
 
@@ -459,6 +461,15 @@ function adddownloadlink(prog)
 			str += '&nbsp;<a href="' + prog.subfiles[i] + '" download title="Download ' + prog.title + ' sub file ' + (i + 1) + ' to computer">' + (i + 1) + '</a>';
 		}
 		str += ')';
+	}
+
+	if (isAndroid) {
+		var progname = prog.title;
+		if (typeof prog.subtitle != 'undefined') {
+			progname += ' / ' + prog.subtitle;
+		}
+
+		str += '<br><a href="intent:http://' + prog.file + '#Intent;package=com.mxtech.videoplayer.pro;S.title=' + encodeURIComponent(progname) + ';end" title="Watch ' + prog.title + ' in MX Player">Watch in MX Player</a>';
 	}
 
 	return str;
