@@ -1104,7 +1104,8 @@ int main(int argc, const char *argv[])
 				ADVBProg prog;
 
 				if (prog.Base64Decode(progstr)) {
-					const AString filename = prog.GetFilename();
+					const AString filename     = prog.GetFilename();
+					const AString tempfilename = prog.GetTempFilename();
 					FILE_INFO info;
 					uint_t    nsecs;
 
@@ -1122,6 +1123,16 @@ int main(int argc, const char *argv[])
 
 					nsecs = (uint_t)((prog.GetActualStop() - prog.GetActualStart()) / 1000);
 
+					if (!AStdFile::exists(filename) &&
+						AStdFile::exists(tempfilename)) {
+						config.printf("File '%s' does not exist but '%s' does, renaming...",
+									  filename.str(),
+									  tempfilename.str());
+						if (rename(tempfilename, filename) != 0) {
+							config.printf("Failed to rename '%s' to '%s'", tempfilename.str(), filename.str());
+						}
+					}
+
 					if (::GetFileInfo(filename, &info)) {
 						config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s",
 									  filename.str(),
@@ -1134,6 +1145,7 @@ int main(int argc, const char *argv[])
 					else config.printf("File '%s' *doesn't* exists", filename.str());
 
 					ADVBProgList::AddToList(config.GetRecordedFile(), prog, true, true);
+					ADVBProgList::RemoveFromList(config.GetRecordingFile(), prog);
 				}
 				else config.printf("Failed to decode programme '%s'\n", progstr.str());
 			}
@@ -1681,7 +1693,7 @@ int main(int argc, const char *argv[])
 							}
 						}
 					}
-				
+
 					printf("Changed %u programme%s\n", nchanged, (nchanged == 1) ? "" : "s");
 				}
 			}
@@ -1702,7 +1714,7 @@ int main(int argc, const char *argv[])
 				}
 				else {
 					uint_t nchanged = 0;
-					
+
 					for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
 						ADVBProg *prog;
 
@@ -1713,7 +1725,7 @@ int main(int argc, const char *argv[])
 							}
 						}
 					}
-				
+
 					printf("Changed %u programme%s\n", nchanged, (nchanged == 1) ? "" : "s");
 				}
 			}
@@ -1837,7 +1849,7 @@ int main(int argc, const char *argv[])
 				}
 				else {
 					uint_t ntested = 0, nchanged = 0;
-					
+
 					for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
 						ADVBProg *pprog;
 
@@ -1891,7 +1903,7 @@ int main(int argc, const char *argv[])
 							ntested++;
 						}
 					}
-				
+
 					printf("%u programme%s tested, %u filename%s changed (%u unchanged)\n",
 						   ntested, (ntested == 1) ? "" : "s",
 						   nchanged, (nchanged == 1) ? "" : "s",
