@@ -465,11 +465,12 @@ function adddownloadlink(prog)
 
 	if (isAndroid) {
 		var progname = prog.title;
+
 		if (typeof prog.subtitle != 'undefined') {
 			progname += ' / ' + prog.subtitle;
 		}
 
-		str += '<br><a href="intent:http://' + prog.file + '#Intent;package=com.mxtech.videoplayer.pro;S.title=' + encodeURIComponent(progname) + ';end" title="Watch ' + prog.title + ' in MX Player">Watch in MX Player</a>';
+		str += '<br><a href="intent:' + window.location.origin + prog.file + '#Intent;package=com.mxtech.videoplayer.pro;S.title=' + encodeURIComponent(progname) + ';end" title="Watch ' + progname + ' in MX Player">Watch in MX Player</a>';
 	}
 
 	return str;
