@@ -78,7 +78,20 @@ var globals         = null;
 var channels        = null;
 var proglistelement = '';
 var ua              = navigator.userAgent.toLowerCase();
-var isAndroid       = (ua.indexOf("android") > -1); //&& ua.indexOf("mobile");
+var isAndroid       = (ua.indexOf("android") >= 0); //&& ua.indexOf("mobile");
+
+var videointents = [
+	{
+		package: "com.mxtech.videoplayer.pro",
+		name: "MX Player",
+	},
+	{
+		package: "org.videolan.vlc",
+		name: "VLC",
+		action: "android.intent.action.VIEW",
+		type: "video/*",
+	},
+];
 
 window.onpopstate = function(event)
 {
@@ -464,13 +477,26 @@ function adddownloadlink(prog)
 	}
 
 	if (isAndroid) {
-		var progname = prog.title;
+		var i, progname = prog.title;
 
 		if (typeof prog.subtitle != 'undefined') {
 			progname += ' / ' + prog.subtitle;
 		}
 
-		str += '<br><a href="intent:' + window.location.origin + prog.file + '#Intent;package=com.mxtech.videoplayer.pro;S.title=' + encodeURIComponent(progname) + ';end" title="Watch ' + progname + ' in MX Player">Watch in MX Player</a>';
+		for (i = 0; i < videointents.length; i++) {
+			var intent = videointents[i];
+
+			str += '<br><a href="intent:' + window.location.origin + prog.file;
+			str += '#Intent;package=' + intent.package + ';';
+			if (typeof intent.action != 'undefined') {
+				str += 'action=' + intent.action + ';';
+			}
+			if (typeof intent.type != 'undefined') {
+				str += 'type=' + intent.type + ';';
+			}
+			str += 'S.title=' + encodeURIComponent(progname) + ';end"';
+			str += ' title="Watch ' + progname + ' in ' + intent.name + '">Watch in ' + videointents[i].name + '</a>';
+		}
 	}
 
 	return str;
