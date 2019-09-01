@@ -458,7 +458,8 @@ int main(int argc, char *argv[])
 			proglist = reslist;
 
 			if (Value(vars, val, "sortfields") &&
-				val.Valid()) {
+				val.Valid() &&
+				(val != "none")) {
 				ADVBProg::FIELDLIST fieldlist;
 				ADVBProg::ParseFieldList(fieldlist, val);
 				proglist->Sort(fieldlist);

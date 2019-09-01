@@ -15,7 +15,7 @@ var patterndefs = null;
 var xmlhttp = null;
 var currentfilter = null;
 var graphsuffix = 'png';
-var defaultsortfields = "start,channel,title,series,episode"
+var defaultsortfields = "none"
 var filters = [
 	{text:"Sources:<br>"},
 	{
