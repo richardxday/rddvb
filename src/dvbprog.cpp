@@ -164,6 +164,10 @@ const AString ADVBProg::delayscalename   	   = "delayscale";
 const AString ADVBProg::latescalename   	   = "latescale";
 const AString ADVBProg::recordoverlapscalename = "recordoverlapscale";
 
+/*--------------------------------------------------------------------------------*/
+/** Basic constructor - empty programme
+ */
+/*--------------------------------------------------------------------------------*/
 ADVBProg::ADVBProg()
 {
 	Init();
@@ -171,6 +175,12 @@ ADVBProg::ADVBProg()
 	Delete();
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Construct programme from binary stream
+ *
+ * @param fp AStdData object to read data from
+ */
+/*--------------------------------------------------------------------------------*/
 ADVBProg::ADVBProg(AStdData& fp)
 {
 	Init();
@@ -178,6 +188,12 @@ ADVBProg::ADVBProg(AStdData& fp)
 	operator = (fp);
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Construct programme from text field list
+ *
+ * @param str field list in 'field=value' format (separated by newlines)
+ */
+/*--------------------------------------------------------------------------------*/
 ADVBProg::ADVBProg(const AString& str)
 {
 	Init();
@@ -185,6 +201,12 @@ ADVBProg::ADVBProg(const AString& str)
 	operator = (str);
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Copy constructor
+ *
+ * @param obj existing programme object
+ */
+/*--------------------------------------------------------------------------------*/
 ADVBProg::ADVBProg(const ADVBProg& obj)
 {
 	Init();
@@ -192,11 +214,19 @@ ADVBProg::ADVBProg(const ADVBProg& obj)
 	operator = (obj);
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Destructor
+ */
+/*--------------------------------------------------------------------------------*/
 ADVBProg::~ADVBProg()
 {
 	if (data) free(data);
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Initialise static (local shared) data - only done once
+ */
+/*--------------------------------------------------------------------------------*/
 void ADVBProg::StaticInit()
 {
 	if (!fieldhash.GetItems()) {
@@ -207,20 +237,40 @@ void ADVBProg::StaticInit()
 			fieldhash.Insert(fields[i].name, (uptr_t)(fields + i));
 		}
 
+		// initialise date/time formats from configuration file
 		dayformat  	   = config.GetConfigItem("dayformat",  	"%d");
 		dateformat 	   = config.GetConfigItem("dateformat", 	" %D-%N-%Y ");
 		timeformat 	   = config.GetConfigItem("timeformat", 	"%h:%m");
 		fulltimeformat = config.GetConfigItem("fulltimeformat", "%h:%m:%s");
 	}
 
+	// set up default file suffices from configuration file
 	if (tempfilesuffix.Empty()) {
 		const ADVBConfig& config = ADVBConfig::Get();
 
-		tempfilesuffix     = config.GetTempFileSuffix();
-		recordedfilesuffix = config.GetRecordedFileSuffix();
-		videofilesuffix    = config.GetVideoFileSuffix();
-		audiofilesuffix    = config.GetAudioFileSuffix();
+		tempfilesuffix     = config.GetTempFileSuffix();		///< file as it is being recorded
+		recordedfilesuffix = config.GetRecordedFileSuffix();	///< file after it has been recorded (before conversion)
+		videofilesuffix    = config.GetVideoFileSuffix();		///< intermediate video file prior to conversion
+		audiofilesuffix    = config.GetAudioFileSuffix();		///< intermediate audio file prior to conversion
 	}
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Initialise data for this object
+ */
+/*--------------------------------------------------------------------------------*/
+void ADVBProg::Init()
+{
+	StaticInit();
+
+	// initialise primary data
+	data     = NULL;
+	maxsize  = 0;
+
+	// initialise record scheduling data
+	list           = NULL;
+	priority_score = 0.0;
+	overlaps       = 0;
 }
 
 const ADVBProg::FIELD *ADVBProg::GetFields(uint_t& nfields)
@@ -274,20 +324,6 @@ void ADVBProg::ModifySearchValue(const ADVBPatterns::FIELD *field, AString& valu
 #endif
 }
 
-void ADVBProg::Init()
-{
-	StaticInit();
-
-	// initialise primary data
-	data     = NULL;
-	maxsize  = 0;
-
-	// initialise record scheduling data
-	list           = NULL;
-	priority_score = 0.0;
-	overlaps       = 0;
-}
-
 void ADVBProg::SwapBytes(DVBPROG *prog)
 {
 	uint16_t *strings = &prog->strings.channel;
@@ -318,6 +354,14 @@ void ADVBProg::SwapBytes(DVBPROG *prog)
 #endif
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Initialise programme from binary stream
+ *
+ * @param fp AStdData object to read data from
+ *
+ * @return reference to this object
+ */
+/*--------------------------------------------------------------------------------*/
 ADVBProg& ADVBProg::operator = (AStdData& fp)
 {
 	DVBPROG _data;
@@ -382,6 +426,14 @@ ADVBProg& ADVBProg::operator = (AStdData& fp)
 	return *this;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Decode programme data from base64 encoded string
+ *
+ * @param str base64 string
+ *
+ * @return true if programme data decoded sucessfully
+ */
+/*--------------------------------------------------------------------------------*/
 bool ADVBProg::Base64Decode(const AString& str)
 {
 	sint_t len = str.Base64DecodeLength();
@@ -549,6 +601,14 @@ AString ADVBProg::GetProgrammeKey() const
 	return key;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Initialise programme from text field list
+ *
+ * @param str field list in 'field=value' format (separated by newlines)
+ *
+ * @return reference to this object
+ */
+/*--------------------------------------------------------------------------------*/
 ADVBProg& ADVBProg::operator = (const AString& str)
 {
 	static const AString tsod = "tsod.plus-1.";
@@ -559,12 +619,12 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 
 	Delete();
 
-	data->start           = GetDate(str, "start");
-	data->stop            = GetDate(str, "stop");
-	data->recstart        = GetDate(str, "recstart");
-	data->recstop         = GetDate(str, "recstop");
-	data->actstart        = GetDate(str, "actstart");
-	data->actstop         = GetDate(str, "actstop");
+	data->start    = GetDate(str, "start");
+	data->stop     = GetDate(str, "stop");
+	data->recstart = GetDate(str, "recstart");
+	data->recstop  = GetDate(str, "recstop");
+	data->actstart = GetDate(str, "actstart");
+	data->actstop  = GetDate(str, "actstop");
 
 	data->filesize = (uint64_t)GetField(str, "filesize");
 	data->flags    = (uint32_t)GetField(str, "flags");
@@ -674,8 +734,8 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	}
 	else data->year = (uint16_t)GetField(str, "year");
 
-	data->jobid    = (uint_t)GetField(str, "jobid");
-	data->score    = (sint_t)GetField(str, "score");
+	data->jobid = (uint_t)GetField(str, "jobid");
+	data->score = (sint_t)GetField(str, "score");
 
 	if (FieldExists(str, "prehandle")) 	data->prehandle  = (uint_t)GetField(str, "prehandle");
 	else							   	data->prehandle  = (uint_t)config.GetUserConfigItem(GetUser(), "prehandle");
@@ -684,7 +744,7 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	if (FieldExists(str, "pri"))		data->pri		 = (int)GetField(str, "pri");
 	else								data->pri		 = (int)config.GetUserConfigItem(GetUser(), "pri");
 
-	data->dvbcard 	 = (uint_t)GetField(str, "card");
+	data->dvbcard = (uint_t)GetField(str, "card");
 
 	SearchAndReplace("\xc2\xa3", "£");
 
@@ -695,6 +755,14 @@ ADVBProg& ADVBProg::operator = (const AString& str)
 	return *this;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Initialise from an existing programme object
+ *
+ * @param obj existing programme object
+ *
+ * @return reference to this object
+ */
+/*--------------------------------------------------------------------------------*/
 ADVBProg& ADVBProg::operator = (const ADVBProg& obj)
 {
 	bool success = false;
@@ -725,6 +793,31 @@ ADVBProg& ADVBProg::operator = (const ADVBProg& obj)
 	return *this;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Modify the current programme object from an existing programme object
+ *
+ * @param obj existing programme object
+ *
+ * @return reference to this object
+ *
+ * @note the following fields are copied from the supplied programme if it is valid:
+ * 	 RecordStart
+ * 	 RecordStop
+ * 	 ActualStart
+ * 	 ActualStop
+ * 	 Flags
+ * 	 FileSize
+ * 	 User
+ * 	 Dir
+ * 	 Filename
+ * 	 Pattern
+ * 	 Prefs
+ * 	 Pri
+ * 	 Score
+ * 	 DVBCard
+ * 	 JobID
+ */
+/*--------------------------------------------------------------------------------*/
 ADVBProg& ADVBProg::Modify(const ADVBProg& obj)
 {
 	if (obj.Valid()) {
@@ -752,6 +845,14 @@ ADVBProg& ADVBProg::Modify(const ADVBProg& obj)
 	return *this;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Write programme data to stream as binary (inverse of operator = (AStdFile& fp))
+ *
+ * @param fp AStdData object to write data to
+ *
+ * @return true if write successful
+ */
+/*--------------------------------------------------------------------------------*/
 bool ADVBProg::WriteToFile(AStdData& fp) const
 {
 #if DVBDATVERSION==1
@@ -762,6 +863,12 @@ bool ADVBProg::WriteToFile(AStdData& fp) const
 #endif
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Return string representing programme data (inverse of operator = (const AString& str))
+ *
+ * @return string containing encoded data
+ */
+/*--------------------------------------------------------------------------------*/
 AString ADVBProg::ExportToText() const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -843,6 +950,14 @@ AString ADVBProg::ExportToText() const
 	return str;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Export programme data to JSON value
+ *
+ * @param doc base document of obj
+ * @param obj JSON value to store data in
+ * @param includebase64 true to include base64 representation of programme data in export
+ */
+/*--------------------------------------------------------------------------------*/
 void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, bool includebase64) const
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -1046,6 +1161,10 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
 	}
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Delete programme data
+ */
+/*--------------------------------------------------------------------------------*/
 void ADVBProg::Delete()
 {
 	if (!data) {
@@ -1180,18 +1299,258 @@ void ADVBProg::SetFlag(uint8_t flag, bool set)
 	else	 data->flags &= GetFlagMask(flag, set);
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Parse a textual list of fields to populate a comparison priority list
+ *
+ * @param fieldlist list of field numbers to populate (appended to)
+ * @param str a string containing the list of field names
+ * @param sep separator for the above
+ * @param reverse true to reverse comparison by reversing every field
+ *
+ * @return true if all field names parsed successfully
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADVBProg::ParseFieldList(FIELDLIST& fieldlist, const AString& str, const AString& sep, bool reverse)
+{
+	const sint_t mul = reverse ? -1 : 1;						// multiplier for optional comparison reversal
+	uint_t i, n = str.CountLines(sep, 0);
+	bool success = (n > 0);
+
+	for (i = 0; i < n; i++) {
+		AString name = str.Line(i, sep);
+		const FIELD *fieldptr;
+		bool reversefield = (name.Left(1) == "-");				// a minus sign means reverse conmparison for this field
+
+		if (reversefield) {
+			name = name.Mid(1);									// remove minus sign
+		}
+
+		if ((fieldptr = (const FIELD *)fieldhash.Read(name)) != NULL) {
+			const sint_t mul2 = mul * (reversefield ? -1 : 1);	// new multiplier is product of global reversal multiplier and field reversal flag
+			const sint_t n = fieldptr - fields;
+			fieldlist.push_back(mul2 * n);						// multiply field number of reversal multiplier
+		}
+		else success = false;
+	}
+
+	return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Compare two programmes using the provided list of fields
+ *
+ * @param prog1 programme 1
+ * @param prog2 programme 2
+ * @param fieldlist a list of fields to compare by (in priority order)
+ * @param reverse ptr to optional reversal flag
+ *
+ * @return -1, 0 or 1 depending on whether prog1 is <, = or > prog2
+ */
+/*--------------------------------------------------------------------------------*/
+int ADVBProg::Compare(const ADVBProg *prog1, const ADVBProg *prog2, const FIELDLIST& fieldlist, const bool *reverse)
+{
+	int res = 0;
+
+	if (prog1 != prog2) {
+		size_t i;
+
+		for (i = 0; (i < fieldlist.size()) && (res == 0); i++) {
+			const uint_t n = (uint_t)abs(fieldlist[i]);		// field numbers can be negative (which means their comparison result should be reversed) hence the abs()
+			bool  reversefield = (fieldlist[i] < 0);		// whether the comparison should be reversed
+
+			if (n < NUMBEROF(fields)) {
+				const FIELD&  field = fields[n];
+				const uint8_t *ptr1 = prog1->GetDataPtr(field.offset);
+				const uint8_t *ptr2 = prog2->GetDataPtr(field.offset);
+
+				switch (field.type) {
+					case ADVBPatterns::FieldType_string: {
+						uint16_t offset1, offset2;
+
+						memcpy(&offset1, ptr1, sizeof(offset1));
+						memcpy(&offset2, ptr2, sizeof(offset2));
+
+						res = CompareNoCase(prog1->GetString(offset1), prog2->GetString(offset2));
+						break;
+					}
+
+					case ADVBPatterns::FieldType_date: {
+						ADateTime dt1,  dt2;
+						uint64_t  val1, val2;
+
+						memcpy(&val1, ptr1, sizeof(val1));
+						dt1  = ADateTime(val1).UTCToLocal();
+						val1 = (uint64_t)dt1;
+
+						memcpy(&val2, ptr2, sizeof(val2));
+						dt2  = ADateTime(val2).UTCToLocal();
+						val2 = (uint64_t)dt2;
+
+						res = COMPARE_ITEMS(val1, val2);
+						break;
+					}
+
+					case ADVBPatterns::FieldType_span: {
+						uint64_t start, end;
+						uint64_t val1, val2;
+
+						memcpy(&start, ptr1, sizeof(start)); ptr1 += sizeof(start);
+						memcpy(&end,   ptr1, sizeof(end));
+						val1 = SUBZ(end, start);
+
+						memcpy(&start, ptr2, sizeof(start)); ptr2 += sizeof(start);
+						memcpy(&end,   ptr2, sizeof(end));
+						val2 = SUBZ(end, start);
+
+						res = COMPARE_ITEMS(val1, val2);
+						break;
+					}
+
+					case ADVBPatterns::FieldType_age: {
+						uint64_t val1, val2, now;
+
+						now = (uint64_t)ADateTime().TimeStamp(true);
+
+						memcpy(&val1, ptr1, sizeof(val1));
+						memcpy(&val2, ptr2, sizeof(val2));
+
+						val1 = SUBZ(now, val1);
+						val2 = SUBZ(now, val2);
+
+						res = COMPARE_ITEMS(val1, val2);
+						break;
+					}
+
+					case ADVBPatterns::FieldType_uint32_t: {
+						uint32_t val1, val2;
+
+						memcpy(&val1, ptr1, sizeof(val1));
+						memcpy(&val2, ptr2, sizeof(val2));
+
+						res = COMPARE_ITEMS(val1, val2);
+						break;
+					}
+
+					case ADVBPatterns::FieldType_sint32_t: {
+						sint32_t val1, val2;
+
+						memcpy(&val1, ptr1, sizeof(val1));
+						memcpy(&val2, ptr2, sizeof(val2));
+
+						res = COMPARE_ITEMS(val1, val2);
+						break;
+					}
+
+					case ADVBPatterns::FieldType_uint16_t: {
+						uint16_t val1, val2;
+
+						memcpy(&val1, ptr1, sizeof(val1));
+						memcpy(&val2, ptr2, sizeof(val2));
+
+						res = COMPARE_ITEMS(val1, val2);
+						break;
+					}
+
+					case ADVBPatterns::FieldType_sint16_t: {
+						sint16_t val1, val2;
+
+						memcpy(&val1, ptr1, sizeof(val1));
+						memcpy(&val2, ptr2, sizeof(val2));
+
+						res = COMPARE_ITEMS(val1, val2);
+						break;
+					}
+
+					case ADVBPatterns::FieldType_uint8_t: {
+						uint8_t val1, val2;
+
+						memcpy(&val1, ptr1, sizeof(val1));
+						memcpy(&val2, ptr2, sizeof(val2));
+
+						res = COMPARE_ITEMS(val1, val2);
+						break;
+					}
+
+					case ADVBPatterns::FieldType_sint8_t: {
+						sint8_t val1, val2;
+
+						memcpy(&val1, ptr1, sizeof(val1));
+						memcpy(&val2, ptr2, sizeof(val2));
+
+						res = COMPARE_ITEMS(val1, val2);
+						break;
+					}
+
+					case ADVBPatterns::FieldType_prog:
+						res = Compare(prog1, prog2);
+						break;
+
+					case ADVBPatterns::FieldType_external_uint32_t: {
+						uint32_t val1 = prog1->GetExternal(field.offset);
+						uint32_t val2 = prog2->GetExternal(field.offset);
+
+						res = COMPARE_ITEMS(val1, val2);
+						break;
+					}
+
+					case ADVBPatterns::FieldType_external_sint32_t: {
+						sint32_t val1 = prog1->GetExternal(field.offset);
+						sint32_t val2 = prog2->GetExternal(field.offset);
+
+						res = COMPARE_ITEMS(val1, val2);
+						break;
+					}
+
+					case ADVBPatterns::FieldType_flag...ADVBPatterns::FieldType_lastflag: {
+						uint_t flag1 = (uint_t)prog1->GetFlag(field.type - ADVBPatterns::FieldType_flag);
+						uint_t flag2 = (uint_t)prog2->GetFlag(field.type - ADVBPatterns::FieldType_flag);
+						res = (sint_t)flag1 - (sint_t)flag2;
+						break;
+					}
+				}
+
+				// if comparison is to be reversed, negate result
+				if (reversefield) res = -res;
+			}
+		}
+
+		// if entire comparison is to be reversed, negate result
+		if (reverse && *reverse) res = -res;
+	}
+
+	return res;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Compare two programmes using the provided list of fields
+ *
+ * @param prog1 ptr to programme 1
+ * @param prog2 ptr to programme 2
+ * @param reverse ptr to optional reversal flag
+ *
+ * @return -1, 0 or 1 depending on whether prog1 is <, = or > prog2
+ *
+ * @note this comparison uses a fixed set of fields to compare by:
+ *       1. Programme start
+ *		 2. Programme channel
+ *		 3. Programme title
+ *		 4. Programme subtitle
+ */
+/*--------------------------------------------------------------------------------*/
 int ADVBProg::Compare(const ADVBProg *prog1, const ADVBProg *prog2, const bool *reverse)
 {
 	int res = 0;
 
-	if		(prog1->GetStart() < prog2->GetStart()) res = -1;
-	else if (prog1->GetStart() > prog2->GetStart()) res =  1;
-	else if (((res = CompareNoCase(prog1->GetChannel(), prog2->GetChannel())) == 0) &&
-			 ((res = CompareNoCase(prog1->GetTitle(),   prog2->GetTitle()))   == 0)) {
-		res = CompareNoCase(prog1->GetSubtitle(), prog2->GetSubtitle());
-	}
+	if (prog1 != prog2) {
+		if		(prog1->GetStart() < prog2->GetStart()) res = -1;
+		else if (prog1->GetStart() > prog2->GetStart()) res =  1;
+		else if (((res = CompareNoCase(prog1->GetChannel(), prog2->GetChannel())) == 0) &&
+				 ((res = CompareNoCase(prog1->GetTitle(),   prog2->GetTitle()))   == 0)) {
+			res = CompareNoCase(prog1->GetSubtitle(), prog2->GetSubtitle());
+		}
 
-	if (reverse && *reverse) res = -res;
+		if (reverse && *reverse) res = -res;
+	}
 
 	return res;
 }
@@ -1547,52 +1906,41 @@ AString ADVBProg::GetQuickDescription() const
 	return str;
 }
 
-int ADVBProg::CompareExternal(uint_t id, uint32_t value) const
+uint32_t ADVBProg::GetExternal(uint_t id) const
 {
-	uint32_t val;
-	int res = 0;
+	uint32_t val = 0;
 
 	switch (id) {
 		case Compare_brate:
 			val = GetRate();
-			if (val < value) res = -1;
-			if (val > value) res =  1;
 			break;
 
 		case Compare_kbrate:
-			val = GetRate();
-			if (( val         / 1024) < value) res = -1;
-			if (((val + 1023) / 1024) > value) res =  1;
-			break;
-
-		default:
+			val = (GetRate() + 512U) / 1024U;
 			break;
 	}
+
+	return val;
+}
+
+int ADVBProg::CompareExternal(uint_t id, uint32_t value) const
+{
+	uint32_t val = GetExternal(id);
+	int res = 0;
+
+	if (val < value) res = -1;
+	if (val > value) res =  1;
 
 	return res;
 }
 
 int ADVBProg::CompareExternal(uint_t id, sint32_t value) const
 {
-	sint32_t val;
+	sint32_t val = GetExternal(id);
 	int res = 0;
 
-	switch (id) {
-		case Compare_brate:
-			val = GetRate();
-			if (val < value) res = -1;
-			if (val > value) res =  1;
-			break;
-
-		case Compare_kbrate:
-			val = GetRate();
-			if (( val         / 1024) < value) res = -1;
-			if (((val + 1023) / 1024) > value) res =  1;
-			break;
-
-		default:
-			break;
-	}
+	if (val < value) res = -1;
+	if (val > value) res =  1;
 
 	return res;
 }

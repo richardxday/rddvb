@@ -106,6 +106,7 @@ int main(int argc, const char *argv[])
 		{"--jobs",								   "",								  "Read programmes from scheduled jobs"},
 		{"-w, --write",							   "<file>",						  "Write listings to file <file>"},
 		{"--sort",								   "",								  "Sort list in chronological order"},
+		{"--sort-by-fields",					   "<fieldlist>",					  "Sort list using field list"},
 		{"--sort-rev",							   "",								  "Sort list in reverse-chronological order"},
 		{"--write-text",						   "<file>",						  "Write listings to file <file> in text format"},
 		{"--write-gnuplot",						   "<file>",						  "Write listings to file <file> in format usable by GNUPlot"},
@@ -1035,7 +1036,19 @@ int main(int argc, const char *argv[])
 			else if ((strcmp(argv[i], "--sort") == 0) || (strcmp(argv[i], "--sort-rev") == 0)) {
 				bool reverse = (strcmp(argv[i], "--sort-rev") == 0);
 				proglist.Sort(reverse);
-				printf("%sorted list\n", reverse ? "Reverse s" : "S");
+				printf("%sorted list chronologically\n", reverse ? "Reverse s" : "S");
+			}
+			else if (strcmp(argv[i], "--sort-by-fields") == 0) {
+				ADVBProg::FIELDLIST fieldlist;
+
+				if (ADVBProg::ParseFieldList(fieldlist, argv[++i])) {
+					proglist.Sort(fieldlist);
+					printf("Sorted list by fields\n");
+				}
+				else {
+					printf("Failed to parse field list for sort\n");
+					res = -1;
+				}
 			}
 			else if (strcmp(argv[i], "--schedule") == 0) {
 				ADVBProgList::SchedulePatterns(starttime);

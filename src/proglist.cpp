@@ -134,6 +134,11 @@ int ADVBProgList::SortProgs(uptr_t item1, uptr_t item2, void *pContext)
 	return ADVBProg::Compare((const ADVBProg *)item1, (const ADVBProg *)item2, (const bool *)pContext);
 }
 
+int ADVBProgList::SortProgsAdvanced(uptr_t item1, uptr_t item2, void *pContext)
+{
+	return ADVBProg::Compare((const ADVBProg *)item1, (const ADVBProg *)item2, *(const ADVBProg::FIELDLIST *)pContext);
+}
+
 void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
 {
 	const ADVBConfig& config = ADVBConfig::Get();
@@ -1857,7 +1862,14 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 
 void ADVBProgList::Sort(bool reverse)
 {
-	proglist.Sort(&SortProgs, &reverse);
+	Sort(&SortProgs, &reverse);
+}
+
+void ADVBProgList::Sort(const ADVBProg::FIELDLIST& fieldlist)
+{
+	if (fieldlist.size() > 0) {
+		Sort(&SortProgsAdvanced, (void *)&fieldlist);
+	}
 }
 
 void ADVBProgList::Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), void *pContext)

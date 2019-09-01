@@ -15,43 +15,44 @@ var patterndefs = null;
 var xmlhttp = null;
 var currentfilter = null;
 var graphsuffix = 'png';
+var defaultsortfields = "start,channel,title,series,episode"
 var filters = [
 	{text:"Sources:<br>"},
 	{
 		title:"Listings",
-		filter:{from:"Listings",titlefilter:"",timefilter:"start>now",expanded:-1,fetch:true},
+		filter:{from:"Listings",titlefilter:"",timefilter:"start>now",sortfields:defaultsortfields,expanded:-1,fetch:true},
 	},
 	{
 		title:"Combined",
-		filter:{from:"Combined",titlefilter:"",timefilter:defaulttimefilter,expanded:-1,fetch:true},
+		filter:{from:"Combined",titlefilter:"",timefilter:defaulttimefilter,sortfields:defaultsortfields,expanded:-1,fetch:true},
 	},
 	{
 		title:"Requested",
-		filter:{from:"Requested",titlefilter:"",timefilter:"",expanded:-1,fetch:true},
+		filter:{from:"Requested",titlefilter:"",timefilter:"",sortfields:defaultsortfields,expanded:-1,fetch:true},
 	},
 	{
 		title:"Rejected",
-		filter:{from:"Combined",titlefilter:"rejected=1",timefilter:defaulttimefilter,expanded:-1,fetch:true},
+		filter:{from:"Combined",titlefilter:"rejected=1",timefilter:defaulttimefilter,sortfields:defaultsortfields,expanded:-1,fetch:true},
 	},
 	{
 		title:"Scheduled",
-		filter:{from:"Combined",titlefilter:"scheduled=1",timefilter:defaulttimefilter,expanded:-1,fetch:true},
+		filter:{from:"Combined",titlefilter:"scheduled=1",timefilter:defaulttimefilter,sortfields:defaultsortfields,expanded:-1,fetch:true},
 	},
 	{
 		title:"Recorded",
-		filter:{from:"Recorded",titlefilter:"",timefilter:defaulttimefilter,expanded:-1,fetch:true},
+		filter:{from:"Recorded",titlefilter:"",timefilter:defaulttimefilter,sortfields:defaultsortfields,expanded:-1,fetch:true},
 	},
 	{
 		title:"Failed",
-		filter:{from:"Failures",titlefilter:"",timefilter:defaulttimefilter,expanded:-1,fetch:true},
+		filter:{from:"Failures",titlefilter:"",timefilter:defaulttimefilter,sortfields:defaultsortfields,expanded:-1,fetch:true},
 	},
 	{
 		title:"Titles (Combined)",
-		filter:{from:"Titles (Combined)",titlefilter:"",timefilter:"",expanded:-1,fetch:true},
+		filter:{from:"Titles (Combined)",titlefilter:"",timefilter:"",sortfields:defaultsortfields,expanded:-1,fetch:true},
 	},
 	{
 		title:"Titles (Listings)",
-		filter:{from:"Titles (Listings)",titlefilter:"",timefilter:"",expanded:-1,fetch:true},
+		filter:{from:"Titles (Listings)",titlefilter:"",timefilter:"",sortfields:defaultsortfields,expanded:-1,fetch:true},
 	},
 	{
 		title:"Patterns",
@@ -64,11 +65,11 @@ var filters = [
 	{text:"<br>DVB Logs:<br>"},
 	{
 		title:"Today",
-		filter:{from:"Logs",timefilter:"start=today",expanded:-1,fetch:true},
+		filter:{from:"Logs",timefilter:"start=today",sortfields:"",expanded:-1,fetch:true},
 	},
 	{
 		title:"Yesterday",
-		filter:{from:"Logs",timefilter:"start=yesterday",expanded:-1,fetch:true},
+		filter:{from:"Logs",timefilter:"start=yesterday",sortfields:"",expanded:-1,fetch:true},
 	},
 ];
 var searches        = null;
@@ -122,6 +123,7 @@ function loadpage()
 	if (typeof filter.from        == 'undefined') filter.from        = document.getElementById("from").value;
 	if (typeof filter.titlefilter == 'undefined') filter.titlefilter = document.getElementById("titlefilter").value;
 	if (typeof filter.timefilter  == 'undefined') filter.timefilter  = document.getElementById("timefilter").value;
+	if (typeof filter.sortfields  == 'undefined') filter.sortfields  = document.getElementById("sortfields").value;
 	if (typeof filter.pagesize    == 'undefined') filter.pagesize    = document.getElementById("pagesize").value;
 	if (typeof filter.page        == 'undefined') filter.page        = 0;
 	if (typeof filter.expanded    == 'undefined') filter.expanded    = -1;
@@ -1821,10 +1823,13 @@ function dvbrequest(filter, postdata, stackrequest)
 		else										  document.getElementById("titlefilter").value = filter.titlefilter;
 		if (typeof filter.timefilter  == 'undefined') filter.timefilter  = currentfilter.timefilter;
 		else										  document.getElementById("timefilter").value = filter.timefilter;
+		if (typeof filter.sortfields  == 'undefined') filter.sortfields  = currentfilter.sortfields;
+		else										  document.getElementById("sortfields").value = filter.sortfields;
 		if (typeof filter.page 	      == 'undefined') {
 			if ((filter.from        != currentfilter.from) ||
 				(filter.titlefilter != currentfilter.titlefilter) ||
-				(filter.timefilter  != currentfilter.timefilter)) {
+				(filter.timefilter  != currentfilter.timefilter) ||
+				(filter.sortfields  != currentfilter.sortfields)) {
 				filter.page = 0;
 			}
 			else filter.page = currentfilter.page;
@@ -1835,6 +1840,7 @@ function dvbrequest(filter, postdata, stackrequest)
 			if ((filter.from        != currentfilter.from) ||
 				(filter.titlefilter != currentfilter.titlefilter) ||
 				(filter.timefilter  != currentfilter.timefilter) ||
+				(filter.sortfields  != currentfilter.sortfields) ||
 				(filter.page        != currentfilter.page)) {
 				filter.expanded = -1;
 			}
@@ -1870,6 +1876,7 @@ function dvbrequest(filter, postdata, stackrequest)
 		 (filter.from        != currentfilter.from) ||
 		 (filter.titlefilter != currentfilter.titlefilter) ||
 		 (filter.timefilter  != currentfilter.timefilter) ||
+		 (filter.sortfields  != currentfilter.sortfields) ||
 		 (filter.page        != currentfilter.page) ||
 		 (filter.pagesize    != currentfilter.pagesize)) &&
 		!((typeof filter.fetch != 'undefined') && !filter.fetch)) {
@@ -1963,6 +1970,7 @@ function dvbrequest(filter, postdata, stackrequest)
 		data += "filter=" + getfullfilter(filter) + "\n";
 		data += "titlefilter=" + filter.titlefilter + "\n";
 		data += "timefilter=" + filter.timefilter + "\n";
+		data += "sortfields=" + filter.sortfields + "\n";
 		data += "page=" + filter.page + "\n";
 		data += "pagesize=" + filter.pagesize + "\n";
 		if (searches != null) {
@@ -2113,6 +2121,11 @@ function updatepagesize()
 					pagesize:document.getElementById("pagesize").value});
 	}
 	else dvbrequest({pagesize:document.getElementById("pagesize").value});
+}
+
+function updatesortfields()
+{
+	dvbrequest({sortfields:document.getElementById("sortfields").value});
 }
 
 function abortfind()

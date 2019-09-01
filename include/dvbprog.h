@@ -20,27 +20,141 @@
 class ADVBProgList;
 class ADVBProg {
 public:
+	/*--------------------------------------------------------------------------------*/
+	/** Basic constructor - empty programme
+	 */
+	/*--------------------------------------------------------------------------------*/
 	ADVBProg();
+	/*--------------------------------------------------------------------------------*/
+	/** Construct programme from binary stream
+	 *
+	 * @param fp AStdData object to read data from
+	 */
+	/*--------------------------------------------------------------------------------*/
 	ADVBProg(AStdData& fp);
+	/*--------------------------------------------------------------------------------*/
+	/** Construct programme from text field list
+	 *
+	 * @param str field list in 'field=value' format (separated by newlines)
+	 */
+	/*--------------------------------------------------------------------------------*/
 	ADVBProg(const AString&  str);
+	/*--------------------------------------------------------------------------------*/
+	/** Copy constructor
+	 *
+	 * @param obj existing programme object
+	 */
+	/*--------------------------------------------------------------------------------*/
 	ADVBProg(const ADVBProg& obj);
+	/*--------------------------------------------------------------------------------*/
+	/** Destructor
+	 */
+	/*--------------------------------------------------------------------------------*/
 	~ADVBProg();
 
+	/*--------------------------------------------------------------------------------*/
+	/** Initialise programme from binary stream
+	 *
+	 * @param fp AStdData object to read data from
+	 *
+	 * @return reference to this object
+	 */
+	/*--------------------------------------------------------------------------------*/
 	ADVBProg& operator = (AStdData& fp);
+	/*--------------------------------------------------------------------------------*/
+	/** Initialise programme from text field list
+	 *
+	 * @param str field list in 'field=value' format (separated by newlines)
+	 *
+	 * @return reference to this object
+	 */
+	/*--------------------------------------------------------------------------------*/
 	ADVBProg& operator = (const AString&  str);
+	/*--------------------------------------------------------------------------------*/
+	/** Initialise from an existing programme object
+	 *
+	 * @param obj existing programme object
+	 *
+	 * @return reference to this object
+	 */
+	/*--------------------------------------------------------------------------------*/
 	ADVBProg& operator = (const ADVBProg& obj);
 
+	/*--------------------------------------------------------------------------------*/
+	/** Modify the current programme object from an existing programme object
+	 *
+	 * @param obj existing programme object
+	 *
+	 * @return reference to this object
+	 *
+	 * @note the following fields are copied from the supplied programme if it is valid:
+	 * 	 RecordStart
+	 * 	 RecordStop
+	 * 	 ActualStart
+	 * 	 ActualStop
+	 * 	 Flags
+	 * 	 FileSize
+	 * 	 User
+	 * 	 Dir
+	 * 	 Filename
+	 * 	 Pattern
+	 * 	 Prefs
+	 * 	 Pri
+	 * 	 Score
+	 * 	 DVBCard
+	 * 	 JobID
+	 */
+	/*--------------------------------------------------------------------------------*/
 	ADVBProg& Modify(const ADVBProg& obj);
 
+	/*--------------------------------------------------------------------------------*/
+	/** Decode programme data from base64 encoded string
+	 *
+	 * @param str base64 string
+	 *
+	 * @return true if programme data decoded sucessfully
+	 */
+	/*--------------------------------------------------------------------------------*/
 	bool Base64Decode(const AString& str);
 
+	/*--------------------------------------------------------------------------------*/
+	/** Return whether programme data is valid
+	 */
+	/*--------------------------------------------------------------------------------*/
 	bool Valid() const {return (data && data->start && data->stop);}
+
+	/*--------------------------------------------------------------------------------*/
+	/** Delete programme data
+	 */
+	/*--------------------------------------------------------------------------------*/
 	void Delete();
 
+	/*--------------------------------------------------------------------------------*/
+	/** Write programme data to stream as binary (inverse of operator = (AStdFile& fp))
+	 *
+	 * @param fp AStdData object to write data to
+	 *
+	 * @return true if write successful
+	 */
+	/*--------------------------------------------------------------------------------*/
 	bool WriteToFile(AStdData& fp) const;
 
+	/*--------------------------------------------------------------------------------*/
+	/** Return string representing programme data (inverse of operator = (const AString& str))
+	 *
+	 * @return string containing encoded data
+	 */
+	/*--------------------------------------------------------------------------------*/
 	AString ExportToText() const;
 
+	/*--------------------------------------------------------------------------------*/
+	/** Export programme data to JSON value
+	 *
+	 * @param doc base document of obj
+	 * @param obj JSON value to store data in
+	 * @param includebase64 true to include base64 representation of programme data in export
+	 */
+	/*--------------------------------------------------------------------------------*/
 	void ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, bool includebase64 = false) const;
 
 	bool Overlaps(const ADVBProg& prog)              const {return ((data->stop > prog.data->start) && (data->start < prog.data->stop));}
@@ -58,6 +172,62 @@ public:
 	bool operator >= (const ADVBProg& obj) const {return (Compare(this, &obj) >= 0);}
 	bool operator <  (const ADVBProg& obj) const {return (Compare(this, &obj) <  0);}
 	bool operator >  (const ADVBProg& obj) const {return (Compare(this, &obj) >  0);}
+
+	/*--------------------------------------------------------------------------------*/
+	/** typedef for list of comparison fields
+	 */
+	/*--------------------------------------------------------------------------------*/
+	typedef std::vector<sint_t> FIELDLIST;
+
+	/*--------------------------------------------------------------------------------*/
+	/** Parse a textual list of fields to populate a comparison priority list
+	 *
+	 * @param fieldlist list of field numbers to populate (appended to)
+	 * @param str a string containing the list of field names
+	 * @param sep separator for the above
+	 * @param reverse true to reverse comparison by reversing every field
+	 *
+	 * @return true if all field names parsed successfully
+	 */
+	/*--------------------------------------------------------------------------------*/
+	static bool ParseFieldList(FIELDLIST& fieldlist, const AString& str, const AString& sep = ",", bool reverse = false);
+
+	/*--------------------------------------------------------------------------------*/
+	/** Compare two programmes using the provided list of fields
+	 *
+	 * @param prog1 programme 1
+	 * @param prog2 programme 2
+	 * @param fieldlist a list of fields to compare by (in priority order)
+	 * @param reverse ptr to optional reversal flag
+	 *
+	 * @return -1, 0 or 1 depending on whether prog1 is <, = or > prog2
+	 */
+	/*--------------------------------------------------------------------------------*/
+	static int  Compare(const ADVBProg *prog1, const ADVBProg *prog2, const FIELDLIST& fieldlist, const bool *reverse = NULL);
+	static int  Compare(const ADVBProg& prog1, const ADVBProg& prog2, const FIELDLIST& fieldlist, const bool *reverse = NULL) {
+		return Compare(&prog1, &prog2, fieldlist, reverse);
+	}
+
+	/*--------------------------------------------------------------------------------*/
+	/** Compare two programmes using the provided list of fields
+	 *
+	 * @param prog1 ptr to programme 1
+	 * @param prog2 ptr to programme 2
+	 * @param reverse ptr to optional reversal flag
+	 *
+	 * @return -1, 0 or 1 depending on whether prog1 is <, = or > prog2
+	 *
+	 * @note this comparison uses a fixed set of fields to compare by:
+	 *       1. Programme start
+	 *		 2. Programme channel
+	 *		 3. Programme title
+	 *		 4. Programme subtitle
+	 */
+	/*--------------------------------------------------------------------------------*/
+	static int  Compare(const ADVBProg *prog1, const ADVBProg *prog2, const bool *reverse = NULL);
+	static int  Compare(const ADVBProg& prog1, const ADVBProg& prog2, const bool *reverse = NULL) {
+		return Compare(&prog1, &prog2, reverse);
+	}
 
 	void SearchAndReplace(const AString& search, const AString& replace);
 
@@ -168,6 +338,7 @@ public:
 		Compare_brate = 0,
 		Compare_kbrate
 	};
+	uint32_t GetExternal(uint_t id) const;
 	int CompareExternal(uint_t id, uint32_t value) const;
 	int CompareExternal(uint_t id, sint32_t value) const;
 
@@ -219,7 +390,7 @@ public:
 		Flag_recordifmissing,
 		Flag_postprocessfailed,
 		Flag_conversionfailed,
-		
+
 		Flag_count,
 
 		_Flag_extra_start = 32,
@@ -233,7 +404,7 @@ public:
 		Flag_failed,
 		Flag_radioprogramme,
 		Flag_tvprogramme,
-		
+
 		Flag_total,
 	};
 	void     SetFlags(uint32_t flags)	{data->flags = flags;}
@@ -308,11 +479,11 @@ public:
 
 	static void GetFlagList(std::vector<AString>& list, bool includegetonly = true);
 	static bool IsFlagNameValid(const AString& name) {return (GetFlagNumber(name) >= 0);}
-	
+
 	bool   SetFlag(const AString& name, bool set = true);
 	bool   ClrFlag(const AString& name);
 	bool   GetFlag(const AString& name) const;
-	
+
 	sint_t GetPri()   	       	  const {return data->pri;}
 	sint_t GetScore()		   	  const {return data->score;}
 
@@ -328,8 +499,6 @@ public:
 	void   SetJobID(uint_t id)		    {data->jobid   = id;}
 
 	bool   RecordDataValid()   	  const {return (data->recstart || data->recstop);}
-
-	static int Compare(const ADVBProg *prog1, const ADVBProg *prog2, const bool *reverse = NULL);
 
 	static bool SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2);
 
@@ -397,7 +566,6 @@ public:
 
 	AString GetConvertedDestinationDirectory() const;
 
-	
 	static AString GenerateStreamCommand(uint_t card, uint_t nsecs, const AString& pids, const AString& logfile = "/dev/null");
 
 	static bool FilePatternExists(const AString& filename);
@@ -557,7 +725,16 @@ protected:
 
 	static const FIELD *GetFields(uint_t& nfields);
 
+	/*--------------------------------------------------------------------------------*/
+	/** Initialise static (local shared) data - only done once
+	 */
+	/*--------------------------------------------------------------------------------*/
 	static void StaticInit();
+
+	/*--------------------------------------------------------------------------------*/
+	/** Initialise data for this object
+	 */
+	/*--------------------------------------------------------------------------------*/
 	void Init();
 
 	bool    GetRecordPIDs(AString& pids, bool update = true) const;
@@ -616,7 +793,7 @@ protected:
 	double   		   priority_score;
 	uint_t	 		   overlaps;
 	AString			   dircreationerrors;
-	
+
 	static AHash       	 fieldhash;
 	static const FIELD 	 fields[];
 	static AString     	 dayformat;

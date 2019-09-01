@@ -457,6 +457,13 @@ int main(int argc, char *argv[])
 			proglist->FindProgrammes(*reslist, filter, errors, (filter.Pos("\n") >= 0) ? "\n" : ";");
 			proglist = reslist;
 
+			if (Value(vars, val, "sortfields") &&
+				val.Valid()) {
+				ADVBProg::FIELDLIST fieldlist;
+				ADVBProg::ParseFieldList(fieldlist, val);
+				proglist->Sort(fieldlist);
+			}
+
 			if (from == "listings") {
 				uint_t i;
 

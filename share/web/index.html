@@ -72,6 +72,12 @@ Display:<br>
 <option value="4">Everything</option>
 </select>
 </td><td>
+Order:<br>
+<select id="sortfields" onchange="updatesortfields()">
+<option value="start,channel,title,series,episode">Time</option>
+<option value="title,series,episode">Programme</option>
+</select>
+</td><td>
 <button class="find" onclick="dvbrequest({from:document.getElementById(&quot;from&quot;).value,titlefilter:document.getElementById(&quot;titlefilter&quot;).value,timefilter:document.getElementById(&quot;timefilter&quot;).value,fetch:true})">Find</button>
 </td><td>
 <h2 id="link" />

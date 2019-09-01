@@ -48,10 +48,10 @@ public:
 
 	bool WriteToFile(const AString& filename, bool updatedependantfiles = true) const;
 	bool WriteToTextFile(const AString& filename) const;
-	
+
 	ADVBProgList& FindDifferences(ADVBProgList& list1, ADVBProgList& list2, bool in1only = true, bool in2only = true);
 	ADVBProgList& FindSimilarities(ADVBProgList& list1, ADVBProgList& list2);
-	
+
 	bool WriteToGNUPlotFile(const AString& filename) const;
 
 	void SearchAndReplace(const AString& search, const AString& replace);
@@ -70,7 +70,7 @@ public:
 
 	uint_t CountOccurances(const ADVBProg& prog) const {return CountOccurances(prog.GetUUID());}
 	uint_t CountOccurances(const AString& uuid) const;
-	
+
 	void CreateHash();
 	const ADVBProg *FindUUID(const ADVBProg& prog) const {return FindUUID(prog.GetUUID());}
 	const ADVBProg *FindUUID(const AString& uuid) const;
@@ -78,7 +78,7 @@ public:
 	int				FindUUIDIndex(const AString& uuid) const;
 	ADVBProg 	   *FindUUIDWritable(const ADVBProg& prog) const {return FindUUIDWritable(prog.GetUUID());}
 	ADVBProg 	   *FindUUIDWritable(const AString& uuid) const;
-	
+
 	static void ReadPatterns(ADataList& patternlist, AString& errors, bool sort = true);
 
 	static bool CheckDiskSpace(bool runcmd = false, rapidjson::Document *doc = NULL);
@@ -98,21 +98,22 @@ public:
 	uint_t FindSimilarProgrammes(ADVBProgList& dest, const ADVBProg& prog, uint_t index = 0) const;
 
 	void Sort(bool reverse = false);
+	void Sort(const ADVBProg::FIELDLIST& fieldlist);
 	void Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), void *pContext = NULL);
 
 	static int CompareEpisode(uptr_t item1, uptr_t item2, void *pContext);
-	
+
 	void CountOverlaps(const ADVBProg::PROGLISTLIST& repeatlists, const ADateTime& starttime);
 	void PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *recstarttimes, uint_t nlists, ADVBProgList& rejectedlist, const ADateTime& starttime);
 	uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));
-	
+
 	typedef struct {
 		AString				 title;
 		std::vector<AString> list;
 	} SERIES;
 	typedef std::map<AString,SERIES> SERIESLIST;
 	void FindSeries(SERIESLIST& serieslist) const;
-	
+
 	void StripFilmsAndSeries(const SERIESLIST& serieslist);
 
 	typedef struct {
@@ -155,7 +156,7 @@ public:
 	static bool CreateCombinedFile();
 	static void CheckRecordingFile();
 	static bool CreateGraphs(const AString& _graphsuffix = "");
-	
+
 	static bool GetAndConvertRecordings();
 	static bool GetRecordingListFromRecordingSlave();
 	static bool CheckRecordingNow();
@@ -186,7 +187,7 @@ protected:
 	uint_t ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& allscheduledlist, ADVBProgList& allrejectedlist, const ADateTime& starttime);
 
 	bool ReadFromBinaryFile(const AString& filename, bool sort = false, bool removeoverlaps = false);
-	
+
 	static void DeleteProg(uptr_t item, void *context) {
 		UNUSED(context);
 		delete (ADVBProg *)item;
@@ -205,6 +206,7 @@ protected:
 	static int CompareRepeatLists(uptr_t item1, uptr_t item2, void *context);
 
 	static int SortProgs(uptr_t item1, uptr_t item2, void *pContext);
+	static int SortProgsAdvanced(uptr_t item1, uptr_t item2, void *pContext);
 	static int SortChannels(uptr_t item1, uptr_t item2, void *pContext);
 	static int SortProgsByUserThenDir(uptr_t item1, uptr_t item2, void *pContext);
 	//static int sortprogsbyscore(uptr_t item1, uptr_t item2, void *pContext);
