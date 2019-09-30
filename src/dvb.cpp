@@ -1248,7 +1248,7 @@ int main(int argc, const char *argv[])
 					if (newcard < config.GetMaxDVBCards()) {
 						dvbcard = config.GetPhysicalDVBCard(newcard);
 						dvbcardspecified = true;
-						printf("Switched to using virtual card %u which is phsical card %u\n", newcard, dvbcard);
+						printf("Switched to using virtual card %u which is physical card %u\n", newcard, dvbcard);
 					}
 					else fprintf(stderr, "Illegal virtual DVB card specified, must be 0..%u\n", config.GetMaxDVBCards() - 1);
 				}
