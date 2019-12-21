@@ -1,4 +1,5 @@
 
+#include <cstdint>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +20,7 @@
 #include "channellist.h"
 #include "findcards.h"
 #include "dvbdatabase.h"
+#include "rdlib/misc.h"
 
 #define EVALTEST 0
 
@@ -82,125 +84,126 @@ static bool argsvalid(int argc, const char *argv[], int i, const OPTION& option)
 int main(int argc, const char *argv[])
 {
     static const OPTION options[] = {
-        {"--no-report-errors",                     "",                                "Do NOT report any errors during directory creation (MUST be first argument)"},
-        {"-v[<n>]",                                "",                                "Increase verbosity by <n> or by 1"},
-        {"--confdir",                              "",                                "Print conf directory"},
-        {"--datadir",                              "",                                "Print data directory"},
-        {"--logdir",                               "",                                "Print log directory"},
-        {"--dirs",                                 "",                                "Print important configuration directories"},
-        {"--getxmltv",                             "<outputfile>",                    "Download XMLTV listings"},
-        {"--dayformat",                            "<format>",                        AString("Format string for day (default '%')").Arg(ADVBProg::GetDayFormat())},
-        {"--dateformat",                           "<format>",                        AString("Format string for date (default '%')").Arg(ADVBProg::GetDateFormat())},
-        {"--timeformat",                           "<format>",                        AString("Format string for time (default '%')").Arg(ADVBProg::GetTimeFormat())},
-        {"--fulltimeformat",                       "<format>",                        AString("Format string for fulltime (default '%')").Arg(ADVBProg::GetFullTimeFormat())},
-        {"--set",                                  "<var>=<val>",                     "Set variable in configuration file for this session only"},
-        {"-u, --update",                           "<file>",                          "Update main listings with file <file>"},
-        {"-l, --load",                             "",                                "Read listings from default file"},
-        {"-r, --read",                             "<file>",                          "Read listings from file <file>"},
-        {"--merge",                                "<file>",                          "Merge listings from file <file>, adding any programmes that dot not exist"},
-        {"--modify-recorded",                      "<file>",                          "Merge listings from file <file> into recorded programmes, adding any programmes that dot not exist"},
-        {"--modify-recorded-from-recording-host",  "",                                "Add recorded programmes from recording host into recorded programmes, adding any programmes that dot not exist"},
-        {"--modify-scheduled-from-recording-host", "",                                "Modfy scheduled programmes from recording host into scheduled programmes"},
-        {"--jobs",                                 "",                                "Read programmes from scheduled jobs"},
-        {"-w, --write",                            "<file>",                          "Write listings to file <file>"},
-        {"--sort",                                 "",                                "Sort list in chronological order"},
-        {"--sort-by-fields",                       "<fieldlist>",                     "Sort list using field list"},
-        {"--sort-rev",                             "",                                "Sort list in reverse-chronological order"},
-        {"--write-text",                           "<file>",                          "Write listings to file <file> in text format"},
-        {"--write-gnuplot",                        "<file>",                          "Write listings to file <file> in format usable by GNUPlot"},
-        {"--email",                                "<recipient> <subject> <message>", "Email current list (if it is non-empty) to <recipient> using subject"},
-        {"--fix-pound",                            "<file>",                          "Fix pound symbols in file"},
-        {"--update-dvb-channels",                  "",                                "Update DVB channel assignments"},
-        {"--update-dvb-channels-output-list",      "",                                "Update DVB channel assignments and output list of SchedulesDirect channel ID's"},
-        {"--update-dvb-channels-file",             "",                                "Update DVB channels file from recording slave if it is newer"},
-        {"--print-channels",                       "",                                "Output all channels"},
-        {"--find-unused-channels",                 "",                                "Find listings and DVB channels that are unused"},
-        {"--update-uuid",                          "",                                "Set UUID's on every programme"},
-        {"--update-combined",                      "",                                "Create a combined list of recorded and scheduled programmes"},
-        {"-L, --list",                             "",                                "List programmes in current list"},
-        {"--list-to-file",                         "<file>",                          "List programmes in current list to file <file>"},
-        {"--list-base64",                          "",                                "List programmes in current list in base64 format"},
-        {"--list-channels",                        "",                                "List channels"},
-        {"--cut-head",                             "<n>",                             "Cut <n> programmes from the start of the list"},
-        {"--cut-tail",                             "<n>",                             "Cut <n> programmes from the end of the list"},
-        {"--head",                                 "<n>",                             "Keep <n> programmes at the start of the list"},
-        {"--tail",                                 "<n>",                             "Keep <n> programmes at the end of the list"},
-        {"--limit",                                "<n>",                             "Limit list to <n> programmes, deleting programmes from the end of the list"},
-        {"-f, --find",                             "<patterns>",                      "Find programmes matching <patterns>"},
-        {"-F, --find-with-file",                   "<pattern-file>",                  "Find programmes matching patterns in patterns file <pattern-file>"},
-        {"-R, --find-repeats",                     "",                                "For each programme in current list, list repeats"},
-        {"--find-similar",                         "<file>",                          "For each programme in current list, find first similar programme in <file>"},
-        {"--find-differences",                     "<file1> <file2>",                 "Find programmes in <file1> but not in <file2> or in <file2> and not in <file1>"},
-        {"--find-in-file1-only",                   "<file1> <file2>",                 "Find programmes in <file1> but not in <file2>"},
-        {"--find-in-file2-only",                   "<file1> <file2>",                 "Find programmes in <file2> and not in <file1>"},
-        {"--find-similarities",                    "<file1> <file2>",                 "Find programmes in both <file1> and <file2>"},
-        {"--describe-pattern",                     "<patterns>",                      "Describe patterns as parsed"},
-        {"--delete-all",                           "",                                "Delete all programmes"},
-        {"--delete",                               "<patterns>",                      "Delete programmes matching <patterns>"},
-        {"--delete-with-file",                     "<pattern-file>",                  "Delete programmes matching patterns in patterns file <pattern-file>"},
-        {"--delete-recorded",                      "",                                "Delete programmes that have been recorded"},
-        {"--delete-using-file",                    "<file>",                          "Delete programmes that are similar to those in file <file>"},
-        {"--delete-similar",                       "",                                "Delete programmes that are similar to others in the list"},
-        {"--schedule",                             "",                                "Schedule and create jobs for default set of patterns on the main listings file"},
-        {"--write-scheduled-jobs",                 "",                                "Create jobs for current scheduled list"},
-        {"--start-time",                           "<time>",                          "Set start time for scheduling"},
-        {"--fake-schedule",                        "",                                "Pretend to schedule (write files) for default set of patterns on the main listings file"},
-        {"--fake-schedule-list",                   "",                                "Pretend to schedule (write files) for current list of programmes"},
-        {"--unschedule-all",                       "",                                "Unschedule all programmes"},
-        {"-S, --schedule-list",                    "",                                "Schedule current list of programmes"},
-        {"--record",                               "<prog>",                          "Record programme <prog> (Base64 encoded)"},
-        {"--record-title",                         "<title>",                         "Schedule to record programme by title that has already started or starts within the next hour"},
-        {"--schedule-record",                      "<base64>",                        "Schedule specified programme (Base64 encoded)"},
-        {"--add-recorded",                         "<prog>",                          "Add recorded programme <prog> to recorded list (Base64 encoded)"},
-        {"--recover-recorded-from-temp",           "",                                "Create recorded programme entries from files in temp folder"},
-        {"--card",                                 "<card>",                          "Set VIRTUAL card for subsequent scanning and PID operations (default 0)"},
-        {"--dvbcard",                              "<card>",                          "Set PHYSICAL card for subsequent scanning and PID operations (default 0)"},
-        {"--pids",                                 "<channel>",                       "Find PIDs (all streams) associated with channel <channel>"},
-        {"--scan",                                 "<freq>[,<freq>...]",              "Scan frequencies <freq>MHz for DVB channels"},
-        {"--scan-all",                             "",                                "Scan frequencies from existing DVB channels"},
-        {"--scan-range",                           "<start-freq> <end-freq> <step>",  "Scan frequencies in specified range for DVB channels"},
-        {"--find-channels",                        "",                                "Run Perl update channels script and update channels accordingly"},
-        {"--find-cards",                           "",                                "Find DVB cards"},
-        {"--change-filename",                      "<filename1> <filename2>",         "Change filename of recorded progamme with filename <filename1> to <filename2>"},
-        {"--change-filename-regex",                "<filename1> <filename2>",         "Change filename of recorded progamme with filename <filename1> to <filename2> (where <filename1> can be a regex and <filename2> can be an expansion)"},
-        {"--change-filename-regex-test",           "<filename1> <filename2>",         "Like above but do not commit changes"},
-        {"--find-recorded-programmes-on-disk",     "",                                "Search for recorded programmes in 'searchdirs' and update any filenames"},
-        {"--find-series",                          "",                                "Find series' in programme list"},
-        {"--fix-data-in-recorded",                 "",                                "Fix incorrect metadata of certain programmes and rename files as necessary"},
-        {"--set-recorded-flag",                    "",                                "Set recorded flag on all programmes in recorded list"},
-        {"--list-flags",                           "",                                "List flags that can be used for --set-flag and --clr-flag"},
-        {"--set-flag",                             "<flag> <patterns>",               "Set flag <flag> on programmes matching pattern"},
-        {"--clr-flag",                             "<flag> <patterns>",               "Clear flag <flag> on programmes matching pattern"},
-        {"--check-disk-space",                     "",                                "Check disk space for all patterns"},
-        {"--update-recording-complete",            "",                                "Update recording complete flag in every recorded programme"},
-        {"--check-recording-file",                 "",                                "Check programmes in running list to ensure they should remain in there"},
-        {"--force-failures",                       "",                                "Add current list to recording failures (setting failed flag)"},
-        {"--show-encoding-args",                   "",                                "Show encoding arguments for programmes in current list"},
-        {"--show-file-format",                     "",                                "Show file format of encoded programme"},
-        {"--use-converted-filename",               "",                                "Change filename to that of converted file, without actually converting file"},
-        {"--set-dir",                              "<patterns> <newdir>",             "Change directory for programmes in current list that match <patterns> to <newdir>"},
-        {"--regenerate-filename",                  "<patterns>",                      "Change filename of current list of programmes that match <pattern> (dependant on converted state), renaming files (in original directory OR current directory)"},
-        {"--regenerate-filename-test",             "<patterns>",                      "Test version of the above, will make no changes to programme list or move files"},
-        {"--delete-files",                         "",                                "Delete encoded files from programmes in current list"},
-        {"--delete-from-record-lists",             "<uuid>",                          "Delete programme with UUID <uuid> from record lists (recorded and record failues)"},
-        {"--record-success",                       "",                                "Run recordsuccess command on programmes in current list"},
-        {"--change-user",                          "<patterns> <newuser>",            "Change user of programmes matching <patterns> to <newuser>"},
-        {"--change-dir",                           "<patterns> <newdir>",             "Change direcotry of programmes matching <patterns> to <newdir>"},
-        {"--get-and-convert-recorded",             "",                                "Pull and convert any recordings from recording host"},
-        {"--force-convert-files",                  "",                                "convert files in current list, even if they have already been converted"},
-        {"--update-recordings-list",               "",                                "Pull list of programmes being recorded"},
-        {"--check-recording-now",                  "",                                "Check to see if programmes that should be being recording are recording"},
-        {"--calc-trend",                           "<start-date>",                    "Calculate average programmes per day and trend line based on programmes after <start-date> in current list"},
-        {"--gen-graphs",                           "",                                "Generate graphs from recorded data"},
-        {"--assign-episodes",                      "",                                "Assign episodes to current list"},
-        {"--reset-assigned-episodes",              "",                                "Reset assigned episodes to current list"},
-        {"--count-hours",                          "",                                "Count total hours of programmes in current list"},
-        {"--find-gaps",                            "",                                "Find gap from now until the next working for each card"},
-        {"--find-new-programmes",                  "",                                "Find programmes that have been scheduled that are either new or from a new series"},
-        {"--check-video-files",                    "",                                "Check archived video files for errors"},
-        {"--stream",                               "<text>",                          "Stream DVB channel or programme being recorded <text> to mplayer (or other player)"},
-        {"--rawstream",                            "<text>",                          "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
-        {"--return-count",                         "",                                "Return programme list count in error code"},
+        {"--no-report-errors",                      "",                                 "Do NOT report any errors during directory creation (MUST be first argument)"},
+        {"-v[<n>]",                                 "",                                 "Increase verbosity by <n> or by 1"},
+        {"--confdir",                               "",                                 "Print conf directory"},
+        {"--datadir",                               "",                                 "Print data directory"},
+        {"--logdir",                                "",                                 "Print log directory"},
+        {"--dirs",                                  "",                                 "Print important configuration directories"},
+        {"--getxmltv",                              "<outputfile>",                     "Download XMLTV listings"},
+        {"--dayformat",                             "<format>",                         AString("Format string for day (default '%')").Arg(ADVBProg::GetDayFormat())},
+        {"--dateformat",                            "<format>",                         AString("Format string for date (default '%')").Arg(ADVBProg::GetDateFormat())},
+        {"--timeformat",                            "<format>",                         AString("Format string for time (default '%')").Arg(ADVBProg::GetTimeFormat())},
+        {"--fulltimeformat",                        "<format>",                         AString("Format string for fulltime (default '%')").Arg(ADVBProg::GetFullTimeFormat())},
+        {"--set",                                   "<var>=<val>",                      "Set variable in configuration file for this session only"},
+        {"-u, --update",                            "<file>",                           "Update main listings with file <file>"},
+        {"-l, --load",                              "",                                 "Read listings from default file"},
+        {"-r, --read",                              "<file>",                           "Read listings from file <file>"},
+        {"--merge",                                 "<file>",                           "Merge listings from file <file>, adding any programmes that dot not exist"},
+        {"--modify-recorded",                       "<file>",                           "Merge listings from file <file> into recorded programmes, adding any programmes that dot not exist"},
+        {"--modify-recorded-from-recording-host",   "",                                 "Add recorded programmes from recording host into recorded programmes, adding any programmes that dot not exist"},
+        {"--modify-scheduled-from-recording-host",  "",                                 "Modfy scheduled programmes from recording host into scheduled programmes"},
+        {"--jobs",                                  "",                                 "Read programmes from scheduled jobs"},
+        {"-w, --write",                             "<file>",                           "Write listings to file <file>"},
+        {"--sort",                                  "",                                 "Sort list in chronological order"},
+        {"--sort-by-fields",                        "<fieldlist>",                      "Sort list using field list"},
+        {"--sort-rev",                              "",                                 "Sort list in reverse-chronological order"},
+        {"--write-text",                            "<file>",                           "Write listings to file <file> in text format"},
+        {"--write-gnuplot",                         "<file>",                           "Write listings to file <file> in format usable by GNUPlot"},
+        {"--email",                                 "<recipient> <subject> <message>",  "Email current list (if it is non-empty) to <recipient> using subject"},
+        {"--fix-pound",                             "<file>",                           "Fix pound symbols in file"},
+        {"--update-dvb-channels",                   "",                                 "Update DVB channel assignments"},
+        {"--update-dvb-channels-output-list",       "",                                 "Update DVB channel assignments and output list of SchedulesDirect channel ID's"},
+        {"--update-dvb-channels-file",              "",                                 "Update DVB channels file from recording slave if it is newer"},
+        {"--print-channels",                        "",                                 "Output all channels"},
+        {"--find-unused-channels",                  "",                                 "Find listings and DVB channels that are unused"},
+        {"--update-uuid",                           "",                                 "Set UUID's on every programme"},
+        {"--update-combined",                       "",                                 "Create a combined list of recorded and scheduled programmes"},
+        {"-L, --list",                              "",                                 "List programmes in current list"},
+        {"--list-to-file",                          "<file>",                           "List programmes in current list to file <file>"},
+        {"--list-base64",                           "",                                 "List programmes in current list in base64 format"},
+        {"--list-channels",                         "",                                 "List channels"},
+        {"--cut-head",                              "<n>",                              "Cut <n> programmes from the start of the list"},
+        {"--cut-tail",                              "<n>",                              "Cut <n> programmes from the end of the list"},
+        {"--head",                                  "<n>",                              "Keep <n> programmes at the start of the list"},
+        {"--tail",                                  "<n>",                              "Keep <n> programmes at the end of the list"},
+        {"--limit",                                 "<n>",                              "Limit list to <n> programmes, deleting programmes from the end of the list"},
+        {"-f, --find",                              "<patterns>",                       "Find programmes matching <patterns>"},
+        {"-F, --find-with-file",                    "<pattern-file>",                   "Find programmes matching patterns in patterns file <pattern-file>"},
+        {"-R, --find-repeats",                      "",                                 "For each programme in current list, list repeats"},
+        {"--find-similar",                          "<file>",                           "For each programme in current list, find first similar programme in <file>"},
+        {"--find-differences",                      "<file1> <file2>",                  "Find programmes in <file1> but not in <file2> or in <file2> and not in <file1>"},
+        {"--find-in-file1-only",                    "<file1> <file2>",                  "Find programmes in <file1> but not in <file2>"},
+        {"--find-in-file2-only",                    "<file1> <file2>",                  "Find programmes in <file2> and not in <file1>"},
+        {"--find-similarities",                     "<file1> <file2>",                  "Find programmes in both <file1> and <file2>"},
+        {"--describe-pattern",                      "<patterns>",                       "Describe patterns as parsed"},
+        {"--delete-all",                            "",                                 "Delete all programmes"},
+        {"--delete",                                "<patterns>",                       "Delete programmes matching <patterns>"},
+        {"--delete-with-file",                      "<pattern-file>",                   "Delete programmes matching patterns in patterns file <pattern-file>"},
+        {"--delete-recorded",                       "",                                 "Delete programmes that have been recorded"},
+        {"--delete-using-file",                     "<file>",                           "Delete programmes that are similar to those in file <file>"},
+        {"--delete-similar",                        "",                                 "Delete programmes that are similar to others in the list"},
+        {"--schedule",                              "",                                 "Schedule and create jobs for default set of patterns on the main listings file"},
+        {"--write-scheduled-jobs",                  "",                                 "Create jobs for current scheduled list"},
+        {"--start-time",                            "<time>",                           "Set start time for scheduling"},
+        {"--fake-schedule",                         "",                                 "Pretend to schedule (write files) for default set of patterns on the main listings file"},
+        {"--fake-schedule-list",                    "",                                 "Pretend to schedule (write files) for current list of programmes"},
+        {"--unschedule-all",                        "",                                 "Unschedule all programmes"},
+        {"-S, --schedule-list",                     "",                                 "Schedule current list of programmes"},
+        {"--record",                                "<prog>",                           "Record programme <prog> (Base64 encoded)"},
+        {"--record-title",                          "<title>",                          "Schedule to record programme by title that has already started or starts within the next hour"},
+        {"--schedule-record",                       "<base64>",                         "Schedule specified programme (Base64 encoded)"},
+        {"--add-recorded",                          "<prog>",                           "Add recorded programme <prog> to recorded list (Base64 encoded)"},
+        {"--recover-recorded-from-temp",            "",                                 "Create recorded programme entries from files in temp folder"},
+        {"--card",                                  "<card>",                           "Set VIRTUAL card for subsequent scanning and PID operations (default 0)"},
+        {"--dvbcard",                               "<card>",                           "Set PHYSICAL card for subsequent scanning and PID operations (default 0)"},
+        {"--pids",                                  "<channel>",                        "Find PIDs (all streams) associated with channel <channel>"},
+        {"--scan",                                  "<freq>[,<freq>...]",               "Scan frequencies <freq>MHz for DVB channels"},
+        {"--scan-all",                              "",                                 "Scan frequencies from existing DVB channels"},
+        {"--scan-range",                            "<start-freq> <end-freq> <step>",   "Scan frequencies in specified range for DVB channels"},
+        {"--find-channels",                         "",                                 "Run Perl update channels script and update channels accordingly"},
+        {"--find-cards",                            "",                                 "Find DVB cards"},
+        {"--change-filename",                       "<filename1> <filename2>",          "Change filename of recorded progamme with filename <filename1> to <filename2>"},
+        {"--change-filename-regex",                 "<filename1> <filename2>",          "Change filename of recorded progamme with filename <filename1> to <filename2> (where <filename1> can be a regex and <filename2> can be an expansion)"},
+        {"--change-filename-regex-test",            "<filename1> <filename2>",          "Like above but do not commit changes"},
+        {"--find-recorded-programmes-on-disk",      "",                                 "Search for recorded programmes in 'searchdirs' and update any filenames"},
+        {"--find-series",                           "",                                 "Find series' in programme list"},
+        {"--fix-data-in-recorded",                  "",                                 "Fix incorrect metadata of certain programmes and rename files as necessary"},
+        {"--set-recorded-flag",                     "",                                 "Set recorded flag on all programmes in recorded list"},
+        {"--list-flags",                            "",                                 "List flags that can be used for --set-flag and --clr-flag"},
+        {"--set-flag",                              "<flag> <patterns>",                "Set flag <flag> on programmes matching pattern"},
+        {"--clr-flag",                              "<flag> <patterns>",                "Clear flag <flag> on programmes matching pattern"},
+        {"--check-disk-space",                      "",                                 "Check disk space for all patterns"},
+        {"--update-recording-complete",             "",                                 "Update recording complete flag in every recorded programme"},
+        {"--check-recording-file",                  "",                                 "Check programmes in running list to ensure they should remain in there"},
+        {"--force-failures",                        "",                                 "Add current list to recording failures (setting failed flag)"},
+        {"--show-encoding-args",                    "",                                 "Show encoding arguments for programmes in current list"},
+        {"--show-file-format",                      "",                                 "Show file format of encoded programme"},
+        {"--use-converted-filename",                "",                                 "Change filename to that of converted file, without actually converting file"},
+        {"--set-dir",                               "<patterns> <newdir>",              "Change directory for programmes in current list that match <patterns> to <newdir>"},
+        {"--regenerate-filename",                   "<patterns>",                       "Change filename of current list of programmes that match <pattern> (dependant on converted state), renaming files (in original directory OR current directory)"},
+        {"--regenerate-filename-test",              "<patterns>",                       "Test version of the above, will make no changes to programme list or move files"},
+        {"--delete-files",                          "",                                 "Delete encoded files from programmes in current list"},
+        {"--delete-from-record-lists",              "<uuid>",                           "Delete programme with UUID <uuid> from record lists (recorded and record failues)"},
+        {"--record-success",                        "",                                 "Run recordsuccess command on programmes in current list"},
+        {"--change-user",                           "<patterns> <newuser>",             "Change user of programmes matching <patterns> to <newuser>"},
+        {"--change-dir",                            "<patterns> <newdir>",              "Change direcotry of programmes matching <patterns> to <newdir>"},
+        {"--get-and-convert-recorded",              "",                                 "Pull and convert any recordings from recording host"},
+        {"--force-convert-files",                   "",                                 "convert files in current list, even if they have already been converted"},
+        {"--update-recordings-list",                "",                                 "Pull list of programmes being recorded"},
+        {"--check-recording-now",                   "",                                 "Check to see if programmes that should be being recording are recording"},
+        {"--calc-trend",                            "<start-date>",                     "Calculate average programmes per day and trend line based on programmes after <start-date> in current list"},
+        {"--gen-graphs",                            "",                                 "Generate graphs from recorded data"},
+        {"--assign-episodes",                       "",                                 "Assign episodes to current list"},
+        {"--reset-assigned-episodes",               "",                                 "Reset assigned episodes to current list"},
+        {"--count-hours",                           "",                                 "Count total hours of programmes in current list"},
+        {"--find-gaps",                             "",                                 "Find gap from now until the next working for each card"},
+        {"--find-new-programmes",                   "",                                 "Find programmes that have been scheduled that are either new or from a new series"},
+        {"--check-video-files",                     "",                                 "Check archived video files for errors"},
+        {"--stream",                                "<text>",                           "Stream DVB channel or programme being recorded <text> to mplayer (or other player)"},
+        {"--rawstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
+        {"--drawprogrammes",                        "<scale>",                          "Draw current list of programmes using a scale of <scale> characters per hour"},
+        {"--return-count",                          "",                                 "Return programme list count in error code"},
     };
     const ADVBConfig& config = ADVBConfig::Get();
     ADVBProgList proglist;
@@ -2259,12 +2262,98 @@ int main(int argc, const char *argv[])
                         config.logit("Running command '%s'", cmd.str());
                     }
 
-                    int res = system(cmd);
-                    (void)res;
+                    int res2 = system(cmd);
+                    (void)res2;
                 }
             }
             else if (stricmp(argv[i], "--return-count") == 0) {
-                res = proglist.Count();
+                res = (int)proglist.Count();
+            }
+            else if (stricmp(argv[i], "--drawprogrammes") == 0) {
+                const uint64_t hour = (uint64_t)3600U * (uint64_t)1000U;
+                const uint_t   namewidth = 20;
+                std::map<AString, std::vector<const ADVBProg *> > map;
+                std::map<AString, std::vector<const ADVBProg *> >::iterator it;
+                uint_t scale = (uint_t)AString(argv[++i]);
+                uint_t j;
+
+                proglist.Sort();
+
+                for (j = 0; j < proglist.Count(); j++) {
+                    const ADVBProg& prog = proglist[j];
+                    map[prog.GetChannel()].push_back(&prog);
+                }
+
+                if (map.size() > 0) {
+                    uint64_t dt0   = UINT64_MAX;
+                    uint64_t dtmax = 0U;
+
+                    for (it = map.begin(); it != map.end(); ++it) {
+                        const std::vector<const ADVBProg *>& list = it->second;
+
+                        dt0   = std::min(dt0,   list.front()->GetStart());
+                        dtmax = std::max(dtmax, list.back()->GetStop());
+                    }
+
+                    // round down to the nearest hour
+                    dt0   -= dt0 % hour;
+
+                    dtmax  = std::max(dtmax, dt0);
+
+                    uint_t maxoffset = (uint_t)(((dtmax - dt0) * (uint64_t)scale) / hour);
+                    {
+                        uint_t offset;
+
+                        printf(AString::Formatify("%%-%us|", namewidth).str(), AString("Channel").Abbreviate(namewidth).str());
+                        for (offset = 0U; offset < maxoffset;) {
+                            uint64_t dt   = dt0 + ((uint64_t)offset * hour) / scale;
+                            AString  desc = ADateTime(dt).DateToStr();
+                            uint     diff = (int)(scale - ((uint_t)desc.len() % scale));
+
+                            if (diff < 1) diff += scale;
+
+                            desc += AString(" ").Copies(diff - 1) + "|";
+
+                            printf("%s", desc.str());
+                            offset += (uint_t)desc.len();
+                        }
+
+                        maxoffset = std::max(maxoffset, offset);
+                    }
+
+                    printf("\n");
+
+                    for (it = map.begin(); it != map.end(); ++it) {
+                        const std::vector<const ADVBProg *>& list = it->second;
+                        size_t k;
+
+                        printf(AString::Formatify("%%-%us|", namewidth).str(), it->first.Abbreviate(namewidth).str());
+
+                        uint_t offset = 0;
+                        for (k = 0; k < list.size(); k++) {
+                            uint_t startoffset = (uint_t)(((list[k]->GetStart() - dt0) * (uint64_t)scale) / hour);
+                            uint_t stopoffset  = (uint_t)(((list[k]->GetStop()  - dt0) * (uint64_t)scale) / hour);
+
+                            if (startoffset > offset) {
+                                int len = (int)(startoffset - offset - 1);
+                                printf("%s|", AString(" ").Copies(len).str());
+                                offset += len + 1;
+                            }
+
+                            if (stopoffset > offset) {
+                                uint_t  len  = stopoffset - offset - 1;
+                                AString desc = list[k]->GetTitleAndSubtitle().Abbreviate((int)len);
+                                desc += AString(" ").Copies((int)(len - (uint_t)desc.GetCharCount()));
+                                printf("%s|", desc.str());
+                                offset += desc.GetCharCount() + 1;
+                            }
+                        }
+                        if (maxoffset > offset) {
+                            printf("%s|", AString(" ").Copies((int)(maxoffset - offset - 1)).str());
+                        }
+                        printf("\n");
+                    }
+                }
             }
 #if EVALTEST
             else if (stricmp(argv[i], "--eval") == 0) {
@@ -2272,7 +2361,6 @@ int main(int argc, const char *argv[])
                 AString      str = argv[++i];
                 AString      errors;
                 AValue       res = 0;
-
                 AddSimpleFunction("func", &__func);
 
                 if (Evaluate(vars, str, res, errors)) {
