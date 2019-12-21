@@ -7,18 +7,18 @@
 
 class ADVBDatabase {
 public:
-	ADVBDatabase();
-	virtual ~ADVBDatabase();
+    ADVBDatabase();
+    virtual ~ADVBDatabase();
 
-	virtual bool Open();
-	virtual void Close();
-	
-	virtual bool IsOpen() const {return (database && database->IsOpen());};
+    virtual bool Open();
+    virtual void Close();
 
-	virtual bool AddProg(const ADVBProg& prog);
-	
+    virtual bool IsOpen() const {return (database && database->IsOpen());};
+
+    virtual bool AddProg(const ADVBProg& prog);
+
 protected:
-	Database *database;
+    Database *database;
 };
 
 #endif

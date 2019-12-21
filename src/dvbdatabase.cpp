@@ -11,103 +11,103 @@
 
 ADVBDatabase::ADVBDatabase() : database(new PostgresDatabase())
 {
-	Open();
+    Open();
 }
 
 ADVBDatabase::~ADVBDatabase()
 {
-	Close();
+    Close();
 
-	if (database) delete database;
+    if (database) delete database;
 }
 
 bool ADVBDatabase::Open()
 {
-	if (database) {
-		const ADVBConfig& config = ADVBConfig::Get();
-		AString host     = config.GetConfigItem("dbhost", "localhost");
-		AString username = config.GetConfigItem("dbuser", "richard");
-		AString password = config.GetConfigItem("dbpassword", "arsebark");
-		AString dbname   = config.GetConfigItem("dbname", "dvb");
+    if (database) {
+        const ADVBConfig& config = ADVBConfig::Get();
+        AString host     = config.GetConfigItem("dbhost", "localhost");
+        AString username = config.GetConfigItem("dbuser", "richard");
+        AString password = config.GetConfigItem("dbpassword", "arsebark");
+        AString dbname   = config.GetConfigItem("dbname", "dvb");
 
-		if (!database->Open(host, username, password, dbname)) {
-			if (database->OpenAdmin(host)) {
-				debug("Connected to DB server '%s' as admin\n", host.str());
-				database->AddUser(username, password);
-				database->CreateDatabase(dbname);
-				database->GrantPrivileges(dbname, username);
-				database->Close();
+        if (!database->Open(host, username, password, dbname)) {
+            if (database->OpenAdmin(host)) {
+                debug("Connected to DB server '%s' as admin\n", host.str());
+                database->AddUser(username, password);
+                database->CreateDatabase(dbname);
+                database->GrantPrivileges(dbname, username);
+                database->Close();
 
-				if (database->Open(host, username, password, dbname)) {
-					static const struct {
-						const char *name;
-						const char *columns;
-					} tables[] = {
-						{
-							"Channels",
-							"ID id,"
-							"ChannelName string(100),"
-							"DVBName string(100)"
-						},
-						{
-							"Programmes",
-							"ID id64,"
-							"Title string(200),"
-							"Subtitle string(200),"
-							"Description string(1000),"
-							"ChannelID references Channels,"
-							"Start date,"
-							"Stop date,"
-							"Director string(100),"
-							"Category string(100),"
-							"Subcategories string(200),"
-							"Year,"
-							"EpisodeNum string(100),"
-							"EpisodeID string(100),"
-							"Actors string(200)"
-						},
-					};
-					uint_t i;
+                if (database->Open(host, username, password, dbname)) {
+                    static const struct {
+                        const char *name;
+                        const char *columns;
+                    } tables[] = {
+                        {
+                            "Channels",
+                            "ID id,"
+                            "ChannelName string(100),"
+                            "DVBName string(100)"
+                        },
+                        {
+                            "Programmes",
+                            "ID id64,"
+                            "Title string(200),"
+                            "Subtitle string(200),"
+                            "Description string(1000),"
+                            "ChannelID references Channels,"
+                            "Start date,"
+                            "Stop date,"
+                            "Director string(100),"
+                            "Category string(100),"
+                            "Subcategories string(200),"
+                            "Year,"
+                            "EpisodeNum string(100),"
+                            "EpisodeID string(100),"
+                            "Actors string(200)"
+                        },
+                    };
+                    uint_t i;
 
-					for (i = 0; i < NUMBEROF(tables); i++) {
-						if (!database->CreateTable(tables[i].name, tables[i].columns)) {
-							debug("Failed to create table '%s' in database\n", tables[i].name);
-						}
-					}
-				}
-			}
-			else {
-				// failed to connect
-				debug("Failed to connect to DB server '%s' as admin\n", host.str());
-			}
-		}
+                    for (i = 0; i < NUMBEROF(tables); i++) {
+                        if (!database->CreateTable(tables[i].name, tables[i].columns)) {
+                            debug("Failed to create table '%s' in database\n", tables[i].name);
+                        }
+                    }
+                }
+            }
+            else {
+                // failed to connect
+                debug("Failed to connect to DB server '%s' as admin\n", host.str());
+            }
+        }
 
-		if (!database->IsOpen()) {
-			debug("Failed to connect to DB server '%s' as user '%s'\n", host.str(), username.str());
-		}
-	}
+        if (!database->IsOpen()) {
+            debug("Failed to connect to DB server '%s' as user '%s'\n", host.str(), username.str());
+        }
+    }
 
-	return IsOpen();
+    return IsOpen();
 }
 
 void ADVBDatabase::Close()
 {
-	if (database) database->Close();
+    if (database) database->Close();
 }
 
 bool ADVBDatabase::AddProg(const ADVBProg& prog)
 {
-	bool success = false;
+    bool success = false;
 
-	if (database && prog.Valid()) {
-		//const ADVBChannelList& channellist = ADVBChannelList::Get();
-		const ADVBChannelList::CHANNEL *channel = NULL;
+    if (database && prog.Valid()) {
+        //const ADVBChannelList& channellist = ADVBChannelList::Get();
+        const ADVBChannelList::CHANNEL *channel = NULL;
 
-		if (channel) {
+        if (channel) {
 
-		}
+        }
 
-	}
+    }
 
-	return success;
+    return success;
 }
