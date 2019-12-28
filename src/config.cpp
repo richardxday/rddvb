@@ -172,7 +172,7 @@ bool ADVBConfig::ReportDirectoryCreationErrors(const AString& errors)
         AString cmd = config.GetConfigItem("createdirfailcmd");
 
         if (cmd.Valid()) {
-            AString  tempfile = config.GetTempFileEx("/tmp", "dir-creation-errors", ".txt");
+            AString  tempfile = config.GetTempFileEx(config.GetTempDir(), "dir-creation-errors", ".txt");
             AStdFile fp;
 
             if (fp.open(tempfile, "w")) {
@@ -951,7 +951,7 @@ AString ADVBConfig::GetRecordingsArchiveDir() const
 
 AString ADVBConfig::GetTempDir() const
 {
-    return GetConfigItem("tempdir", "/tmp");
+    return GetConfigItem("tempdir", RDDVB_ROOT_DIR "tmp");
 }
 
 AString ADVBConfig::GetQueue() const
