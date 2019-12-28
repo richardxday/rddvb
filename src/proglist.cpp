@@ -1,4 +1,6 @@
 
+#include "json/forwards.h"
+#include "json/reader.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -408,10 +410,12 @@ bool ADVBProgList::ReadFromJSONFile(const AString& filename)
     bool    success = false;
 
     if (data.ReadFromFile(filename)) {
-        Json::Reader reader;
-        Json::Value  obj;
+        std::string errors;
+        Json::CharReaderBuilder rbuilder;
+        Json::CharReader *reader = rbuilder.newCharReader();
+        Json::Value obj;
 
-        if (reader.parse(data.str(), obj)) {
+        if ((reader != NULL) && reader->parse(data.str(), data.str() + data.len(), &obj, &errors)) {
             if (obj.isMember("Channels") && obj["Channels"].isArray()) {
                 const Json::Value& channels = obj["Channels"];
                 uint_t i, nchannels = (uint_t)channels.size();
@@ -419,7 +423,9 @@ bool ADVBProgList::ReadFromJSONFile(const AString& filename)
                 for (i = 0; i < nchannels; i++) {
                     const Json::Value& channel = channels[i];
 
-                    if (channel.isMember("DisplayName")) printf("Channel %u/%u: '%s'\n", i, (uint_t)channels.size(), channel["DisplayName"].asString().c_str());
+                    if (channel.isMember("DisplayName")) {
+                        printf("Channel %u/%u: '%s'\n", i, (uint_t)channels.size(), channel["DisplayName"].asString().c_str());
+                    }
                     if (channel.isMember("TvListings") && channel["TvListings"].isArray()) {
                         const Json::Value& tvlistings = channel["TvListings"];
                         uint_t j, ntvlistings = (uint_t)tvlistings.size();
@@ -434,6 +440,10 @@ bool ADVBProgList::ReadFromJSONFile(const AString& filename)
 
                 success = true;
             }
+        }
+
+        if (reader != NULL) {
+            delete reader;
         }
     }
 
@@ -461,7 +471,9 @@ bool ADVBProgList::ReadFromFile(const AString& filename)
     else if (filename.Suffix() == "dat") {
         success = ReadFromBinaryFile(filename, notempty, notempty);
     }
-    else config.printf("Unrecognized suffix '%s' for file '%s'", filename.Suffix().str(), filename.str());
+    else {
+        config.printf("Unrecognized suffix '%s' for file '%s'", filename.Suffix().str(), filename.str());
+    }
 
     return success;
 }
