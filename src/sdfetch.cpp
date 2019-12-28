@@ -1,4 +1,7 @@
 
+#include "json/writer.h"
+#include <ostream>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,8 +30,14 @@ static bool Post(CURL *curl, const char *url, const Json::Value& postdata, Json:
     bool success = false;
 
     {
-        Json::FastWriter writer;
-        _postdata = writer.write(postdata);
+        Json::StreamWriterBuilder wbuilder;
+        Json::StreamWriter *writer = wbuilder.newStreamWriter();
+        std::stringbuf str;
+        std::ostream sout(NULL);
+        sout.rdbuf(&str);
+        writer->write(postdata, &sout);
+        delete writer;
+        _postdata = str.str().c_str();
     }
 
     slist = curl_slist_append(slist, "Content-Type: application/json");
@@ -52,11 +61,18 @@ static bool Post(CURL *curl, const char *url, const Json::Value& postdata, Json:
         fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
     }
     else {
-        Json::Reader reader;
-        if (!reader.parse(_response.c_str(), resp)) {
-            fprintf(stderr, "Failed to parse response '%s'\n", _response.c_str());
+        Json::CharReaderBuilder rbuilder;
+        Json::CharReader *reader = rbuilder.newCharReader();
+        std::string errors;
+
+        if (reader != NULL) {
+            if (!reader->parse(_response.c_str(), _response.c_str() + _response.length(), &resp, &errors)) {
+                fprintf(stderr, "Failed to parse response '%s'\n", _response.c_str());
+            }
+            else success = true;
+
+            delete reader;
         }
-        else success = true;
     }
 
     return success;
@@ -73,7 +89,9 @@ void SetAuthentication(Json::Value& obj, const char *user, const char *password)
     SHA1_Final(hash, &ctx);
 
     uint_t i;
-    for (i = 0; i < NUMBEROF(hash); i++) sprintf(sha1password + i * 2, "%02x", (uint_t)hash[i]);
+    for (i = 0; i < NUMBEROF(hash); i++) {
+        sprintf(sha1password + i * 2, "%02x", (uint_t)hash[i]);
+    }
 
     obj["username"] = user;
     obj["password"] = sha1password;
