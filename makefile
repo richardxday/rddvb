@@ -1,15 +1,15 @@
 
 all: default-build
 
-MAKEFILEDIR:=$(shell rdlib-config --makefiles)
+MAKEFILEDIR := $(shell rdlib-config --makefiles)
 
-LIBRARY:=rddvb
+LIBRARY := rddvb
 
-LIBRARY_VERSION_MAJOR:=0
-LIBRARY_VERSION_MINOR:=1
-LIBRARY_VERSION_RELEASE:=0
-LIBRARY_VERSION_BUILD:=0
-LIBRARY_DESCRIPTION:=DVB auto-scheduler
+LIBRARY_VERSION_MAJOR	:= 0
+LIBRARY_VERSION_MINOR	:= 1
+LIBRARY_VERSION_RELEASE := 0
+LIBRARY_VERSION_BUILD	:= 0
+LIBRARY_DESCRIPTION		:= DVB auto-scheduler
 
 include $(MAKEFILEDIR)/makefile.init
 

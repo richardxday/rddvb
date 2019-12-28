@@ -15,9 +15,9 @@
 #include "config.h"
 #include "findcards.h"
 
-#define DEFAULTCONFDIR RDDVB_ROOT_DIR "/etc/dvb"
-#define DEFAULTDATADIR RDDVB_ROOT_DIR "/var/dvb"
-#define DEFAULTLOGDIR  RDDVB_ROOT_DIR "/var/log/dvb"
+#define DEFAULTCONFDIR RDDVB_ROOT_DIR "etc/dvb"
+#define DEFAULTDATADIR RDDVB_ROOT_DIR "var/dvb"
+#define DEFAULTLOGDIR  RDDVB_ROOT_DIR "var/log/dvb"
 
 AQuitHandler quithandler;
 
