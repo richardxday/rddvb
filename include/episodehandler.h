@@ -8,24 +8,23 @@
 
 class ADVBEpisodeHandler {
 public:
-	ADVBEpisodeHandler();
-	~ADVBEpisodeHandler();
+    ADVBEpisodeHandler();
+    ~ADVBEpisodeHandler();
 
-	void AssignEpisode(ADVBProg& prog, bool ignorerepeats = false);
-
-protected:
-	static bool __WriteString(const AString& key, uptr_t value, void *context);
-
-	uint32_t GetDayOffset(const AString& key) const;
-	void   	 SetDayOffset(const AString& key, uint32_t value);
-	uint32_t GetEpisode(const AString& key) const;
-	void     SetEpisode(const AString& key, uint32_t value);
+    void AssignEpisode(ADVBProg& prog, bool ignorerepeats = false);
 
 protected:
-	AHash dayoffsethash;
-	AHash episodehash;
-	bool  changed;
+    static bool __WriteString(const AString& key, uptr_t value, void *context);
+
+    uint32_t GetDayOffset(const AString& key) const;
+    void     SetDayOffset(const AString& key, uint32_t value);
+    uint32_t GetEpisode(const AString& key) const;
+    void     SetEpisode(const AString& key, uint32_t value);
+
+protected:
+    AHash dayoffsethash;
+    AHash episodehash;
+    bool  changed;
 };
 
 #endif
-

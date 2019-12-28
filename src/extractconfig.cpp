@@ -12,30 +12,30 @@ static std::vector<AString> configrecord;
 
 int main(void)
 {
-	const ADVBConfig& config = ADVBConfig::Get();
-	ADVBProg prog;
-	size_t i, j;
+    const ADVBConfig& config = ADVBConfig::Get();
+    ADVBProg prog;
+    size_t i, j;
 
-	(void)prog;
+    (void)prog;
 
-	config.SetConfigRecorder(&configrecord);
+    config.SetConfigRecorder(&configrecord);
 
 #include "config.extract.h"
 
-	//std::sort(configrecord.begin(), configrecord.end());
+    //std::sort(configrecord.begin(), configrecord.end());
 
-	for (i = 0; i < configrecord.size(); i++) {
-		for (j = i + 1; j < configrecord.size();) {
-			if (configrecord[j] == configrecord[i]) {
-				configrecord.erase(configrecord.begin() + j);
-			}
-			else j++;
-		}
-	}
+    for (i = 0; i < configrecord.size(); i++) {
+        for (j = i + 1; j < configrecord.size();) {
+            if (configrecord[j] == configrecord[i]) {
+                configrecord.erase(configrecord.begin() + j);
+            }
+            else j++;
+        }
+    }
 
-	for (i = 0; i < configrecord.size(); i++) {
-		printf("%s\n", configrecord[i].str());
-	}
+    for (i = 0; i < configrecord.size(); i++) {
+        printf("%s\n", configrecord[i].str());
+    }
 
-	return 0;
+    return 0;
 }

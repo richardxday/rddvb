@@ -8,8 +8,8 @@ extern AString CatPath(const AString& dir1, const AString& dir2);
 extern uint64_t JSONTimeOffset(uint64_t dt);
 
 typedef struct {
-	AString search;
-	AString replace;
+    AString search;
+    AString replace;
 } REPLACEMENT;
 extern AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint_t n);
 

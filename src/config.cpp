@@ -215,7 +215,7 @@ const AString *ADVBConfig::GetDefaultItemEx(const AString& name) const
 /*--------------------------------------------------------------------------------*/
 AString ADVBConfig::GetDefaultItem(const AString& name) const
 {
-    const AString *str = GetDefaultItemEx(name);;
+    const AString *str = GetDefaultItemEx(name);
     return str ? *str : "";
 }
 
