@@ -1,7 +1,7 @@
 
 all: default-build
 
-MAKEFILEDIR = /usr/local/share/rdlib-0.1/makefiles
+MAKEFILEDIR:=$(shell rdlib-config --makefiles)
 
 LIBRARY:=rddvb
 
@@ -40,13 +40,13 @@ HEADERS :=										\
 	proglist.h
 
 GLOBAL_CFLAGS += $(shell pkg-config --cflags rdlib-0.1)
-GLOBAL_LIBS   += $(shell pkg-config --libs rdlib-0.1)
+GLOBAL_LIBS	  += $(shell pkg-config --libs rdlib-0.1)
 
 GLOBAL_CFLAGS += $(shell pkg-config --cflags jsoncpp)
-GLOBAL_LIBS   += $(shell pkg-config --libs jsoncpp)
+GLOBAL_LIBS	  += $(shell pkg-config --libs jsoncpp)
 
 GLOBAL_CFLAGS += $(shell curl-config --cflags)
-GLOBAL_LIBS   += $(shell curl-config --libs) -lcrypto
+GLOBAL_LIBS	  += $(shell curl-config --libs) -lcrypto
 
 include $(MAKEFILEDIR)/makefile.prebuild
 
@@ -58,31 +58,31 @@ include $(MAKEFILEDIR)/makefile.lib
 LOCAL_SHARE_FILES := $(shell find share/*)
 INSTALLEDSHAREFILES += $(LOCAL_SHARE_FILES:share/%=$(INSTALLSHAREDST)/%)
 
-DEBUG_LIBS   += $(DEBUG_LIBDIR)/$(DEBUG_SHARED_LIBRARY)
+DEBUG_LIBS	 += $(DEBUG_LIBDIR)/$(DEBUG_SHARED_LIBRARY)
 RELEASE_LIBS += $(RELEASE_LIBDIR)/$(RELEASE_SHARED_LIBRARY)
 
 HEADERS :=
 
 APPLICATION := dvb
-OBJECTS     := $(APPLICATION:%=%.o)
+OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
 APPLICATION := dvbweb
-OBJECTS     := $(APPLICATION:%=%.o)
+OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
 APPLICATION := dvbfemon
-OBJECTS     := $(APPLICATION:%=%.o)
+OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
 APPLICATION := dvbdecodeprog
-OBJECTS     := $(APPLICATION:%=%.o)
+OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
 INSTALL_BINARIES:=0
 
 APPLICATION := extractconfig
-OBJECTS     := $(APPLICATION:%=%.o)
+OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
 DEFAULTCONFIG := share/default-config-values.txt
@@ -107,14 +107,14 @@ $(DEFAULTCONFIG): $(EXTRACTCONFIG)
 	@LD_LIBRARY_PATH=$(RELEASE_LIBDIR) $(EXTRACTCONFIG) >$@
 endif
 
-CLEANFILES  += $(HEADERSSRC)/config.extract.h $(DEFAULTCONFIG)
+CLEANFILES	+= $(HEADERSSRC)/config.extract.h $(DEFAULTCONFIG)
 
 APPLICATION := comparechannels
-OBJECTS     := $(APPLICATION:%=%.o)
+OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
 APPLICATION := sdfetch
-OBJECTS     := $(APPLICATION:%=%.o)
+OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
 LOCAL_INSTALLED_BINARIES := $(shell find scripts -type f)
