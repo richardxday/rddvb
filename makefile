@@ -56,7 +56,7 @@ EXTRA_CXXFLAGS += -std=c++11
 
 include $(MAKEFILEDIR)/makefile.lib
 
-LOCAL_SHARE_FILES := $(shell find share/*)
+LOCAL_SHARE_FILES := $(shell find share/* | sed -E "s/\.in$$//" | uniq)
 INSTALLEDSHAREFILES += $(LOCAL_SHARE_FILES:share/%=$(INSTALLSHAREDST)/%)
 
 DEBUG_LIBS	 += $(DEBUG_LIBDIR)/$(DEBUG_SHARED_LIBRARY)
@@ -80,13 +80,16 @@ APPLICATION := dvbdecodeprog
 OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
-INSTALL_BINARIES:=0
+INSTALL_BINARIES := 0
 
 APPLICATION := extractconfig
 OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
 DEFAULTCONFIG := share/default-config-values.txt
+
+share/%: share/%.in
+	cat $< | sed -E "s#@prefix@#$(PREFIX)#g" >$@
 
 $(HEADERSSRC)/config.extract.h: $(HEADERSSRC)/config.h
 	@echo "Generating $@"
