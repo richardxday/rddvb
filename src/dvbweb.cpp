@@ -190,6 +190,36 @@ void deletetitle(uptr_t value, void *context)
     delete (PROGTITLE *)value;
 }
 
+void parsearg(AHash& vars, const AString& arg, AStdData& log)
+{
+    uint_t j, n = arg.CountLines("\n", 0);
+
+    for (j = 0; j < n; j++) {
+        AString line = arg.Line(j, "\n", 0);
+        int p;
+
+        if ((p = line.Pos("=")) > 0) {
+            AString var = line.Left(p);
+            AString val = line.Mid(p + 1);
+
+            log.printf("%s='%s'\n", var.str(), val.str());
+
+            vars.Insert(var, (uptr_t)new AString(val));
+        }
+    }
+}
+
+void parsefile(AStdData& fp, AHash& vars, AStdData& log)
+{
+    AString line;
+
+    while (line.ReadLn(fp) >= 0) {
+        log.printf("stdin = %s\n", line.str());
+
+        parsearg(vars, line, log);
+    }
+}
+
 int main(int argc, char *argv[])
 {
     const ADVBConfig&   config = ADVBConfig::Get(true);
@@ -199,8 +229,7 @@ int main(int argc, char *argv[])
     AStdFile            log(RDDVB_ROOT_DIR "tmp/dvbweb.log", "w");
     AHash               vars(&AString::DeleteString);
     AString             val, logdata, errors;
-    bool                base64encoded = true;
-    int i;
+    int  i;
 
     (void)prog;
 
@@ -208,37 +237,27 @@ int main(int argc, char *argv[])
 
     log.printf("%d args\n", argc);
 
+    if (argc == 1) {
+        parsefile(*Stdin, vars, log);
+    }
+
     for (i = 1; i < argc; i++) {
         AString arg = argv[i];
 
         log.printf("argv[%d] = %s\n", i, arg.str());
 
         if (arg == "cli") {
-            base64encoded = false;
             enabledebug(true);
-            continue;
         }
-
-        if (base64encoded) arg = arg.Base64Decode();
-
-        uint_t j, n = arg.CountLines("\n", 0);
-
-        //debug("dvbweb: %u lines: %s\n", n, arg.str());
-
-        for (j = 0; j < n; j++) {
-            AString line = arg.Line(j, "\n", 0);
-            int p;
-
-            if ((p = line.Pos("=")) > 0) {
-                AString var = line.Left(p);
-                AString val = line.Mid(p + 1);
-
-                log.printf("%s='%s'\n", var.str(), val.str());
-
-                //debug("Setting '%s' as '%s'\n", var.str(), val.str());
-
-                vars.Insert(var, (uptr_t)new AString(val));
-            }
+        else if (arg == "-") {
+            parsefile(*Stdin, vars, log);
+        }
+        else if (arg.Pos("=") >= 0) {
+            parsearg(vars, arg, log);
+        }
+        else {
+            log.printf("Unrecognised argument '%s'\n", arg.str());
+            break;
         }
     }
 
@@ -942,7 +961,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        if (base64encoded) {
+        if (argc == 1) {
             rapidjson::Writer<AStdData> writer(*Stdout);
             doc.Accept(writer);
         }

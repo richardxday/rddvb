@@ -1,3 +1,0 @@
-<?php
-passthru("@prefix@/bin/dvbweb " . base64_encode($args));
-?>

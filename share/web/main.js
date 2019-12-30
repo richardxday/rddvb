@@ -1963,8 +1963,7 @@ function dvbrequest(filter, postdata, stackrequest)
 			}
 		}
 
-		xmlhttp.open("POST", "dvb.php", true);
-		xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+		xmlhttp.open("POST", "dvb.sh", true);
 
 		var data = "";
 		data += "from=" + filter.from + "\n";
@@ -1987,7 +1986,8 @@ function dvbrequest(filter, postdata, stackrequest)
 			data += "patterndefs=\n";
 		}
 		if (typeof postdata != 'undefined') data += postdata;
-		xmlhttp.send(data.replace(/\n/g, '&'));
+
+		xmlhttp.send(data);
 
 		document.getElementById("status").innerHTML += " <button onclick=\"abortfind()\">Abort</button>";
 		document.getElementById("statusbottom").innerHTML = '';
