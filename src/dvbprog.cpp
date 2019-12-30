@@ -9,6 +9,7 @@
 #include <map>
 #include <algorithm>
 
+#include <rdlib/StdMemFile.h>
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
 #include <rapidjson/prettywriter.h>
@@ -269,6 +270,109 @@ void ADVBProg::Init()
     overlaps       = 0;
 }
 
+ADVBProg::DVBPROG *ADVBProg::ReadData(AStdData& fp, bool readheader)
+{
+    static const uint8_t bigendian = (uint8_t)MachineIsBigEndian();
+    DVBPROG _data, *pdata = NULL;
+    uint8_t swap = AStdData::SWAP_NEVER;
+
+    if (readheader) {
+        uint8_t header;
+
+        if (fp.readitem(header)) {
+            bool _bigendian = ((header & 0x80) != 0);
+
+            swap = (_bigendian != bigendian) ? AStdData::SWAP_ALWAYS : AStdData::SWAP_NEVER;
+        }
+        else return NULL;
+    }
+
+    if (fp.readitem(_data.start, swap) &&
+        fp.readitem(_data.stop, swap) &&
+        fp.readitem(_data.recstart, swap) &&
+        fp.readitem(_data.recstop, swap) &&
+        fp.readitem(_data.actstart, swap) &&
+        fp.readitem(_data.actstop, swap) &&
+        fp.readitem(_data.filesize, swap) &&
+        fp.readitem(_data.flags, swap) &&
+        fp.readitem(_data.episode.valid, swap) &&
+        fp.readitem(_data.episode.series, swap) &&
+        fp.readitem(_data.episode.episode, swap) &&
+        fp.readitem(_data.episode.episodes, swap) &&
+        fp.readitem(_data.assignedepisode, swap) &&
+        fp.readitem(_data.year, swap) &&
+        fp.readitem(_data.jobid, swap) &&
+        fp.readitem(_data.score, swap) &&
+        fp.readitem(_data.prehandle, swap) &&
+        fp.readitem(_data.posthandle, swap) &&
+        fp.readitem(_data.dvbcard, swap) &&
+        fp.readitem(_data.pri, swap)) {
+        uint16_t *strings = &_data.strings.channel;
+        uint_t i;
+
+        for (i = 0; (i < StringCount); i++) {
+            if (!fp.readitem(strings[i], swap)) {
+                break;
+            }
+        }
+
+        if ((i == StringCount) &&
+            ((pdata = (DVBPROG *)calloc(1, sizeof(_data) + _data.strings.end)) != NULL)) {
+            memcpy(pdata, &_data, sizeof(*pdata));
+
+            if (fp.readbytes(pdata->strdata, pdata->strings.end) != pdata->strings.end) {
+                free(pdata);
+                pdata = NULL;
+            }
+        }
+    }
+
+    return pdata;
+}
+
+bool ADVBProg::WriteData(AStdData& fp, bool writeheader) const
+{
+    static const uint8_t header = ((uint8_t)MachineIsBigEndian() << 7) | DVBDATVERSION;
+    bool success = false;
+
+    if ((!writeheader || fp.writeitem(header)) &&
+        fp.writeitem(data->start) &&
+        fp.writeitem(data->stop) &&
+        fp.writeitem(data->recstart) &&
+        fp.writeitem(data->recstop) &&
+        fp.writeitem(data->actstart) &&
+        fp.writeitem(data->actstop) &&
+        fp.writeitem(data->filesize) &&
+        fp.writeitem(data->flags) &&
+        fp.writeitem(data->episode.valid) &&
+        fp.writeitem(data->episode.series) &&
+        fp.writeitem(data->episode.episode) &&
+        fp.writeitem(data->episode.episodes) &&
+        fp.writeitem(data->assignedepisode) &&
+        fp.writeitem(data->year) &&
+        fp.writeitem(data->jobid) &&
+        fp.writeitem(data->score) &&
+        fp.writeitem(data->prehandle) &&
+        fp.writeitem(data->posthandle) &&
+        fp.writeitem(data->dvbcard) &&
+        fp.writeitem(data->pri)) {
+        uint16_t *strings = &data->strings.channel;
+        uint_t i;
+
+        for (i = 0; (i < StringCount); i++) {
+            if (!fp.writeitem(strings[i])) {
+                break;
+            }
+        }
+
+        if (i == StringCount) {
+            success = (fp.writebytes(data->strdata, data->strings.end) == data->strings.end);
+        }
+    }
+
+    return success;
+}
+
 const ADVBProg::FIELD *ADVBProg::GetFields(uint_t& nfields)
 {
     nfields = NUMBEROF(fields);
@@ -316,32 +420,6 @@ void ADVBProg::ModifySearchValue(const ADVBPatterns::FIELD *field, AString& valu
     }
 }
 
-void ADVBProg::SwapBytes(DVBPROG *prog)
-{
-    uint16_t *strings = &prog->strings.channel;
-    uint_t i;
-
-    prog->start    = ::SwapBytes(prog->start);
-    prog->stop     = ::SwapBytes(prog->stop);
-    prog->recstart = ::SwapBytes(prog->recstart);
-    prog->recstop  = ::SwapBytes(prog->recstop);
-    prog->actstart = ::SwapBytes(prog->actstart);
-    prog->actstop  = ::SwapBytes(prog->actstop);
-
-    prog->filesize = ::SwapBytes(prog->filesize);
-    prog->flags    = ::SwapBytes(prog->flags);
-
-    prog->episode.episode  = ::SwapBytes(prog->episode.episode);
-    prog->episode.episodes = ::SwapBytes(prog->episode.episodes);
-
-    for (i = 0; i < StringCount; i++) strings[i] = ::SwapBytes(strings[i]);
-
-    prog->assignedepisode = ::SwapBytes(prog->assignedepisode);
-    prog->year            = ::SwapBytes(prog->year);
-    prog->jobid           = ::SwapBytes(prog->jobid);
-    prog->score           = ::SwapBytes((uint16_t)prog->score);
-}
-
 /*--------------------------------------------------------------------------------*/
 /** Initialise programme from binary stream
  *
@@ -352,42 +430,11 @@ void ADVBProg::SwapBytes(DVBPROG *prog)
 /*--------------------------------------------------------------------------------*/
 ADVBProg& ADVBProg::operator = (AStdData& fp)
 {
-    DVBPROG _data;
-    slong_t n;
-    bool    success = false;
-
     Delete();
 
-    static const uint8_t bigendian = (uint8_t)MachineIsBigEndian();
-    uint8_t header;
-
-    if (fp.readitem(header)) {
-        uint8_t version = header & 127;
-        bool    swap    = ((header >> 7) != bigendian);
-
-        (void)version;
-
-        if ((n = fp.readbytes((uint8_t *)&_data, sizeof(_data))) == (slong_t)sizeof(_data)) {
-            if (swap) SwapBytes(data);
-
-            if ((sizeof(_data) + _data.strings.end) > maxsize) {
-                if (data) free(data);
-
-                maxsize = sizeof(_data) + _data.strings.end;
-                data    = (DVBPROG *)calloc(1, maxsize);
-            }
-
-            if (data && ((sizeof(_data) + _data.strings.end) <= maxsize)) {
-                memcpy(data, &_data, sizeof(*data));
-
-                if ((n = fp.readbytes(data->strdata, _data.strings.end)) == (slong_t)_data.strings.end) {
-                    success = true;
-                }
-            }
-        }
+    if ((data = ReadData(fp)) == NULL) {
+        Delete();
     }
-
-    if (!success) Delete();
 
     return *this;
 }
@@ -818,8 +865,7 @@ ADVBProg& ADVBProg::Modify(const ADVBProg& obj)
 /*--------------------------------------------------------------------------------*/
 bool ADVBProg::WriteToFile(AStdData& fp) const
 {
-    static const uint8_t header = ((uint8_t)MachineIsBigEndian() << 7) | DVBDATVERSION;
-    return (fp.writeitem(header) && (fp.writebytes((uint8_t *)data, sizeof(*data) + data->strings.end) == (slong_t)(sizeof(*data) + data->strings.end)));
+    return WriteData(fp);
 }
 
 /*--------------------------------------------------------------------------------*/

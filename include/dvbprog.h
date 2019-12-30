@@ -336,7 +336,7 @@ public:
     int CompareExternal(uint_t id, uint32_t value) const;
     int CompareExternal(uint_t id, sint32_t value) const;
 
-    typedef PACKEDSTRUCT {
+    typedef struct {
         uint8_t  valid;
         uint8_t  series;
         uint16_t episode;
@@ -588,7 +588,7 @@ protected:
 
     AString GetProgrammeKey() const;
 
-    typedef PACKEDSTRUCT {
+    typedef struct {
         uint64_t start;
         uint64_t stop;
         uint64_t recstart;
@@ -611,7 +611,7 @@ protected:
         uint8_t  dvbcard;
         sint8_t  pri;
 
-        PACKEDSTRUCT {
+        struct {
             uint16_t channel;
             uint16_t basechannel;
             uint16_t channelid;
@@ -641,6 +641,9 @@ protected:
         char     strdata[0];
     } DVBPROG;
 
+    static DVBPROG *ReadData(AStdData& fp, bool readheader = true);
+    bool WriteData(AStdData& fp, bool writeheader = true) const;
+
     uint8_t *GetDataPtr(uint16_t offset) const {return (uint8_t *)((uptr_t)data + offset);}
 
     static uint16_t GetDirDataOffset();
@@ -651,8 +654,6 @@ protected:
     static uint16_t GetScoreDataOffset();
 
     static AString SanitizeString(const AString& str, bool filesystem = false, bool dir = false);
-
-    static void SwapBytes(DVBPROG *prog);
 
     uint64_t GetDate(const AString& str, const AString& fieldname) const;
 
