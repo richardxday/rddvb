@@ -1,3 +1,3 @@
 #!@rootdir@bin/bash
 echo -e "Content-Type: text/plain\n\n"
-@prefix@/bin/dvbweb
+LD_LIBRARY_PATH="@prefix@/lib:@rootdir@usr/lib" @prefix@/bin/dvbweb
