@@ -285,9 +285,7 @@ public:
     const char *GetModifiedCategory()    const {return IsFilm() ? "film" : GetCategory();}
     const char *GetDirector()            const {return GetString(data->strings.director);}
     const char *GetEpisodeNum()          const {return GetString(data->strings.episodenum);}
-#if DVBDATVERSION > 1
     const char *GetEpisodeID()           const {return GetString(data->strings.episodeid);}
-#endif
     const char *GetUser()                const {return GetString(data->strings.user);}
     const char *GetDir()                 const {return GetString(data->strings.dir);}
     const char *GetFilename()            const {return GetString(data->strings.filename);}
@@ -296,11 +294,9 @@ public:
     const char *GetActors()              const {return GetString(data->strings.actors);}
     const char *GetPrefs()               const {return GetString(data->strings.prefs);}
 
-#if DVBDATVERSION > 1
     const char *GetRating()              const {return GetString(data->strings.rating);}
     const char *GetSubCategory()         const {return GetString(data->strings.subcategory);}
     void SetSubCategory(const AString& str)    {SetString(&data->strings.subcategory, str);}
-#endif
 
     bool SetUUID();
 
@@ -311,9 +307,7 @@ public:
     bool SetPattern(const char    *str)        {return SetString(&data->strings.pattern,    str);}
     bool SetPrefs(const char      *str)        {return SetString(&data->strings.prefs,      str);}
 
-#if DVBDATVERSION > 1
     bool SetEpisodeID(const char *str)         {return SetString(&data->strings.episodeid,  str);}
-#endif
 
     static const AString& GetDayFormat()              {StaticInit(); return dayformat;}
     static const AString& GetDateFormat()             {StaticInit(); return dateformat;}
@@ -541,7 +535,11 @@ public:
     static int CompareScore(const ADVBProg& prog1, const ADVBProg& prog2);
     static int SortListByScore(uptr_t item1, uptr_t item2, void *context);
 
-    AString Base64Encode() const {return ::Base64Encode((const uint8_t *)data, sizeof(*data) + data->strings.end);}
+    /*--------------------------------------------------------------------------------*/
+    /** Base 64 encode programme data
+     */
+    /*--------------------------------------------------------------------------------*/
+    AString Base64Encode() const;
 
     AString GetLinkToFile() const;
     bool    UpdateFileSize();
@@ -590,56 +588,6 @@ protected:
 
     AString GetProgrammeKey() const;
 
-#if DVBDATVERSION==1
-    typedef PACKEDSTRUCT {
-        uint64_t start;
-        uint64_t stop;
-        uint64_t recstart;
-        uint64_t recstop;
-        uint64_t actstart;
-        uint64_t actstop;
-
-        uint64_t filesize;
-        uint32_t flags;
-
-        EPISODE  episode;
-
-        PACKEDSTRUCT {
-            uint16_t channel;
-            uint16_t basechannel;
-            uint16_t channelid;
-            uint16_t dvbchannel;
-            uint16_t title;
-            uint16_t subtitle;
-            uint16_t desc;
-            uint16_t category;
-            uint16_t director;
-            uint16_t episodenum;
-            uint16_t user;
-            uint16_t dir;
-            uint16_t filename;
-            uint16_t pattern;
-            uint16_t uuid;
-            uint16_t actors;
-            uint16_t prefs;
-            uint16_t end;
-        } strings;
-
-        uint16_t assignedepisode;
-        uint16_t year;
-        uint16_t jobid;
-        sint16_t score;
-
-        uint8_t  prehandle;
-        uint8_t  posthandle;
-        uint8_t  dvbcard;
-        sint8_t  pri;
-
-        uint8_t  bigendian;
-
-        char     strdata[0];
-    } DVBPROG;
-#else
     typedef PACKEDSTRUCT {
         uint64_t start;
         uint64_t stop;
@@ -692,16 +640,13 @@ protected:
 
         char     strdata[0];
     } DVBPROG;
-#endif
 
     uint8_t *GetDataPtr(uint16_t offset) const {return (uint8_t *)((uptr_t)data + offset);}
 
     static uint16_t GetDirDataOffset();
     static uint16_t GetUserDataOffset();
     static uint16_t GetActorsDataOffset();
-#if DVBDATVERSION > 1
     static uint16_t GetSubCategoryDataOffset();
-#endif
     static uint16_t GetPriDataOffset();
     static uint16_t GetScoreDataOffset();
 
