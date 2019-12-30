@@ -445,7 +445,17 @@ ADVBProg& ADVBProg::operator = (AStdData& fp)
 /*--------------------------------------------------------------------------------*/
 AString ADVBProg::Base64Encode() const
 {
-    return ::Base64Encode((const uint8_t *)data, sizeof(*data) + data->strings.end);
+    AStdMemFile mem;
+    AString str;
+
+    if (mem.open("w")) {
+        if (WriteData(mem, false)) {
+            str = ::Base64Encode(mem.GetData(), mem.GetLength());
+        }
+        mem.close();
+    }
+
+    return str;
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -458,26 +468,22 @@ AString ADVBProg::Base64Encode() const
 /*--------------------------------------------------------------------------------*/
 bool ADVBProg::Base64Decode(const AString& str)
 {
-    sint_t len = str.Base64DecodeLength();
-    bool success = false;
+    AStdMemFile mem;
 
-    Delete();
+    if (mem.open("w")) {
+        if (mem.Base64Decode(str)) {
+            Delete();
 
-    if (len > 0) {
-        if ((uint_t)len > maxsize) {
-            if (data) free(data);
-            maxsize = len;
-            data    = (DVBPROG *)calloc(1, maxsize);
+            mem.rewind();
+            if ((data = ReadData(mem, false)) == NULL) {
+                Delete();
+            }
         }
 
-        if (data) {
-            success = ((str.Base64Decode((uint8_t *)data, maxsize) == len) && Valid());
-        }
+        mem.close();
     }
 
-    if (!success) Delete();
-
-    return success;
+    return Valid();
 }
 
 void ADVBProg::SetMarker(AString& marker, const AString& field)
