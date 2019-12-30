@@ -1,9 +1,3 @@
-#!@rootdir@usr/bin/php
-Content-type: text/plain
-
 <?php
-print_r(get_defined_vars());
-$args = file_get_contents("php://input");
-echo "Args: $args\n";
 passthru("@prefix@/bin/dvbweb " . base64_encode($args));
 ?>
