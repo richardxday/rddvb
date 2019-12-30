@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
     rapidjson::Document doc;
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
     ADVBProg            prog;   // ensure ADVBProg initialisation takes place
-    AStdFile            log;    //("/home/richard/dvbweb.log", "w");
+    AStdFile            log(RDDVB_ROOT_DIR "tmp/dvbweb.log", "w");
     AHash               vars(&AString::DeleteString);
     AString             val, logdata, errors;
     bool                base64encoded = true;
@@ -206,8 +206,12 @@ int main(int argc, char *argv[])
 
     enabledebug(false);
 
+    log.printf("%d args\n", argc);
+
     for (i = 1; i < argc; i++) {
         AString arg = argv[i];
+
+        log.printf("argv[%d] = %s\n", i, arg.str());
 
         if (arg == "cli") {
             base64encoded = false;

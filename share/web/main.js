@@ -72,14 +72,14 @@ var filters = [
 		filter:{from:"Logs",timefilter:"start=yesterday",sortfields:"",expanded:-1,fetch:true},
 	},
 ];
-var searches        = null;
-var stats           = null;
-var link            = null;
-var globals         = null;
-var channels        = null;
+var searches		= null;
+var stats			= null;
+var link			= null;
+var globals			= null;
+var channels		= null;
 var proglistelement = '';
-var ua              = navigator.userAgent.toLowerCase();
-var isAndroid       = (ua.indexOf("android") >= 0); //&& ua.indexOf("mobile");
+var ua				= navigator.userAgent.toLowerCase();
+var isAndroid		= (ua.indexOf("android") >= 0); //&& ua.indexOf("mobile");
 
 var videointents = [
 	{
@@ -120,13 +120,13 @@ function loadpage()
 
 	filter = decodeurl();
 
-	if (typeof filter.from        == 'undefined') filter.from        = document.getElementById("from").value;
+	if (typeof filter.from		  == 'undefined') filter.from		 = document.getElementById("from").value;
 	if (typeof filter.titlefilter == 'undefined') filter.titlefilter = document.getElementById("titlefilter").value;
-	if (typeof filter.timefilter  == 'undefined') filter.timefilter  = document.getElementById("timefilter").value;
-	if (typeof filter.sortfields  == 'undefined') filter.sortfields  = document.getElementById("sortfields").value;
-	if (typeof filter.pagesize    == 'undefined') filter.pagesize    = document.getElementById("pagesize").value;
-	if (typeof filter.page        == 'undefined') filter.page        = 0;
-	if (typeof filter.expanded    == 'undefined') filter.expanded    = -1;
+	if (typeof filter.timefilter  == 'undefined') filter.timefilter	 = document.getElementById("timefilter").value;
+	if (typeof filter.sortfields  == 'undefined') filter.sortfields	 = document.getElementById("sortfields").value;
+	if (typeof filter.pagesize	  == 'undefined') filter.pagesize	 = document.getElementById("pagesize").value;
+	if (typeof filter.page		  == 'undefined') filter.page		 = 0;
+	if (typeof filter.expanded	  == 'undefined') filter.expanded	 = -1;
 
 	dvbrequest(filter);
 }
@@ -207,17 +207,17 @@ function find(field, str, title, style, desc = null)
 
 function findfromfilter(from, titlefilter, timefilter, str, title, style, desc = null)
 {
-	if ((title 		== null) || (typeof title 	   == 'undefined')) title 	   = 'Search ' + from + ' using filter ' + titlefilter.replace(/"/g, '&quot;');
-	if ((style 		== null) || (typeof style 	   == 'undefined')) style 	   = '';
+	if ((title		== null) || (typeof title	   == 'undefined')) title	   = 'Search ' + from + ' using filter ' + titlefilter.replace(/"/g, '&quot;');
+	if ((style		== null) || (typeof style	   == 'undefined')) style	   = '';
 	if ((timefilter == null) || (typeof timefilter == 'undefined')) timefilter = '';
 
 	titlefilter = titlefilter.replace(/"/g, '\\&quot;');
-	timefilter  = timefilter.replace(/"/g, '\\&quot;');
+	timefilter	= timefilter.replace(/"/g, '\\&quot;');
 
 	return ('<a href="javascript:void(0);" onclick="dvbrequest({' +
-			'from:&quot;'        + from        + '&quot;,' +
+			'from:&quot;'		 + from		   + '&quot;,' +
 			'titlefilter:&quot;' + titlefilter + '&quot;,' +
-			'timefilter:&quot;'  + timefilter  + '&quot;});" ' +
+			'timefilter:&quot;'	 + timefilter  + '&quot;});" ' +
 			style + ' title="' + title + ((desc != null) ? "\n\n" + desc.replace(/"/g, '&quot;') : "") + '">' + str + '</a>');
 }
 
@@ -226,9 +226,9 @@ function showstatus(type)
 	var status = 'Showing ' + (response.from + 1) + ' to ' + (response.from + response.for) + ' of ' + response.total + ' ' + type;
 
 	if (response.for != response.total) {
-		var page    = response.page;
+		var page	= response.page;
 		var maxpage = ((response.total + response.pagesize - 1) / response.pagesize) | 0;
-		var flag    = false;
+		var flag	= false;
 
 		status += ': ';
 
@@ -272,7 +272,7 @@ function showstatus(type)
 function gotopage()
 {
 	if (document.getElementById("page") != null) page = (document.getElementById("page").value | 0) - 1;
-	else									     page = 0;
+	else										 page = 0;
 
 	dvbrequest({page:page});
 }
@@ -349,9 +349,9 @@ function populateusers()
 		str += '<tr><th>User</th><th>Folder</th><th>Freespace</th><th>Search</th></tr>';
 
 		for (i = 0; i < response.users.length; i++) {
-			var user     = response.users[i];
+			var user	 = response.users[i];
 			var username = getusername(user.user);
-			var level    = user.level + 0;
+			var level	 = user.level + 0;
 
 			if (level > 2) level = 2;
 
@@ -386,7 +386,7 @@ function populateusers()
 			for (i = 0; i < response.diskspace.length; i++) {
 				var diskspace  = response.diskspace[i];
 				var username   = getusername(diskspace.user);
-				var level      = diskspace.level + 0;
+				var level	   = diskspace.level + 0;
 
 				if (level > 2) level = 2;
 
@@ -399,12 +399,12 @@ function populateusers()
 
 				str += '</td>';
 
-                str += '<td>';
+				str += '<td>';
 				str += findfromfilter('Combined', 'filename@<"' + diskspace.fullfolder + '"', defaulttimefilter, 'Combined', 'Search for recordings in combined listings with folder ' + diskspace.folder) + '&nbsp;';
 				str += findfromfilter('Requested', 'filename@<"' + diskspace.fullfolder + '"', '', 'Requested', 'Search for requested recordings with folder ' + diskspace.folder) + '&nbsp;';
 				str += findfromfilter('Recorded', 'filename@<"' + diskspace.fullfolder + '"', '', 'Recorded', 'Search for recorded programmes with folder ' + diskspace.folder) + '&nbsp;';
 				str += findfromfilter('Patterns', 'filename@<"' + diskspace.fullfolder + '"', '', 'Patterns', 'Display scheduling patterns with folder ' + diskspace.folder) + '&nbsp;';
-                str += '</td>';
+				str += '</td>';
 
 				str += '</tr>';
 			}
@@ -425,36 +425,36 @@ function strpad(num, len)
 
 function populatedates(prog)
 {
-    var locale      = 'en-GB';
-    var timeoptions = {timeZone: 'UTC', hour: '2-digit', minute: '2-digit'};
-    var dateoptions = {timeZone: 'UTC', weekday: 'short', year: 'numeric', month: 'short', day: '2-digit'};
+	var locale		= 'en-GB';
+	var timeoptions = {timeZone: 'UTC', hour: '2-digit', minute: '2-digit'};
+	var dateoptions = {timeZone: 'UTC', weekday: 'short', year: 'numeric', month: 'short', day: '2-digit'};
 
-    if ((typeof prog.start != 'undefined') &&
-        (typeof prog.stop  != 'undefined')) {
-        var startdate = new Date(prog.start);
-        var stopdate  = new Date(prog.stop);
-        prog.starttime    = startdate.toLocaleString(locale, timeoptions);
-        prog.stoptime     = stopdate.toLocaleString(locale, timeoptions);
-        prog.startdate    = startdate.toLocaleString(locale, dateoptions).replace(/, /g, '#').replace(/ /g, '-').replace(/#/g, ' ');
-    }
+	if ((typeof prog.start != 'undefined') &&
+		(typeof prog.stop  != 'undefined')) {
+		var startdate = new Date(prog.start);
+		var stopdate  = new Date(prog.stop);
+		prog.starttime	  = startdate.toLocaleString(locale, timeoptions);
+		prog.stoptime	  = stopdate.toLocaleString(locale, timeoptions);
+		prog.startdate	  = startdate.toLocaleString(locale, dateoptions).replace(/, /g, '#').replace(/ /g, '-').replace(/#/g, ' ');
+	}
 
-    if ((typeof prog.recstart != 'undefined') &&
-        (typeof prog.recstop  != 'undefined')) {
-        var startdate = new Date(prog.recstart);
-        var stopdate  = new Date(prog.recstop);
-        prog.recstarttime    = startdate.toLocaleString(locale, timeoptions);
-        prog.recstoptime     = stopdate.toLocaleString(locale, timeoptions);
-        prog.recstartdate    = startdate.toLocaleString(locale, dateoptions).replace(/, /g, '#').replace(/ /g, '-').replace(/#/g, ' ');
-    }
+	if ((typeof prog.recstart != 'undefined') &&
+		(typeof prog.recstop  != 'undefined')) {
+		var startdate = new Date(prog.recstart);
+		var stopdate  = new Date(prog.recstop);
+		prog.recstarttime	 = startdate.toLocaleString(locale, timeoptions);
+		prog.recstoptime	 = stopdate.toLocaleString(locale, timeoptions);
+		prog.recstartdate	 = startdate.toLocaleString(locale, dateoptions).replace(/, /g, '#').replace(/ /g, '-').replace(/#/g, ' ');
+	}
 
-    if ((typeof prog.actstart != 'undefined') &&
-        (typeof prog.actstop  != 'undefined')) {
-        var startdate = new Date(prog.actstart);
-        var stopdate  = new Date(prog.actstop);
-        prog.actstarttime    = startdate.toLocaleString(locale, timeoptions);
-        prog.actstoptime     = stopdate.toLocaleString(locale, timeoptions);
-        prog.actstartdate    = startdate.toLocaleString(locale, dateoptions).replace(/, /g, '#').replace(/ /g, '-').replace(/#/g, ' ');
-    }
+	if ((typeof prog.actstart != 'undefined') &&
+		(typeof prog.actstop  != 'undefined')) {
+		var startdate = new Date(prog.actstart);
+		var stopdate  = new Date(prog.actstop);
+		prog.actstarttime	 = startdate.toLocaleString(locale, timeoptions);
+		prog.actstoptime	 = stopdate.toLocaleString(locale, timeoptions);
+		prog.actstartdate	 = startdate.toLocaleString(locale, dateoptions).replace(/, /g, '#').replace(/ /g, '-').replace(/#/g, ' ');
+	}
 }
 
 function gettimesearchstring(datems)
@@ -534,26 +534,26 @@ function populateprogs(id)
 					if (typeof response.progs[i].scheduled != 'undefined') populatedates(response.progs[i].scheduled);
 				}
 
-				var prog     = response.progs[i];
+				var prog	 = response.progs[i];
 				var selected = (i == id);
 
 				if ((typeof prog.html == 'undefined') || (selected != prog.html.selected)) {
-					var prog1      = prog;
+					var prog1	   = prog;
 					var headerstr  = '';
 					var detailsstr = '';
 					var classname  = '';
-					var trstr      = '';
+					var trstr	   = '';
 
 					if		(typeof prog.recorded  != 'undefined') prog1 = prog.recorded;
 					else if (typeof prog.scheduled != 'undefined') prog1 = prog.scheduled;
 
-					if		(prog.flags.postprocessing)  		  classname = ' class="processing"';
-					else if	(prog.flags.running)		 		  classname = ' class="recording"';
-					else if (prog.flags.failed)			 		  classname = ' class="failed"';
-					else if (prog.flags.scheduled)		 		  classname = ' class="scheduled"';
-					else if	(prog1.flags.recorded)    	 		  classname = ' class="recorded"';
-					else if (prog1.flags.rejected)	 	 		  classname = ' class="rejected"';
-					else if	(prog1.flags.scheduled)    	 		  classname = ' class="scheduled"';
+					if		(prog.flags.postprocessing)			  classname = ' class="processing"';
+					else if	(prog.flags.running)				  classname = ' class="recording"';
+					else if (prog.flags.failed)					  classname = ' class="failed"';
+					else if (prog.flags.scheduled)				  classname = ' class="scheduled"';
+					else if	(prog1.flags.recorded)				  classname = ' class="recorded"';
+					else if (prog1.flags.rejected)				  classname = ' class="rejected"';
+					else if	(prog1.flags.scheduled)				  classname = ' class="scheduled"';
 					else if (prog.flags.film || prog1.flags.film) classname = ' class="film"';
 
 					trstr += '<tr' + classname + ' id="prog' + i + 'header"></tr>';
@@ -755,7 +755,7 @@ function populateprogs(id)
 
 							if (typeof prog.episode.episode != 'undefined') {
 								if (str2 != '') str2 += ', episode ';
-								else		    str2 += 'Episode ';
+								else			str2 += 'Episode ';
 								str2 += prog.episode.episode;
 								if (typeof prog.episode.episodes != 'undefined') {
 									str2 += ' of ' + prog.episode.episodes;
@@ -800,13 +800,13 @@ function populateprogs(id)
 						str1 = '';
 
 						if ((progvb > 3) &&
-							!prog.flags.recorded  	   &&
-							!prog.flags.scheduled 	   &&
-							!prog.flags.rejected   	   &&
-							!prog.flags.failed     	   &&
-							!prog.flags.running        &&
+							!prog.flags.recorded	   &&
+							!prog.flags.scheduled	   &&
+							!prog.flags.rejected	   &&
+							!prog.flags.failed		   &&
+							!prog.flags.running		   &&
 							!prog.flags.postprocessing &&
-							prog.flags.recordable      &&
+							prog.flags.recordable	   &&
 							(typeof prog.recorded  == 'undefined') &&
 							(typeof prog.scheduled == 'undefined')) {
 							//str1 += '<br><br>';
@@ -851,13 +851,13 @@ function populateprogs(id)
 							if ((typeof prog.series != 'undefined') && (prog.series.length > n)) n = prog.series.length;
 
 							var dec = 3;
-							if (n > 10)  dec++;
+							if (n > 10)	 dec++;
 							if (n > 100) dec++;
 
 							for (j = 0; j < n; j++) {
 								if (typeof prog.series == 'undefined') str1 += '&nbsp;&nbsp;&nbsp;';
 
-								if ((typeof prog.series    != 'undefined') &&
+								if ((typeof prog.series	   != 'undefined') &&
 									(typeof prog.series[j] != 'undefined') &&
 									(prog.series[j].state != 'empty')) {
 									var valid = 0, str3 = '';
@@ -1039,7 +1039,7 @@ function populateprogs(id)
 					changed |= (document.getElementById("prog" + i + "header") == null);
 
 					if (typeof response.progs[i].html == 'undefined') response.progs[i].html = {};
-					response.progs[i].html.selected  = selected;
+					response.progs[i].html.selected	 = selected;
 					response.progs[i].html.headerstr = headerstr;
 
 					if		(typeof response.progs[i].html.trstr == 'undefined') changed = true;
@@ -1085,9 +1085,9 @@ function populateprogs(id)
 					}
 
 					var minutes = ((offset + 59999) / 60000) | 0;
-					var hours   = (minutes / 60) | 0;
+					var hours	= (minutes / 60) | 0;
 					minutes -= hours * 60;
-					var days    = (hours / 24) | 0;
+					var days	= (hours / 24) | 0;
 					hours -= days * 24;
 
 					var n = 0;
@@ -1187,7 +1187,7 @@ function populatetitles(id)
 				if ((title.isfilm > 0) && (title.notfilm == 0)) str += ' class="film"';
 
 				str += '><td style="text-align:left;">';
-				str +=          findfromfilter(from, 'title="' + title.title + '"', '', title.title, 'Find all versions of this title' + desc) + '</td>';
+				str +=			findfromfilter(from, 'title="' + title.title + '"', '', title.title, 'Find all versions of this title' + desc) + '</td>';
 				str += '<td>' + findfromfilter(from, pattern + 'title="' + title.title + '"', '', title.total + ' In Total', 'Find all versions of this title') + '</td>';
 				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" recorded', '', title.recorded + ' Recorded', 'Find recorded versions of this title') + '</td>';
 				str += '<td>' + findfromfilter('Combined', pattern + 'title="' + title.title + '" available', '', title.available + ' Available', 'Find recorded versions of this title that are available') + '</td>';
@@ -1218,7 +1218,7 @@ function recordprogramme(id)
 
 		if (user == defaultuser) user = '';
 
-		if ((typeof prog.flags.film != 'undefined') && prog.flags.film)  pattern += ' film=1 onceonly:=1 pri:=-3';
+		if ((typeof prog.flags.film != 'undefined') && prog.flags.film)	 pattern += ' film=1 onceonly:=1 pri:=-3';
 
 		if (typeof prog.subtitle != 'undefined') pattern += ' subtitle="' + prog.subtitle + '"';
 
@@ -1330,7 +1330,7 @@ function displayfilter(patternid, termindex, type)
 
 	if (pattern.terms.length > 0) {
 		if (pattern.terms[0].assign) str += 'set&nbsp;';
-		else					     str += 'if&nbsp;';
+		else						 str += 'if&nbsp;';
 	}
 
 	for (i = 0; i < pattern.terms.length; i++) {
@@ -1421,7 +1421,7 @@ function displayfilter_changed(patternid, termindex, type)
 			if (i == fielddata.operators.length) opindex = fielddata.operators[0];
 		}
 
-		patterns[patternid].terms[termindex].field   = field;
+		patterns[patternid].terms[termindex].field	 = field;
 		patterns[patternid].terms[termindex].opindex = opindex;
 	}
 	else if (type == 'operator') {
@@ -1475,9 +1475,9 @@ function getvalidoperators(term_field, term_opindex)
 	var map = [];
 
 	for (k = 0; k < operators.length; k++) {
-		var opindex  = operators[k];
+		var opindex	 = operators[k];
 		var operator = patterndefs.operators[opindex];
-		var opcode   = operator.opcode;
+		var opcode	 = operator.opcode;
 
 		if (typeof map[opcode] == 'undefined') {
 			map[opcode] = true;
@@ -1550,7 +1550,7 @@ function populatepattern(pattern, index)
 	}
 	else {
 		if (pattern.user != '') str += pattern.user;
-		else				    str += defaultuser;
+		else					str += defaultuser;
 	}
 
 	str += '</td><td class="desc">';
@@ -1576,7 +1576,7 @@ function populatepattern(pattern, index)
 		str += '<button id="updatepattern' + index + 'link" onclick="updatepattern(' + index + ')">Update</button>&nbsp;';
 	}
 	if (pattern.enabled) str += '<button onclick="disablepattern(' + index + ')">Disable</button>&nbsp;';
-	else			     str += '<button onclick="enablepattern(' + index + ')">Enable</button>&nbsp;';
+	else				 str += '<button onclick="enablepattern(' + index + ')">Enable</button>&nbsp;';
 	str += '<button onclick="deletepattern(' + index + ')">Delete</button>&nbsp;';
 	str += 'Search:&nbsp;';
 	str += '<button onclick="findusingpattern(&quot;Listings&quot;,&quot;pattern' + index + '&quot;);" title="Find this pattern in listings">Listings</button>&nbsp;';
@@ -1617,7 +1617,7 @@ function populatepatterns(id)
 			}
 			else {
 				if (pattern.user != '') str += pattern.user;
-				else				    str += defaultuser;
+				else					str += defaultuser;
 			}
 			str += '</td><td class="desc">';
 			str += '<input type="text" id="newrecpattern" size=50 maxlength=10000 value="" onfocusout="addrecchanged(&quot;newrec&quot;)"/>';
@@ -1661,9 +1661,9 @@ function patternchanged(index)
 {
 	if (typeof patterns[index] != 'undefined') {
 		var updated = ((document.getElementById("pattern" + index + "pattern").value != patterns[index].pattern) ||
-					   (document.getElementById("pattern" + index + "user").value    != patterns[index].user));
+					   (document.getElementById("pattern" + index + "user").value	 != patterns[index].user));
 		if (updated) document.getElementById("updatepattern" + index + "link").innerHTML = "<b>Update</b>";
-		else	     document.getElementById("updatepattern" + index + "link").innerHTML = "Update";
+		else		 document.getElementById("updatepattern" + index + "link").innerHTML = "Update";
 		displayfilter(index, -1, '');
 	}
 }
@@ -1672,9 +1672,9 @@ function updatepattern(index)
 {
 	if (typeof patterns[index] != 'undefined') {
 		if ((document.getElementById("pattern" + index + "pattern").value != patterns[index].pattern) ||
-			(document.getElementById("pattern" + index + "user").value    != patterns[index].user)) {
+			(document.getElementById("pattern" + index + "user").value	  != patterns[index].user)) {
 			var postdata = "";
-			var user    = document.getElementById("pattern" + index + "user").value;
+			var user	= document.getElementById("pattern" + index + "user").value;
 			var pattern = document.getElementById("pattern" + index + "pattern").value;
 
 			if (user == defaultuser) user = '';
@@ -1749,7 +1749,7 @@ function addrecchanged(srcobject)
 
 function addpattern(srcobject)
 {
-	var user    = document.getElementById(srcobject + 'user').value;
+	var user	= document.getElementById(srcobject + 'user').value;
 	var pattern = document.getElementById(srcobject + 'pattern').value;
 
 	if (user == defaultuser) user = '';
@@ -1805,8 +1805,8 @@ function populate(id)
 	if (response != null) {
 		if		(typeof response.patterns != 'undefined') populatepatterns(id);
 		else if (typeof response.loglines != 'undefined') populatelogs(id);
-		else if (typeof response.titles   != 'undefined') populatetitles(id);
-		else if (typeof response.progs    != 'undefined') populateprogs(id);
+		else if (typeof response.titles	  != 'undefined') populatetitles(id);
+		else if (typeof response.progs	  != 'undefined') populateprogs(id);
 
 		populateusers();
 	}
@@ -1817,31 +1817,31 @@ function populate(id)
 function dvbrequest(filter, postdata, stackrequest)
 {
 	if (typeof filter != 'undefined') {
-		if (typeof filter.from 	      == 'undefined') filter.from 		 = currentfilter.from;
+		if (typeof filter.from		  == 'undefined') filter.from		 = currentfilter.from;
 		else										  document.getElementById("from").value = filter.from;
 		if (typeof filter.titlefilter == 'undefined') filter.titlefilter = currentfilter.titlefilter;
 		else										  document.getElementById("titlefilter").value = filter.titlefilter;
-		if (typeof filter.timefilter  == 'undefined') filter.timefilter  = currentfilter.timefilter;
+		if (typeof filter.timefilter  == 'undefined') filter.timefilter	 = currentfilter.timefilter;
 		else										  document.getElementById("timefilter").value = filter.timefilter;
-		if (typeof filter.sortfields  == 'undefined') filter.sortfields  = currentfilter.sortfields;
+		if (typeof filter.sortfields  == 'undefined') filter.sortfields	 = currentfilter.sortfields;
 		else										  document.getElementById("sortfields").value = filter.sortfields;
-		if (typeof filter.page 	      == 'undefined') {
-			if ((filter.from        != currentfilter.from) ||
+		if (typeof filter.page		  == 'undefined') {
+			if ((filter.from		!= currentfilter.from) ||
 				(filter.titlefilter != currentfilter.titlefilter) ||
-				(filter.timefilter  != currentfilter.timefilter) ||
-				(filter.sortfields  != currentfilter.sortfields)) {
+				(filter.timefilter	!= currentfilter.timefilter) ||
+				(filter.sortfields	!= currentfilter.sortfields)) {
 				filter.page = 0;
 			}
 			else filter.page = currentfilter.page;
 		}
-		if (typeof filter.pagesize    == 'undefined') filter.pagesize    = currentfilter.pagesize;
+		if (typeof filter.pagesize	  == 'undefined') filter.pagesize	 = currentfilter.pagesize;
 		else										  document.getElementById("pagesize").value = filter.pagesize;
- 		if (typeof filter.expanded    == 'undefined') {
-			if ((filter.from        != currentfilter.from) ||
+		if (typeof filter.expanded	  == 'undefined') {
+			if ((filter.from		!= currentfilter.from) ||
 				(filter.titlefilter != currentfilter.titlefilter) ||
-				(filter.timefilter  != currentfilter.timefilter) ||
-				(filter.sortfields  != currentfilter.sortfields) ||
-				(filter.page        != currentfilter.page)) {
+				(filter.timefilter	!= currentfilter.timefilter) ||
+				(filter.sortfields	!= currentfilter.sortfields) ||
+				(filter.page		!= currentfilter.page)) {
 				filter.expanded = -1;
 			}
 			else filter.expanded = currentfilter.expanded;
@@ -1849,7 +1849,7 @@ function dvbrequest(filter, postdata, stackrequest)
 	}
 	else filter = currentfilter;
 
-	filter.page     = filter.page     | 0;
+	filter.page		= filter.page	  | 0;
 	filter.pagesize = filter.pagesize | 0;
 
 	if ((typeof stackrequest == 'undefined') || stackrequest) {
@@ -1871,14 +1871,14 @@ function dvbrequest(filter, postdata, stackrequest)
 	}
 
 	if (((currentfilter == null) ||
-		 (typeof postdata    != 'undefined') ||
+		 (typeof postdata	 != 'undefined') ||
 		 ((typeof filter.fetch != 'undefined') && filter.fetch) ||
-		 (filter.from        != currentfilter.from) ||
+		 (filter.from		 != currentfilter.from) ||
 		 (filter.titlefilter != currentfilter.titlefilter) ||
-		 (filter.timefilter  != currentfilter.timefilter) ||
-		 (filter.sortfields  != currentfilter.sortfields) ||
-		 (filter.page        != currentfilter.page) ||
-		 (filter.pagesize    != currentfilter.pagesize)) &&
+		 (filter.timefilter	 != currentfilter.timefilter) ||
+		 (filter.sortfields	 != currentfilter.sortfields) ||
+		 (filter.page		 != currentfilter.page) ||
+		 (filter.pagesize	 != currentfilter.pagesize)) &&
 		!((typeof filter.fetch != 'undefined') && !filter.fetch)) {
 
 		document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
@@ -1964,6 +1964,7 @@ function dvbrequest(filter, postdata, stackrequest)
 		}
 
 		xmlhttp.open("POST", "dvb.php", true);
+		xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 
 		var data = "";
 		data += "from=" + filter.from + "\n";
@@ -1986,7 +1987,7 @@ function dvbrequest(filter, postdata, stackrequest)
 			data += "patterndefs=\n";
 		}
 		if (typeof postdata != 'undefined') data += postdata;
-		xmlhttp.send(data);
+		xmlhttp.send(data.replace(/\n/g, '&'));
 
 		document.getElementById("status").innerHTML += " <button onclick=\"abortfind()\">Abort</button>";
 		document.getElementById("statusbottom").innerHTML = '';
@@ -2077,7 +2078,7 @@ function parserequest(index, user, pattern)
 
 	var data = "";
 	data += "parse=" + pattern + "\n";
-	data += "user="  + user    + "\n";
+	data += "user="	 + user	   + "\n";
 	xmlhttp.send(data);
 }
 
@@ -2170,9 +2171,9 @@ function showchannels()
 			var valid = false;
 
 			// if ((typeof channel.dvb != 'undefined') &&
-			// 	(typeof channel.dvb.frequency != 'undefined') &&
-			// 	(typeof channel.dvb.pidlist != 'undefined') &&
-			// 	(channel.dvb.pidlist.length > 0)) {
+			//	(typeof channel.dvb.frequency != 'undefined') &&
+			//	(typeof channel.dvb.pidlist != 'undefined') &&
+			//	(channel.dvb.pidlist.length > 0)) {
 			{
 				str += '<tr';
 

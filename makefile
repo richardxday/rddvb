@@ -89,7 +89,11 @@ include $(MAKEFILEDIR)/makefile.app
 DEFAULTCONFIG := share/default-config-values.txt
 
 share/%: share/%.in
-	cat $< | sed -E "s#@prefix@#$(PREFIX)#g" >$@
+	@cat $< \
+	| sed -E "s#@rootdir@#$(ROOTDIR)#g" \
+	| sed -E "s#@prefix@#$(PREFIX)#g" \
+	>$@
+	@chmod a+x $@
 
 $(HEADERSSRC)/config.extract.h: $(HEADERSSRC)/config.h
 	@echo "Generating $@"
