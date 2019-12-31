@@ -92,6 +92,7 @@ share/%: share/%.in
 	@cat $< \
 	| sed -E "s#@rootdir@#$(ROOTDIR)#g" \
 	| sed -E "s#@prefix@#$(PREFIX)#g" \
+	| sed -E "s#@share@#$(INSTALLSHAREDST)#g" \
 	>$@
 	@chmod a+x $@
 
