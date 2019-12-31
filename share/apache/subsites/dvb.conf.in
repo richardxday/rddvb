@@ -1,19 +1,19 @@
-Alias /dvb "/usr/local/share/rddvb-0.1/web"
-<Directory "/usr/local/share/rddvb-0.1/web">
+Alias /dvb "@share@/web"
+<Directory "@share@/web">
 	Options ExecCGI
 	AddHandler cgi-script .php .sh
 	DirectoryIndex index.html
 	AuthType Basic
 	AuthName "DVB Listings"
-	AuthUserFile /etc/apache2/passwd
+	AuthUserFile @root@etc/apache2/passwd
 	Require user dvb
 	AllowOverride None
 	Order allow,deny
 	Allow from all
 </Directory>
 
-Alias /dvbgraphs "/var/dvb/graphs"
-<Directory "/var/dvb/graphs">
+Alias /dvbgraphs "@root@var/dvb/graphs"
+<Directory "@root@var/dvb/graphs">
 	Options Indexes MultiViews
 	AllowOverride None
 	Order allow,deny
@@ -21,8 +21,8 @@ Alias /dvbgraphs "/var/dvb/graphs"
 	Satisfy Any
 </Directory>
 
-Alias /gnuplot "/usr/share/gnuplot"
-<Directory "/usr/share/gnuplot">
+Alias /gnuplot "@root@usr/share/gnuplot"
+<Directory "@root@usr/share/gnuplot">
 	Options Indexes MultiViews
 	AllowOverride None
 	Order allow,deny

@@ -90,7 +90,7 @@ DEFAULTCONFIG := share/default-config-values.txt
 
 share/%: share/%.in
 	@cat $< \
-	| sed -E "s#@rootdir@#$(ROOTDIR)#g" \
+	| sed -E "s#@root@#$(ROOTDIR)#g" \
 	| sed -E "s#@prefix@#$(PREFIX)#g" \
 	| sed -E "s#@share@#$(INSTALLSHAREDST)#g" \
 	>$@
@@ -126,12 +126,23 @@ APPLICATION := sdfetch
 OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
-LOCAL_INSTALLED_BINARIES := $(shell find scripts -type f)
-LOCAL_INSTALLED_BINARIES := $(LOCAL_INSTALLED_BINARIES:scripts/%=$(INSTALLBINDST)/%)
-INSTALLEDBINARIES += $(LOCAL_INSTALLED_BINARIES)
-UNINSTALLFILES += $(LOCAL_INSTALLED_BINARIES)
+LOCAL_INSTALLED_SCRIPTS := $(shell find scripts -type f)
+GLOBAL_INSTALLED_SCRIPTS := $(LOCAL_INSTALLED_SCRIPTS:scripts/%=$(INSTALLBINDST)/%)
+INSTALLEDBINARIES += $(GLOBAL_INSTALLED_SCRIPTS)
+UNINSTALLFILES += $(GLOBAL_INSTALLED_SCRIPTS)
 
 $(INSTALLBINDST)/%: scripts/%
+	@$(SUDO) $(MAKEFILEDIR)/copyifnewer "$<" "$@"
+
+APACHESRC := share/apache
+APACHEDST := $(ROOTDIR)etc/apache2
+LOCAL_APACHE_FILES := $(shell find $(APACHESRC) -type f | sed -E "s/\.in$$//" | uniq)
+GLOBAL_APACHE_FILES := $(LOCAL_APACHE_FILES:$(APACHESRC)/%=$(APACHEDST)/%)
+
+INSTALLEDSHAREFILES += $(GLOBAL_APACHE_FILES)
+UNINSTALLFILES += $(GLOBAL_APACHE_FILES)
+
+$(APACHEDST)/%: $(APACHESRC)/%
 	@$(SUDO) $(MAKEFILEDIR)/copyifnewer "$<" "$@"
 
 all: $(DEFAULTCONFIG)
@@ -146,9 +157,9 @@ include $(MAKEFILEDIR)/makefile.post
 
 post-install: $(INSTALLTARGETS)
 	@echo "Creating directories..."
-	-@test -d $(shell $(RUNDVB) --confdir) || ( $(SUDO) mkdir $(shell $(RUNDVB) --confdir) && $(SUDO) chown -R ${LOGNAME}:${LOGNAME} $(shell $(RUNDVB) --confdir) )
-	-@test -d $(shell $(RUNDVB) --datadir) || ( $(SUDO) mkdir $(shell $(RUNDVB) --datadir) && $(SUDO) chown -R ${LOGNAME}:${LOGNAME} $(shell $(RUNDVB) --datadir) )
-	-@test -d $(shell $(RUNDVB) --datadir)/graphs || ( $(SUDO) mkdir $(shell $(RUNDVB) --datadir)/graphs && $(SUDO) chown -R ${LOGNAME}:${LOGNAME} $(shell $(RUNDVB) --datadir)/graphs )
-	-@test -d $(shell $(RUNDVB) --logdir) || ( $(SUDO) mkdir $(shell $(RUNDVB) --logdir) && $(SUDO) chown -R ${LOGNAME}:${LOGNAME} $(shell $(RUNDVB) --logdir) )
-	-@test -d $(shell $(RUNDVB) --logdir)/slave || ( $(SUDO) mkdir $(shell $(RUNDVB) --logdir)/slave && $(SUDO) chown -R ${LOGNAME}:${LOGNAME} $(shell $(RUNDVB) --logdir)/slave )
+	-@test -d $(shell $(RUNDVB) --confdir) || ( $(SUDO) mkdir $(shell $(RUNDVB) --confdir) && $(SUDO) chown -R $(LOGNAME):$(LOGNAME) $(shell $(RUNDVB) --confdir) )
+	-@test -d $(shell $(RUNDVB) --datadir) || ( $(SUDO) mkdir $(shell $(RUNDVB) --datadir) && $(SUDO) chown -R $(LOGNAME):$(LOGNAME) $(shell $(RUNDVB) --datadir) )
+	-@test -d $(shell $(RUNDVB) --datadir)/graphs || ( $(SUDO) mkdir $(shell $(RUNDVB) --datadir)/graphs && $(SUDO) chown -R $(LOGNAME):$(LOGNAME) $(shell $(RUNDVB) --datadir)/graphs )
+	-@test -d $(shell $(RUNDVB) --logdir) || ( $(SUDO) mkdir $(shell $(RUNDVB) --logdir) && $(SUDO) chown -R $(LOGNAME):$(LOGNAME) $(shell $(RUNDVB) --logdir) )
+	-@test -d $(shell $(RUNDVB) --logdir)/slave || ( $(SUDO) mkdir $(shell $(RUNDVB) --logdir)/slave && $(SUDO) chown -R $(LOGNAME):$(LOGNAME) $(shell $(RUNDVB) --logdir)/slave )
 	-@bash -c "cd 'share/gnuplot' ; find . -name \"*.png\" -exec bash -c \"test -f '$(shell $(RUNDVB) --datadir)/graphs/{}' || cp '{}' '$(shell $(RUNDVB) --datadir)/graphs'\" \\;"

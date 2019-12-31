@@ -1,4 +1,4 @@
-#!@rootdir@usr/bin/php
+#!@root@usr/bin/php
 Content-Type: text/html
 
 <!DOCTYPE html>
