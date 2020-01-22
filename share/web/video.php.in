@@ -1,6 +1,3 @@
-#!@root@usr/bin/php
-Content-Type: text/html
-
 <!DOCTYPE html>
 <html>
 <?php
