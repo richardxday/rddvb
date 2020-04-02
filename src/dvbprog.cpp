@@ -2924,12 +2924,14 @@ bool ADVBProg::OnRecordSuccess() const
 
     if ((cmd = config.GetUserConfigItem(user, "recordsuccesscmd")).Valid()) {
         cmd = ReplaceTerms(cmd);
+        cmd.printf(" 2>&1 >>\"%s\"", config.GetLogFile().str());
 
         success = RunCommand(cmd);
     }
 
     if (IsNotifySet() && (cmd = config.GetUserConfigItem(user, "notifycmd")).Valid()) {
         cmd = ReplaceTerms(cmd);
+        cmd.printf(" 2>&1 >>\"%s\"", config.GetLogFile().str());
 
         success = RunCommand(cmd);
     }
@@ -2947,6 +2949,7 @@ bool ADVBProg::OnRecordFailure() const
 
     if ((cmd = config.GetUserConfigItem(user, "recordfailurecmd")).Valid()) {
         cmd = ReplaceTerms(cmd);
+        cmd.printf(" 2>&1 >>\"%s\"", config.GetLogFile().str());
 
         success = RunCommand(cmd);
     }
@@ -3655,6 +3658,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             (cmd = config.GetHierarchicalConfigItem(GetUser(), "postconvertcmd", GetChannel())).Valid() ||
             (cmd = config.GetHierarchicalConfigItem(GetUser(), "postconvertcmd", GetBaseChannel())).Valid()) {
             cmd = ReplaceTerms(cmd);
+            cmd.printf(" 2>&1 >>\"%s\"", config.GetLogFile().str());
 
             success = RunCommand(cmd);
         }
