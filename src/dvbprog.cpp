@@ -3647,7 +3647,19 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                       GetQuickDescription().str(),
                       AValue((taken + 999) / 1000).ToString().str(),
                       taken ? AString(" (%0.3;x real-time)").Arg((double)GetLength() / (double)taken).str() : "");
-    }
+
+        AString cmd;
+        if ((cmd = config.GetHierarchicalConfigItem(GetUser(), "postconvertcmd", GetTitleAndSubtitle())).Valid() ||
+            (cmd = config.GetHierarchicalConfigItem(GetUser(), "postconvertcmd", GetTitle())).Valid() ||
+            (cmd = config.GetHierarchicalConfigItem(GetUser(), "postconvertcmd", GetCategory())).Valid() ||
+            (cmd = config.GetHierarchicalConfigItem(GetUser(), "postconvertcmd", GetChannel())).Valid() ||
+            (cmd = config.GetHierarchicalConfigItem(GetUser(), "postconvertcmd", GetBaseChannel())).Valid())
+        {
+            cmd = ReplaceTerms(cmd);
+
+            success = RunCommand("nice " + cmd);
+        }
+   }
     else config.logit("Process failed!");
 
     return success;
