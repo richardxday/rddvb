@@ -2925,13 +2925,13 @@ bool ADVBProg::OnRecordSuccess() const
     if ((cmd = config.GetUserConfigItem(user, "recordsuccesscmd")).Valid()) {
         cmd = ReplaceTerms(cmd);
 
-        success = RunCommand("nice " + cmd);
+        success = RunCommand(cmd);
     }
 
     if (IsNotifySet() && (cmd = config.GetUserConfigItem(user, "notifycmd")).Valid()) {
         cmd = ReplaceTerms(cmd);
 
-        success = RunCommand("nice " + cmd);
+        success = RunCommand(cmd);
     }
 
     TriggerServerCommand(config.GetServerGetAndConvertCommand());
@@ -2948,7 +2948,7 @@ bool ADVBProg::OnRecordFailure() const
     if ((cmd = config.GetUserConfigItem(user, "recordfailurecmd")).Valid()) {
         cmd = ReplaceTerms(cmd);
 
-        success = RunCommand("nice " + cmd);
+        success = RunCommand(cmd);
     }
 
     return success;
@@ -3041,7 +3041,7 @@ bool ADVBProg::PostRecord()
     bool success = false;
 
     if ((postcmd = GeneratePostRecordCommand()).Valid()) {
-        success = RunCommand("nice " + postcmd);
+        success = RunCommand(postcmd);
     }
     else success = true;
 
@@ -3061,7 +3061,7 @@ bool ADVBProg::PostProcess()
         SetPostProcessing();
         ADVBProgList::AddToList(config.GetProcessingFile(), *this);
 
-        success = postprocessed = RunCommand("nice " + postcmd);
+        success = postprocessed = RunCommand(postcmd);
 
         SetPostProcessed();
         UpdateFileSize();
@@ -3653,11 +3653,10 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             (cmd = config.GetHierarchicalConfigItem(GetUser(), "postconvertcmd", GetTitle())).Valid() ||
             (cmd = config.GetHierarchicalConfigItem(GetUser(), "postconvertcmd", GetCategory())).Valid() ||
             (cmd = config.GetHierarchicalConfigItem(GetUser(), "postconvertcmd", GetChannel())).Valid() ||
-            (cmd = config.GetHierarchicalConfigItem(GetUser(), "postconvertcmd", GetBaseChannel())).Valid())
-        {
+            (cmd = config.GetHierarchicalConfigItem(GetUser(), "postconvertcmd", GetBaseChannel())).Valid()) {
             cmd = ReplaceTerms(cmd);
 
-            success = RunCommand("nice " + cmd);
+            success = RunCommand(cmd);
         }
    }
     else config.logit("Process failed!");
