@@ -1463,7 +1463,7 @@ AString ADVBConfig::ListConfigValues() const
     {
         const ASettingsHandler::Value& value = *(const ASettingsHandler::Value *)list[i];
         if (value.String1.Valid() && (value.String1[0] != '#')) {
-            res.printf("\t%-30s = %s\n", value.String1.str(), value.String2.str());
+            res.printf("\t%-30s = %s\n", value.String1.str(), GetConfigItem(value.String1).str());
         }
     }
 
@@ -1474,10 +1474,10 @@ AString ADVBConfig::ListLiveConfigValues() const
 {
     AString res;
 
-    res.printf("Live config value:\n");
+    res.printf("Live config values:\n");
     for (auto it = livevalues.begin(); it != livevalues.end(); ++it)
     {
-        AString val = (*it->second)(this);
+        AString val = ReplaceTerms("{conf:" + it->first + "}");
 
         if (val.Valid()) {
             res.printf("\t%-30s = %s\n", it->first.str(), val.str());
