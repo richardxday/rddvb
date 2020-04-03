@@ -14,6 +14,7 @@
 
 #include "config.h"
 #include "findcards.h"
+#include "rdlib/SettingsHandler.h"
 
 #define DEFAULTCONFDIR RDDVB_ROOT_DIR "etc/dvb"
 #define DEFAULTDATADIR RDDVB_ROOT_DIR "var/dvb"
@@ -22,15 +23,15 @@
 AQuitHandler quithandler;
 
 ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false),
-                           defaults(&AString::DeleteString),
                            configrecorder(NULL),
                            disableoutput(false)
 {
     const struct passwd *pw = getpwuid(getuid());
     static const struct {
-        const char *name;
-        const char *value;
+        AString name;
+        AString value;
     } __defaults[] = {
+        {"username",                     pw->pw_name},
         {"homedir",                      pw->pw_dir},
         {"prehandle",                    "2"},
         {"posthandle",                   "3"},
@@ -68,8 +69,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
     uint_t i;
 
     for (i = 0; i < NUMBEROF(__defaults); i++) {
-        AString *str = new AString(__defaults[i].value);
-        defaults.Insert(__defaults[i].name, (uptr_t)str);
+        defaults[__defaults[i].name] = __defaults[i].value;
     }
 
     // ensure no changes are saved
@@ -123,6 +123,10 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         fp.open(GetRecordFailuresFile(), "w");
         fp.close();
     }
+
+#define CONFIG_GETVALUE(name, fn) livevalues["*" name] = &__##fn;
+#include "configlivevalues.def"
+#undef CONFIG_GETVALUE
 }
 
 ADVBConfig::~ADVBConfig()
@@ -202,7 +206,8 @@ bool ADVBConfig::ReportDirectoryCreationErrors(const AString& errors)
 /*--------------------------------------------------------------------------------*/
 const AString *ADVBConfig::GetDefaultItemEx(const AString& name) const
 {
-    return (const AString *)defaults.Read(name);
+    auto it = defaults.find(name);
+    return (it != defaults.end()) ? &it->second : NULL;
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -216,7 +221,7 @@ const AString *ADVBConfig::GetDefaultItemEx(const AString& name) const
 AString ADVBConfig::GetDefaultItem(const AString& name) const
 {
     const AString *str = GetDefaultItemEx(name);
-    return str ? *str : "";
+    return ReplaceTerms(str ? *str : "");
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -242,7 +247,7 @@ AString ADVBConfig::GetConfigItem(const AString& name) const
 
     //debug("Request for '%s' (implicit default: '%s'): '%s'\n", name.str(), def ? def->str() : "<notset>", res.str());
 
-    return res;
+    return ReplaceTerms(res);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -269,7 +274,7 @@ AString ADVBConfig::GetConfigItem(const AString& name, const AString& defval) co
 
     //debug("Request for '%s' (with default: '%s'): '%s'\n", name.str(), defval.str(), res.str());
 
-    return res;
+    return ReplaceTerms(res);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -318,7 +323,7 @@ AString ADVBConfig::GetConfigItem(const std::vector<AString>& list, const AStrin
         }
     }
 
-    return res;
+    return ReplaceTerms(res);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -556,13 +561,41 @@ AString ADVBConfig::GetRelativePath(const AString& filename) const
     return res;
 }
 
+AString ADVBConfig::ReplaceTerms(const AString& _str) const
+{
+    AString str = _str;
+    int p1, p2;
+
+    while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.FindClosing('}', p1 + 6)) >= 0)) {
+        AString var = ReplaceTerms(str.Mid(p1 + 6, p2 - p1 - 6));
+        AString item;
+
+        auto it = livevalues.find(var);
+        if (it != livevalues.end()) {
+            item = ReplaceTerms((*it->second)(this));
+        }
+        else item = GetConfigItem(var);
+
+        str = str.Left(p1) + item + str.Mid(p2 + 1);
+    }
+
+    return str;
+}
+
 AString ADVBConfig::ReplaceTerms(const AString& user, const AString& _str) const
 {
     AString str = _str;
     int p1, p2;
 
-    while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.Pos("}", p1)) >= 0)) {
-        AString item = GetUserConfigItem(user, str.Mid(p1 + 6, p2 - p1 - 6));
+    while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.FindClosing('}', p1 + 6)) >= 0)) {
+        AString var = ReplaceTerms(user, str.Mid(p1 + 6, p2 - p1 - 6));
+        AString item;
+
+        auto it = livevalues.find(var);
+        if (it != livevalues.end()) {
+            item = ReplaceTerms(user, (*it->second)(this));
+        }
+        else item = GetUserConfigItem(user, var);
 
         str = str.Left(p1) + item + str.Mid(p2 + 1);
     }
@@ -575,8 +608,15 @@ AString ADVBConfig::ReplaceTerms(const AString& user, const AString& subitem, co
     AString str = _str;
     int p1, p2;
 
-    while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.Pos("}", p1)) >= 0)) {
-        AString item = GetUserSubItemConfigItem(user, subitem, str.Mid(p1 + 6, p2 - p1 - 6));
+    while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.FindClosing('}', p1 + 6)) >= 0)) {
+        AString var = ReplaceTerms(user, subitem, str.Mid(p1 + 6, p2 - p1 - 6));
+        AString item;
+
+        auto it = livevalues.find(var);
+        if (it != livevalues.end()) {
+            item = ReplaceTerms(user, subitem, (*it->second)(this));
+        }
+        else item = GetUserSubItemConfigItem(user, subitem, var);
 
         str = str.Left(p1) + item + str.Mid(p2 + 1);
     }
@@ -946,7 +986,7 @@ AString ADVBConfig::GetRecordingsStorageDir() const
 
 AString ADVBConfig::GetRecordingsArchiveDir() const
 {
-    return CatPath(GetRecordingsDir(), GetConfigItem("achivedir", "Archive"));
+    return CatPath(GetRecordingsDir(), GetConfigItem("archivedir", "Archive"));
 }
 
 AString ADVBConfig::GetTempDir() const
@@ -1410,4 +1450,39 @@ uint_t ADVBConfig::GetMaxRecordLag(const AString& user, const AString& category)
 bool ADVBConfig::DeleteProgrammesWithNoDVBChannel() const
 {
     return ((uint_t)GetConfigItem("deleteprogrammeswithnodvbchannel", "0") != 0);
+}
+
+AString ADVBConfig::ListConfigValues() const
+{
+    ADataList list;
+    AString res;
+
+    res.printf("Config values:\n");
+    config.GetAllLike(list, "");
+    for (uint_t i = 0; i < list.Count(); i++)
+    {
+        const ASettingsHandler::Value& value = *(const ASettingsHandler::Value *)list[i];
+        if (value.String1.Valid() && (value.String1[0] != '#')) {
+            res.printf("\t%-30s = %s\n", value.String1.str(), value.String2.str());
+        }
+    }
+
+    return res;
+}
+
+AString ADVBConfig::ListLiveConfigValues() const
+{
+    AString res;
+
+    res.printf("Live config value:\n");
+    for (auto it = livevalues.begin(); it != livevalues.end(); ++it)
+    {
+        AString val = (*it->second)(this);
+
+        if (val.Valid()) {
+            res.printf("\t%-30s = %s\n", it->first.str(), val.str());
+        }
+    }
+
+    return res;
 }

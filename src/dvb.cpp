@@ -203,6 +203,9 @@ int main(int argc, const char *argv[])
         {"--stream",                                "<text>",                           "Stream DVB channel or programme being recorded <text> to mplayer (or other player)"},
         {"--rawstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
         {"--drawprogrammes",                        "<scale>",                          "Draw current list of programmes using a scale of <scale> characters per hour"},
+        {"--listconfigvalues",                      "",                                 "List all config values"},
+        {"--configitem",                            "<item>",                           "Return value for config item"},
+        {"--configvalue",                           "<value>",                          "Evaluate config value"},
         {"--return-count",                          "",                                 "Return programme list count in error code"},
     };
     const ADVBConfig& config = ADVBConfig::Get();
@@ -2354,6 +2357,19 @@ int main(int argc, const char *argv[])
                         printf("\n");
                     }
                 }
+            }
+            else if (stricmp(argv[i], "--listconfigvalues") == 0) {
+                AString res = config.ListConfigValues() + "\n" + config.ListLiveConfigValues();
+                printf("%s", res.str());
+            }
+            else if (stricmp(argv[i], "--configitem") == 0) {
+                AString var = argv[++i];
+                AString val = config.GetConfigItem(var);
+                printf("%s=%s\n", var.str(), config.ReplaceTerms(val).str());
+            }
+            else if (stricmp(argv[i], "--configvalue") == 0) {
+                AString val = argv[++i];
+                printf("%s\n", config.ReplaceTerms(val).str());
             }
 #if EVALTEST
             else if (stricmp(argv[i], "--eval") == 0) {

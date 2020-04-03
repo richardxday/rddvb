@@ -8,6 +8,7 @@
 #include <rdlib/DataList.h>
 
 #include <vector>
+#include <map>
 
 #include "dvbmisc.h"
 
@@ -220,7 +221,7 @@ public:
     /** Return true if system defaults contain a value for name
      */
     /*--------------------------------------------------------------------------------*/
-    bool    DefaultItemExists(const AString& name) const {return defaults.Exists(name);}
+    bool    DefaultItemExists(const AString& name) const {return (defaults.find(name) != defaults.end());}
 
     /*--------------------------------------------------------------------------------*/
     /** Create list of users, based on existence of <name>-patterns.txt in /etc/dvb
@@ -315,7 +316,8 @@ public:
     /*--------------------------------------------------------------------------------*/
     AString GetTempFileEx(const AString& tempdir, const AString& name, const AString& suffix = "") const;
 
-    AString GetQueue()                       const; // extractconfig()
+    AString GetQueue() const; // extractconfig()
+
     AString GetRecordingsSubDir(const AString& user, const AString& category = "") const; // extractconfig("<name>", "<category>")
     AString GetRecordingsDir(const AString& user, const AString& category = "")    const; // extractconfig("<name>", "<category>")
     AString GetFilenameTemplate(const AString& user, const AString& title, const AString& category) const; // extractconfig("<name>", "<title>", "<category>")
@@ -359,6 +361,7 @@ public:
     AString GetNamedFile(const AString& name) const;
 
     AString GetConvertedFileSuffix(const AString& user, const AString& def = "mp4") const; // extractconfig("<user>", "<filetype>")
+    AString ReplaceTerms(const AString& str) const;
     AString ReplaceTerms(const AString& user, const AString& str) const;
     AString ReplaceTerms(const AString& user, const AString& subitem, const AString& str) const;
 
@@ -459,6 +462,9 @@ public:
 
     const AString& GetDefaultInterRecTime() const;
 
+    AString ListConfigValues() const;
+    AString ListLiveConfigValues() const;
+
     bool ReadReplacementsFile(std::vector<REPLACEMENT>& replacements, const AString& filename) const;
 
     bool ExtractLogData(const ADateTime& start, const ADateTime& end, const AString& filename) const;
@@ -502,13 +508,20 @@ private:
     ADVBConfig();
     ~ADVBConfig();
 
+    typedef AString (*livevaluefn_t)(const ADVBConfig *config);
+
+#define CONFIG_GETVALUE(name, fn) static AString __##fn(const ADVBConfig *config) {return config->fn();}
+#include "configlivevalues.def"
+#undef CONFIG_GETVALUE
+
 protected:
-    ASettingsHandler     config;
-    AHash                defaults;
-    std::vector<uint_t>  dvbcards;
-    std::vector<AString> *configrecorder;
-    AString              dircreationerrors;
-    bool                 disableoutput;
+    ASettingsHandler                 config;
+    std::map<AString,AString>        defaults;
+    std::vector<uint_t>              dvbcards;
+    std::vector<AString>             *configrecorder;
+    std::map<AString, livevaluefn_t> livevalues;
+    AString                          dircreationerrors;
+    bool                             disableoutput;
 };
 
 #endif
