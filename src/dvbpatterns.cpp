@@ -525,8 +525,8 @@ int ADVBPatterns::SortTermsByAssign(uptr_t item1, uptr_t item2, void *context)
 {
     const TERM *term1 = (const TERM *)item1;
     const TERM *term2 = (const TERM *)item2;
-    bool assign1 = term1->field->assignable;
-    bool assign2 = term2->field->assignable;
+    bool assign1 = (term1->field && term1->field->assignable);
+    bool assign2 = (term2->field && term2->field->assignable);
     int  res = 0;
 
     UNUSED(context);

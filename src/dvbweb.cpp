@@ -235,16 +235,12 @@ int main(int argc, char *argv[])
 
     enabledebug(false);
 
-    log.printf("%d args\n", argc);
-
     if (argc == 1) {
         parsefile(*Stdin, vars, log);
     }
 
     for (i = 1; i < argc; i++) {
         AString arg = argv[i];
-
-        log.printf("argv[%d] = %s\n", i, arg.str());
 
         if (arg == "cli") {
             enabledebug(true);
