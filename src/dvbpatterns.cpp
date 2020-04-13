@@ -525,16 +525,17 @@ int ADVBPatterns::SortTermsByAssign(uptr_t item1, uptr_t item2, void *context)
 {
     const TERM *term1 = (const TERM *)item1;
     const TERM *term2 = (const TERM *)item2;
-    bool assign1 = RANGE(term1->data.opcode, Operator_First_Assignable, Operator_Last_Assignable);
-    bool assign2 = RANGE(term2->data.opcode, Operator_First_Assignable, Operator_Last_Assignable);
+    bool assign1 = term1->field->assignable;
+    bool assign2 = term2->field->assignable;
+    int  res = 0;
 
     UNUSED(context);
 
-    if ( assign1 && !assign2) return  1;
-    if (!assign1 &&  assign2) return -1;
-    if ( assign1 &&  assign2) return COMPARE_ITEMS(term1->data.field, term2->data.field);
+    if      ( assign1 && !assign2) res = -1;
+    else if (!assign1 &&  assign2) res =  1;
+    else if ( assign1 &&  assign2) res = COMPARE_ITEMS(term1->data.field, term2->data.field);
 
-    return 0;
+    return res;
 }
 
 uint_t ADVBPatterns::ParsePatterns(ADataList& patternlist, const AString& patterns, AString& errors, const AString& sep, const AString& user)
@@ -1077,6 +1078,10 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 
     if (errors.Valid()) pattern.enabled = false;
 
+    // config.printf("--------------------------------------------------------------------------------\n");
+    // config.printf("Pattern before sort:\n%s\n", ToString(pattern).str());
+    // config.printf("--------------------------------------------------------------------------------\n");
+
     if (errors.Empty()) {
         list.Sort(&SortTermsByAssign);
 
@@ -1096,6 +1101,10 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
             }
         }
     }
+
+    // config.printf("--------------------------------------------------------------------------------\n");
+    // config.printf("Pattern after sort:\n%s\n", ToString(pattern).str());
+    // config.printf("--------------------------------------------------------------------------------\n");
 
     if (errors.Empty()) {
         for (i = 0; i < list.Count(); i++) {
