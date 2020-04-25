@@ -202,6 +202,7 @@ int main(int argc, const char *argv[])
         {"--check-video-files",                     "",                                 "Check archived video files for errors"},
         {"--stream",                                "<text>",                           "Stream DVB channel or programme being recorded <text> to mplayer (or other player)"},
         {"--rawstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
+        {"--mp4stream",                             "<text>",                           "Stream DVB channel or programme being recorded <text>, encoding as mp4 to console (for piping to arbitrary programs)"},
         {"--drawprogrammes",                        "<scale>",                          "Draw current list of programmes using a scale of <scale> characters per hour"},
         {"--listconfigvalues",                      "",                                 "List all config values"},
         {"--configitem",                            "<item>",                           "Return value for config item"},
@@ -1169,7 +1170,7 @@ int main(int argc, const char *argv[])
                 else config.printf("Failed to decode programme '%s'\n", progstr.str());
             }
             else if (strcmp(argv[i], "--recover-recorded-from-temp") == 0) {
-                ADVBLock     dvblock("files");
+                ADVBLock     lock("files");
                 ADVBProgList reclist;
                 AString      reclistfilename = config.GetRecordedFile();
                 uint_t       nchanges = 0;
@@ -2148,8 +2149,10 @@ int main(int argc, const char *argv[])
                 }
             }
             else if ((stricmp(argv[i], "--stream") == 0) ||
-                     (stricmp(argv[i], "--rawstream") == 0)) {
+                     (stricmp(argv[i], "--rawstream") == 0) ||
+                     (stricmp(argv[i], "--mp4stream") == 0)) {
                 bool rawstream = (stricmp(argv[i], "--rawstream") == 0);
+                bool mp4stream = (stricmp(argv[i], "--mp4stream") == 0);
                 AString text = AString(argv[++i]).DeEscapify(), cmd;
 
                 ADVBConfig::GetWriteable(true);
@@ -2159,7 +2162,11 @@ int main(int argc, const char *argv[])
 
                     cmd1.printf("dvb %s --stream \"%s\"", dvbcardspecified ? AString("--dvbcard %").Arg(dvbcard).str() : "", text.str());
 
-                    if (!rawstream) {
+                    if (mp4stream) {
+                        cmd2.printf("| %s", config.GetStreamEncoderCommand().str());
+                        //fprintf(stderr, "Cmd2: '%s'\n", cmd2.str());
+                    }
+                    else if (!rawstream) {
                         cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
                     }
 

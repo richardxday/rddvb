@@ -47,11 +47,10 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"h264preset",                   "veryfast"},
         {"h264bufsize",                  "3000k"},
         {"videodeinterlace",             "yadif"},
-        {"videofilter",                  "-filter:v {conf:videodeinterlace}"},
-        {"filters",                      "{conf:videofilter} {conf:audiofilter}"},
+        {"videofilters",                 "-filter:v {conf:videodeinterlace}"},
         {"encodeflags",                  "-movflags +faststart"},
-        {"h264video",                    "-vcodec libx264 -preset {conf:h264preset} -crf {conf:h264crf} -maxrate {conf:maxvideorate} -bufsize {conf:h264bufsize} {conf:encodeflags} {conf:filters}"},
-        {"aacaudio",                     "-acodec aac -b:a {conf:aacbitrate}"},
+        {"h264video",                    "-vcodec libx264 -preset {conf:h264preset} -crf {conf:h264crf} -maxrate {conf:maxvideorate} -bufsize {conf:h264bufsize} {conf:encodeflags} {conf:videofilters}"},
+        {"aacaudio",                     "-acodec aac -b:a {conf:aacbitrate} {conf:audiofilters}"},
         {"encodecopy",                   "{conf:copyvideo} {conf:mp3audio}"},
         {"encodeh264",                   "{conf:h264video} {conf:aacaudio}"},
         {"encodeargs",                   "{conf:encodeh264}"},
@@ -65,6 +64,28 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"mindatarate:mp4",              "100"},
         {"mindatarate:mp3",              "12"},
         {"mindatarate",                  "10"},
+        {"streaminput",                  "-i -"},
+        {"streamoutputmp4",              "mp4"},
+        {"streamoutputmpegts",           "mpegts"},
+        {"streamoutputformat",           "{conf:streamoutputmp4}"},
+        {"streamoutput",                 "-f {conf:streamoutputformat} -"},
+        {"streamverbosity",              "-v quiet"},
+        {"streamh264preset",             "ultrafast"},
+        {"streamh264crf",                "22"},
+        {"streammaxvideorate",           "{conf:maxvideorate}"},
+        {"streamh264bufsize",            "{conf:h264bufsize}"},
+        {"streamencodeflags",            "frag_keyframe+faststart+empty_moov"},
+        {"streamvideofilters",           "{conf:videofilters}"},
+        {"streamotherargs",              "-tune zerolatency -strict experimental"},
+        {"streamh264video",              "-vcodec h264 -preset {conf:streamh264preset} -crf {conf:streamh264crf} {conf:streamotherargs} -movflags {conf:streamencodeflags}"},
+        {"streamvideo",                  "{conf:streamh264video} {conf:streamvideofilters}"},
+        {"streamaacbitrate",             "{conf:aacbitrate}"},
+        {"streammp3bitrate",             "{conf:mp3bitrate}"},
+        {"streamaudiofilters",           "{conf:audiofilters}"},
+        {"streamaacaudio",               "-acodec aac -b:a {conf:streamaacbitrate}"},
+        {"streammp3audio",               "-acodec libmp3lame -b:a {conf:streammp3bitrate}"},
+        {"streamaudio",                  "{conf:streamaacaudio} {conf:streamaudiofilters}"},
+        {"streamencodeargs",             "{conf:streaminput} {conf:streamvideo} {conf:streamaudio} {conf:streamverbosity} {conf:streamoutput}"},
     };
     uint_t i;
 
@@ -1184,6 +1205,11 @@ AString ADVBConfig::GetDVBStreamCommand() const
     return GetConfigItem("dvbstreamcmd", "dvbstream");
 }
 
+AString ADVBConfig::GetVideoEncoder() const
+{
+    return GetConfigItem("videoencoder", "ffmpeg");
+}
+
 AString ADVBConfig::GetMPlayerArgs() const
 {
     return GetConfigItem("mplayerargs", "");
@@ -1205,6 +1231,11 @@ AString ADVBConfig::GetVideoPlayerCommand() const
                                        .SearchAndReplace("{args}",            GetMPlayerArgs())
                                        .SearchAndReplace("{cacheminpercent}", AValue(100.0 * (double)GetMPlayerCacheMinSize() / (double)GetMPlayerCacheSize() + .01).ToString("0.2"))
                                        .SearchAndReplace("{cachesize}",       AValue(GetMPlayerCacheSize()).ToString())));
+}
+
+AString ADVBConfig::GetStreamEncoderCommand() const
+{
+    return GetConfigItem("streamencodercmd", ReplaceTerms(AString(GetVideoEncoder() + " " + GetConfigItem("streamencodeargs"))));
 }
 
 AString ADVBConfig::GetTempFileSuffix() const
@@ -1329,7 +1360,7 @@ bool ADVBConfig::ForceSubs(const AString& user) const
 
 AString ADVBConfig::GetEncodeCommand(const AString& user, const AString& category) const
 {
-    return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodecmd", "avconv"));
+    return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodecmd", GetVideoEncoder()));
 }
 
 AString ADVBConfig::GetEncodeArgs(const AString& user, const AString& category) const
@@ -1419,7 +1450,7 @@ AString ADVBConfig::GetServerRescheduleCommand() const
 
 AString ADVBConfig::GetVideoErrorCheckCommand() const
 {
-    return GetConfigItem("videocheckcmd", "avconv -t 60 -v error -i \"{filename}\" -f null - 2>&1 | wc -l >{logfile}");
+    return GetConfigItem("videocheckcmd", GetVideoEncoder() + " -t 60 -v error -i \"{filename}\" -f null - 2>&1 | wc -l >{logfile}");
 }
 
 AString ADVBConfig::GetGraphSuffix() const

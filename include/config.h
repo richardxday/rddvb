@@ -365,12 +365,14 @@ public:
     AString ReplaceTerms(const AString& user, const AString& str) const;
     AString ReplaceTerms(const AString& user, const AString& subitem, const AString& str) const;
 
+    AString GetVideoEncoder()                const; // extractconfig()
     AString GetDVBStreamCommand()            const; // extractconfig()
 
     AString GetMPlayerArgs()                 const; // extractconfig()
     uint_t  GetMPlayerCacheSize()            const; // extractconfig()
     uint_t  GetMPlayerCacheMinSize()         const; // extractconfig()
     AString GetVideoPlayerCommand()          const; // extractconfig()
+    AString GetStreamEncoderCommand()        const; // extractconfig()
 
     AString GetTempFileSuffix()              const; // extractconfig()
     AString GetRecordedFileSuffix()          const; // extractconfig()
