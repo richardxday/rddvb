@@ -631,7 +631,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
     const ADVBConfig& config = ADVBConfig::Get();
     ADataList&        list   = pattern.list;
     AString&          errors = pattern.errors;
-    AString           line   = config.ReplaceTerms(user, _line);
+    AString           line   = config.ReplaceTerms(user, _line, "");
     TERM              *term;
     uint_t            i;
 

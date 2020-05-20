@@ -218,180 +218,34 @@ bool ADVBConfig::ReportDirectoryCreationErrors(const AString& errors)
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Return system default value for config item or NULL
+/** Replace terms in given string using possibly-valid pre and post values
  *
- * @param name config item name
+ * @param pre optional prefix for config item
+ * @param _str string to perform replacements on
+ * @param post optional postfix for config item
  *
- * @return ptr to system default or NULL
+ * @return string
  */
 /*--------------------------------------------------------------------------------*/
-const AString *ADVBConfig::GetDefaultItemEx(const AString& name) const
+AString ADVBConfig::ReplaceTerms(const AString& pre, const AString& _str, const AString& post) const
 {
-    auto it = defaults.find(name);
-    return (it != defaults.end()) ? &it->second : NULL;
-}
+    AString str = _str;
+    int p1, p2;
 
-/*--------------------------------------------------------------------------------*/
-/** Return system default value for config item
- *
- * @param name config item name
- *
- * @return system default or empty string
- */
-/*--------------------------------------------------------------------------------*/
-AString ADVBConfig::GetDefaultItem(const AString& name) const
-{
-    const AString *str = GetDefaultItemEx(name);
-    return ReplaceTerms(str ? *str : "");
-}
+    while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.FindClosing('}', p1 + 6)) >= 0)) {
+        AString var = ReplaceTerms(pre, str.Mid(p1 + 6, p2 - p1 - 6), post);
+        AString item;
 
-/*--------------------------------------------------------------------------------*/
-/** Return value config item value or system default value
- *
- * @param name config item name
- *
- * @return config item value, system default or empty string
- */
-/*--------------------------------------------------------------------------------*/
-AString ADVBConfig::GetConfigItem(const AString& name) const
-{
-    const AString *def = NULL;
-    AString res;
+        auto it = livevalues.find(var);
+        if (it != livevalues.end()) {
+            item = ReplaceTerms(pre, (*it->second)(this), post);
+        }
+        else item = GetHierarchicalConfigItem(pre, var, post);
 
-    CheckUpdate();
-
-    if (config.Exists(name)) res = config.Get(name);
-    else if ((def = GetDefaultItemEx(name)) != NULL) {
-        res = *def;
-        if (configrecorder) configrecorder->push_back(name + "=" + *def);
+        str = str.Left(p1) + item + str.Mid(p2 + 1);
     }
 
-    //debug("Request for '%s' (implicit default: '%s'): '%s'\n", name.str(), def ? def->str() : "<notset>", res.str());
-
-    return ReplaceTerms(res);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Return config item value or the specified default
- *
- * @param name config item name
- * @param defval default value
- *
- * @return config item value, specified default or empty string
- *
- * @note this will *never* return the system default for the config item because the default is explicit (but the caller could use GetDefaultItem())
- */
-/*--------------------------------------------------------------------------------*/
-AString ADVBConfig::GetConfigItem(const AString& name, const AString& defval) const
-{
-    AString res;
-
-    CheckUpdate();
-
-    if (config.Exists(name)) res = config.Get(name);
-    else                     res = defval;
-
-    if (configrecorder) configrecorder->push_back(name + "=" + defval);
-
-    //debug("Request for '%s' (with default: '%s'): '%s'\n", name.str(), defval.str(), res.str());
-
-    return ReplaceTerms(res);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Get value from list of config items, a specified default or system default
- *
- * @param list list of config items
- * @param defval an explicit default value
- * @param defvalid true if defval is valid
- *
- * @return value
- *
- * @note the value returned is the first of:
- * @note 1. the value of the first config item in list found in dvb.conf; or
- * @note 2. defval if defvalid == true; or
- * @note 3. the value of the first config item in list with a valid system default
- */
-/*--------------------------------------------------------------------------------*/
-AString ADVBConfig::GetConfigItem(const std::vector<AString>& list, const AString& defval, bool defvalid) const
-{
-    AString res;
-    size_t  i;
-
-    for (i = 0; i < list.size(); i++) {
-        const AString& name = list[i];
-
-        if (config.Exists(name)) {
-            res = config.Get(name);
-            break;
-        }
-    }
-
-    if (i == list.size()) {
-        if (defvalid) {
-            res = defval;
-        }
-        else {
-            for (i = 0; i < list.size(); i++) {
-                const AString& name = list[i];
-                const AString *def;
-
-                if ((def = GetDefaultItemEx(name)) != NULL) {
-                    res = *def;
-                    break;
-                }
-            }
-        }
-    }
-
-    return ReplaceTerms(res);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Get possible valid combinations of <pre>/<name>/<post>
- *
- * @param list destination of list of valid combinations
- * @param pre optional config item prefix
- * @param name config item
- * @param post optional config item postfix
- */
-/*--------------------------------------------------------------------------------*/
-void ADVBConfig::GetCombinations(std::vector<AString>& list, const AString& pre, const AString& name, const AString& post) const
-{
-    if (pre.Valid() && name.Valid() && post.Valid()) list.push_back(Combine(Combine(pre, name), post));
-    if (pre.Valid() && name.Valid())                 list.push_back(Combine(pre, name));
-    if (               name.Valid() && post.Valid()) list.push_back(Combine(name, post));
-    list.push_back(name);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Return the value of the pre/post config item or system default
- *
- * @param pre optional config item prefix
- * @param name config item
- * @param post optional config item postfix
- *
- * @return value
- *
- * @note the value returned is the first of:
- * @note 1. the value of <pre>:<name>:<post> from dvb.conf (if <pre> and <post> are valid and value found); or
- * @note 2. the value of <pre>:<name> from dvb.conf (if <pre> is valid and value found); or
- * @note 3. the value of <name>:<post> from dvb.conf (if <post> is valid and value found); or
- * @note 4. the value of <name> from dvb.conf (if value found); or
- * @note 5. the system default of <pre>:<name>:<post> (if <pre> and <post> are valid and system default found); or
- * @note 6. the system default of <pre>:<name (if <pre> is valid and system default found); or
- * @note 7. the system default of <name>:<post> (if <post> is valid and system default found); or
- * @note 8. the system default of <name> (if system default found)
- * @note 9. an empty string otherwise
- */
-/*--------------------------------------------------------------------------------*/
-AString ADVBConfig::GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post) const
-{
-    std::vector<AString> list;
-
-    GetCombinations(list, pre, name, post);
-
-    return GetConfigItem(list);
+    return str;
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -400,6 +254,8 @@ AString ADVBConfig::GetHierarchicalConfigItem(const AString& pre, const AString&
  * @param pre optional config item prefix
  * @param name config item
  * @param post optional config item postfix
+ * @param defval default value if no value found (only used if defvalid = true)
+ * @param defvalid true if defval is to be used instead of system default
  *
  * @return value
  *
@@ -408,79 +264,56 @@ AString ADVBConfig::GetHierarchicalConfigItem(const AString& pre, const AString&
  * @note 2. the value of <pre>:<name> from dvb.conf (if <pre> is valid and value found); or
  * @note 3. the value of <name>:<post> from dvb.conf (if <post> is valid and value found); or
  * @note 4. the value of <name> from dvb.conf (if value found); or
- * @note 5. defval otherwise
+ * @note 5. defval if defvalid is true; or
+ * @note 6. the system default of <pre>:<name>:<post> (if <pre> and <post> are valid and system default found); or
+ * @note 7. the system default of <pre>:<name (if <pre> is valid and system default found); or
+ * @note 8. the system default of <name>:<post> (if <post> is valid and system default found); or
+ * @note 9. the system default of <name> (if system default found)
+ * @note 10. an empty string otherwise
  */
 /*--------------------------------------------------------------------------------*/
-AString ADVBConfig::GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post, const AString& defval) const
+AString ADVBConfig::GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post, const AString& defval, bool defvalid) const
 {
-    std::vector<AString> list;
+    std::map<AString,AString>::const_iterator it;
+    AString res;
 
-    GetCombinations(list, pre, name, post);
+    CheckUpdate();
 
-    return GetConfigItem(list, defval, true);
-}
+    defvalid |= defval.Valid();
 
-/*--------------------------------------------------------------------------------*/
-/** Return user based config item or system default
- *
- * @param user DVB user name
- * @param name config item name
- *
- * @return user value (<user>:<name>), value (<name>), system default or empty string
- */
-/*--------------------------------------------------------------------------------*/
-AString ADVBConfig::GetUserConfigItem(const AString& user, const AString& name) const
-{
-    return GetHierarchicalConfigItem(user, name, "");
-}
+    if (pre.Valid() && name.Valid() && post.Valid() && config.Exists(Combine(pre, name, post))) {
+        res = config.Get(Combine(pre, name, post));
+    }
+    else if (pre.Valid() && name.Valid() && config.Exists(Combine(pre, name))) {
+        res = config.Get(Combine(pre, name));
+    }
+    else if (name.Valid() && post.Valid() && config.Exists(Combine(name, post))) {
+        res = config.Get(Combine(name, post));
+    }
+    else if (config.Exists(name)) {
+        res = config.Get(name);
+    }
+    else if (defvalid) {
+        res = defval;
+    }
+    else if (pre.Valid() && name.Valid() && post.Valid() && ((it = defaults.find(Combine(pre, name, post))) != defaults.end())) {
+        res = it->second;
+    }
+    else if (pre.Valid() && name.Valid() && ((it = defaults.find(Combine(pre, name))) != defaults.end())) {
+        res = it->second;
+    }
+    else if (name.Valid() && post.Valid() && ((it = defaults.find(Combine(name, post))) != defaults.end())) {
+        res = it->second;
+    }
+    else if (((it = defaults.find(name)) != defaults.end())) {
+        res = it->second;
+    }
 
-/*--------------------------------------------------------------------------------*/
-/** Return user based config item or the specified default
- *
- * @param user DVB user name
- * @param name config item name
- * @param defval default value
- *
- * @return user value (<user>:<name>), value (<name>), specified default or empty string
- *
- * @note this will *never* return the system default for the config item because the default is explicit (but the caller could use GetDefaultItem())
- */
-/*--------------------------------------------------------------------------------*/
-AString ADVBConfig::GetUserConfigItem(const AString& user, const AString& name, const AString& defval) const
-{
-    return GetHierarchicalConfigItem(user, name, "", defval);
-}
+    res = ReplaceTerms(pre, res, post);
 
-/*--------------------------------------------------------------------------------*/
-/** Get user/subitem based config item or system default
- *
- * @param user DVB user name
- * @param name config item name
- * @param subitem subitem
- *
- * @return user-subitem value (<user>:<name>:<subitem>), user value (<user>:<name>), value (<name>), system default or empty string
- */
-/*--------------------------------------------------------------------------------*/
-AString ADVBConfig::GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name) const
-{
-    return GetHierarchicalConfigItem(user, name, subitem);
-}
+    if (configrecorder) configrecorder->push_back(name + "=" + res);
 
-/*--------------------------------------------------------------------------------*/
-/** Get user/subitem based config item or specified default
- *
- * @param user DVB user name
- * @param name config item name
- * @param subitem subitem
- *
- * @return user-subitem value (<user>:<name>:<subitem>), user value (<user>:<name>), value (<name>), specified default or empty string
- *
- * @note this will *never* return the system default for the config item because the default is explicit (but the caller could use GetDefaultItem())
- */
-/*--------------------------------------------------------------------------------*/
-AString ADVBConfig::GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name, const AString& defval) const
-{
-    return GetHierarchicalConfigItem(user, name, subitem, defval);
+    return res;
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -580,69 +413,6 @@ AString ADVBConfig::GetRelativePath(const AString& filename) const
     if (filename.StartsWith(GetRecordingsDir())) res = AString("/videos").CatPath(filename.Mid(GetRecordingsDir().len()));
 
     return res;
-}
-
-AString ADVBConfig::ReplaceTerms(const AString& _str) const
-{
-    AString str = _str;
-    int p1, p2;
-
-    while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.FindClosing('}', p1 + 6)) >= 0)) {
-        AString var = ReplaceTerms(str.Mid(p1 + 6, p2 - p1 - 6));
-        AString item;
-
-        auto it = livevalues.find(var);
-        if (it != livevalues.end()) {
-            item = ReplaceTerms((*it->second)(this));
-        }
-        else item = GetConfigItem(var);
-
-        str = str.Left(p1) + item + str.Mid(p2 + 1);
-    }
-
-    return str;
-}
-
-AString ADVBConfig::ReplaceTerms(const AString& user, const AString& _str) const
-{
-    AString str = _str;
-    int p1, p2;
-
-    while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.FindClosing('}', p1 + 6)) >= 0)) {
-        AString var = ReplaceTerms(user, str.Mid(p1 + 6, p2 - p1 - 6));
-        AString item;
-
-        auto it = livevalues.find(var);
-        if (it != livevalues.end()) {
-            item = ReplaceTerms(user, (*it->second)(this));
-        }
-        else item = GetUserConfigItem(user, var);
-
-        str = str.Left(p1) + item + str.Mid(p2 + 1);
-    }
-
-    return str;
-}
-
-AString ADVBConfig::ReplaceTerms(const AString& user, const AString& subitem, const AString& _str) const
-{
-    AString str = _str;
-    int p1, p2;
-
-    while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.FindClosing('}', p1 + 6)) >= 0)) {
-        AString var = ReplaceTerms(user, subitem, str.Mid(p1 + 6, p2 - p1 - 6));
-        AString item;
-
-        auto it = livevalues.find(var);
-        if (it != livevalues.end()) {
-            item = ReplaceTerms(user, subitem, (*it->second)(this));
-        }
-        else item = GetUserSubItemConfigItem(user, subitem, var);
-
-        str = str.Left(p1) + item + str.Mid(p2 + 1);
-    }
-
-    return str;
 }
 
 void ADVBConfig::MapDVBCards()
@@ -1460,17 +1230,12 @@ AString ADVBConfig::GetGraphSuffix() const
 
 uint_t ADVBConfig::GetMinimalDataRate(const AString& filesuffix) const
 {
-    AString val = GetConfigItem("mindatarate:" + filesuffix);
-    if (val.Empty()) val = GetDefaultItem("mindatarate:" + filesuffix);
-    if (val.Empty()) val = GetConfigItem("mindatarate");
-    if (val.Empty()) val = GetDefaultItem("mindatarate");
-    return (uint_t)val;
+    return (uint_t)GetHierarchicalConfigItem("", "mindatarate", filesuffix);
 }
 
 uint_t ADVBConfig::GetScheduleReportVerbosity(const AString& type) const
 {
-    AString defval = GetConfigItem("schedulereportverbosity", "1");
-    return (uint_t)(type.Valid() ? GetConfigItem("schedulereportverbosity:" + type, defval) : defval);
+    return (uint_t)GetHierarchicalConfigItem("", "schedulereportverbosity", type, "1");
 }
 
 uint_t ADVBConfig::GetMaxRecordLag(const AString& user, const AString& category) const

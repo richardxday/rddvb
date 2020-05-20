@@ -69,16 +69,6 @@ public:
     /*--------------------------------------------------------------------------------*/
 
     /*--------------------------------------------------------------------------------*/
-    /** Return system default value for config item
-     *
-     * @param name config item name
-     *
-     * @return system default or empty string
-     */
-    /*--------------------------------------------------------------------------------*/
-    AString GetDefaultItem(const AString& name) const;
-
-    /*--------------------------------------------------------------------------------*/
     /** Return value config item value or system default value
      *
      * @param name config item name
@@ -86,7 +76,7 @@ public:
      * @return config item value, system default or empty string
      */
     /*--------------------------------------------------------------------------------*/
-    AString GetConfigItem(const AString& name) const;
+    AString GetConfigItem(const AString& name) const {return GetHierarchicalConfigItem("", name, "");}
 
     /*--------------------------------------------------------------------------------*/
     /** Return config item value or the specified default
@@ -99,66 +89,7 @@ public:
      * @note this will *never* return the system default for the config item because the default is explicit (but the caller could use GetDefaultItem())
      */
     /*--------------------------------------------------------------------------------*/
-    AString GetConfigItem(const AString& name, const AString& defval) const;
-
-    /*--------------------------------------------------------------------------------*/
-    /** Get value from list of config items, a specified default or system default
-     *
-     * @param list list of config items
-     * @param defval an explicit default value
-     * @param defvalid true if defval is valid
-     *
-     * @return value
-     *
-     * @note the value returned is the first of:
-     * @note 1. the value of the first config item in list found in dvb.conf; or
-     * @note 2. defval if defvalid == true; or
-     * @note 3. the value of the first config item in list with a valid system default
-     */
-    /*--------------------------------------------------------------------------------*/
-    AString GetConfigItem(const std::vector<AString>& list, const AString& defval = "", bool defvalid = false) const;
-
-    /*--------------------------------------------------------------------------------*/
-    /** Return the value of the pre/post config item or system default
-     *
-     * @param pre optional config item prefix
-     * @param name config item
-     * @param post optional config item postfix
-     *
-     * @return value
-     *
-     * @note the value returned is the first of:
-     * @note 1. the value of <pre>:<name>:<post> from dvb.conf (if <pre> and <post> are valid and value found); or
-     * @note 2. the value of <pre>:<name> from dvb.conf (if <pre> is valid and value found); or
-     * @note 3. the value of <name>:<post> from dvb.conf (if <post> is valid and value found); or
-     * @note 4. the value of <name> from dvb.conf (if value found); or
-     * @note 5. the system default of <pre>:<name>:<post> (if <pre> and <post> are valid and system default found); or
-     * @note 6. the system default of <pre>:<name (if <pre> is valid and system default found); or
-     * @note 7. the system default of <name>:<post> (if <post> is valid and system default found); or
-     * @note 8. the system default of <name> (if system default found)
-     * @note 9. an empty string otherwise
-     */
-    /*--------------------------------------------------------------------------------*/
-    AString GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post) const;
-
-    /*--------------------------------------------------------------------------------*/
-    /** Return the value of the pre/post config item or specified default
-     *
-     * @param pre optional config item prefix
-     * @param name config item
-     * @param post optional config item postfix
-     *
-     * @return value
-     *
-     * @note the value returned is the first of:
-     * @note 1. the value of <pre>:<name>:<post> from dvb.conf (if <pre> and <post> are valid and value found); or
-     * @note 2. the value of <pre>:<name> from dvb.conf (if <pre> is valid and value found); or
-     * @note 3. the value of <name>:<post> from dvb.conf (if <post> is valid and value found); or
-     * @note 4. the value of <name> from dvb.conf (if value found); or
-     * @note 5. defval otherwise
-     */
-    /*--------------------------------------------------------------------------------*/
-    AString GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post, const AString& defval) const;
+    AString GetConfigItem(const AString& name, const AString& defval) const {return GetHierarchicalConfigItem("", name, "", defval, true);}
 
     /*--------------------------------------------------------------------------------*/
     /** Return user based config item or system default
@@ -169,7 +100,7 @@ public:
      * @return user value (<user>:<name>), value (<name>), system default or empty string
      */
     /*--------------------------------------------------------------------------------*/
-    AString GetUserConfigItem(const AString& user, const AString& name) const;
+    AString GetUserConfigItem(const AString& user, const AString& name) const {return GetHierarchicalConfigItem(user, name, "");}
 
     /*--------------------------------------------------------------------------------*/
     /** Return user based config item or the specified default
@@ -183,7 +114,7 @@ public:
      * @note this will *never* return the system default for the config item because the default is explicit (but the caller could use GetDefaultItem())
      */
     /*--------------------------------------------------------------------------------*/
-    AString GetUserConfigItem(const AString& user, const AString& name, const AString& defval) const;
+    AString GetUserConfigItem(const AString& user, const AString& name, const AString& defval) const {return GetHierarchicalConfigItem(user, name, "", defval, true);}
 
     /*--------------------------------------------------------------------------------*/
     /** Get user/subitem based config item or system default
@@ -195,7 +126,7 @@ public:
      * @return user-subitem value (<user>:<name>:<subitem>), user value (<user>:<name>), value (<name>), system default or empty string
      */
     /*--------------------------------------------------------------------------------*/
-    AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name) const;
+    AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name) const {return GetHierarchicalConfigItem(user, name, subitem);}
 
     /*--------------------------------------------------------------------------------*/
     /** Get user/subitem based config item or specified default
@@ -209,7 +140,33 @@ public:
      * @note this will *never* return the system default for the config item because the default is explicit (but the caller could use GetDefaultItem())
      */
     /*--------------------------------------------------------------------------------*/
-    AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name, const AString& defval) const;
+    AString GetUserSubItemConfigItem(const AString& user, const AString& subitem, const AString& name, const AString& defval) const {return GetHierarchicalConfigItem(user, name, subitem, defval, true);}
+
+    /*--------------------------------------------------------------------------------*/
+    /** Return the value of the pre/post config item or specified default
+     *
+     * @param pre optional config item prefix
+     * @param name config item
+     * @param post optional config item postfix
+     * @param defval default value if no value found (only used if defvalid = true)
+     * @param defvalid true if defval is to be used instead of system default
+     *
+     * @return value
+     *
+     * @note the value returned is the first of:
+     * @note 1. the value of <pre>:<name>:<post> from dvb.conf (if <pre> and <post> are valid and value found); or
+     * @note 2. the value of <pre>:<name> from dvb.conf (if <pre> is valid and value found); or
+     * @note 3. the value of <name>:<post> from dvb.conf (if <post> is valid and value found); or
+     * @note 4. the value of <name> from dvb.conf (if value found); or
+     * @note 5. defval if defvalid is true; or
+     * @note 6. the system default of <pre>:<name>:<post> (if <pre> and <post> are valid and system default found); or
+     * @note 7. the system default of <pre>:<name (if <pre> is valid and system default found); or
+     * @note 8. the system default of <name>:<post> (if <post> is valid and system default found); or
+     * @note 9. the system default of <name> (if system default found)
+     * @note 10. an empty string otherwise
+     */
+    /*--------------------------------------------------------------------------------*/
+    AString GetHierarchicalConfigItem(const AString& pre, const AString& name, const AString& post, const AString& defval = "", bool defvalid = false) const;
 
     /*--------------------------------------------------------------------------------*/
     /** Return true if config contains a value for name
@@ -361,9 +318,19 @@ public:
     AString GetNamedFile(const AString& name) const;
 
     AString GetConvertedFileSuffix(const AString& user, const AString& def = "mp4") const; // extractconfig("<user>", "<filetype>")
-    AString ReplaceTerms(const AString& str) const;
-    AString ReplaceTerms(const AString& user, const AString& str) const;
-    AString ReplaceTerms(const AString& user, const AString& subitem, const AString& str) const;
+
+    /*--------------------------------------------------------------------------------*/
+    /** Replace terms in given string using possibly-valid pre and post values
+     *
+     * @param pre optional prefix for config item
+     * @param _str string to perform replacements on
+     * @param post optional postfix for config item
+     *
+     * @return string
+     */
+    /*--------------------------------------------------------------------------------*/
+    AString ReplaceTerms(const AString& pre, const AString& _str, const AString& post) const;
+    AString ReplaceTerms(const AString& _str) const {return ReplaceTerms("", _str, "");}
 
     AString GetVideoEncoder()                const; // extractconfig()
     AString GetDVBStreamCommand()            const; // extractconfig()
@@ -474,10 +441,8 @@ public:
     // NOTE: function cheats 'const'!
     void SetConfigRecorder(std::vector<AString> *recorder) const;
 
-    static AString Combine(const char     *str1, const char     *str2) {return AString(str1) + ":" + AString(str2);}
-    static AString Combine(const char     *str1, const AString&  str2) {return AString(str1) + ":" + str2;}
-    static AString Combine(const AString&  str1, const char     *str2) {return str1 + ":" + AString(str2);}
-    static AString Combine(const AString&  str1, const AString&  str2) {return str1 + ":" + str2;}
+    static AString Combine(const AString&  str1, const AString&  str2)                       {return str1 + ":" + str2;}
+    static AString Combine(const AString&  str1, const AString&  str2, const AString&  str3) {return str1 + ":" + str2 + ":" + str3;}
 
 protected:
     /*--------------------------------------------------------------------------------*/
@@ -489,17 +454,6 @@ protected:
      */
     /*--------------------------------------------------------------------------------*/
     const AString *GetDefaultItemEx(const AString& name) const;
-
-    /*--------------------------------------------------------------------------------*/
-    /** Get possible valid combinations of <pre>/<name>/<post>
-     *
-     * @param list destination of list of valid combinations
-     * @param pre optional config item prefix
-     * @param name config item
-     * @param post optional config item postfix
-     */
-    /*--------------------------------------------------------------------------------*/
-    void GetCombinations(std::vector<AString>& list, const AString& pre, const AString& name, const AString& post = "") const;
 
     void MapDVBCards();
     void CheckUpdate() const;

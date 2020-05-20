@@ -204,9 +204,10 @@ int main(int argc, const char *argv[])
         {"--rawstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
         {"--mp4stream",                             "<text>",                           "Stream DVB channel or programme being recorded <text>, encoding as mp4 to console (for piping to arbitrary programs)"},
         {"--drawprogrammes",                        "<scale>",                          "Draw current list of programmes using a scale of <scale> characters per hour"},
-        {"--listconfigvalues",                      "",                                 "List all config values"},
-        {"--configitem",                            "<item>",                           "Return value for config item"},
-        {"--configvalue",                           "<value>",                          "Evaluate config value"},
+        {"--list-config-values",                    "",                                 "List all config values"},
+        {"--config-item",                           "<item>",                           "Return value for config item"},
+        {"--user-config-item",                      "<user> <item>",                    "Return value for user's config item"},
+        {"--user-category-config-item",             "<user> <category> <item>",         "Return value for user's config item for specified programme category"},
         {"--return-count",                          "",                                 "Return programme list count in error code"},
     };
     const ADVBConfig& config = ADVBConfig::Get();
@@ -2365,19 +2366,29 @@ int main(int argc, const char *argv[])
                     }
                 }
             }
-            else if (stricmp(argv[i], "--listconfigvalues") == 0) {
+            else if (stricmp(argv[i], "--list-config-values") == 0) {
                 AString res = config.ListConfigValues() + "\n" + config.ListLiveConfigValues();
                 printf("%s", res.str());
             }
-            else if (stricmp(argv[i], "--configitem") == 0) {
+            else if (stricmp(argv[i], "--config-item") == 0) {
                 AString var = argv[++i];
                 AString val = config.GetConfigItem(var);
-                printf("%s=%s\n", var.str(), config.ReplaceTerms(val).str());
+                printf("%s=%s\n", var.str(), val.str());
             }
-            else if (stricmp(argv[i], "--configvalue") == 0) {
-                AString val = argv[++i];
-                printf("%s\n", config.ReplaceTerms(val).str());
+            else if (stricmp(argv[i], "--user-config-item") == 0) {
+                AString user = argv[++i];
+                AString var  = argv[++i];
+                AString val  = config.GetUserConfigItem(user, var);
+                printf("%s:%s=%s\n", user.str(), var.str(), val.str());
             }
+            else if (stricmp(argv[i], "--user-category-config-item") == 0) {
+                AString user     = argv[++i];
+                AString category = argv[++i];
+                AString var      = argv[++i];
+                AString val      = config.GetUserSubItemConfigItem(user, category, var);
+                printf("%s:%s:%s=%s\n", user.str(), var.str(), category.str(), val.str());
+            }
+
 #if EVALTEST
             else if (stricmp(argv[i], "--eval") == 0) {
                 simplevars_t vars;

@@ -2108,14 +2108,9 @@ AString ADVBProg::GetPrefItem(const AString& name, const AString& defval) const
 AString ADVBProg::GetAttributedConfigItem(const AString& name, const AString& defval, bool defvalid) const
 {
     const ADVBConfig& config = ADVBConfig::Get();
-    std::vector<AString> list;
 
-    list.push_back(ADVBConfig::Combine(name, GetUUID()));
-    list.push_back(ADVBConfig::Combine(name, GetTitle()));
-    list.push_back(ADVBConfig::Combine(GetUser(), name));
-    list.push_back(name);
-
-    return config.GetConfigItem(list, defval, defvalid);
+    return config.GetHierarchicalConfigItem(GetUser(), name, GetUUID(),
+                                            config.GetHierarchicalConfigItem(GetUser(), name, GetTitle(), defval, defvalid));
 }
 
 AString ADVBProg::SanitizeString(const AString& str, bool filesystem, bool dir)
@@ -2153,7 +2148,7 @@ AString ADVBProg::ReplaceTerms(const AString& str, bool filesystem) const
     const ADVBConfig& config = ADVBConfig::Get();
     AString date  = GetStartDT().UTCToLocal().DateFormat("%Y-%M-%D");
     AString times = GetStartDT().UTCToLocal().DateFormat("%h%m") + "-" + GetStopDT().UTCToLocal().DateFormat("%h%m");
-    AString res   = (config.ReplaceTerms(GetUser(), str)
+    AString res   = (config.ReplaceTerms(GetUser(), str, "")
                      .SearchAndReplace("{title}", SanitizeString(GetTitle(), filesystem))
                      .SearchAndReplace("{titleandsubtitle}", SanitizeString(GetTitleAndSubtitle(), filesystem))
                      .SearchAndReplace("{titlesubtitleandchannel}", SanitizeString(GetTitleSubtitleAndChannel(), filesystem))
