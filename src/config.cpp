@@ -1130,17 +1130,17 @@ bool ADVBConfig::ForceSubs(const AString& user) const
 
 AString ADVBConfig::GetEncodeCommand(const AString& user, const AString& category) const
 {
-    return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodecmd", GetVideoEncoder()));
+    return GetUserSubItemConfigItem(user, category.ToLower(), "encodecmd", GetVideoEncoder());
 }
 
 AString ADVBConfig::GetEncodeArgs(const AString& user, const AString& category) const
 {
-    return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodeargs"));
+    return GetUserSubItemConfigItem(user, category.ToLower(), "encodeargs");
 }
 
 AString ADVBConfig::GetEncodeAudioOnlyArgs(const AString& user, const AString& category) const
 {
-    return ReplaceTerms(user, category.ToLower(), GetUserSubItemConfigItem(user, category.ToLower(), "encodeaudioonlyargs"));
+    return GetUserSubItemConfigItem(user, category.ToLower(), "encodeaudioonlyargs");
 }
 
 AString ADVBConfig::GetEncodeLogLevel(const AString& user, bool verbose) const
