@@ -24,7 +24,7 @@ Other functions:<br>
 <td class="maincontent">
 <table class="filter"><tr><td>
 From:<br>
-<select id="from">
+<select id="from" onchange="dvbrequest({from:document.getElementById(&quot;from&quot;).value})">
 <option>Listings</option>
 <option selected>Combined</option>
 <option>Requested</option>
@@ -37,10 +37,10 @@ From:<br>
 </select>
 </td><td>
 Filter:<br>
-<input type="text" id="titlefilter" value = "" size=30 maxlength=10000 onfocusout="dvbrequest({from:document.getElementById(&quot;from&quot;).value,titlefilter:document.getElementById(&quot;titlefilter&quot;).value,timefilter:document.getElementById(&quot;timefilter&quot;).value})">
+<input type="text" id="titlefilter" value = "" size=30 maxlength=10000 onchange="dvbrequest({titlefilter:document.getElementById(&quot;titlefilter&quot;).value})">
 </td><td>
 Time:<br>
-<select id="timefilter" onfocusout="dvbrequest({timefilter:document.getElementById(&quot;timefilter&quot;).value})">
+<select id="timefilter" onchange="dvbrequest({timefilter:document.getElementById(&quot;timefilter&quot;).value})">
 <option value="start&gt;=midnight,-4W">From 4 weeks ago</option>
 <option value="start&gt;=midnight,-3W">From 3 weeks ago</option>
 <option value="start&gt;=midnight,-2W">From 2 weeks ago</option>
