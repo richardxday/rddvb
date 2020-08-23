@@ -39,19 +39,22 @@ HEADERS :=										\
 	iconcache.h									\
 	proglist.h
 
-GLOBAL_CFLAGS += $(shell pkg-config --cflags rdlib-0.1)
-GLOBAL_LIBS	  += $(shell pkg-config --libs rdlib-0.1)
+GLOBAL_CFLAGS       += $(call pkgcflags,rdlib-0.1)
+GLOBAL_CXXFLAGS     += $(call pkgcxxflags,rdlib-0.1)
+GLOBAL_LIBS	        += $(call pkglibs,rdlib-0.1)
 
-GLOBAL_CFLAGS += $(shell pkg-config --cflags jsoncpp)
-GLOBAL_LIBS	  += $(shell pkg-config --libs jsoncpp)
+GLOBAL_COMMON_FLAGS += $(call pkgcflags,jsoncpp)
+GLOBAL_LIBS	        += $(call pkglibs,jsoncpp)
 
-GLOBAL_CFLAGS += $(shell curl-config --cflags)
-GLOBAL_LIBS	  += $(shell curl-config --libs) -lcrypto
+GLOBAL_COMMON_FLAGS += $(shell curl-config --cflags)
+GLOBAL_LIBS	        += $(shell curl-config --libs) -lcrypto
 
 include $(MAKEFILEDIR)/makefile.prebuild
 
-EXTRA_CFLAGS += "-DRDDVB_ROOT_DIR=\"$(ROOTDIR)\""
-EXTRA_CFLAGS += "-DRDDVB_SHARE_DIR=\"$(INSTALLSHAREDST)\""
+EXTRA_COMMON_FLAGS += "-DRDDVB_ROOT_DIR=\"$(ROOTDIR)\""
+EXTRA_COMMON_FLAGS += "-DRDDVB_SHARE_DIR=\"$(INSTALLSHAREDST)\""
+
+EXTRA_CFLAGS   += -std=c99
 EXTRA_CXXFLAGS += -std=c++11
 
 include $(MAKEFILEDIR)/makefile.lib
@@ -82,10 +85,6 @@ include $(MAKEFILEDIR)/makefile.app
 
 INSTALL_BINARIES := 0
 
-APPLICATION := extractconfig
-OBJECTS		:= $(APPLICATION:%=%.o)
-include $(MAKEFILEDIR)/makefile.app
-
 DEFAULTCONFIG := share/default-config-values.txt
 
 share/%: share/%.in
@@ -101,20 +100,24 @@ $(HEADERSSRC)/config.extract.h: $(HEADERSSRC)/config.h
 	@grep -h -E '^[[:blank:]]+[A-Za-z0-9_]+[ \t]+.+// extractconfig' $< | sed -E 's/^[ \t]+[A-Za-z0-9_]+[ \t]+([A-Za-z0-9_]+)\(.+\/\/ extractconfig\((.*)\).*$$/(void)config.\1(\2);/' >$@
 
 ifdef DEBUG
-$(DEBUG_OBJDIR)/$(APPLICATION).o: $(HEADERSSRC)/config.extract.h
+$(DEBUG_OBJDIR)/$(APPLICATION)/$(APPLICATION).o: $(HEADERSSRC)/config.extract.h
 
 EXTRACTCONFIG := $(DEBUG_BINDIR)/$(DEBUG_APPLICATION)$(APPLICATION_SUFFIX)
 $(DEFAULTCONFIG): $(EXTRACTCONFIG)
 	@echo "Generating $@"
 	@LD_LIBRARY_PATH=$(DEBUG_LIBDIR) $(EXTRACTCONFIG) >$@
 else
-$(RELEASE_OBJDIR)/$(APPLICATION).o: $(HEADERSSRC)/config.extract.h
+$(RELEASE_OBJDIR)/$(APPLICATION)/$(APPLICATION).o: $(HEADERSSRC)/config.extract.h
 
 EXTRACTCONFIG := $(RELEASE_BINDIR)/$(RELEASE_APPLICATION)$(APPLICATION_SUFFIX)
 $(DEFAULTCONFIG): $(EXTRACTCONFIG)
 	@echo "Generating $@"
 	@LD_LIBRARY_PATH="$(RELEASE_LIBDIR):$(INSTALLLIBDST)" $(EXTRACTCONFIG) >$@
 endif
+
+APPLICATION := extractconfig
+OBJECTS		:= $(APPLICATION:%=%.o)
+include $(MAKEFILEDIR)/makefile.app
 
 CLEANFILES	+= $(HEADERSSRC)/config.extract.h $(DEFAULTCONFIG)
 
