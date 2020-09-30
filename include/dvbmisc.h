@@ -2,6 +2,7 @@
 #define __DVB_MISC__
 
 #include <rdlib/misc.h>
+#include <rdlib/strsup.h>
 
 extern AString CatPath(const AString& dir1, const AString& dir2);
 
