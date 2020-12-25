@@ -3333,6 +3333,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
         success &= RunCommand(cmd, !verbose);
         remove(basename + ".sup");
+        remove(basename + ".sup.idx");
         remove(basename + ".sup.IFO");
     }
 
@@ -3341,6 +3342,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
     AString bestaspect;
     std::vector<MEDIAFILE> videofiles;
     std::vector<MEDIAFILE> audiofiles;
+    std::vector<AString>   subtitlefiles;
 
     if (success) {
         AStdFile fp;
@@ -3352,6 +3354,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             static const AString filemarker   = "---> new File:";
             static const AString pidmarker    = "++> Mpg ";
             static const AString pidmarker2   = "PID";
+            static const AString vobsubmarker = "-> create VobSub Files (idx + sub) :";
             AString  line;
             AString  aspect   = "16:9";
             uint64_t t1       = 0;
@@ -3416,6 +3419,17 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                         }
                     }
                 }
+
+                if ((p = line.PosNoCase(vobsubmarker)) >= 0) {
+                    p += vobsubmarker.len();
+
+                    AString filename = line.Mid(p).Words(0).DeQuotify();
+                    config.printf("Created file: %s%s (subtitles)", filename.str(), AStdFile::exists(filename) ? "" : " (DOES NOT EXIST!)", pid);
+
+                    if (AStdFile::exists(filename)) {
+                        subtitlefiles.push_back(filename);
+                    }
+                }
             }
 
             {
@@ -3456,16 +3470,26 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             config.printf("%2u: PID %5u %s", (uint_t)i, audiofiles[i].pid, audiofiles[i].filename.str());
         }
     }
+    if (subtitlefiles.size() > 0) {
+        std::sort(subtitlefiles.begin(), subtitlefiles.end(), CompareFilenames);
+
+        size_t i;
+        config.printf("Subtitle files:");
+        for (i = 0; i < subtitlefiles.size(); i++) {
+            config.printf("%2u: %s", (uint_t)i, subtitlefiles[i].str());
+        }
+    }
 
     AString m2vfile;
     AString mp2file;
+    AString subtitlefile;
     uint_t  videotrack = (uint_t)GetAttributedConfigItem(videotrackname, "0");
 
     if (videotrack < (uint_t)videofiles.size()) {
         m2vfile = videofiles[videotrack].filename;
         config.printf("Using video track %u of '%s', file '%s'", videotrack, GetQuickDescription().str(), m2vfile.str());
     }
-    else if (videofiles.size()) {
+    else if (videofiles.size() > 0) {
         m2vfile = videofiles[0].filename;
         config.printf("Video track %u of '%s' doesn't exists, using file '%s' instead", videotrack, GetQuickDescription().str(), m2vfile.str());
     }
@@ -3477,13 +3501,19 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         mp2file = audiofiles[audiotrack].filename;
         config.printf("Using audio track %u of '%s', file '%s'", audiotrack, GetQuickDescription().str(), mp2file.str());
     }
-    else if (audiofiles.size()) {
+    else if (audiofiles.size() > 0) {
         mp2file = audiofiles[0].filename;
         config.printf("Audio track %u of '%s' doesn't exists, using file '%s' instead", audiotrack, GetQuickDescription().str(), mp2file.str());
     }
     else {
         config.printf("Warning: no audio file(s) associated with '%s'", GetQuickDescription().str());
         success = false;
+    }
+
+    if (subtitlefiles.size() > 0)
+    {
+        subtitlefile = subtitlefiles[0];
+        config.printf("Using subtitle file '%s'for '%s'", subtitlefile.str(), GetQuickDescription().str());
     }
 
     if (success) {
@@ -3515,6 +3545,10 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             inputfiles.printf("-i \"%s\" -i \"%s\"",
                               m2vfile.str(),
                               mp2file.str());
+            if (subtitlefile.Valid()) {
+                inputfiles.printf(" -i \"%s\"",
+                                  subtitlefile.str());
+            }
             success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
         }
         else {
@@ -3589,6 +3623,10 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
                 AString inputfiles;
                 inputfiles.printf("-i \"%s\"", concatfile.str());
+                if (subtitlefile.Valid()) {
+                    inputfiles.printf(" -i \"%s\"",
+                                      subtitlefile.str());
+                }
                 success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
             }
 

@@ -711,6 +711,7 @@ protected:
     } MEDIAFILE;
 
     static bool CompareMediaFiles(const MEDIAFILE& file1, const MEDIAFILE& file2);
+    static bool CompareFilenames(const AString& file1, const AString& file2) {return (CompareCase(file1, file2) > 0);}
 
     void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect);
     bool EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose) const;
