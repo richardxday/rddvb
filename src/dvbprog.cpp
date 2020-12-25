@@ -3424,7 +3424,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                     p += vobsubmarker.len();
 
                     AString filename = line.Mid(p).Words(0).DeQuotify();
-                    config.printf("Created file: %s%s (subtitles)", filename.str(), AStdFile::exists(filename) ? "" : " (DOES NOT EXIST!)", pid);
+                    config.printf("Created file: %s%s (subtitles)", filename.str(), AStdFile::exists(filename) ? "" : " (DOES NOT EXIST!)");
 
                     if (AStdFile::exists(filename)) {
                         subtitlefiles.push_back(filename);
