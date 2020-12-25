@@ -1276,7 +1276,7 @@ bool ADVBProg::SetString(const uint16_t *offset, const char *str)
                     }
                 }
 
-                strcpy((char *)data->strdata + strings[field], str);
+                strcpy(&data->strdata[0] + strings[field], str);
 
                 success = true;
             }
