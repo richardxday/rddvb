@@ -1023,6 +1023,16 @@ AString ADVBConfig::GetVideoFileSuffix() const
     return GetConfigItem("videofilesuffix", "m2v");
 }
 
+AString ADVBConfig::GetSubtitleFileSuffix() const
+{
+    return GetConfigItem("subtitlefilesuffix", "sup");
+}
+
+AString ADVBConfig::GetSubtitleIndexFileSuffix() const
+{
+    return GetConfigItem("subtitleindexfilesuffix", "idx");
+}
+
 AString ADVBConfig::GetAudioFileSuffix() const
 {
     return GetConfigItem("audiofilesuffix", "mp2");

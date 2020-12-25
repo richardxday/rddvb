@@ -346,6 +346,8 @@ public:
     AString GetVideoFileSuffix()             const; // extractconfig()
     AString GetAudioFileSuffix()             const; // extractconfig()
     AString GetAudioDestFileSuffix()         const; // extractconfig()
+    AString GetSubtitleFileSuffix()          const; // extractconfig()
+    AString GetSubtitleIndexFileSuffix()     const; // extractconfig()
 
     uint_t  GetPhysicalDVBCard(uint_t n, bool forcemapping = false) const;
     uint_t  GetVirtualDVBCard(uint_t n)      const;

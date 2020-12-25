@@ -3269,14 +3269,16 @@ bool ADVBProg::CompareMediaFiles(const MEDIAFILE& file1, const MEDIAFILE& file2)
 
 bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 {
-    const ADVBConfig& config         = ADVBConfig::Get();
-    const AString tempfilesuffix     = config.GetTempFileSuffix();
-    const AString recordedfilesuffix = config.GetRecordedFileSuffix();
-    const AString videofilesuffix    = config.GetVideoFileSuffix();
-    const AString audiofilesuffix    = config.GetAudioFileSuffix();
-    AString       src                = GetFilename();
-    AString       dst                = GenerateFilename(true);
-    AString       archivedst         = ReplaceFilenameTerms(config.GetRecordingsArchiveDir(), false).CatPath(src.FilePart());
+    const ADVBConfig& config              = ADVBConfig::Get();
+    const AString tempfilesuffix          = config.GetTempFileSuffix();
+    const AString recordedfilesuffix      = config.GetRecordedFileSuffix();
+    const AString videofilesuffix         = config.GetVideoFileSuffix();
+    const AString audiofilesuffix         = config.GetAudioFileSuffix();
+    const AString subtitlefilesuffix      = config.GetSubtitleFileSuffix();
+    const AString subtitleindexfilesuffix = config.GetSubtitleIndexFileSuffix();
+    AString       src                     = GetFilename();
+    AString       dst                     = GenerateFilename(true);
+    AString       archivedst              = ReplaceFilenameTerms(config.GetRecordingsArchiveDir(), false).CatPath(src.FilePart());
 
     if (!CreateDirectory(archivedst.PathPart())) {
         if (dircreationerrors.Valid()) dircreationerrors.printf("\n");
@@ -3343,6 +3345,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
     std::vector<MEDIAFILE> videofiles;
     std::vector<MEDIAFILE> audiofiles;
     std::vector<AString>   subtitlefiles;
+    size_t i;
 
     if (success) {
         AStdFile fp;
@@ -3354,7 +3357,6 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             static const AString filemarker   = "---> new File:";
             static const AString pidmarker    = "++> Mpg ";
             static const AString pidmarker2   = "PID";
-            static const AString vobsubmarker = "-> create VobSub Files (idx + sub) :";
             AString  line;
             AString  aspect   = "16:9";
             uint64_t t1       = 0;
@@ -3417,17 +3419,12 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                         else if (filename.Suffix() == audiofilesuffix) {
                             audiofiles.push_back(file);
                         }
-                    }
-                }
-
-                if ((p = line.PosNoCase(vobsubmarker)) >= 0) {
-                    p += vobsubmarker.len();
-
-                    AString filename = line.Mid(p).Words(0).DeQuotify();
-                    config.printf("Created file: %s%s (subtitles)", filename.str(), AStdFile::exists(filename) ? "" : " (DOES NOT EXIST!)");
-
-                    if (AStdFile::exists(filename)) {
-                        subtitlefiles.push_back(filename);
+                        else if (filename.Suffix() == subtitlefilesuffix) {
+                            if (AStdFile::exists(filename + "." + subtitleindexfilesuffix)) {
+                                subtitlefiles.push_back(filename + "." + subtitleindexfilesuffix);
+                            }
+                            subtitlefiles.push_back(filename);
+                        }
                     }
                 }
             }
@@ -3455,7 +3452,6 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
     if (videofiles.size() > 0) {
         std::sort(videofiles.begin(), videofiles.end(), CompareMediaFiles);
 
-        size_t i;
         config.printf("Video files:");
         for (i = 0; i < videofiles.size(); i++) {
             config.printf("%2u: PID %5u %s", (uint_t)i, videofiles[i].pid, videofiles[i].filename.str());
@@ -3464,16 +3460,12 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
     if (audiofiles.size() > 0) {
         std::sort(audiofiles.begin(), audiofiles.end(), CompareMediaFiles);
 
-        size_t i;
         config.printf("Audio files:");
         for (i = 0; i < audiofiles.size(); i++) {
             config.printf("%2u: PID %5u %s", (uint_t)i, audiofiles[i].pid, audiofiles[i].filename.str());
         }
     }
     if (subtitlefiles.size() > 0) {
-        std::sort(subtitlefiles.begin(), subtitlefiles.end(), CompareFilenames);
-
-        size_t i;
         config.printf("Subtitle files:");
         for (i = 0; i < subtitlefiles.size(); i++) {
             config.printf("%2u: %s", (uint_t)i, subtitlefiles[i].str());
@@ -3482,7 +3474,6 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
     AString m2vfile;
     AString mp2file;
-    AString subtitlefile;
     uint_t  videotrack = (uint_t)GetAttributedConfigItem(videotrackname, "0");
 
     if (videotrack < (uint_t)videofiles.size()) {
@@ -3508,12 +3499,6 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
     else {
         config.printf("Warning: no audio file(s) associated with '%s'", GetQuickDescription().str());
         success = false;
-    }
-
-    if (subtitlefiles.size() > 0)
-    {
-        subtitlefile = subtitlefiles[0];
-        config.printf("Using subtitle file '%s'for '%s'", subtitlefile.str(), GetQuickDescription().str());
     }
 
     if (success) {
@@ -3545,10 +3530,13 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             inputfiles.printf("-i \"%s\" -i \"%s\"",
                               m2vfile.str(),
                               mp2file.str());
-            if (subtitlefile.Valid()) {
-                inputfiles.printf(" -i \"%s\"",
-                                  subtitlefile.str());
+            for (i = 0; i < subtitlefiles.size(); i++) {
+                inputfiles.printf(" -i \"%s\"", subtitlefiles[i].str());
             }
+            if (subtitlefiles.size() > 0) {
+                inputfiles.printf(" -scodec copy");
+            }
+
             success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
         }
         else {
@@ -3559,10 +3547,14 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             if (!AStdFile::exists(remuxsrc)) {
                 AString cmd;
 
-                cmd.printf("nice %s -fflags +genpts -i \"%s.%s\" -i \"%s.%s\" -acodec copy -vcodec copy -v warning -f mpegts \"%s\"",
+                cmd.printf("nice %s -fflags +genpts -i \"%s.%s\" -i \"%s.%s\"",
                            proccmd.str(),
                            basename.str(), videofilesuffix.str(),
-                           basename.str(), audiofilesuffix.str(),
+                           basename.str(), audiofilesuffix.str());
+                for (i = 0; i < subtitlefiles.size(); i++) {
+                    cmd.printf(" -i \"%s\"", subtitlefiles[i].str());
+                }
+                cmd.printf(" -acodec copy -vcodec copy -v warning -f mpegts \"%s\"",
                            remuxsrc.str());
 
                 success &= RunCommand(cmd, !verbose);
@@ -3581,9 +3573,13 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                     outfile.printf("%s-%s-%u.%s", basename.str(), bestaspect.SearchAndReplace(":", "_").str(), i, recordedfilesuffix.str());
 
                     if (!AStdFile::exists(outfile)) {
-                        cmd.printf("nice %s -fflags +genpts -i \"%s\" -ss %s", proccmd.str(), remuxsrc.str(), GenTime(split.start).str());
+                        cmd.printf("nice %s -fflags +genpts -i \"%s\"", proccmd.str(), remuxsrc.str());
+                        for (i = 0; i < subtitlefiles.size(); i++) {
+                            cmd.printf(" -i \"%s\"", subtitlefiles[i].str());
+                        }
+                        cmd.printf(" -ss %s", GenTime(split.start).str());
                         if (split.length > 0) cmd.printf(" -t %s", GenTime(split.length).str());
-                        cmd.printf(" -acodec copy -vcodec copy -v warning -y -f mpegts \"%s\"", outfile.str());
+                        cmd.printf(" -acodec copy -vcodec copy -scodec copy -v warning -y -f mpegts \"%s\"", outfile.str());
 
                         success &= RunCommand(cmd, !verbose);
                         if (!success) break;
@@ -3623,10 +3619,13 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
                 AString inputfiles;
                 inputfiles.printf("-i \"%s\"", concatfile.str());
-                if (subtitlefile.Valid()) {
-                    inputfiles.printf(" -i \"%s\"",
-                                      subtitlefile.str());
+                for (i = 0; i < subtitlefiles.size(); i++) {
+                    inputfiles.printf(" -i \"%s\"", subtitlefiles[i].str());
                 }
+                if (subtitlefiles.size() > 0) {
+                    inputfiles.printf(" -scodec copy");
+                }
+
                 success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
             }
 
