@@ -33,6 +33,7 @@ public:
             uint32_t freq;
             bool     hasvideo;
             bool     hasaudio;
+            bool     hassubtitle;
             PIDLIST  pidlist;
         } dvb;
         struct {

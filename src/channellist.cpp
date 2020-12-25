@@ -69,10 +69,19 @@ ADVBChannelList& ADVBChannelList::Get()
 
 bool ADVBChannelList::ForceChannelAudioAndVideoFlags(CHANNEL *channel)
 {
-    bool hadvideo = channel->dvb.hasvideo;
-    bool hadaudio = channel->dvb.hasaudio;
+    bool hadvideo    = channel->dvb.hasvideo;
+    bool hadaudio    = channel->dvb.hasaudio;
+    bool hadsubtitle = channel->dvb.hassubtitle;
 
-    if (channel->dvb.pidlist.size() >= 2) {
+    channel->dvb.hasvideo    = false;
+    channel->dvb.hasaudio    = false;
+    channel->dvb.hassubtitle = false;
+
+    if (channel->dvb.pidlist.size() >= 3) {
+        // ASSUME for now that a PID list of 3 or more means both audio and video and subtitles are available
+        channel->dvb.hasvideo = channel->dvb.hasaudio = channel->dvb.hassubtitle = true;
+    }
+    else if (channel->dvb.pidlist.size() >= 2) {
         // ASSUME for now that a PID list of 2 or more means both audio and video are available
         channel->dvb.hasvideo = channel->dvb.hasaudio = true;
     }
@@ -82,10 +91,9 @@ bool ADVBChannelList::ForceChannelAudioAndVideoFlags(CHANNEL *channel)
     }
     else {
         // no PIDS, no audio or video
-        channel->dvb.hasvideo = channel->dvb.hasaudio = false;
     }
 
-    return ((channel->dvb.hasvideo != hadvideo) || (channel->dvb.hasaudio != hadaudio));
+    return ((channel->dvb.hasvideo != hadvideo) || (channel->dvb.hasaudio != hadaudio) || (channel->dvb.hassubtitle != hadsubtitle));
 }
 
 bool ADVBChannelList::Read()
@@ -118,11 +126,12 @@ bool ADVBChannelList::Read()
                         CHANNEL *chan;
 
                         if ((chan = new CHANNEL) != NULL) {
-                            chan->dvb.lcn = 0;
+                            chan->dvb.lcn           = 0;
                             chan->xmltv.sdchannelid = 0;
-                            chan->dvb.freq = 0;
-                            chan->dvb.hasaudio = false;
-                            chan->dvb.hasvideo = false;
+                            chan->dvb.freq          = 0;
+                            chan->dvb.hasaudio      = false;
+                            chan->dvb.hasvideo      = false;
+                            chan->dvb.hassubtitle   = false;
 
                             if (chanobj.HasMember("dvb")) {
                                 const rapidjson::Value& subobj = chanobj["dvb"];
@@ -159,6 +168,10 @@ bool ADVBChannelList::Read()
                                 else {
                                     chan->dvb.hasaudio = true;
                                     changed = true;
+                                }
+
+                                if (subobj.HasMember("hassubtitle") && subobj["hassubtitle"].IsBool()) {
+                                    chan->dvb.hassubtitle = subobj["hassubtitle"].GetBool();
                                 }
 
                                 if (subobj.HasMember("pidlist") && subobj["pidlist"].IsArray()) {
@@ -245,6 +258,8 @@ bool ADVBChannelList::Read()
                         chan->dvb.hasaudio = true;
                     }
                     else chan->dvb.hasaudio = false;
+
+                    chan->dvb.hassubtitle = false;
 
                     changed = true;
                 }
@@ -430,8 +445,9 @@ void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, rapidjson::Va
             dvbobj.AddMember("frequency", rapidjson::Value(chan.dvb.freq), allocator);
         }
 
-        dvbobj.AddMember("hasvideo", rapidjson::Value(chan.dvb.hasvideo), allocator);
-        dvbobj.AddMember("hasaudio", rapidjson::Value(chan.dvb.hasaudio), allocator);
+        dvbobj.AddMember("hasvideo",    rapidjson::Value(chan.dvb.hasvideo), allocator);
+        dvbobj.AddMember("hasaudio",    rapidjson::Value(chan.dvb.hasaudio), allocator);
+        dvbobj.AddMember("hassubtitle", rapidjson::Value(chan.dvb.hassubtitle), allocator);
 
         if (chan.dvb.pidlist.size() > 0) {
             rapidjson::Value pidlist;
@@ -739,6 +755,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
                                 Type_none = 0,
                                 Type_video,
                                 Type_audio,
+                                Type_subtitle,
                             } pidtype_t;
                             std::map<pidtype_t,bool> pidhash;
                             PIDLIST                  pidlist;
@@ -749,21 +766,36 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
                             changed |= (freq != chan->dvb.freq);
                             chan->dvb.freq = freq;
 
-                            bool hasvideo = false;
-                            bool hasaudio = false;
+                            bool hasvideo    = false;
+                            bool hasaudio    = false;
+                            bool hassubtitle = false;
+
+                            uint_t    type = 0;
+                            uint_t    pid  = 0;
+                            uint_t    stid = 0;
+                            pidtype_t id   = Type_none;
 
                             for (i = 0; i < n; i++) {
+                                static const AString streamstartstr = "<stream ";
+                                static const AString streamendstr   = "</stream>";
+                                static const AString subtitlestr    = "<subtitling_descriptor ";
+
                                 line = service.Line(i, "\n", 0);
 
-                                if (line.Left(8) == "<stream ") {
-                                    uint_t    type = (uint_t)line.GetField("type=\"", "\"");
-                                    uint_t    pid  = (uint_t)line.GetField("pid=\"", "\"");
-                                    pidtype_t id   = Type_none;
+                                if (line.Left(streamstartstr.len()) == streamstartstr) {
+                                    type = (uint_t)line.GetField("type=\"", "\"");
+                                    pid  = (uint_t)line.GetField("pid=\"", "\"");
 
                                     if      (RANGE(type, 1, 2)) id = Type_video;
                                     else if (RANGE(type, 3, 4)) id = Type_audio;
+                                }
+                                else if (line.Left(subtitlestr.len()) == subtitlestr) {
+                                    stid = (uint_t)line.GetField("tag=\"", "\"");
 
-                                    if ((id != Type_none) && (pidhash.find(id) == pidhash.end())) {
+                                    if ((type == 6) && (stid == 0x59)) id = Type_subtitle;
+                                }
+                                else if (line == streamendstr) {
+                                    if ((pid > 0) && (id != Type_none) && (pidhash.find(id) == pidhash.end())) {
                                         pidhash[id] = true;
 
                                         pidlist.push_back(pid);
@@ -779,10 +811,17 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
                                             case Type_audio:
                                                 hasaudio = true;
                                                 break;
+
+                                            case Type_subtitle:
+                                                hassubtitle = true;
+                                                break;
                                         }
                                     }
 
                                     if (verbose) config.printf("Service %s Stream type %u pid %u (%s)", servname.str(), type, pid, (id != Type_none) ? "included" : "EXCLUDED");
+
+                                    type = pid = stid = 0;
+                                    id = Type_none;
                                 }
                             }
 
@@ -814,9 +853,10 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
                                 chan->dvb.pidlist = pidlist;
 
                                 // only update video and audio flags if a new pidlist is available
-                                changed |= ((hasvideo != chan->dvb.hasvideo) || (hasaudio != chan->dvb.hasaudio));
-                                chan->dvb.hasvideo = hasvideo;
-                                chan->dvb.hasaudio = hasaudio;
+                                changed |= ((hasvideo != chan->dvb.hasvideo) || (hasaudio != chan->dvb.hasaudio) || (hassubtitle != chan->dvb.hassubtitle));
+                                chan->dvb.hasvideo    = hasvideo;
+                                chan->dvb.hasaudio    = hasaudio;
+                                chan->dvb.hassubtitle = hassubtitle;
                             }
                             else if (!chan->dvb.hasvideo && !chan->dvb.hasaudio) {
                                 // no video and audio flags yet, guess them based on number of PIDs in pidlist
