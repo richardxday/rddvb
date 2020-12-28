@@ -35,7 +35,15 @@ else {
     echo "<title>" . $prog['title'];
     if (isset($prog['subtitle'])) echo " / " . $prog['subtitle'];
     echo "</title>\n";
+    echo "<script src=\"https://cdn.plyr.io/3.6.3/plyr.js\"></script>\n";
     echo "</head>\n";
+    echo "<script type=\"text/javascript\">\n";
+    echo "const player = new Plyr('video', {captions: {active: true}});\n";
+    echo "// Expose player so it can be used from the console\n";
+    echo "window.player = player;\n";
+    echo "window.player.config.autopause = false;\n";
+    echo "window.player.config.debug = true;\n";
+    echo "</script>\n";
     echo "<body>\n";
 
     echo "<h1>" . $prog['title'];
@@ -44,9 +52,9 @@ else {
 
     //print_r($prog);
 
-    echo '<center><video autoplay controls>' . "\n";
-    echo '<source src="' . $prog['file'] . '" />' . "\n";
-    echo '</video></center>' . "\n";
+    echo '<center><div id="container"><video id="player" autoplay playsinline crossorigin controls>' . "\n";
+    echo '<source src="' . $prog['file'] . '" type="video/mp4">' . "\n";
+    echo '</video></div></center>' . "\n";
     echo "<br><br>\n";
 
     if (isset($prog['start']) && isset($prog['stop'])) {
@@ -90,4 +98,5 @@ else {
 ?>
 </body>
 <link rel="stylesheet" type="text/css" href="main.css" />
+<link rel="stylesheet" type="text/css" href="https://cdn.plyr.io/3.6.3/plyr.css" />
 </html>
