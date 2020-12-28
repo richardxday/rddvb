@@ -3230,7 +3230,7 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
     AString proccmd = config.GetEncodeCommand(GetUser(), GetModifiedCategory());
     AString args    = config.GetEncodeArgs(GetUser(), GetModifiedCategory());
     AString tempdst = config.GetRecordingsStorageDir().CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
-    uint_t  i, n = args.CountLines(";");
+    int     i, n = args.CountLines(";");
     bool    success = true;
 
     for (i = 0; i < n; i++) {
@@ -3248,7 +3248,7 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
             AString finaldst;
             AString append;
 
-            if (i) append.printf("-%u", i);
+            if (i > 0) append.printf("-%u", i);
 
             finaldst = outputfile.Prefix() + append + "." + outputfile.Suffix();
 
@@ -3532,7 +3532,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                 inputfiles.printf(" -i \"%s\"", subtitlefiles[i].str());
             }
             if (subtitlefiles.size() > 0) {
-                inputfiles.printf(" -scodec copy");
+                inputfiles.printf(" -scodec copy -metadata:s:s:0 language=eng");
             }
 
             success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
@@ -3552,6 +3552,9 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                 for (i = 0; i < subtitlefiles.size(); i++) {
                     cmd.printf(" -i \"%s\"", subtitlefiles[i].str());
                 }
+                if (subtitlefiles.size() > 0) {
+                    cmd.printf(" -scodec copy -metadata:s:s:0 language=eng");
+                }
                 cmd.printf(" -acodec copy -vcodec copy -v warning -f mpegts \"%s\"",
                            remuxsrc.str());
 
@@ -3559,25 +3562,23 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             }
 
             std::vector<AString> files;
-            uint_t i;
-
             for (i = 0; i < splits.size(); i++) {
-                const SPLIT& split = splits[i];
+                const auto& split = splits[i];
 
                 if (split.aspect == bestaspect) {
                     AString cmd;
                     AString outfile;
 
-                    outfile.printf("%s-%s-%u.%s", basename.str(), bestaspect.SearchAndReplace(":", "_").str(), i, recordedfilesuffix.str());
+                    outfile.printf("%s-%s-%u.%s", basename.str(), bestaspect.SearchAndReplace(":", "_").str(), (uint_t)i, recordedfilesuffix.str());
 
                     if (!AStdFile::exists(outfile)) {
                         cmd.printf("nice %s -fflags +genpts -i \"%s\"", proccmd.str(), remuxsrc.str());
-                        for (i = 0; i < subtitlefiles.size(); i++) {
-                            cmd.printf(" -i \"%s\"", subtitlefiles[i].str());
+                        for (size_t j = 0; j < subtitlefiles.size(); j++) {
+                            cmd.printf(" -i \"%s\"", subtitlefiles[j].str());
                         }
                         cmd.printf(" -ss %s", GenTime(split.start).str());
                         if (split.length > 0) cmd.printf(" -t %s", GenTime(split.length).str());
-                        cmd.printf(" -acodec copy -vcodec copy -scodec copy -v warning -y -f mpegts \"%s\"", outfile.str());
+                        cmd.printf(" -acodec copy -vcodec copy -scodec copy -metadata:s:s:0 language=eng -v warning -y -f mpegts \"%s\"", outfile.str());
 
                         success &= RunCommand(cmd, !verbose);
                         if (!success) break;
@@ -3621,7 +3622,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                     inputfiles.printf(" -i \"%s\"", subtitlefiles[i].str());
                 }
                 if (subtitlefiles.size() > 0) {
-                    inputfiles.printf(" -scodec copy");
+                    inputfiles.printf(" -scodec copy -metadata:s:s:0 language=eng");
                 }
 
                 success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
