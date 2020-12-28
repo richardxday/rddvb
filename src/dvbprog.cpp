@@ -3658,7 +3658,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
     if (success && cleanup) {
         AList delfiles;
 
-        CollectFiles(basename.PathPart(), basename.FilePart() + ".sup.*", RECURSE_ALL_SUBDIRS, delfiles);
+        CollectFiles(basename.PathPart(), basename.FilePart() + ".sup*", RECURSE_ALL_SUBDIRS, delfiles);
         CollectFiles(basename.PathPart(), basename.FilePart() + "-*." + videofilesuffix, RECURSE_ALL_SUBDIRS, delfiles);
         CollectFiles(basename.PathPart(), basename.FilePart() + "-*." + audiofilesuffix, RECURSE_ALL_SUBDIRS, delfiles);
 
