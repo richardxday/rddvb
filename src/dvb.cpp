@@ -203,6 +203,7 @@ int main(int argc, const char *argv[])
         {"--stream",                                "<text>",                           "Stream DVB channel or programme being recorded <text> to mplayer (or other player)"},
         {"--rawstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
         {"--mp4stream",                             "<text>",                           "Stream DVB channel or programme being recorded <text>, encoding as mp4 to console (for piping to arbitrary programs)"},
+        {"--hlsstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text>, encoding as HLS"},
         {"--drawprogrammes",                        "<scale>",                          "Draw current list of programmes using a scale of <scale> characters per hour"},
         {"--list-config-values",                    "",                                 "List all config values"},
         {"--config-item",                           "<item>",                           "Return value for config item"},
@@ -2151,9 +2152,11 @@ int main(int argc, const char *argv[])
             }
             else if ((stricmp(argv[i], "--stream") == 0) ||
                      (stricmp(argv[i], "--rawstream") == 0) ||
-                     (stricmp(argv[i], "--mp4stream") == 0)) {
+                     (stricmp(argv[i], "--mp4stream") == 0) ||
+                     (stricmp(argv[i], "--hlsstream") == 0)) {
                 bool rawstream = (stricmp(argv[i], "--rawstream") == 0);
                 bool mp4stream = (stricmp(argv[i], "--mp4stream") == 0);
+                bool hlsstream = (stricmp(argv[i], "--hlsstream") == 0);
                 AString text = AString(argv[++i]).DeEscapify(), cmd;
 
                 ADVBConfig::GetWriteable(true);
@@ -2165,7 +2168,9 @@ int main(int argc, const char *argv[])
 
                     if (mp4stream) {
                         cmd2.printf("| %s", config.GetStreamEncoderCommand().str());
-                        //fprintf(stderr, "Cmd2: '%s'\n", cmd2.str());
+                    }
+                    else if (hlsstream) {
+                        cmd2.printf("| %s", config.GetHLSEncoderCommand().SearchAndReplace("{hlsoutputfilename}", text).str());
                     }
                     else if (!rawstream) {
                         cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
@@ -2207,7 +2212,21 @@ int main(int argc, const char *argv[])
                                 if (pids.Valid()) {
                                     cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)std::min(maxtime.GetAbsoluteSecond(), (uint64_t)0xffffffff), pids);
 
-                                    if (!config.IsRecordingSlave() && !rawstream) cmd.printf(" | %s", config.GetVideoPlayerCommand().str());
+                                    if (!config.IsRecordingSlave()) {
+                                        AString cmd2;
+
+                                        if (mp4stream) {
+                                            cmd2.printf("| %s", config.GetStreamEncoderCommand().str());
+                                        }
+                                        else if (hlsstream) {
+                                            cmd2.printf("| %s", config.GetHLSEncoderCommand().SearchAndReplace("{hlsoutputfilename}", text).str());
+                                        }
+                                        else if (!rawstream) {
+                                            cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
+                                        }
+
+                                        cmd2 += " " + cmd2;
+                                    }
                                 }
                                 else fprintf(stderr, "Failed to find PIDs for channel '%s'\n", text.str());
                             }
@@ -2272,9 +2291,17 @@ int main(int argc, const char *argv[])
                     if (config.LogRemoteCommands()) {
                         config.logit("Running command '%s'", cmd.str());
                     }
+                    else {
+                        fprintf(stderr, "Running command '%s'\n", cmd.str());
+                    }
 
                     int res2 = system(cmd);
                     (void)res2;
+
+                    if (hlsstream) {
+                        res2 = system(config.GetHLSCleanCommand().SearchAndReplace("{hlsoutputfilename}", text));
+                        (void)res2;
+                    }
                 }
             }
             else if (stricmp(argv[i], "--return-count") == 0) {
@@ -2413,3 +2440,7 @@ int main(int argc, const char *argv[])
 
     return res;
 }
+
+/* live streaming
+dvb --rawstream "bbc news" | ffmpeg -i - -c:v libx264 -crf 21 -preset veryfast -g 25 -sc_threshold 0 -c:a aac -b:a 128k -ac 2 -f hls -hls_time 4 -hls_list_size 5 -hls_wrap 5 -hls_flags delete_segments -hls_playlist_type event stream.m3u8
+*/

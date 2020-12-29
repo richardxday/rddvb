@@ -85,7 +85,41 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"streamaacaudio",               "-acodec aac -b:a {conf:streamaacbitrate}"},
         {"streammp3audio",               "-acodec libmp3lame -b:a {conf:streammp3bitrate}"},
         {"streamaudio",                  "{conf:streamaacaudio} {conf:streamaudiofilters}"},
-        {"streamencodeargs",             "{conf:streaminput} {conf:streamvideo} {conf:streamaudio} {conf:streamverbosity} {conf:streamoutput}"},
+        {"streamsubtitlelang",           "eng"},
+        {"streamsubtitlemetadata",       "-metadata:s:s:0 language={conf:streamsubtitlelang}"},
+        {"streamsubtitlecodec",          "-scodec copy"},
+        {"streamsubtitles",              "{conf:streamsubtitlecodec} {conf:streamsubtitlemetadata}"},
+        {"streamencodeargs",             "{conf:streaminput} {conf:streamvideo} {conf:streamaudio} {conf:streamsubtitles} {conf:streamverbosity} {conf:streamoutput}"},
+        {"hlsinput",                     "-i -"},
+        {"hlsoutputformat",              "hls"},
+        {"hlssegmenttime",               "4"},
+        {"hlssegmentcount",              "10"},
+        {"hlsoutputpath",                "{conf:*recordingsdir}/Stream"},
+        {"hlsoutputfilename",            "{conf:hlsoutputpath}/{hlsoutputfilename}.m3u8"},
+        {"hlsoutputargs",                "-hls_time {conf:hlssegmenttime} -hls_list_size {conf:hlssegmentcount} -hls_wrap {conf:hlssegmentcount} -hls_flags delete_segments -hls_playlist_type event \"{conf:hlsoutputfilename}\""},
+        {"hlsoutput",                    "-f {conf:hlsoutputformat} {conf:hlsoutputargs}"},
+        {"hlsverbosity",                 "-v quiet"},
+        {"hlsh264preset",                "ultrafast"},
+        {"hlsh264crf",                   "22"},
+        {"hlsmaxvideorate",              "{conf:maxvideorate}"},
+        {"hlsh264bufsize",               "{conf:h264bufsize}"},
+        {"hlsencodeflags",               "frag_keyframe+faststart+empty_moov"},
+        {"hlsvideofilters",              "{conf:videofilters}"},
+        {"hlsotherargs",                 "-tune zerolatency -strict experimental -g 25 -sc_threshold 0"},
+        {"hlsh264video",                 "-vcodec h264 -preset {conf:hlsh264preset} -crf {conf:hlsh264crf} {conf:hlsotherargs} -movflags {conf:hlsencodeflags}"},
+        {"hlsvideo",                     "{conf:hlsh264video} {conf:hlsvideofilters}"},
+        {"hlsaacbitrate",                "{conf:aacbitrate}"},
+        {"hlsmp3bitrate",                "{conf:mp3bitrate}"},
+        {"hlsaudiofilters",              "{conf:audiofilters}"},
+        {"hlsaacaudio",                  "-acodec aac -b:a {conf:hlsaacbitrate}"},
+        {"hlsmp3audio",                  "-acodec libmp3lame -b:a {conf:hlsmp3bitrate}"},
+        {"hlsaudio",                     "{conf:hlsaacaudio} {conf:hlsaudiofilters}"},
+        {"hlssubtitlelang",              "eng"},
+        {"hlssubtitlemetadata",          "-metadata:s:s:0 language={conf:hlssubtitlelang}"},
+        {"hlssubtitlecodec",             "-scodec copy"},
+        {"hlssubtitles",                 "{conf:hlssubtitlecodec} {conf:hlssubtitlemetadata}"},
+        {"hlscleanup",                   "rm \"{conf:hlsoutputfilename}\" \"{conf:hlsoutputpath}/{hlsoutputfilename}\"*.ts"},
+        {"hlsencodeargs",                "{conf:hlsinput} {conf:hlsvideo} {conf:hlsaudio} {conf:hlssubtitles} {conf:hlsverbosity} {conf:hlsoutput}"},
     };
     uint_t i;
 
@@ -1006,6 +1040,16 @@ AString ADVBConfig::GetVideoPlayerCommand() const
 AString ADVBConfig::GetStreamEncoderCommand() const
 {
     return GetConfigItem("streamencodercmd", ReplaceTerms(AString(GetVideoEncoder() + " " + GetConfigItem("streamencodeargs"))));
+}
+
+AString ADVBConfig::GetHLSEncoderCommand() const
+{
+    return GetConfigItem("hlsencodercmd", ReplaceTerms(AString(GetVideoEncoder() + " " + GetConfigItem("hlsencodeargs"))));
+}
+
+AString ADVBConfig::GetHLSCleanCommand() const
+{
+    return GetConfigItem("hlscleanupcmd", ReplaceTerms(GetConfigItem("hlscleanup")));
 }
 
 AString ADVBConfig::GetTempFileSuffix() const

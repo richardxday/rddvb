@@ -340,6 +340,8 @@ public:
     uint_t  GetMPlayerCacheMinSize()         const; // extractconfig()
     AString GetVideoPlayerCommand()          const; // extractconfig()
     AString GetStreamEncoderCommand()        const; // extractconfig()
+    AString GetHLSEncoderCommand()           const; // extractconfig()
+    AString GetHLSCleanCommand()             const; // extractconfig()
 
     AString GetTempFileSuffix()              const; // extractconfig()
     AString GetRecordedFileSuffix()          const; // extractconfig()
