@@ -93,7 +93,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"hlsinput",                     "-i -"},
         {"hlsoutputformat",              "hls"},
         {"hlssegmenttime",               "4"},
-        {"hlssegmentcount",              "10"},
+        {"hlssegmentcount",              "150"},
         {"hlsoutputpath",                "{conf:*recordingsdir}/Stream"},
         {"hlsoutputfilename",            "{conf:hlsoutputpath}/{hlsoutputfilename}.m3u8"},
         {"hlsoutputargs",                "-hls_time {conf:hlssegmenttime} -hls_list_size {conf:hlssegmentcount} -hls_wrap {conf:hlssegmentcount} -hls_flags delete_segments -hls_playlist_type event \"{conf:hlsoutputfilename}\""},

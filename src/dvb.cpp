@@ -2291,9 +2291,6 @@ int main(int argc, const char *argv[])
                     if (config.LogRemoteCommands()) {
                         config.logit("Running command '%s'", cmd.str());
                     }
-                    else {
-                        fprintf(stderr, "Running command '%s'\n", cmd.str());
-                    }
 
                     int res2 = system(cmd);
                     (void)res2;
