@@ -228,3 +228,68 @@ AString SanitizeString(const AString& str, bool filesystem, bool dir)
 
     return res;
 }
+
+bool FindActiveStreamingProcesses(std::vector<dvbstreamprocs_t>& procs)
+{
+    const ADVBConfig& config = ADVBConfig::Get();
+    AString tempfile = config.GetTempFile("streams", ".txt");
+    AString cmd;
+    bool success = false;
+
+    cmd.printf("bash -c 'pgrep -a dvbstream >\"%s\"'", tempfile.str());
+    if (system(cmd) == 0) {
+        AStdFile fp;
+
+        if (fp.open(tempfile)) {
+            static const AString cardid   = "-c";
+            static const AString freqid   = "-f";
+            static const AString timeid   = "-n";
+            static const AString outputid = "-o";
+            AString line;
+
+            while (line.ReadLn(fp) >= 0) {
+                dvbstreamprocs_t proc;
+                int i, n = line.CountWords();
+
+                proc.pid   = 0;
+                proc.pcard = 0;
+                proc.vcard = 0;
+                proc.freq  = 0;
+                proc.time  = 0;
+
+                for (i = 0; i < n; i++) {
+                    AString word = line.Word(i);
+
+                    if (i == 0) {
+                        proc.pid = (uint32_t)line.Word(i);
+                    }
+                    else if (i >= 2) {
+                        if (word == cardid) {
+                            proc.pcard = (uint_t)line.Word(++i);
+                            proc.vcard = config.GetVirtualDVBCard(proc.pcard);
+                        }
+                        else if (word == freqid) {
+                            proc.freq = (uint32_t)line.Word(++i);
+                        }
+                        else if (word == timeid) {
+                            proc.time = (uint32_t)line.Word(++i);
+                        }
+                        else if (word[0] != '-') {
+                            proc.pids.push_back((uint_t)word);
+                        }
+                    }
+                }
+
+                procs.push_back(proc);
+            }
+
+            fp.close();
+
+            success = true;
+        }
+    }
+
+    remove(tempfile);
+
+    return success;
+}

@@ -414,6 +414,8 @@ public:
 
     AString GetGraphSuffix()                 const; // extractconfig()
 
+    AString GetStreamListingCommand(const AString& pattern, const AString& tempfile) const; // extractconfig()
+
     uint_t  GetMinimalDataRate(const AString& filesuffix) const; // extractconfig("<filesuffix>")
 
     uint_t  GetScheduleReportVerbosity(const AString& type = "") const; // extractconfig("<type>")

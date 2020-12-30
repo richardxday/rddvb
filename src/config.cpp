@@ -1292,6 +1292,20 @@ AString ADVBConfig::GetGraphSuffix() const
     return GetConfigItem("graphsuffix", "svg");
 }
 
+AString ADVBConfig::GetStreamListingCommand(const AString& pattern, const AString& tempfile) const
+{
+    AString cmd;
+
+    if (GetStreamSlave().Valid()) {
+        cmd.printf("bash -c 'pgrep -a ssh | grep dvb | grep \"%s\" | grep -E \"\\--stream \\\"%s\\\"\" | sed -E \"s/^([0-9]+).+--stream \\\"(.+)\\\".*$/\\1 \\2/\" >\"%s\"'", GetStreamSlave().str(), pattern.str(), tempfile.str());
+    }
+    else {
+        cmd.printf("bash -c 'pgrep -a dvb | grep -E \"\\--stream %s\" | sed -E \"s/^([0-9]+).+--stream (.+)$/\\1 \\2/\" >\"%s\"'", pattern.str(), tempfile.str());
+    }
+
+    return cmd;
+}
+
 uint_t ADVBConfig::GetMinimalDataRate(const AString& filesuffix) const
 {
     return (uint_t)GetHierarchicalConfigItem("", "mindatarate", filesuffix);

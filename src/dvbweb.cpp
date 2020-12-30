@@ -18,7 +18,7 @@
 #include "dvbpatterns.h"
 #include "findcards.h"
 #include "channellist.h"
-#include "rdlib/StdFile.h"
+#include "dvbstreams.h"
 
 typedef struct {
     AString title;
@@ -328,62 +328,33 @@ int main(int argc, char *argv[])
     }
 
     if (Value(vars, val, "liststreams")) {
-        AString tempfile = config.GetTempFile("streams", ".txt");
-        AString cmd;
+        rapidjson::Value subobj;
+        std::vector<dvbstream_t> streams;
 
-        cmd.printf("bash -c 'pgrep -a ssh | grep dvb | grep \"%s\" | grep -E \"\\--stream \\\".+\\\"\" | sed -E \"s/^.+--stream \\\"(.+)\\\".*$/\\1/\" >\"%s\"'", config.GetRecordingSlave().str(), tempfile.str());
-        if (system(cmd) == 0) {
-            AStdFile fp;
+        subobj.SetArray();
 
-            if (fp.open(tempfile)) {
-                rapidjson::Value subobj;
-                AString line;
-
-                subobj.SetArray();
-
-                while (line.ReadLn(fp) >= 0) {
-                    subobj.PushBack(rapidjson::Value(line.str(), allocator), allocator);
-                }
-
-                fp.close();
-
-                doc.AddMember("activestreams", subobj, allocator);
+        if (ListDVBStreams(val, streams)) {
+            for (size_t j = 0; j < streams.size(); j++) {
+                subobj.PushBack(rapidjson::Value(streams[j].name.str(), allocator), allocator);
             }
+
+            doc.AddMember("activestreams", subobj, allocator);
         }
-        remove(tempfile);
     }
 
     if (Value(vars, val, "stopstreams")) {
-        AString tempfile = config.GetTempFile("streams", ".txt");
-        AString cmd;
+        rapidjson::Value subobj;
+        std::vector<dvbstream_t> streams;
 
-        cmd.printf("bash -c 'pgrep -a ssh | grep dvb | grep \"%s\" | grep -E \"\\--stream \\\"%s\\\"\" | sed -E \"s/^([0-9]+).+--stream \\\"(.+)\\\".*$/\\1 \\2/\" >\"%s\"'", config.GetRecordingSlave().str(), val.str(), tempfile.str());
-        if (system(cmd) == 0) {
-            AStdFile fp;
+        subobj.SetArray();
 
-            if (fp.open(tempfile)) {
-                rapidjson::Value subobj;
-                AString line;
-
-                subobj.SetArray();
-
-                while (line.ReadLn(fp) >= 0) {
-                    AString cmd2;
-                    uint_t pid = (uint_t)line.Word(0);
-
-                    cmd2.printf("bash -c 'kill -SIGINT %u'", pid);
-
-                    if (system(cmd2) == 0) {
-                        subobj.PushBack(rapidjson::Value(line.Words(1).str(), allocator), allocator);
-                    }
-                }
-
-                fp.close();
-
-                doc.AddMember("streamsstopped", subobj, allocator);
+        if (StopDVBStreams(val, streams)) {
+            for (size_t j = 0; j < streams.size(); j++) {
+                subobj.PushBack(rapidjson::Value(streams[j].name.str(), allocator), allocator);
             }
+
+            doc.AddMember("stoppedstreams", subobj, allocator);
         }
-        remove(tempfile);
     }
 
     if (Value(vars, val, "parse")) {

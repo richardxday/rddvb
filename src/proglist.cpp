@@ -3534,7 +3534,7 @@ ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate, con
     return trend;
 }
 
-ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector<TIMEGAP>& gaps) const
+ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector<TIMEGAP>& gaps, const std::map<uint_t,bool> *cardstoavoid) const
 {
     const ADVBConfig& config = ADVBConfig::Get();
     std::vector<std::vector<const ADVBProg *> > lists;
@@ -3578,7 +3578,9 @@ ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector
             else gap.end = list[0]->GetRecordStartDT();
         }
 
-        if ((gap.start <= start) &&
+        if (((cardstoavoid == NULL) ||
+             (cardstoavoid->find(gap.card) == cardstoavoid->end())) &&
+            (gap.start <= start) &&
             ((gap.end - gap.start) > (res.end - res.start))) {
             res = gap;
         }

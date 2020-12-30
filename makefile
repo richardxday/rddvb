@@ -21,6 +21,7 @@ OBJECTS :=										\
 	dvbmisc.o									\
 	dvbpatterns.o								\
 	dvbprog.o									\
+	dvbstreams.o								\
 	episodehandler.o							\
 	findcards.o									\
 	iconcache.o									\
@@ -34,6 +35,7 @@ HEADERS :=										\
 	dvbmisc.h									\
 	dvbpatterns.h								\
 	dvbprog.h									\
+	dvbstreams.h								\
 	episodehandler.h							\
 	findcards.h									\
 	iconcache.h									\

@@ -142,7 +142,7 @@ public:
         ADateTime end;
         uint_t card;
     } TIMEGAP;
-    TIMEGAP FindGaps(const ADateTime& start, std::vector<TIMEGAP>& gaps) const;
+    TIMEGAP FindGaps(const ADateTime& start, std::vector<TIMEGAP>& gaps, const std::map<uint_t,bool> *cardstoavoid = NULL) const;
 
     bool RecordImmediately(const ADateTime& dt, const AString& title, const AString& user = "", uint64_t maxminutes = 3600) const;
 

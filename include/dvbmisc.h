@@ -1,6 +1,9 @@
 #ifndef __DVB_MISC__
 #define __DVB_MISC__
 
+#include <vector>
+#include <map>
+
 #include <rdlib/misc.h>
 #include <rdlib/strsup.h>
 
@@ -32,5 +35,15 @@ extern bool CopyFile(const AString& src, const AString& dst, bool binary = true)
 extern bool MoveFile(const AString& src, const AString& dst, bool binary = true);
 
 extern AString SanitizeString(const AString& str, bool filesystem = false, bool dir = false);
+
+typedef struct {
+    uint32_t pid;
+    uint32_t freq;
+    uint_t   pcard;     ///< physical card
+    uint_t   vcard;     ///< virtual card
+    uint32_t time;
+    std::vector<uint_t> pids;
+} dvbstreamprocs_t;
+extern bool FindActiveStreamingProcesses(std::vector<dvbstreamprocs_t>& procs);
 
 #endif
