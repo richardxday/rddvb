@@ -18,6 +18,7 @@
 #include "dvbpatterns.h"
 #include "findcards.h"
 #include "channellist.h"
+#include "rdlib/StdFile.h"
 
 typedef struct {
     AString title;
@@ -301,6 +302,67 @@ int main(int argc, char *argv[])
         bool commit = (val == "commit");
 
         ADVBProgList::SchedulePatterns(ADateTime().TimeStamp(true), commit);
+    }
+
+    if (Value(vars, val, "hlsstream")) {
+        AString tempfile = config.GetTempFile("hlsstream", "txt");
+        AString cmd;
+
+        cmd.printf("(dvb --hlsstream \"%s\" >\"%s\" ; rm \"%s\") &", val.str(), tempfile.str(), tempfile.str());
+        int res2 = system(cmd);
+        (void)res2;
+    }
+
+    if (Value(vars, val, "liststreams")) {
+        AString tempfile = config.GetTempFile("streams", "txt");
+        AString cmd;
+
+        cmd.printf("pgrep -a ssh | grep dvb | grep \"%s\" | grep -E \"\\--stream \\\".+\\\"\" | sed -E \"s/^.+--stream \\\"(.+)\\\".*$/\1/\" >\"%s\"", config.GetRecordingSlave().str(), tempfile.str());
+        if (system(cmd) == 0) {
+            AStdFile fp;
+
+            if (fp.open(tempfile)) {
+                rapidjson::Value subobj;
+                AString line;
+
+                while (line.ReadLn(fp) >= 0) {
+                    subobj.PushBack(rapidjson::Value(line.str(), allocator), allocator);
+                }
+
+                fp.close();
+
+                doc.AddMember("activestreams", subobj, allocator);
+            }
+        }
+        remove(tempfile);
+    }
+
+    if (Value(vars, val, "stopstream")) {
+        AString tempfile = config.GetTempFile("streams", "txt");
+        AString cmd;
+
+        cmd.printf("pgrep -a ssh | grep dvb | grep \"%s\" | grep -E \"\\--stream \\\"%s\\\"\" >\"%s\" | sed -E \"s/^([0-9]+).+--stream \\\"(.+)\\\".*$/\1 \2/\"", config.GetRecordingSlave().str(), val.str(), tempfile.str());
+        if (system(cmd) == 0) {
+            AStdFile fp;
+
+            if (fp.open(tempfile)) {
+                rapidjson::Value subobj;
+                AString line;
+
+                while (line.ReadLn(fp) >= 0) {
+                    cmd.printf("kill -SIGINT %u", (uint_t)line.Word(0));
+
+                    if (system(cmd) == 0) {
+                        subobj.PushBack(rapidjson::Value(line.Words(1).str(), allocator), allocator);
+                    }
+                }
+
+                fp.close();
+
+                doc.AddMember("streamsstopped", subobj, allocator);
+            }
+        }
+        remove(tempfile);
     }
 
     if (Value(vars, val, "parse")) {
