@@ -85,12 +85,10 @@ static bool argsvalid(int argc, const char *argv[], int i, const OPTION& option)
 static bool preparehlsstreaming(const AString& name)
 {
     const ADVBConfig& config   = ADVBConfig::Get();
-    const AString     dir      = config.GetConfigItem("hlsoutputpath").SearchAndReplace("{hlsname}", name);
-    const AString     srcfile  = config.GetConfigItem("hlsstreamhtmlsourcefile").SearchAndReplace("{hlsname}", name);
-    const AString     destfile = config.GetConfigItem("hlsstreamhtmldestfile").SearchAndReplace("{hlsname}", name);
+    const AString     dir      = config.GetHLSConfigItem("hlsoutputpath", name);
+    const AString     srcfile  = config.GetHLSConfigItem("hlsstreamhtmlsourcefile", name);
+    const AString     destfile = config.GetHLSConfigItem("hlsstreamhtmldestfile", name);
     bool success = false;
-
-    fprintf(stderr, "Dir '%s', source file '%s', dest file '%s'\n", dir.str(), srcfile.str(), destfile.str());
 
     if (CreateDirectory(dir)) {
         AStdFile ifp, ofp;
@@ -99,8 +97,8 @@ static bool preparehlsstreaming(const AString& name)
             if (ofp.open(destfile, "w")) {
                 AString line;
 
-                while (line.ReadLn(ifp) > 0) {
-                    line = config.ReplaceTerms("", line, "").SearchAndReplace("{hlsdir}", dir).SearchAndReplace("{hlsname}", name);
+                while (line.ReadLn(ifp) >= 0) {
+                    line = config.ReplaceHLSTerms(config.ReplaceTerms(line), name).SearchAndReplace("{hlsdir}", dir);
                     ofp.printf("%s\n", line.str());
                 }
 
@@ -2201,8 +2199,7 @@ int main(int argc, const char *argv[])
                 bool rawstream = (stricmp(argv[i], "--rawstream") == 0);
                 bool mp4stream = (stricmp(argv[i], "--mp4stream") == 0);
                 bool hlsstream = (stricmp(argv[i], "--hlsstream") == 0);
-                AString text          = AString(argv[++i]).DeEscapify();
-                AString sanitizedtext = SanitizeString(text, true, true);
+                AString text = AString(argv[++i]).DeEscapify();
                 AString cmd, pipecmd;
 
                 ADVBConfig::GetWriteable(true);
@@ -2211,8 +2208,8 @@ int main(int argc, const char *argv[])
                     pipecmd.printf("| %s", config.GetStreamEncoderCommand().str());
                 }
                 else if (hlsstream) {
-                    preparehlsstreaming(sanitizedtext);
-                    pipecmd.printf("| %s", config.GetHLSEncoderCommand().SearchAndReplace("{hlsname}", sanitizedtext).str());
+                    preparehlsstreaming(text);
+                    pipecmd.printf("| %s", config.ReplaceHLSTerms(config.GetHLSEncoderCommand(), text).str());
                 }
                 else if (!rawstream) {
                     pipecmd.printf("| %s", config.GetVideoPlayerCommand().str());
@@ -2332,7 +2329,7 @@ int main(int argc, const char *argv[])
                     (void)res2;
 
                     if (hlsstream) {
-                        res2 = system(config.GetHLSCleanCommand().SearchAndReplace("{hlsname}", sanitizedtext));
+                        res2 = system(config.ReplaceHLSTerms(config.GetHLSCleanCommand(), text));
                         (void)res2;
                     }
                 }

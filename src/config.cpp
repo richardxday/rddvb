@@ -13,6 +13,7 @@
 #include <rdlib/Recurse.h>
 
 #include "config.h"
+#include "dvbmisc.h"
 #include "findcards.h"
 #include "rdlib/SettingsHandler.h"
 
@@ -99,10 +100,10 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"hlsoutputformat",              "hls"},
         {"hlssegmenttime",               "4"},
         {"hlssegmentcount",              "150"},
-        {"hlsoutputpath",                "{conf:*recordingsdir}/Stream/{hlsname}"},
-        {"hlsoutputfilename",            "{hlsname}.m3u8"},
+        {"hlsoutputpath",                "{conf:*recordingsdir}/Stream/{hlssanitizedname}"},
+        {"hlsoutputfilename",            "{hlssanitizedname}.m3u8"},
         {"hlsoutputfullpath",            "{conf:hlsoutputpath}/{conf:hlsoutputfilename}"},
-        {"hlscleanup",                   "rm -fr \"{conf:hlsoutputfullpath}\""},
+        {"hlscleanup",                   "rm -fr \"{conf:hlsoutputpath}\""},
         {"hlsoutputargs",                "-hls_time {conf:hlssegmenttime} -hls_list_size {conf:hlssegmentcount} -hls_wrap {conf:hlssegmentcount} -hls_flags delete_segments -hls_playlist_type event \"{conf:hlsoutputfullpath}\""},
         {"hlsoutput",                    "-f {conf:hlsoutputformat} {conf:hlsoutputargs}"},
         {"hlsverbosity",                 "-v quiet"},
@@ -127,7 +128,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"hlssubtitles",                 "{conf:hlssubtitlecodec} {conf:hlssubtitlemetadata}"},
         {"hlsencodeargs",                "{conf:hlsinput} {conf:hlsvideo} {conf:hlsaudio} {conf:hlsverbosity} {conf:hlsoutput}"},
         {"hlsstreamhtmlsourcefile",      "{conf:sharedir}/stream/hlsstream.html"},
-        {"hlsstreamhtmldestfile",        "{conf:hlsoutputpath}/{hlsname}.html"},
+        {"hlsstreamhtmldestfile",        "{conf:hlsoutputpath}/{hlssanitizedname}.html"},
     };
     uint_t i;
 
@@ -1343,4 +1344,14 @@ AString ADVBConfig::ListLiveConfigValues() const
     }
 
     return res;
+}
+
+AString ADVBConfig::ReplaceHLSTerms(const AString& str, const AString& name) const
+{
+    return str.SearchAndReplace("{hlssanitizedname}", SanitizeString(name, true)).SearchAndReplace("{hlsname}", name);
+}
+
+AString ADVBConfig::GetHLSConfigItem(const AString& item, const AString& name) const
+{
+    return ReplaceHLSTerms(GetConfigItem(item), name);
 }
