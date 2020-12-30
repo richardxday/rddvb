@@ -104,7 +104,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"hlsoutputpath",                "{conf:hlsoutputbase}/{hlssanitizedname}"},
         {"hlsoutputfilename",            "{hlssanitizedname}.m3u8"},
         {"hlsoutputfullpath",            "{conf:hlsoutputpath}/{conf:hlsoutputfilename}"},
-        {"hlscleanup",                   "rm -fr \"{conf:hlsoutputpath}\""},
+        {"hlscleanup",                   "rm -fr \"{conf:hlsstreamhtmldestfile}\" \"{conf:hlsoutputpath}\""},
         {"hlsoutputargs",                "-hls_time {conf:hlssegmenttime} -hls_list_size {conf:hlssegmentcount} -hls_wrap {conf:hlssegmentcount} -hls_flags delete_segments -hls_playlist_type event \"{conf:hlsoutputfullpath}\""},
         {"hlsoutput",                    "-f {conf:hlsoutputformat} {conf:hlsoutputargs}"},
         {"hlsverbosity",                 "-v quiet"},
