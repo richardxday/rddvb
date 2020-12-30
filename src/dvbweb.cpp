@@ -232,6 +232,8 @@ int main(int argc, char *argv[])
     AString             val, logdata, errors;
     int  i;
 
+    doc.SetObject();
+
     (void)prog;
 
     enabledebug(false);
@@ -304,26 +306,40 @@ int main(int argc, char *argv[])
         ADVBProgList::SchedulePatterns(ADateTime().TimeStamp(true), commit);
     }
 
-    if (Value(vars, val, "hlsstream")) {
-        AString tempfile = config.GetTempFile("hlsstream", "txt");
+    if (Value(vars, val, "starthlsstream")) {
+        rapidjson::Value subobj;
+        AString tempfile = config.GetTempFile("hlsstream", ".txt");
         AString cmd;
 
-        cmd.printf("(dvb --hlsstream \"%s\" >\"%s\" ; rm \"%s\") &", val.str(), tempfile.str(), tempfile.str());
-        int res2 = system(cmd);
-        (void)res2;
+        subobj.SetArray();
+
+        cmd.printf("bash -c 'dvb --hlsstream \"%s\" 2>\"%s\" ; rm \"%s\"' &", val.str(), tempfile.str(), tempfile.str());
+        if (system(cmd) == 0) {
+            subobj.PushBack(rapidjson::Value(val.str(), allocator), allocator);
+
+            doc.AddMember("startedstreams", subobj, allocator);
+        }
+        else
+        {
+            subobj.PushBack(rapidjson::Value(val.str(), allocator), allocator);
+
+            doc.AddMember("failedstreams", subobj, allocator);
+        }
     }
 
     if (Value(vars, val, "liststreams")) {
-        AString tempfile = config.GetTempFile("streams", "txt");
+        AString tempfile = config.GetTempFile("streams", ".txt");
         AString cmd;
 
-        cmd.printf("pgrep -a ssh | grep dvb | grep \"%s\" | grep -E \"\\--stream \\\".+\\\"\" | sed -E \"s/^.+--stream \\\"(.+)\\\".*$/\1/\" >\"%s\"", config.GetRecordingSlave().str(), tempfile.str());
+        cmd.printf("bash -c 'pgrep -a ssh | grep dvb | grep \"%s\" | grep -E \"\\--stream \\\".+\\\"\" | sed -E \"s/^.+--stream \\\"(.+)\\\".*$/\\1/\" >\"%s\"'", config.GetRecordingSlave().str(), tempfile.str());
         if (system(cmd) == 0) {
             AStdFile fp;
 
             if (fp.open(tempfile)) {
                 rapidjson::Value subobj;
                 AString line;
+
+                subobj.SetArray();
 
                 while (line.ReadLn(fp) >= 0) {
                     subobj.PushBack(rapidjson::Value(line.str(), allocator), allocator);
@@ -337,11 +353,11 @@ int main(int argc, char *argv[])
         remove(tempfile);
     }
 
-    if (Value(vars, val, "stopstream")) {
-        AString tempfile = config.GetTempFile("streams", "txt");
+    if (Value(vars, val, "stopstreams")) {
+        AString tempfile = config.GetTempFile("streams", ".txt");
         AString cmd;
 
-        cmd.printf("pgrep -a ssh | grep dvb | grep \"%s\" | grep -E \"\\--stream \\\"%s\\\"\" >\"%s\" | sed -E \"s/^([0-9]+).+--stream \\\"(.+)\\\".*$/\1 \2/\"", config.GetRecordingSlave().str(), val.str(), tempfile.str());
+        cmd.printf("bash -c 'pgrep -a ssh | grep dvb | grep \"%s\" | grep -E \"\\--stream \\\"%s\\\"\" | sed -E \"s/^([0-9]+).+--stream \\\"(.+)\\\".*$/\\1 \\2/\" >\"%s\"'", config.GetRecordingSlave().str(), val.str(), tempfile.str());
         if (system(cmd) == 0) {
             AStdFile fp;
 
@@ -349,10 +365,15 @@ int main(int argc, char *argv[])
                 rapidjson::Value subobj;
                 AString line;
 
-                while (line.ReadLn(fp) >= 0) {
-                    cmd.printf("kill -SIGINT %u", (uint_t)line.Word(0));
+                subobj.SetArray();
 
-                    if (system(cmd) == 0) {
+                while (line.ReadLn(fp) >= 0) {
+                    AString cmd2;
+                    uint_t pid = (uint_t)line.Word(0);
+
+                    cmd2.printf("bash -c 'kill -SIGINT %u'", pid);
+
+                    if (system(cmd2) == 0) {
                         subobj.PushBack(rapidjson::Value(line.Words(1).str(), allocator), allocator);
                     }
                 }
@@ -694,8 +715,6 @@ int main(int argc, char *argv[])
                 }
             }
         }
-
-        doc.SetObject();
 
         {
             uint_t i, nitems, offset, count = pagesize;
