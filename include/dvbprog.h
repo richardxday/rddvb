@@ -653,8 +653,6 @@ protected:
     static uint16_t GetPriDataOffset();
     static uint16_t GetScoreDataOffset();
 
-    static AString SanitizeString(const AString& str, bool filesystem = false, bool dir = false);
-
     uint64_t GetDate(const AString& str, const AString& fieldname) const;
 
     const char *GetString(uint16_t offset)   const {return data->strdata + offset;}

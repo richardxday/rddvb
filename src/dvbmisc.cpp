@@ -208,3 +208,23 @@ bool MoveFile(const AString& src, const AString& dst, bool binary)
 
     return success;
 }
+
+AString SanitizeString(const AString& str, bool filesystem, bool dir)
+{
+    AString res;
+
+    if (filesystem) {
+        AStringUpdate updater(&res);
+        sint_t i;
+
+        for (i = 0; i < str.len(); i++) {
+            char c = str[i];
+
+            if      (IsSymbolChar(c) || (c == '.') || (c == '-') || (dir && (c == ' '))) updater.Update(c);
+            else if ((c == '/') || IsWhiteSpace(c)) updater.Update('_');
+        }
+    }
+    else res = str;
+
+    return res;
+}

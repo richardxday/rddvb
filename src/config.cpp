@@ -33,6 +33,11 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
     } __defaults[] = {
         {"username",                     pw->pw_name},
         {"homedir",                      pw->pw_dir},
+        {"confdir",                      DEFAULTCONFDIR},
+        {"datadir",                      DEFAULTDATADIR},
+        {"logdir",                       DEFAULTLOGDIR},
+        {"sharedir",                     RDDVB_SHARE_DIR},
+        {"tempdir",                      RDDVB_ROOT_DIR "tmp"},
         {"prehandle",                    "2"},
         {"posthandle",                   "3"},
         {"pri",                          "0"},
@@ -94,9 +99,11 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"hlsoutputformat",              "hls"},
         {"hlssegmenttime",               "4"},
         {"hlssegmentcount",              "150"},
-        {"hlsoutputpath",                "{conf:*recordingsdir}/Stream"},
-        {"hlsoutputfilename",            "{conf:hlsoutputpath}/{hlsoutputfilename}.m3u8"},
-        {"hlsoutputargs",                "-hls_time {conf:hlssegmenttime} -hls_list_size {conf:hlssegmentcount} -hls_wrap {conf:hlssegmentcount} -hls_flags delete_segments -hls_playlist_type event \"{conf:hlsoutputfilename}\""},
+        {"hlsoutputpath",                "{conf:*recordingsdir}/Stream/{hlsname}"},
+        {"hlsoutputfilename",            "{hlsname}.m3u8"},
+        {"hlsoutputfullpath",            "{conf:hlsoutputpath}/{conf:hlsoutputfilename}"},
+        {"hlscleanup",                   "rm -fr \"{conf:hlsoutputfullpath}\""},
+        {"hlsoutputargs",                "-hls_time {conf:hlssegmenttime} -hls_list_size {conf:hlssegmentcount} -hls_wrap {conf:hlssegmentcount} -hls_flags delete_segments -hls_playlist_type event \"{conf:hlsoutputfullpath}\""},
         {"hlsoutput",                    "-f {conf:hlsoutputformat} {conf:hlsoutputargs}"},
         {"hlsverbosity",                 "-v quiet"},
         {"hlsh264preset",                "ultrafast"},
@@ -118,8 +125,9 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"hlssubtitlemetadata",          "-metadata:s:s:0 language={conf:hlssubtitlelang}"},
         {"hlssubtitlecodec",             "-scodec copy"},
         {"hlssubtitles",                 "{conf:hlssubtitlecodec} {conf:hlssubtitlemetadata}"},
-        {"hlscleanup",                   "rm \"{conf:hlsoutputfilename}\" \"{conf:hlsoutputpath}/{hlsoutputfilename}\"*.ts"},
-        {"hlsencodeargs",                "{conf:hlsinput} {conf:hlsvideo} {conf:hlsaudio} {conf:hlssubtitles} {conf:hlsverbosity} {conf:hlsoutput}"},
+        {"hlsencodeargs",                "{conf:hlsinput} {conf:hlsvideo} {conf:hlsaudio} {conf:hlsverbosity} {conf:hlsoutput}"},
+        {"hlsstreamhtmlsourcefile",      "{conf:sharedir}/stream/hlsstream.html"},
+        {"hlsstreamhtmldestfile",        "{conf:hlsoutputpath}/{hlsname}.html"},
     };
     uint_t i;
 
@@ -134,12 +142,12 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
     std::map<AString, AString> dirs;
     AString dir;
 
-    dirs[GetConfigDir()] = "config";
-    dirs[GetDataDir()] = "data";
-    dirs[GetLogDir()] = "log";
+    dirs[GetConfigDir()]            = "config";
+    dirs[GetDataDir()]              = "data";
+    dirs[GetLogDir()]               = "log";
     dirs[GetRecordingsStorageDir()] = "recording storage";
-    dirs[GetRecordingsDir()] = "recordings";
-    dirs[GetTempDir()] = "temp";
+    dirs[GetRecordingsDir()]        = "recordings";
+    dirs[GetTempDir()]              = "temp";
     if (((dir = GetRecordingsArchiveDir()).Valid()) && (dir.Pos("{") < 0)) {
         dirs[dir] = "archive";
     }

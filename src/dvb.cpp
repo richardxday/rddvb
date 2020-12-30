@@ -16,6 +16,7 @@
 
 #include "config.h"
 #include "dvblock.h"
+#include "dvbmisc.h"
 #include "proglist.h"
 #include "channellist.h"
 #include "findcards.h"
@@ -79,6 +80,49 @@ static bool argsvalid(int argc, const char *argv[], int i, const OPTION& option)
     }
 
     return valid;
+}
+
+static bool preparehlsstreaming(const AString& name)
+{
+    const ADVBConfig& config   = ADVBConfig::Get();
+    const AString     dir      = config.GetConfigItem("hlsoutputpath").SearchAndReplace("{hlsname}", name);
+    const AString     srcfile  = config.GetConfigItem("hlsstreamhtmlsourcefile").SearchAndReplace("{hlsname}", name);
+    const AString     destfile = config.GetConfigItem("hlsstreamhtmldestfile").SearchAndReplace("{hlsname}", name);
+    bool success = false;
+
+    fprintf(stderr, "Dir '%s', source file '%s', dest file '%s'\n", dir.str(), srcfile.str(), destfile.str());
+
+    if (CreateDirectory(dir)) {
+        AStdFile ifp, ofp;
+
+        if (ifp.open(srcfile)) {
+            if (ofp.open(destfile, "w")) {
+                AString line;
+
+                while (line.ReadLn(ifp) > 0) {
+                    line = config.ReplaceTerms("", line, "").SearchAndReplace("{hlsdir}", dir).SearchAndReplace("{hlsname}", name);
+                    ofp.printf("%s\n", line.str());
+                }
+
+                ofp.close();
+
+                success = true;
+            }
+            else {
+                fprintf(stderr, "Failed to open file '%s' for writing\n", destfile.str());
+            }
+
+            ifp.close();
+        }
+        else {
+            fprintf(stderr, "Failed to open file '%s' for reading\n", srcfile.str());
+        }
+    }
+    else {
+        fprintf(stderr, "Failed to create directory '%s'\n", dir.str());
+    }
+
+    return success;
 }
 
 int main(int argc, const char *argv[])
@@ -2157,26 +2201,27 @@ int main(int argc, const char *argv[])
                 bool rawstream = (stricmp(argv[i], "--rawstream") == 0);
                 bool mp4stream = (stricmp(argv[i], "--mp4stream") == 0);
                 bool hlsstream = (stricmp(argv[i], "--hlsstream") == 0);
-                AString text = AString(argv[++i]).DeEscapify(), cmd;
+                AString text          = AString(argv[++i]).DeEscapify();
+                AString sanitizedtext = SanitizeString(text, true, true);
+                AString cmd, pipecmd;
 
                 ADVBConfig::GetWriteable(true);
 
+                if (mp4stream) {
+                    pipecmd.printf("| %s", config.GetStreamEncoderCommand().str());
+                }
+                else if (hlsstream) {
+                    preparehlsstreaming(sanitizedtext);
+                    pipecmd.printf("| %s", config.GetHLSEncoderCommand().SearchAndReplace("{hlsname}", sanitizedtext).str());
+                }
+                else if (!rawstream) {
+                    pipecmd.printf("| %s", config.GetVideoPlayerCommand().str());
+                }
+
                 if (config.GetStreamSlave().Valid()) {
-                    AString cmd1, cmd2;
+                    cmd.printf("dvb %s --stream \"%s\"", dvbcardspecified ? AString("--dvbcard %").Arg(dvbcard).str() : "", text.str());
 
-                    cmd1.printf("dvb %s --stream \"%s\"", dvbcardspecified ? AString("--dvbcard %").Arg(dvbcard).str() : "", text.str());
-
-                    if (mp4stream) {
-                        cmd2.printf("| %s", config.GetStreamEncoderCommand().str());
-                    }
-                    else if (hlsstream) {
-                        cmd2.printf("| %s", config.GetHLSEncoderCommand().SearchAndReplace("{hlsoutputfilename}", text).str());
-                    }
-                    else if (!rawstream) {
-                        cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
-                    }
-
-                    cmd = GetRemoteCommand(cmd1, cmd2, false, true);
+                    cmd = GetRemoteCommand(cmd, pipecmd, false, true);
                 }
                 else {
                     ADVBChannelList& channellist = ADVBChannelList::Get();
@@ -2213,19 +2258,7 @@ int main(int argc, const char *argv[])
                                     cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)std::min(maxtime.GetAbsoluteSecond(), (uint64_t)0xffffffff), pids);
 
                                     if (!config.IsRecordingSlave()) {
-                                        AString cmd2;
-
-                                        if (mp4stream) {
-                                            cmd2.printf("| %s", config.GetStreamEncoderCommand().str());
-                                        }
-                                        else if (hlsstream) {
-                                            cmd2.printf("| %s", config.GetHLSEncoderCommand().SearchAndReplace("{hlsoutputfilename}", text).str());
-                                        }
-                                        else if (!rawstream) {
-                                            cmd2.printf("| %s", config.GetVideoPlayerCommand().str());
-                                        }
-
-                                        cmd2 += " " + cmd2;
+                                        cmd += " " + pipecmd;
                                     }
                                 }
                                 else fprintf(stderr, "Failed to find PIDs for channel '%s'\n", text.str());
@@ -2291,12 +2324,15 @@ int main(int argc, const char *argv[])
                     if (config.LogRemoteCommands()) {
                         config.logit("Running command '%s'", cmd.str());
                     }
+                    else {
+                        fprintf(stderr, "Cmd: %s\n", cmd.str());
+                    }
 
                     int res2 = system(cmd);
                     (void)res2;
 
                     if (hlsstream) {
-                        res2 = system(config.GetHLSCleanCommand().SearchAndReplace("{hlsoutputfilename}", text));
+                        res2 = system(config.GetHLSCleanCommand().SearchAndReplace("{hlsname}", sanitizedtext));
                         (void)res2;
                     }
                 }

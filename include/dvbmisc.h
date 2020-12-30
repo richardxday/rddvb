@@ -31,4 +31,6 @@ extern bool CopyFile(AStdData& fp1, AStdData& fp2);
 extern bool CopyFile(const AString& src, const AString& dst, bool binary = true);
 extern bool MoveFile(const AString& src, const AString& dst, bool binary = true);
 
+extern AString SanitizeString(const AString& str, bool filesystem = false, bool dir = false);
+
 #endif

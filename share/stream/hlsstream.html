@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>{hlsname}</title>
+<script src="https://cdn.plyr.io/3.6.3/plyr.js"></script>
+</head>
+<script type="text/javascript">
+const player = new Plyr('video', {captions: {active: true}});
+// Expose player so it can be used from the console
+window.player = player;
+</script>
+<body>
+<h1>{hlsname}</h1><br>
+<center><div id="container"><video id="player" autoplay playsinline crossorigin controls data-poster="{conf:hlsname}">
+<source src="{conf:hlsname}">
+</video></div></center>
+<br><br>
+</body>
+<link rel="stylesheet" type="text/css" href="https://cdn.plyr.io/3.6.3/plyr.css" />
+</html>

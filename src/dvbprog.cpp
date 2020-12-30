@@ -2113,26 +2113,6 @@ AString ADVBProg::GetAttributedConfigItem(const AString& name, const AString& de
                                             config.GetHierarchicalConfigItem(GetUser(), name, GetTitle(), defval, defvalid));
 }
 
-AString ADVBProg::SanitizeString(const AString& str, bool filesystem, bool dir)
-{
-    AString res;
-
-    if (filesystem) {
-        AStringUpdate updater(&res);
-        sint_t i;
-
-        for (i = 0; i < str.len(); i++) {
-            char c = str[i];
-
-            if      (IsSymbolChar(c) || (c == '.') || (c == '-') || (dir && (c == ' '))) updater.Update(c);
-            else if ((c == '/') || IsWhiteSpace(c)) updater.Update('_');
-        }
-    }
-    else res = str;
-
-    return res;
-}
-
 void ADVBProg::SearchAndReplace(const AString& search, const AString& replace)
 {
     const uint16_t *strs = &data->strings.channel;
