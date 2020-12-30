@@ -100,7 +100,8 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"hlsoutputformat",              "hls"},
         {"hlssegmenttime",               "4"},
         {"hlssegmentcount",              "150"},
-        {"hlsoutputpath",                "{conf:*recordingsdir}/Stream/{hlssanitizedname}"},
+        {"hlsoutputbase",                "{conf:*recordingsdir}/Stream"},
+        {"hlsoutputpath",                "{conf:hlsoutputbase}/{hlssanitizedname}"},
         {"hlsoutputfilename",            "{hlssanitizedname}.m3u8"},
         {"hlsoutputfullpath",            "{conf:hlsoutputpath}/{conf:hlsoutputfilename}"},
         {"hlscleanup",                   "rm -fr \"{conf:hlsoutputpath}\""},
@@ -128,7 +129,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"hlssubtitles",                 "{conf:hlssubtitlecodec} {conf:hlssubtitlemetadata}"},
         {"hlsencodeargs",                "{conf:hlsinput} {conf:hlsvideo} {conf:hlsaudio} {conf:hlsverbosity} {conf:hlsoutput}"},
         {"hlsstreamhtmlsourcefile",      "{conf:sharedir}/stream/hlsstream.html"},
-        {"hlsstreamhtmldestfile",        "{conf:hlsoutputpath}/{hlssanitizedname}.html"},
+        {"hlsstreamhtmldestfile",        "{conf:hlsoutputbase}/{hlssanitizedname}.html"},
     };
     uint_t i;
 
