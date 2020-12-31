@@ -490,13 +490,15 @@ uint_t ADVBConfig::GetPhysicalDVBCard(uint_t n, bool forcemapping) const
     if (forcemapping || !dvbcards.size()) {
         (const_cast<ADVBConfig *>(this))->MapDVBCards();
     }
-
     return (n < dvbcards.size()) ? dvbcards[n] : 0;
 }
 
 uint_t ADVBConfig::GetVirtualDVBCard(uint_t n) const
 {
     std::vector<uint_t>::const_iterator it;
+    if (!dvbcards.size()) {
+        (const_cast<ADVBConfig *>(this))->MapDVBCards();
+    }
     return ((it = std::find(dvbcards.begin(), dvbcards.end(), n)) != dvbcards.end()) ? *it : ~0;
 }
 

@@ -280,6 +280,20 @@ bool FindActiveStreamingProcesses(std::vector<dvbstreamprocs_t>& procs)
                     }
                 }
 
+#if 0
+                fprintf(stderr, "PID %u: card %u/%u freq %uHz time %us", proc.pid, proc.pcard, proc.vcard, proc.freq, proc.time);
+                for (size_t j = 0; j < proc.pids.size(); j++) {
+                    if (j == 0) {
+                        fprintf(stderr, " pids: ");
+                    }
+                    else {
+                        fprintf(stderr, ", ");
+                    }
+                    fprintf(stderr, "%u", proc.pids[j]);
+                }
+                fprintf(stderr, "\n");
+#endif
+
                 procs.push_back(proc);
             }
 
@@ -287,6 +301,12 @@ bool FindActiveStreamingProcesses(std::vector<dvbstreamprocs_t>& procs)
 
             success = true;
         }
+        else {
+            fprintf(stderr, "Failed to open list of dvbstream processes (file '%s')\n", tempfile.str());
+        }
+    }
+    else {
+        fprintf(stderr, "Failed to get list of dvbstream processes\n");
     }
 
     remove(tempfile);
