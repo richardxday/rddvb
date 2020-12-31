@@ -242,7 +242,6 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, bool detach, cons
             success = (system(cmd2) == 0);
         }
         else {
-            fprintf(stderr, "Running command '%s'\n", cmd.str());
             int res = system(cmd);
             (void)res;
         }

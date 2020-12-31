@@ -568,8 +568,7 @@ int main(int argc, const char *argv[])
                             ::GetFileInfo(dstfilename, &info2) &&
                             (info2.WriteTime > info1.WriteTime)) {
                             // replace local channels file with remote one
-                            ::remove(filename);
-                            ::rename(dstfilename, filename);
+                            MoveFile(dstfilename, filename);
                             config.printf("Replaced local channels file with one from recording slave");
                         }
                         else config.printf("Local channels file up to date");
@@ -1154,7 +1153,7 @@ int main(int argc, const char *argv[])
                         config.printf("File '%s' does not exist but '%s' does, renaming...",
                                       filename.str(),
                                       tempfilename.str());
-                        if (rename(tempfilename, filename) != 0) {
+                        if (!MoveFile(tempfilename, filename)) {
                             config.printf("Failed to rename '%s' to '%s'", tempfilename.str(), filename.str());
                         }
                     }
