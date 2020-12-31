@@ -96,7 +96,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"streamsubtitlecodec",          "-scodec copy"},
         {"streamsubtitles",              "{conf:streamsubtitlecodec} {conf:streamsubtitlemetadata}"},
         {"streamencodeargs",             "{conf:streaminput} {conf:streamvideo} {conf:streamaudio} {conf:streamsubtitles} {conf:streamverbosity} {conf:streamoutput}"},
-        {"hlsinput",                     "-i -"},
+        {"hlsinput",                     "-i - -probesize 30M -analyzeduration 30M"},
         {"hlsoutputformat",              "hls"},
         {"hlssegmenttime",               "4"},
         {"hlssegmentcount",              "150"},
@@ -130,6 +130,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"hlsencodeargs",                "{conf:hlsinput} {conf:hlsvideo} {conf:hlsaudio} {conf:hlsverbosity} {conf:hlsoutput}"},
         {"hlsstreamhtmlsourcefile",      "{conf:sharedir}/stream/hlsstream.html"},
         {"hlsstreamhtmldestfile",        "{conf:hlsoutputbase}/{hlssanitizedname}.html"},
+        {"hlsstreamurl",                 "/streams/{hlssanitizedname}.html"},
     };
     uint_t i;
 
@@ -1144,7 +1145,12 @@ bool ADVBConfig::RescheduleAfterDeletingPattern(const AString& user, const AStri
 
 bool ADVBConfig::IsRecordingSlave() const
 {
-    return ((uint_t)GetConfigItem("isrecordingslave", "0"));
+    return ((uint_t)GetConfigItem("isrecordingslave", "0") != 0);
+}
+
+bool ADVBConfig::IsStreamSlave() const
+{
+    return ((uint_t)GetConfigItem("isstreamslave", "0") != 0);
 }
 
 bool ADVBConfig::ConvertVideos() const
@@ -1297,10 +1303,10 @@ AString ADVBConfig::GetStreamListingCommand(const AString& pattern, const AStrin
     AString cmd;
 
     if (GetStreamSlave().Valid()) {
-        cmd.printf("bash -c 'pgrep -a ssh | grep dvb | grep \"%s\" | grep -E \"\\--stream \\\"%s\\\"\" | sed -E \"s/^([0-9]+).+--stream \\\"(.+)\\\".*$/\\1 \\2/\" >\"%s\"'", GetStreamSlave().str(), pattern.str(), tempfile.str());
+        cmd.printf("bash -c 'pgrep -a ssh | grep dvb | grep \"%s\" | grep -i -E \"\\--stream \\\"%s\\\"\" | sed -E \"s/^([0-9]+).+--stream \\\"(.+)\\\".*$/\\1 \\2/\" >\"%s\"'", GetStreamSlave().str(), pattern.str(), tempfile.str());
     }
     else {
-        cmd.printf("bash -c 'pgrep -a dvb | grep -E \"\\--stream %s\" | sed -E \"s/^([0-9]+).+--stream (.+)$/\\1 \\2/\" >\"%s\"'", pattern.str(), tempfile.str());
+        cmd.printf("bash -c 'pgrep -a dvb | grep -i -E \"\\--stream %s\" | sed -E \"s/^([0-9]+).+--stream (.+)$/\\1 \\2/\" >\"%s\"'", pattern.str(), tempfile.str());
     }
 
     return cmd;

@@ -371,6 +371,7 @@ public:
     bool    RescheduleAfterDeletingPattern(const AString& user, const AString& category) const; // extractconfig("<user>", "<category>")
 
     bool    IsRecordingSlave()               const; // extractconfig()
+    bool    IsStreamSlave()                  const; // extractconfig()
     bool    ConvertVideos()                  const; // extractconfig()
     bool    EnableCombined()                 const; // extractconfig()
 

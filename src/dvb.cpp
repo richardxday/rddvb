@@ -205,6 +205,9 @@ int main(int argc, const char *argv[])
         {"--rawstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
         {"--mp4stream",                             "<text>",                           "Stream DVB channel or programme being recorded <text>, encoding as mp4 to console (for piping to arbitrary programs)"},
         {"--hlsstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text>, encoding as HLS"},
+        {"--list-streams",                          "",                                 "List active stream(s)"},
+        {"--stop-streams",                          "<pattern>",                        "Stop stream(s) matching <pattern>"},
+        {"--stop-stream",                           "<name>",                           "Stop specific stream"},
         {"--drawprogrammes",                        "<scale>",                          "Draw current list of programmes using a scale of <scale> characters per hour"},
         {"--list-config-values",                    "",                                 "List all config values"},
         {"--config-item",                           "<item>",                           "Return value for config item"},
@@ -2172,7 +2175,40 @@ int main(int argc, const char *argv[])
                     type = StreamType_HLS;
                 }
 
-                StartDVBStream(type, name, dvbcardspecified ? AString("%").Arg(dvbcard) : "");
+                StartDVBStream(type, name, false, dvbcardspecified ? AString("%").Arg(dvbcard) : "");
+            }
+            else if (stricmp(argv[i], "--list-streams") == 0) {
+                std::vector<dvbstream_t> streams;
+
+                if (ListDVBStreams(streams)) {
+                    for (size_t j = 0; j < streams.size(); j++) {
+                        const auto& stream = streams[j];
+                        printf("Stream '%s' (PID %u): '%s' (URL '%s')\n", stream.name.str(), stream.pid, stream.htmlfile.str(), stream.url.str());
+                    }
+                }
+                else fprintf(stderr, "Failed to find DVB streams\n");
+            }
+            else if (stricmp(argv[i], "--stop-streams") == 0) {
+                std::vector<dvbstream_t> streams;
+                AString pattern = argv[++i];
+
+                if (StopDVBStreams(pattern, streams)) {
+                    for (size_t j = 0; j < streams.size(); j++) {
+                        printf("Stopped stream '%s'\n", streams[j].name.str());
+                    }
+                }
+                else fprintf(stderr, "Failed to stop DVB streams\n");
+            }
+            else if (stricmp(argv[i], "--stop-stream") == 0) {
+                std::vector<dvbstream_t> streams;
+                AString name = argv[++i];
+
+                if (StopDVBStreams(name, streams)) {
+                    for (size_t j = 0; j < streams.size(); j++) {
+                        printf("Stopped stream '%s'\n", streams[j].name.str());
+                    }
+                }
+                else fprintf(stderr, "Failed to stop DVB streams\n");
             }
             else if (stricmp(argv[i], "--return-count") == 0) {
                 res = (int)proglist.Count();
@@ -2310,7 +2346,3 @@ int main(int argc, const char *argv[])
 
     return res;
 }
-
-/* live streaming
-dvb --rawstream "bbc news" | ffmpeg -i - -c:v libx264 -crf 21 -preset veryfast -g 25 -sc_threshold 0 -c:a aac -b:a 128k -ac 2 -f hls -hls_time 4 -hls_list_size 5 -hls_wrap 5 -hls_flags delete_segments -hls_playlist_type event stream.m3u8
-*/

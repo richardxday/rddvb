@@ -34,14 +34,15 @@ typedef struct {
     } counts;
 } PROGTITLE;
 
-bool Value(const AHash& vars, AString& val, const AString& var)
+bool Value(const std::map<AString,AString>& vars, AString& val, const AString& var)
 {
-    AString *p;
+    auto it = vars.find(var);
 
-    if ((p = (AString *)vars.Read(var)) != NULL) val = *p;
-    else val.Delete();
+    if (it != vars.end()) {
+        val = it->second;
+    }
 
-    return (p != NULL);
+    return (it != vars.end());
 }
 
 rapidjson::Value getuserdetails(rapidjson::Document& doc, const AString& user)
@@ -191,7 +192,7 @@ void deletetitle(uptr_t value, void *context)
     delete (PROGTITLE *)value;
 }
 
-void parsearg(AHash& vars, const AString& arg, AStdData& log)
+void parsearg(std::map<AString,AString>& vars, const AString& arg, AStdData& log)
 {
     uint_t j, n = arg.CountLines("\n", 0);
 
@@ -205,12 +206,12 @@ void parsearg(AHash& vars, const AString& arg, AStdData& log)
 
             log.printf("%s='%s'\n", var.str(), val.str());
 
-            vars.Insert(var, (uptr_t)new AString(val));
+            vars[var] = val;
         }
     }
 }
 
-void parsefile(AStdData& fp, AHash& vars, AStdData& log)
+void parsefile(AStdData& fp, std::map<AString,AString>& vars, AStdData& log)
 {
     AString line;
 
@@ -226,9 +227,9 @@ int main(int argc, char *argv[])
     const ADVBConfig&   config = ADVBConfig::Get(true);
     rapidjson::Document doc;
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    std::map<AString,AString> vars;
     ADVBProg            prog;   // ensure ADVBProg initialisation takes place
     AStdFile            log(RDDVB_ROOT_DIR "tmp/dvbweb.log", "w");
-    AHash               vars(&AString::DeleteString);
     AString             val, logdata, errors;
     int  i;
 
@@ -258,6 +259,21 @@ int main(int argc, char *argv[])
             log.printf("Unrecognised argument '%s'\n", arg.str());
             break;
         }
+    }
+
+    {
+        rapidjson::Value subobj;
+
+        subobj.SetObject();
+
+        subobj.AddMember("path", rapidjson::Value(getenv("PATH"), allocator), allocator);
+
+        auto it = vars.begin();
+        for (; it != vars.end(); ++it) {
+            subobj.AddMember(rapidjson::Value(it->first, allocator), rapidjson::Value(it->second, allocator), allocator);
+        }
+
+        doc.AddMember("args", subobj, allocator);
     }
 
     if (Value(vars, val, "editpattern")) {
@@ -306,15 +322,14 @@ int main(int argc, char *argv[])
         ADVBProgList::SchedulePatterns(ADateTime().TimeStamp(true), commit);
     }
 
-    if (Value(vars, val, "starthlsstream")) {
+    if (Value(vars, val, "startstream")) {
         rapidjson::Value subobj;
         AString tempfile = config.GetTempFile("hlsstream", ".txt");
         AString cmd;
 
         subobj.SetArray();
 
-        cmd.printf("bash -c 'dvb --hlsstream \"%s\" 2>\"%s\" ; rm \"%s\"' &", val.str(), tempfile.str(), tempfile.str());
-        if (system(cmd) == 0) {
+        if (StartDVBStream(StreamType_HLS, val, true)) {
             subobj.PushBack(rapidjson::Value(val.str(), allocator), allocator);
 
             doc.AddMember("startedstreams", subobj, allocator);
@@ -327,18 +342,18 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (Value(vars, val, "liststreams")) {
+    if (Value(vars, val, "stopstream")) {
         rapidjson::Value subobj;
         std::vector<dvbstream_t> streams;
 
         subobj.SetArray();
 
-        if (ListDVBStreams(val, streams)) {
+        if (StopDVBStream(val, streams)) {
             for (size_t j = 0; j < streams.size(); j++) {
                 subobj.PushBack(rapidjson::Value(streams[j].name.str(), allocator), allocator);
             }
 
-            doc.AddMember("activestreams", subobj, allocator);
+            doc.AddMember("stoppedstreams", subobj, allocator);
         }
     }
 
@@ -355,6 +370,28 @@ int main(int argc, char *argv[])
 
             doc.AddMember("stoppedstreams", subobj, allocator);
         }
+    }
+
+    {
+        rapidjson::Value obj;
+        std::vector<dvbstream_t> streams;
+
+        obj.SetArray();
+
+        if (ListDVBStreams(streams)) {
+            for (size_t j = 0; j < streams.size(); j++) {
+                rapidjson::Value subobj;
+                const auto& stream = streams[j];
+
+                subobj.SetObject();
+                subobj.AddMember("name", rapidjson::Value(stream.name.str(), allocator), allocator);
+                subobj.AddMember("url",  rapidjson::Value(stream.url.str(), allocator), allocator);
+
+                obj.PushBack(subobj, allocator);
+            }
+        }
+
+        doc.AddMember("activestreams", obj, allocator);
     }
 
     if (Value(vars, val, "parse")) {

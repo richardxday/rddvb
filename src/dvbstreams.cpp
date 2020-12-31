@@ -9,8 +9,9 @@
 #include "proglist.h"
 #include "dvbprog.h"
 #include "rdlib/Recurse.h"
+#include "rdlib/strsup.h"
 
-bool ListDVBStreams(const AString& pattern, std::vector<dvbstream_t>& activestreams)
+bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& pattern)
 {
     const ADVBConfig& config = ADVBConfig::Get();
     AString tempfile = config.GetTempFile("streams", ".txt");
@@ -24,10 +25,12 @@ bool ListDVBStreams(const AString& pattern, std::vector<dvbstream_t>& activestre
             AString line;
 
             while (line.ReadLn(fp) >= 0) {
-                dvbstream_t stream = {
-                    (uint_t)line.Word(0),
-                    line.Words(1),
-                };
+                dvbstream_t stream;
+
+                stream.pid      = (uint_t)line.Word(0);
+                stream.name     = line.Words(1);
+                stream.htmlfile = config.GetHLSConfigItem("hlsstreamhtmldestfile", stream.name);
+                stream.url      = config.GetHLSConfigItem("hlsstreamurl", stream.name);
 
                 activestreams.push_back(stream);
             }
@@ -84,7 +87,7 @@ static bool PrepareHLSStreaming(const AString& name)
     return success;
 }
 
-bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dvbcardstr)
+bool StartDVBStream(dvbstreamtype_t type, const AString& name, bool detach, const AString& dvbcardstr)
 {
     const ADVBConfig& config = ADVBConfig::Get();
     AString cmd, pipecmd;
@@ -102,6 +105,7 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dv
         case StreamType_HLS:
             PrepareHLSStreaming(name);
             pipecmd.printf("| %s", config.ReplaceHLSTerms(config.GetHLSEncoderCommand(), name).str());
+            pipecmd.printf(" ; %s", config.ReplaceHLSTerms(config.GetHLSCleanCommand(), name).str());
             break;
 
         case StreamType_MP4:
@@ -163,7 +167,7 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dv
                     if (pids.Valid()) {
                         cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)std::min(maxtime.GetAbsoluteSecond(), (uint64_t)0xffffffff), pids);
 
-                        if (!config.IsRecordingSlave()) {
+                        if (!config.IsStreamSlave() && pipecmd.Valid()) {
                             cmd += " " + pipecmd;
                         }
                     }
@@ -231,11 +235,15 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dv
             config.logit("Running command '%s'", cmd.str());
         }
 
-        int res = system(cmd);
-        (void)res;
+        if (detach) {
+            AString cmd2;
 
-        if (type == StreamType_HLS) {
-            res = system(config.ReplaceHLSTerms(config.GetHLSCleanCommand(), name));
+            cmd2.printf("bash -c '%s' 2>/dev/null >/dev/null &", cmd.str());
+            success = (system(cmd2) == 0);
+        }
+        else {
+            fprintf(stderr, "Running command '%s'\n", cmd.str());
+            int res = system(cmd);
             (void)res;
         }
 
@@ -245,39 +253,56 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dv
     return success;
 }
 
-bool StopDVBStreams(const AString& pattern, std::vector<dvbstream_t>& stoppedstreams)
+bool StopDVBStream(const AString& name, std::vector<dvbstream_t>& stoppedstreams)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    AString tempfile = config.GetTempFile("streams", ".txt");
-    AString cmd      = config.GetStreamListingCommand(pattern, tempfile);
+    std::vector<dvbstream_t> streams;
     bool success = false;
 
-    if (system(cmd) == 0) {
-        AStdFile fp;
+    if (ListDVBStreams(streams)) {
+        for (size_t i = 0; i < streams.size(); i++) {
+            const auto& stream = streams[i];
 
-        if (fp.open(tempfile)) {
-            AString line;
-
-            while (line.ReadLn(fp) >= 0) {
-                dvbstream_t stream = {
-                    (uint32_t)line.Word(0),
-                    line.Words(1),
-                };
+            if (CompareNoCase(stream.name, name) == 0) {
                 AString cmd2;
 
                 cmd2.printf("bash -c 'kill -SIGINT %u'", stream.pid);
+                fprintf(stderr, "Cmd: '%s'\n", cmd2.str());
                 if (system(cmd2) == 0) {
                     stoppedstreams.push_back(stream);
+                    success = true;
+                }
+                else {
+                    fprintf(stderr, "Failed to stop stream '%s' (pid %u)\n", stream.name.str(), stream.pid);
                 }
             }
-
-            fp.close();
-
-            success = true;
         }
     }
 
-    remove(tempfile);
+    return success;
+}
+
+bool StopDVBStreams(const AString& pattern, std::vector<dvbstream_t>& stoppedstreams)
+{
+    std::vector<dvbstream_t> streams;
+    bool success = false;
+
+    if (ListDVBStreams(streams, pattern)) {
+        success = true;
+
+        for (size_t i = 0; i < streams.size(); i++) {
+            const auto& stream = streams[i];
+            AString cmd2;
+
+            cmd2.printf("bash -c 'kill -SIGINT %u'", stream.pid);
+            if (system(cmd2) == 0) {
+                stoppedstreams.push_back(stream);
+            }
+            else {
+                fprintf(stderr, "Failed to stop stream '%s' (pid %u)\n", stream.name.str(), stream.pid);
+                success = false;
+            }
+        }
+    }
 
     return success;
 }
