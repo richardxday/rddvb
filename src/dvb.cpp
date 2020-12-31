@@ -564,9 +564,9 @@ int main(int argc, const char *argv[])
                     if (GetFileFromRecordingSlave(filename, dstfilename)) {
                         FILE_INFO info1, info2;
 
-                        if (::GetFileInfo(filename,    &info1) &&
-                            ::GetFileInfo(dstfilename, &info2) &&
-                            (info2.WriteTime > info1.WriteTime)) {
+                        if (::GetFileInfo(filename, &info1) &&
+                            (!::GetFileInfo(dstfilename, &info2) ||
+                             (info2.WriteTime > info1.WriteTime))) {
                             // replace local channels file with remote one
                             MoveFile(dstfilename, filename);
                             config.printf("Replaced local channels file with one from recording slave");
