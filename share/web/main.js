@@ -2277,7 +2277,7 @@ function showchannels()
                             (typeof (stream = streams.find(stream => stream.name == channel.xmltv.name)) != 'undefined')) ||
                            ((typeof channel.xmltv.convertedname != 'undefined') &&
                             (typeof (stream = streams.find(stream => stream.name == channel.xmltv.convertedname)) != 'undefined')))))) {
-                        str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstream=' + stream + '&quot;)">Stop</a>';
+                        str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstream=' + stream.name + '&quot;)">Stop</a>';
                     }
                     else if ((typeof channel.xmltv != 'undefined') &&
                              (typeof channel.xmltv.convertedname != 'undefined')) {

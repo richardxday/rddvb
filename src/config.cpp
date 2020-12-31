@@ -96,7 +96,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"streamsubtitlecodec",          "-scodec copy"},
         {"streamsubtitles",              "{conf:streamsubtitlecodec} {conf:streamsubtitlemetadata}"},
         {"streamencodeargs",             "{conf:streaminput} {conf:streamvideo} {conf:streamaudio} {conf:streamsubtitles} {conf:streamverbosity} {conf:streamoutput}"},
-        {"hlsinput",                     "-i - -probesize 30M -analyzeduration 30M"},
+        {"hlsinput",                     "-i -"},
         {"hlsoutputformat",              "hls"},
         {"hlssegmenttime",               "4"},
         {"hlssegmentcount",              "150"},
@@ -1029,7 +1029,7 @@ AString ADVBConfig::GetVideoEncoder() const
 
 AString ADVBConfig::GetMPlayerArgs() const
 {
-    return GetConfigItem("mplayerargs", "");
+    return GetConfigItem("mplayerargs", "-gui -autosync 1 -vf yadif=1");
 }
 
 uint_t ADVBConfig::GetMPlayerCacheSize() const
@@ -1046,7 +1046,7 @@ AString ADVBConfig::GetVideoPlayerCommand() const
 {
     return GetConfigItem("playercmd", (AString("mplayer {args} -cache-min {cacheminpercent} -cache {cachesize} -")
                                        .SearchAndReplace("{args}",            GetMPlayerArgs())
-                                       .SearchAndReplace("{cacheminpercent}", AValue(100.0 * (double)GetMPlayerCacheMinSize() / (double)GetMPlayerCacheSize() + .01).ToString("0.2"))
+                                       .SearchAndReplace("{cacheminpercent}", AValue(100.0 * (double)GetMPlayerCacheMinSize() / (double)GetMPlayerCacheSize()).ToString("0.2"))
                                        .SearchAndReplace("{cachesize}",       AValue(GetMPlayerCacheSize()).ToString())));
 }
 
@@ -1305,10 +1305,24 @@ AString ADVBConfig::GetStreamListingCommand(const AString& pattern, const AStrin
     AString cmd;
 
     if (GetStreamSlave().Valid()) {
-        cmd.printf("bash -c 'pgrep -a ssh | grep dvb | grep \"%s\" | grep -i -E \"\\--stream \\\"%s\\\"\" | sed -E \"s/^([0-9]+).+--stream \\\"(.+)\\\".*$/\\1 \\2/\" >\"%s\"'", GetStreamSlave().str(), pattern.str(), tempfile.str());
+        cmd.printf("bash -c 'pgrep -a -f \"bash .+ %s .+dvb +--stream \\\\\\\\\\\"%s\\\\\\\\\\\"\" | sed -E \"s/^([0-9]+) .+ --stream \\\\\\\\\\\"(.+)\\\\\\\\\\\".+$/\\1 \\2/\" >\"%s\"'", GetStreamSlave().str(), pattern.str(), tempfile.str());
     }
     else {
         cmd.printf("bash -c 'pgrep -a dvb | grep -i -E \"\\--stream %s\" | sed -E \"s/^([0-9]+).+--stream (.+)$/\\1 \\2/\" >\"%s\"'", pattern.str(), tempfile.str());
+    }
+
+    return cmd;
+}
+
+AString ADVBConfig::GetStreamListingKillingCommand(uint32_t pid) const
+{
+    AString cmd;
+
+    if (GetStreamSlave().Valid()) {
+        cmd.printf("bash -c 'kill -SIGINT $(pgrep -P %u | tail -n 1)'", pid);
+    }
+    else {
+        cmd.printf("bash -c 'kill -SIGINT $(pgrep -P $(pgrep -P %u) \"dvbstream\")'", pid);
     }
 
     return cmd;

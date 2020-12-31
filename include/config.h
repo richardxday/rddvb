@@ -416,6 +416,7 @@ public:
     AString GetGraphSuffix()                 const; // extractconfig()
 
     AString GetStreamListingCommand(const AString& pattern, const AString& tempfile) const; // extractconfig("<pattern>", "<tempfile>")
+    AString GetStreamListingKillingCommand(uint32_t pid) const; // extractconfig(<pid>)
 
     uint_t  GetMinimalDataRate(const AString& filesuffix) const; // extractconfig("<filesuffix>")
 

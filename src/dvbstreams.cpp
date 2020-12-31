@@ -87,7 +87,7 @@ static bool PrepareHLSStreaming(const AString& name)
     return success;
 }
 
-bool StartDVBStream(dvbstreamtype_t type, const AString& name, bool detach, const AString& dvbcardstr)
+bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dvbcardstr)
 {
     const ADVBConfig& config = ADVBConfig::Get();
     AString cmd, pipecmd;
@@ -235,18 +235,16 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, bool detach, cons
             config.logit("Running command '%s'", cmd.str());
         }
 
-        if (detach) {
-            AString cmd2;
-
+        AString cmd2;
+        if (pipecmd.Valid()) {
             cmd2.printf("bash -c '%s' 2>/dev/null >/dev/null &", cmd.str());
-            success = (system(cmd2) == 0);
         }
         else {
-            int res = system(cmd);
-            (void)res;
+            cmd2.printf("bash -c '%s'", cmd.str());
         }
 
-        success = true;
+        //fprintf(stderr, "Cmd: %s\n", cmd2.str());
+        success = (system(cmd2) == 0);
     }
 
     return success;
@@ -254,6 +252,7 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, bool detach, cons
 
 bool StopDVBStream(const AString& name, std::vector<dvbstream_t>& stoppedstreams)
 {
+    const ADVBConfig& config = ADVBConfig::Get();
     std::vector<dvbstream_t> streams;
     bool success = false;
 
@@ -262,16 +261,14 @@ bool StopDVBStream(const AString& name, std::vector<dvbstream_t>& stoppedstreams
             const auto& stream = streams[i];
 
             if (CompareNoCase(stream.name, name) == 0) {
-                AString cmd2;
+                AString cmd = config.GetStreamListingKillingCommand(stream.pid);
 
-                cmd2.printf("bash -c 'kill -SIGINT %u'", stream.pid);
-                fprintf(stderr, "Cmd: '%s'\n", cmd2.str());
-                if (system(cmd2) == 0) {
+                if (system(cmd) == 0) {
                     stoppedstreams.push_back(stream);
-                    success = true;
                 }
                 else {
                     fprintf(stderr, "Failed to stop stream '%s' (pid %u)\n", stream.name.str(), stream.pid);
+                    success = false;
                 }
             }
         }
@@ -282,6 +279,7 @@ bool StopDVBStream(const AString& name, std::vector<dvbstream_t>& stoppedstreams
 
 bool StopDVBStreams(const AString& pattern, std::vector<dvbstream_t>& stoppedstreams)
 {
+    const ADVBConfig& config = ADVBConfig::Get();
     std::vector<dvbstream_t> streams;
     bool success = false;
 
@@ -290,10 +288,9 @@ bool StopDVBStreams(const AString& pattern, std::vector<dvbstream_t>& stoppedstr
 
         for (size_t i = 0; i < streams.size(); i++) {
             const auto& stream = streams[i];
-            AString cmd2;
+            AString cmd = config.GetStreamListingKillingCommand(stream.pid);
 
-            cmd2.printf("bash -c 'kill -SIGINT %u'", stream.pid);
-            if (system(cmd2) == 0) {
+            if (system(cmd) == 0) {
                 stoppedstreams.push_back(stream);
             }
             else {

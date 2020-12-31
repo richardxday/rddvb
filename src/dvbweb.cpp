@@ -329,7 +329,7 @@ int main(int argc, char *argv[])
 
         subobj.SetArray();
 
-        if (StartDVBStream(StreamType_HLS, val, true)) {
+        if (StartDVBStream(StreamType_HLS, val)) {
             subobj.PushBack(rapidjson::Value(val.str(), allocator), allocator);
 
             doc.AddMember("startedstreams", subobj, allocator);
