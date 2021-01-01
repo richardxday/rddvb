@@ -59,7 +59,11 @@ table.proglist,table.patternlist,table.titlelist,table.channellist
 {
 	width:100%;
 }
-table.proglist,table.patternlist,table.patternlist th,table.channellist,table.channellist th
+table.streamlist
+{
+	width:10%;
+}
+table.proglist,table.patternlist,table.patternlist th,table.channellist,table.channellist th,table.streamlist,table.streamlist th
 {
 	background-color:#eee;
 }
@@ -71,7 +75,7 @@ table.proglist td
 	vertical-align:middle;
 	width:1%;
 }
-table.patternlist th,table.patternlist td,table.titlelist td,table.channellist th,table.channellist td
+table.patternlist th,table.patternlist td,table.titlelist td,table.channellist th,table.channellist td,table.streamlist th,table.streamlist td
 {
 	border-top:1px solid #aaa;
 	padding:4px;
@@ -124,11 +128,11 @@ table.proglist tr.scheduled,table.patternlist tr.enabled
 {
 	background-color:#8f8;
 }
-table.channellist tr
+table.channellist tr,table.streamlist tr
 {
 	background-color:#beb;
 }
-table.channellist tr:hover
+table.channellist tr:hover,table.streamlist tr:hover
 {
 	background-color:#ada;
 }

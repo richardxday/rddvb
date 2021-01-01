@@ -14,6 +14,7 @@ typedef struct {
     uint32_t pid;
     AString  name;
     AString  htmlfile;
+    AString  hlsfile;
     AString  url;
 } dvbstream_t;
 

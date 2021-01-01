@@ -34,12 +34,17 @@ document.addEventListener('DOMContentLoaded', () => {
 	window.player = player;
 });
 </script>
+<link rel="stylesheet" type="text/css" href="https://cdn.plyr.io/3.6.3/plyr.css" />
+<style>
+  .plyr {
+      max-width: 75%;
+  }
+</style>
 </head>
 <body>
 <h1>{hlsname}</h1><br>
-<center><div id="container"><video id="player" autoplay playsinline crossorigin controls>
+<center><div id="container"><video id="player" autoplay playsinline crossorigin controls width="50%">
 </video></div></center>
 <br><br>
 </body>
-<link rel="stylesheet" type="text/css" href="https://cdn.plyr.io/3.6.3/plyr.css" />
 </html>

@@ -28,10 +28,15 @@ bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& patt
             while (line.ReadLn(fp) >= 0) {
                 dvbstream_t stream;
 
-                stream.pid      = (uint_t)line.Word(0);
-                stream.name     = line.Words(1);
+                stream.pid  = (uint_t)line.Word(0);
+                stream.name = line.Words(1);
+
                 stream.htmlfile = config.GetHLSConfigItem("hlsstreamhtmldestfile", stream.name);
-                stream.url      = config.GetHLSConfigItem("hlsstreamurl", stream.name);
+                stream.hlsfile  = config.GetHLSConfigItem("hlsoutputfullpath", stream.name);
+                if (AStdFile::exists(stream.htmlfile) &&
+                    AStdFile::exists(stream.hlsfile)) {
+                    stream.url  = config.GetHLSConfigItem("hlsstreamurl", stream.name);
+                }
 
                 activestreams.push_back(stream);
             }

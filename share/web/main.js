@@ -94,6 +94,8 @@ var videointents = [
 	},
 ];
 
+var waitingforstreamurlstimer = null;
+
 window.onpopstate = function(event)
 {
 	var filter = event.state;
@@ -1804,10 +1806,10 @@ function populate(id)
 {
 	if (response != null) {
         if      (typeof response.showchannels != 'undefined') showchannels();
-		else if (typeof response.patterns != 'undefined') populatepatterns(id);
-		else if (typeof response.loglines != 'undefined') populatelogs(id);
-		else if (typeof response.titles	  != 'undefined') populatetitles(id);
-		else if (typeof response.progs	  != 'undefined') populateprogs(id);
+		else if (typeof response.patterns     != 'undefined') populatepatterns(id);
+		else if (typeof response.loglines     != 'undefined') populatelogs(id);
+		else if (typeof response.titles	      != 'undefined') populatetitles(id);
+		else if (typeof response.progs	      != 'undefined') populateprogs(id);
 
 		populateusers();
 	}
@@ -1815,8 +1817,13 @@ function populate(id)
 	displayfilter(0, -1, '');
 }
 
-function dvbrequest(filter, postdata, stackrequest)
+function dvbrequest(filter, postdata, stackrequest, timerbased)
 {
+    if (waitingforstreamurlstimer != null) {
+        clearTimeout(waitingforstreamurlstimer);
+        waitingforstreamurlstimer = null;
+    }
+
 	if (typeof filter != 'undefined') {
 		if (typeof filter.from		  == 'undefined') filter.from		 = currentfilter.from;
 		else										  document.getElementById("from").value = filter.from;
@@ -1882,7 +1889,9 @@ function dvbrequest(filter, postdata, stackrequest)
 		 (filter.pagesize	 != currentfilter.pagesize)) &&
 		!((typeof filter.fetch != 'undefined') && !filter.fetch)) {
 
-		document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
+        if ((typeof timerbased == 'undefined') || !timerbased) {
+		    document.getElementById("status").innerHTML = '<span style="font-size:200%;">Fetching...</span>';
+        }
 
 		if ((xmlhttp != null) && (xmlhttp.readState < 4)) {
 			xmlhttp.abort();
@@ -1990,7 +1999,9 @@ function dvbrequest(filter, postdata, stackrequest)
 
 		xmlhttp.send(data);
 
-		document.getElementById("status").innerHTML += " <button onclick=\"abortfind()\">Abort</button>";
+        if ((typeof timerbased == 'undefined') || !timerbased) {
+		    document.getElementById("status").innerHTML += " <button onclick=\"abortfind()\">Abort</button>";
+        }
 		document.getElementById("statusbottom").innerHTML = '';
 	}
 	else {
@@ -2149,11 +2160,50 @@ function reschedule()
 	}
 }
 
+function requeststreams()
+{
+    dvbrequest({},"showchannels=1", false, true);
+}
+
 function showchannels()
 {
 	var str = '', i, j;
 	var validchannels = 0;
     var activestreams = response.activestreams;
+    var waitingforstreamurls = false;
+
+    if ((typeof activestreams != 'undefined') &&
+        (activestreams.length > 0)) {
+        var str = '';
+
+	    str += '<table class="streamlist"><tr>';
+        str += '<th style="text-align:left">Channel</th><th>Watch</th><th>Stop</th></tr>'
+
+        for (i = 0; i < activestreams.length; i++) {
+            var stream = activestreams[i];
+
+            str += '<tr><td style="text-align:left">' + stream.name + '</td><td>';
+            if (stream.url.length > 0) {
+                str += '<a href="' + stream.url + '" title="Watch ' + stream.name + ' in browser" target=_blank>Watch</a>';
+            }
+            else {
+                str += 'Waiting for stream...';
+                waitingforstreamurls = true;
+            }
+
+            str += '</td><td>';
+            str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstream=' + stream.name + '\\nshowchannels=1&quot;)">Stop</a>';
+            str += '</td></tr>';
+        }
+
+	    str += '</table>';
+        str += '<h2><a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstreams=.+\\nshowchannels=1&quot;)">Stop All Streams</a></h2>';
+        document.getElementById("status").innerHTML = str;
+    }
+
+    if (waitingforstreamurls) {
+        waitingforstreamurlstimer = setTimeout(requeststreams, 1000)
+    }
 
 	str += '<table class="channellist"><tr>';
 	str += '<th>LCN</th>';
@@ -2266,14 +2316,14 @@ function showchannels()
 					str += '<td>';
                     if ((typeof activestreams != 'undefined') &&
                         (((typeof channel.dvb.name != 'undefined') &&
-                          (typeof (stream = activestreams.find(stream => stream.name == channel.dvb.name)) != 'undefined')) ||
+                          (typeof (stream = activestreams.find(stream => stream.name.toLowerCase() == channel.dvb.name.toLowerCase())) != 'undefined')) ||
                          ((typeof channel.dvb.convertedname != 'undefined') &&
-                          (typeof (stream = activestreams.find(stream => stream.name == channel.dvb.convertedname)) != 'undefined')) ||
+                          (typeof (stream = activestreams.find(stream => stream.name.toLowerCase() == channel.dvb.convertedname.toLowerCase())) != 'undefined')) ||
                          ((typeof channel.xmltv != 'undefined') &&
                           (((typeof channel.xmltv.name != 'undefined') &&
-                            (typeof (stream = activestreams.find(stream => stream.name == channel.xmltv.name)) != 'undefined')) ||
+                            (typeof (stream = activestreams.find(stream => stream.name.toLowerCase() == channel.xmltv.name.toLowerCase())) != 'undefined')) ||
                            ((typeof channel.xmltv.convertedname != 'undefined') &&
-                            (typeof (stream = activestreams.find(stream => stream.name == channel.xmltv.convertedname)) != 'undefined')))))) {
+                            (typeof (stream = activestreams.find(stream => stream.name.toLowerCase() == channel.xmltv.convertedname.toLowerCase())) != 'undefined')))))) {
                         str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstream=' + stream.name + '\\nshowchannels=1&quot;)">Stop</a>';
                     }
                     else if ((typeof channel.xmltv != 'undefined') &&
