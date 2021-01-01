@@ -305,9 +305,6 @@ bool FindActiveStreamingProcesses(std::vector<dvbstreamprocs_t>& procs)
             fprintf(stderr, "Failed to open list of dvbstream processes (file '%s')\n", tempfile.str());
         }
     }
-    else {
-        fprintf(stderr, "Failed to get list of dvbstream processes\n");
-    }
 
     remove(tempfile);
 

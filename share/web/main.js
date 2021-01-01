@@ -77,7 +77,6 @@ var stats			= null;
 var link			= null;
 var globals			= null;
 var channels		= null;
-var streams         = null;
 var proglistelement = '';
 var ua				= navigator.userAgent.toLowerCase();
 var isAndroid		= (ua.indexOf("android") >= 0); //&& ua.indexOf("mobile");
@@ -1804,7 +1803,8 @@ function populatelogs(id)
 function populate(id)
 {
 	if (response != null) {
-		if		(typeof response.patterns != 'undefined') populatepatterns(id);
+        if      (typeof response.showchannels != 'undefined') showchannels();
+		else if (typeof response.patterns != 'undefined') populatepatterns(id);
 		else if (typeof response.loglines != 'undefined') populatelogs(id);
 		else if (typeof response.titles	  != 'undefined') populatetitles(id);
 		else if (typeof response.progs	  != 'undefined') populateprogs(id);
@@ -1939,10 +1939,6 @@ function dvbrequest(filter, postdata, stackrequest)
 							};
 						}
 
-                        if (typeof response.activestreams != 'undefined') {
-                            streams = response.activestreams;
-                        }
-
 						document.getElementById("errormsg").innerHTML = '';
 						if (typeof response.counts != 'undefined') {
 							if ((typeof response.counts.rejected != 'undefined') && (response.counts.rejected > 0)) {
@@ -1990,7 +1986,7 @@ function dvbrequest(filter, postdata, stackrequest)
 		if (patterndefs == null) {
 			data += "patterndefs=\n";
 		}
-		if (typeof postdata != 'undefined') data += postdata;
+		if (typeof postdata != 'undefined') data += postdata.replace(/\\n/g, "\n");
 
 		xmlhttp.send(data);
 
@@ -2157,6 +2153,7 @@ function showchannels()
 {
 	var str = '', i, j;
 	var validchannels = 0;
+    var activestreams = response.activestreams;
 
 	str += '<table class="channellist"><tr>';
 	str += '<th>LCN</th>';
@@ -2267,25 +2264,25 @@ function showchannels()
                     channel.dvb.hasvideo &&
                     channel.dvb.hasaudio) {
 					str += '<td>';
-                    if ((typeof streams != 'undefined') &&
+                    if ((typeof activestreams != 'undefined') &&
                         (((typeof channel.dvb.name != 'undefined') &&
-                          (typeof (stream = streams.find(stream => stream.name == channel.dvb.name)) != 'undefined')) ||
+                          (typeof (stream = activestreams.find(stream => stream.name == channel.dvb.name)) != 'undefined')) ||
                          ((typeof channel.dvb.convertedname != 'undefined') &&
-                          (typeof (stream = streams.find(stream => stream.name == channel.dvb.convertedname)) != 'undefined')) ||
+                          (typeof (stream = activestreams.find(stream => stream.name == channel.dvb.convertedname)) != 'undefined')) ||
                          ((typeof channel.xmltv != 'undefined') &&
                           (((typeof channel.xmltv.name != 'undefined') &&
-                            (typeof (stream = streams.find(stream => stream.name == channel.xmltv.name)) != 'undefined')) ||
+                            (typeof (stream = activestreams.find(stream => stream.name == channel.xmltv.name)) != 'undefined')) ||
                            ((typeof channel.xmltv.convertedname != 'undefined') &&
-                            (typeof (stream = streams.find(stream => stream.name == channel.xmltv.convertedname)) != 'undefined')))))) {
-                        str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstream=' + stream.name + '&quot;)">Stop</a>';
+                            (typeof (stream = activestreams.find(stream => stream.name == channel.xmltv.convertedname)) != 'undefined')))))) {
+                        str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstream=' + stream.name + '\\nshowchannels=1&quot;)">Stop</a>';
                     }
                     else if ((typeof channel.xmltv != 'undefined') &&
                              (typeof channel.xmltv.convertedname != 'undefined')) {
-                        str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;startstream=' + channel.xmltv.convertedname + '&quot;)">Start</a>';
+                        str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;startstream=' + channel.xmltv.convertedname + '\\nshowchannels=1&quot;)">Start</a>';
                     }
                     else if ((typeof channel.dvb != 'undefined') &&
                              (typeof channel.dvb.convertedname != 'undefined')) {
-                        str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;startstream=' + channel.dvb.convertedname + '&quot;)">Start</a>';
+                        str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;startstream=' + channel.dvb.convertedname + '\\nshowchannels=1&quot;)">Start</a>';
                     }
 					str += '</td>';
                 }

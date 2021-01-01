@@ -9,6 +9,7 @@
 #include "proglist.h"
 #include "dvbprog.h"
 #include "rdlib/Recurse.h"
+#include "rdlib/misc.h"
 #include "rdlib/strsup.h"
 
 bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& pattern)
@@ -140,12 +141,12 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dv
                 list.Sort();
 
                 // get list of active dvbstream processes
-                FindActiveStreamingProcesses(procs);
-
-                /// convert list into map
-                for (size_t j = 0; j < procs.size(); j++) {
-                    const auto& proc = procs[j];
-                    virtualcardsinuse[proc.vcard] = true;
+                if (FindActiveStreamingProcesses(procs)) {
+                    // convert list into map
+                    for (size_t j = 0; j < procs.size(); j++) {
+                        const auto& proc = procs[j];
+                        virtualcardsinuse[proc.vcard] = true;
+                    }
                 }
 
                 best = list.FindGaps(ADateTime().TimeStamp(true), gaps, &virtualcardsinuse);
@@ -237,7 +238,7 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dv
 
         AString cmd2;
         if (pipecmd.Valid()) {
-            cmd2.printf("bash -c '%s' 2>/dev/null >/dev/null &", cmd.str());
+            cmd2.printf("bash -c '%s' >/dev/null &", cmd.str());
         }
         else {
             cmd2.printf("bash -c '%s'", cmd.str());
@@ -250,9 +251,22 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dv
     return success;
 }
 
+static bool KillStream(uint32_t pid)
+{
+    static const uint32_t maxattempts = 20;
+    const ADVBConfig& config = ADVBConfig::Get();
+    AString cmd = config.GetStreamListingKillingCommand(pid);
+    uint32_t attempts;
+
+    for (attempts = 0; (system(cmd) == 0); attempts++) {
+        Sleep(200);
+    }
+
+    return ((attempts > 0) && (attempts < maxattempts));
+}
+
 bool StopDVBStream(const AString& name, std::vector<dvbstream_t>& stoppedstreams)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
     std::vector<dvbstream_t> streams;
     bool success = false;
 
@@ -261,14 +275,14 @@ bool StopDVBStream(const AString& name, std::vector<dvbstream_t>& stoppedstreams
             const auto& stream = streams[i];
 
             if (CompareNoCase(stream.name, name) == 0) {
-                AString cmd = config.GetStreamListingKillingCommand(stream.pid);
-
-                if (system(cmd) == 0) {
+                if (KillStream(stream.pid)) {
                     stoppedstreams.push_back(stream);
+                    success = true;
                 }
                 else {
                     fprintf(stderr, "Failed to stop stream '%s' (pid %u)\n", stream.name.str(), stream.pid);
                     success = false;
+                    break;
                 }
             }
         }
@@ -279,7 +293,6 @@ bool StopDVBStream(const AString& name, std::vector<dvbstream_t>& stoppedstreams
 
 bool StopDVBStreams(const AString& pattern, std::vector<dvbstream_t>& stoppedstreams)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
     std::vector<dvbstream_t> streams;
     bool success = false;
 
@@ -288,14 +301,15 @@ bool StopDVBStreams(const AString& pattern, std::vector<dvbstream_t>& stoppedstr
 
         for (size_t i = 0; i < streams.size(); i++) {
             const auto& stream = streams[i];
-            AString cmd = config.GetStreamListingKillingCommand(stream.pid);
 
-            if (system(cmd) == 0) {
+            if (KillStream(stream.pid)) {
                 stoppedstreams.push_back(stream);
+                success = true;
             }
             else {
                 fprintf(stderr, "Failed to stop stream '%s' (pid %u)\n", stream.name.str(), stream.pid);
                 success = false;
+                break;
             }
         }
     }

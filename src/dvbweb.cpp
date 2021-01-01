@@ -261,21 +261,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    {
-        rapidjson::Value subobj;
-
-        subobj.SetObject();
-
-        subobj.AddMember("path", rapidjson::Value(getenv("PATH"), allocator), allocator);
-
-        auto it = vars.begin();
-        for (; it != vars.end(); ++it) {
-            subobj.AddMember(rapidjson::Value(it->first, allocator), rapidjson::Value(it->second, allocator), allocator);
-        }
-
-        doc.AddMember("args", subobj, allocator);
-    }
-
     if (Value(vars, val, "editpattern")) {
         AString edit = val.ToLower();
         AString user, pattern;
@@ -322,6 +307,8 @@ int main(int argc, char *argv[])
         ADVBProgList::SchedulePatterns(ADateTime().TimeStamp(true), commit);
     }
 
+    bool liststreams = (Value(vars, val, "showchannels") && ((uint_t)val > 0));
+
     if (Value(vars, val, "startstream")) {
         rapidjson::Value subobj;
         AString tempfile = config.GetTempFile("hlsstream", ".txt");
@@ -340,6 +327,8 @@ int main(int argc, char *argv[])
 
             doc.AddMember("failedstreams", subobj, allocator);
         }
+
+        liststreams = true;
     }
 
     if (Value(vars, val, "stopstream")) {
@@ -355,6 +344,8 @@ int main(int argc, char *argv[])
 
             doc.AddMember("stoppedstreams", subobj, allocator);
         }
+
+        liststreams = true;
     }
 
     if (Value(vars, val, "stopstreams")) {
@@ -370,9 +361,11 @@ int main(int argc, char *argv[])
 
             doc.AddMember("stoppedstreams", subobj, allocator);
         }
+
+        liststreams = true;
     }
 
-    {
+    if (liststreams) {
         rapidjson::Value obj;
         std::vector<dvbstream_t> streams;
 
@@ -392,6 +385,8 @@ int main(int argc, char *argv[])
         }
 
         doc.AddMember("activestreams", obj, allocator);
+
+        doc.AddMember("showchannels", true, allocator);
     }
 
     if (Value(vars, val, "parse")) {
@@ -410,7 +405,7 @@ int main(int argc, char *argv[])
         doc.AddMember("newpattern", rapidjson::Value(newpattern.str(), allocator), allocator);
         doc.AddMember("parsedpattern", getpattern(doc, pattern), allocator);
     }
-    else {
+    else if (!liststreams) {
         enum {
             DataSource_Progs = 0,
             DataSource_Titles,
@@ -1045,15 +1040,15 @@ int main(int argc, char *argv[])
                 doc.AddMember("globals", obj, allocator);
             }
         }
+    }
 
-        if (argc == 1) {
-            rapidjson::Writer<AStdData> writer(*Stdout);
-            doc.Accept(writer);
-        }
-        else {
-            rapidjson::PrettyWriter<AStdData> writer(*Stdout);
-            doc.Accept(writer);
-        }
+    if (argc == 1) {
+        rapidjson::Writer<AStdData> writer(*Stdout);
+        doc.Accept(writer);
+    }
+    else {
+        rapidjson::PrettyWriter<AStdData> writer(*Stdout);
+        doc.Accept(writer);
     }
 
     return 0;

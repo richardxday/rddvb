@@ -1039,12 +1039,12 @@ uint_t ADVBConfig::GetMPlayerCacheSize() const
 
 uint_t ADVBConfig::GetMPlayerCacheMinSize() const
 {
-    return (uint_t)GetConfigItem("mplayercacheminsize", "1024");
+    return (uint_t)GetConfigItem("mplayercacheminsize", "512");
 }
 
 AString ADVBConfig::GetVideoPlayerCommand() const
 {
-    return GetConfigItem("playercmd", (AString("mplayer {args} -cache-min {cacheminpercent} -cache {cachesize} -")
+    return GetConfigItem("playercmd", (AString("mplayer {args} -cache-min {cacheminpercent} -cache {cachesize} - 2>/dev/null")
                                        .SearchAndReplace("{args}",            GetMPlayerArgs())
                                        .SearchAndReplace("{cacheminpercent}", AValue(100.0 * (double)GetMPlayerCacheMinSize() / (double)GetMPlayerCacheSize()).ToString("0.2"))
                                        .SearchAndReplace("{cachesize}",       AValue(GetMPlayerCacheSize()).ToString())));
