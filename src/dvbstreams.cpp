@@ -119,7 +119,7 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dv
     }
 
     if (config.GetStreamSlave().Valid()) {
-        cmd.printf("dvb %s --stream \"%s\"", dvbcardspecified ? AString("--dvbcard %").Arg(dvbcard).str() : "", name.str());
+        cmd.printf("dvb %s --rawstream \"%s\"", dvbcardspecified ? AString("--dvbcard %").Arg(dvbcard).str() : "", name.str());
 
         cmd = GetRemoteCommand(cmd, pipecmd, false, true);
     }
