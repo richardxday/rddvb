@@ -1305,7 +1305,7 @@ AString ADVBConfig::GetStreamListingCommand(const AString& pattern, const AStrin
     AString cmd;
 
     if (GetStreamSlave().Valid()) {
-        cmd.printf("bash -c 'pgrep -a -f \"bash .+ %s .+dvb +--stream \\\\\\\\\\\"%s\\\\\\\\\\\"\" | sed -E \"s/^([0-9]+) .+ --stream \\\\\\\\\\\"(.+)\\\\\\\\\\\".+$/\\1 \\2/\" >\"%s\"'", GetStreamSlave().str(), pattern.str(), tempfile.str());
+        cmd.printf("bash -c 'pgrep -a -f \"bash .+ %s .+dvb +--rawstream \\\\\\\\\\\"%s\\\\\\\\\\\"\" | sed -E \"s/^([0-9]+) .+ --rawstream \\\\\\\\\\\"(.+)\\\\\\\\\\\".+$/\\1 \\2/\" >\"%s\"'", GetStreamSlave().str(), pattern.str(), tempfile.str());
     }
     else {
         cmd.printf("bash -c 'pgrep -a dvb | grep -i -E \"\\--stream %s\" | sed -E \"s/^([0-9]+).+--stream (.+)$/\\1 \\2/\" >\"%s\"'", pattern.str(), tempfile.str());
@@ -1319,10 +1319,10 @@ AString ADVBConfig::GetStreamListingKillingCommand(uint32_t pid) const
     AString cmd;
 
     if (GetStreamSlave().Valid()) {
-        cmd.printf("bash -c 'kill -SIGINT $(pgrep -P %u | tail -n 1)'", pid);
+        cmd.printf("bash -c 'kill -SIGINT $(pgrep -P %u | tail -n 1) 2>/dev/null >/dev/null'", pid);
     }
     else {
-        cmd.printf("bash -c 'kill -SIGINT $(pgrep -P $(pgrep -P %u) \"dvbstream\")'", pid);
+        cmd.printf("bash -c 'kill -SIGINT $(pgrep -P $(pgrep -P %u) \"dvbstream\") 2>/dev/null >/dev/null'", pid);
     }
 
     return cmd;
