@@ -2209,10 +2209,10 @@ function showchannels()
 	str += '<th>LCN</th>';
 	str += '<th style="text-align:left">XMLTV Channel</th>';
 	str += '<th style="text-align:left">DVB Channel</th>';
+	str += '<th>Streaming</th>';
 	str += '<th>DVB Frequency</th>';
 	str += '<th>DVB PID List</th>';
 	str += '<th>Type</th>';
-	str += '<th>Actions</th>';
 	str += '</tr>';
 
 	document.getElementById("statusbottom").innerHTML = '';
@@ -2280,35 +2280,6 @@ function showchannels()
 				else str += '<td>&nbsp;</td>';
 
 				if ((typeof channel.dvb != 'undefined') &&
-					(typeof channel.dvb.frequency != 'undefined')) {
-					str += '<td>' + channel.dvb.frequency + '</td>';
-				}
-				else str += '<td>&nbsp;</td>';
-
-				if ((typeof channel.dvb != 'undefined') &&
-					(typeof channel.dvb.pidlist != 'undefined') &&
-					(channel.dvb.pidlist.length > 0)) {
-					str += '<td>';
-					for (j = 0; j < channel.dvb.pidlist.length; j++) {
-						if (j > 0) str += ', ';
-						str += channel.dvb.pidlist[j];
-					}
-					str += '</td>';
-				}
-				else str += '<td>&nbsp;</td>';
-
-				if ((typeof channel.dvb != 'undefined') &&
-					(typeof channel.dvb.hasvideo != 'undefined') &&
-					(typeof channel.dvb.hasaudio != 'undefined')) {
-					str += '<td>';
-					if (channel.dvb.hasvideo && channel.dvb.hasaudio) str += "TV";
-					else if (channel.dvb.hasaudio)					  str += "Radio";
-					else											  str += "&nbsp;";
-					str += '</td>';
-				}
-				else str += '<td>&nbsp;</td>';
-
-				if ((typeof channel.dvb != 'undefined') &&
 					(typeof channel.dvb.hasvideo != 'undefined') &&
 					(typeof channel.dvb.hasaudio != 'undefined') &&
                     channel.dvb.hasvideo &&
@@ -2336,6 +2307,35 @@ function showchannels()
                     }
 					str += '</td>';
                 }
+				else str += '<td>&nbsp;</td>';
+
+				if ((typeof channel.dvb != 'undefined') &&
+					(typeof channel.dvb.frequency != 'undefined')) {
+					str += '<td>' + channel.dvb.frequency + '</td>';
+				}
+				else str += '<td>&nbsp;</td>';
+
+				if ((typeof channel.dvb != 'undefined') &&
+					(typeof channel.dvb.pidlist != 'undefined') &&
+					(channel.dvb.pidlist.length > 0)) {
+					str += '<td>';
+					for (j = 0; j < channel.dvb.pidlist.length; j++) {
+						if (j > 0) str += ', ';
+						str += channel.dvb.pidlist[j];
+					}
+					str += '</td>';
+				}
+				else str += '<td>&nbsp;</td>';
+
+				if ((typeof channel.dvb != 'undefined') &&
+					(typeof channel.dvb.hasvideo != 'undefined') &&
+					(typeof channel.dvb.hasaudio != 'undefined')) {
+					str += '<td>';
+					if (channel.dvb.hasvideo && channel.dvb.hasaudio) str += "TV";
+					else if (channel.dvb.hasaudio)					  str += "Radio";
+					else											  str += "&nbsp;";
+					str += '</td>';
+				}
 				else str += '<td>&nbsp;</td>';
 
 				str += '</tr>';
