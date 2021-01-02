@@ -99,7 +99,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"hlsinput",                     "-i -"},
         {"hlsoutputformat",              "hls"},
         {"hlssegmenttime",               "4"},
-        {"hlssegmentcount",              "150"},
+        {"hlssegmentcount",              "900"},
         {"hlsoutputbase",                "{conf:*recordingsdir}/Stream"},
         {"hlsoutputpath",                "{conf:hlsoutputbase}/{hlssanitizedname}"},
         {"hlsoutputfilename",            "{hlssanitizedname}.m3u8"},
@@ -487,7 +487,7 @@ void ADVBConfig::MapDVBCards()
 
 uint_t ADVBConfig::GetPhysicalDVBCard(uint_t n, bool forcemapping) const
 {
-    if (forcemapping || !dvbcards.size()) {
+    if (forcemapping || (dvbcards.size() == 0)) {
         (const_cast<ADVBConfig *>(this))->MapDVBCards();
     }
     return (n < dvbcards.size()) ? dvbcards[n] : 0;
@@ -496,10 +496,10 @@ uint_t ADVBConfig::GetPhysicalDVBCard(uint_t n, bool forcemapping) const
 uint_t ADVBConfig::GetVirtualDVBCard(uint_t n) const
 {
     std::vector<uint_t>::const_iterator it;
-    if (!dvbcards.size()) {
+    if (dvbcards.size() == 0) {
         (const_cast<ADVBConfig *>(this))->MapDVBCards();
     }
-    return ((it = std::find(dvbcards.begin(), dvbcards.end(), n)) != dvbcards.end()) ? *it : ~0;
+    return ((it = std::find(dvbcards.begin(), dvbcards.end(), n)) != dvbcards.end()) ? *it : ~(uint_t)0;
 }
 
 AString ADVBConfig::GetIgnoreDVBCardList() const
@@ -510,7 +510,7 @@ AString ADVBConfig::GetIgnoreDVBCardList() const
 bool ADVBConfig::IgnoreDVBCard(uint_t n) const
 {
     AString cards = GetIgnoreDVBCardList();
-    uint_t i, ncards = cards.CountColumns();
+    uint_t i, ncards = (uint_t)cards.CountColumns();
 
     for (i = 0; i < ncards; i++) {
         if ((uint_t)cards.Column(i) == n) return true;
@@ -1029,7 +1029,7 @@ AString ADVBConfig::GetVideoEncoder() const
 
 AString ADVBConfig::GetMPlayerArgs() const
 {
-    return GetConfigItem("mplayerargs", "-gui -autosync 1 -vf yadif=1");
+    return GetConfigItem("mplayerargs", "-autosync 1 -vf yadif=1");
 }
 
 uint_t ADVBConfig::GetMPlayerCacheSize() const
