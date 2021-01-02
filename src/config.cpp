@@ -45,8 +45,8 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"dir",                          "{titledir}"},
         {"h264crf",                      "17"},
         {"maxvideorate",                 "2000k"},
-        {"aacbitrate",                   "160k"},
-        {"mp3bitrate",                   "160k"},
+        {"aacbitrate",                   "192k"},
+        {"mp3bitrate",                   "192k"},
         {"copyvideo",                    "-vcodec copy"},
         {"copyaudio",                    "-acodec copy"},
         {"mp3audio",                     "-acodec mp3 -b:a {conf:mp3bitrate}"},
@@ -76,8 +76,8 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"streamoutputformat",           "{conf:streamoutputmp4}"},
         {"streamoutput",                 "-f {conf:streamoutputformat} -"},
         {"streamverbosity",              "-v quiet"},
-        {"streamh264preset",             "ultrafast"},
-        {"streamh264crf",                "22"},
+        {"streamh264preset",             "{conf:h264preset}"},
+        {"streamh264crf",                "17"},
         {"streammaxvideorate",           "{conf:maxvideorate}"},
         {"streamh264bufsize",            "{conf:h264bufsize}"},
         {"streamencodeflags",            "frag_keyframe+faststart+empty_moov"},
@@ -108,8 +108,8 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"hlsoutputargs",                "-hls_time {conf:hlssegmenttime} -hls_list_size {conf:hlssegmentcount} -hls_wrap {conf:hlssegmentcount} -hls_flags delete_segments -hls_playlist_type event \"{conf:hlsoutputfullpath}\""},
         {"hlsoutput",                    "-f {conf:hlsoutputformat} {conf:hlsoutputargs}"},
         {"hlsverbosity",                 "-v quiet"},
-        {"hlsh264preset",                "ultrafast"},
-        {"hlsh264crf",                   "17"},
+        {"hlsh264preset",                "{conf:streamh264preset}"},
+        {"hlsh264crf",                   "{conf:streamh264crf}"},
         {"hlsmaxvideorate",              "{conf:maxvideorate}"},
         {"hlsh264bufsize",               "{conf:h264bufsize}"},
         {"hlsencodeflags",               "frag_keyframe+faststart+empty_moov"},
@@ -1029,7 +1029,7 @@ AString ADVBConfig::GetVideoEncoder() const
 
 AString ADVBConfig::GetMPlayerArgs() const
 {
-    return GetConfigItem("mplayerargs", "-autosync 1 -vf yadif=1");
+    return GetConfigItem("mplayerargs", "-autosync 1 -vf {conf:videodeinterlace}=1");
 }
 
 uint_t ADVBConfig::GetMPlayerCacheSize() const

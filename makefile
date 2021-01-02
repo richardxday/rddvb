@@ -101,6 +101,10 @@ $(HEADERSSRC)/config.extract.h: $(HEADERSSRC)/config.h
 	@echo "Generating $@"
 	@grep -h -E '^[[:blank:]]+[A-Za-z0-9_]+[ \t]+.+// extractconfig' $< | sed -E 's/^[ \t]+[A-Za-z0-9_]+[ \t]+([A-Za-z0-9_]+)\(.+\/\/ extractconfig\((.*)\).*$$/(void)config.\1(\2);/' >$@
 
+APPLICATION := extractconfig
+OBJECTS		:= $(APPLICATION:%=%.o)
+include $(MAKEFILEDIR)/makefile.app
+
 ifdef DEBUG
 $(DEBUG_OBJDIR)/$(APPLICATION)/$(APPLICATION).o: $(HEADERSSRC)/config.extract.h
 
@@ -116,10 +120,6 @@ $(DEFAULTCONFIG): $(EXTRACTCONFIG)
 	@echo "Generating $@"
 	@LD_LIBRARY_PATH="$(RELEASE_LIBDIR):$(INSTALLLIBDST)" $(EXTRACTCONFIG) >$@
 endif
-
-APPLICATION := extractconfig
-OBJECTS		:= $(APPLICATION:%=%.o)
-include $(MAKEFILEDIR)/makefile.app
 
 CLEANFILES	+= $(HEADERSSRC)/config.extract.h $(DEFAULTCONFIG)
 
