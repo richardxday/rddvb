@@ -101,7 +101,8 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dv
     bool dvbcardspecified = dvbcardstr.Valid();
     bool success = false;
 
-    ADVBConfig::GetWriteable(true);
+    // ensure output is disabled
+    ADVBConfig::GetWriteable().DisableOutput();
 
     switch (type) {
         default:
@@ -173,7 +174,7 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dv
                     if (pids.Valid()) {
                         cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)std::min(maxtime.GetAbsoluteSecond(), (uint64_t)0xffffffff), pids);
 
-                        if (!config.IsStreamSlave() && pipecmd.Valid()) {
+                        if (pipecmd.Valid()) {
                             cmd += " " + pipecmd;
                         }
                     }

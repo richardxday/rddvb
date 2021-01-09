@@ -13,10 +13,13 @@
 
 int main(int argc, char *argv[])
 {
-    const ADVBConfig&   config = ADVBConfig::Get(true);
+    const ADVBConfig&   config = ADVBConfig::Get();
     rapidjson::Document doc;
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
     ADVBProg prog;  // ensure ADVBProg initialisation takes place
+
+    // ensure output is disabled
+    ADVBConfig::GetWriteable().DisableOutput();
 
     doc.SetObject();
 

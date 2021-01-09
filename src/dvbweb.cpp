@@ -224,7 +224,7 @@ void parsefile(AStdData& fp, std::map<AString,AString>& vars, AStdData& log)
 
 int main(int argc, char *argv[])
 {
-    const ADVBConfig&   config = ADVBConfig::Get(true);
+    const ADVBConfig&   config = ADVBConfig::Get();
     rapidjson::Document doc;
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
     std::map<AString,AString> vars;
@@ -232,6 +232,9 @@ int main(int argc, char *argv[])
     AStdFile            log(RDDVB_ROOT_DIR "tmp/dvbweb.log", "w");
     AString             val, logdata, errors;
     int  i;
+
+    // ensure output is disabled
+    ADVBConfig::GetWriteable().DisableOutput();
 
     doc.SetObject();
 

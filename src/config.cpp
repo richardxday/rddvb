@@ -203,19 +203,18 @@ ADVBConfig::~ADVBConfig()
 /** Singleton access
  */
 /*--------------------------------------------------------------------------------*/
-const ADVBConfig& ADVBConfig::Get(bool disableoutput)
+const ADVBConfig& ADVBConfig::Get()
 {
-    return (const ADVBConfig &)ADVBConfig::GetWriteable(disableoutput);
+    return (const ADVBConfig &)ADVBConfig::GetWriteable();
 }
 
 /*--------------------------------------------------------------------------------*/
 /** Writable singleton access (for updating object, NOT dvb.conf)
  */
 /*--------------------------------------------------------------------------------*/
-ADVBConfig& ADVBConfig::GetWriteable(bool disableoutput)
+ADVBConfig& ADVBConfig::GetWriteable()
 {
     static ADVBConfig config;
-    if (disableoutput) config.DisableOutput();
     return config;
 }
 
@@ -1148,11 +1147,6 @@ bool ADVBConfig::RescheduleAfterDeletingPattern(const AString& user, const AStri
 bool ADVBConfig::IsRecordingSlave() const
 {
     return ((uint_t)GetConfigItem("isrecordingslave", "0") != 0);
-}
-
-bool ADVBConfig::IsStreamSlave() const
-{
-    return ((uint_t)GetConfigItem("isstreamslave", "0") != 0);
 }
 
 bool ADVBConfig::ConvertVideos() const

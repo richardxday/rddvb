@@ -25,12 +25,18 @@ public:
     /** Singleton access
      */
     /*--------------------------------------------------------------------------------*/
-    static const ADVBConfig& Get(bool disableoutput = false);
+    static const ADVBConfig& Get();
     /*--------------------------------------------------------------------------------*/
     /** Writable singleton access (for updating object, NOT dvb.conf)
      */
     /*--------------------------------------------------------------------------------*/
-    static ADVBConfig& GetWriteable(bool disableoutput = false);
+    static ADVBConfig& GetWriteable();
+
+    /*--------------------------------------------------------------------------------*/
+    /** Disable output (note: write access required)
+     */
+    /*--------------------------------------------------------------------------------*/
+    void DisableOutput() {disableoutput = true;}
 
     /*--------------------------------------------------------------------------------*/
     /** Return whether output is currently disabled or not
@@ -371,7 +377,6 @@ public:
     bool    RescheduleAfterDeletingPattern(const AString& user, const AString& category) const; // extractconfig("<user>", "<category>")
 
     bool    IsRecordingSlave()               const; // extractconfig()
-    bool    IsStreamSlave()                  const; // extractconfig()
     bool    ConvertVideos()                  const; // extractconfig()
     bool    EnableCombined()                 const; // extractconfig()
 
@@ -467,8 +472,6 @@ protected:
 
     void MapDVBCards();
     void CheckUpdate() const;
-
-    void DisableOutput() {disableoutput = true;}
 
 private:
     ADVBConfig();
