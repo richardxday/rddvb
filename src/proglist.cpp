@@ -2077,7 +2077,37 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
         else if ((starttimems >= lateststartms) && ((starttimems - lateststartms) >= prog.GetStart())) {
             config.logit("'%s' started too long ago (%u minutes)", prog.GetQuickDescription().str(), (uint_t)((starttimems - prog.GetStart() + 59999) / 60000));
         }
-        else deleteprog = false;
+        else {
+            ADVBProgList alreadyrecordedlist;
+
+            recordedlist.FindSimilarProgrammes(alreadyrecordedlist, prog);
+
+            if (alreadyrecordedlist.Count() > 0) {
+                bool report = false;
+
+                if (prog.AllowRepeats()) {
+                    config.logit("'%s' has already been recorded (%u times) but has repeats allowed:", prog.GetQuickDescription().str(), alreadyrecordedlist.Count());
+                    report = true;
+                }
+                if (prog.RecordIfMissing()) {
+                    config.logit("'%s' has already been recorded (%u times) but has record if missing enabled:", prog.GetQuickDescription().str(), alreadyrecordedlist.Count());
+                    report = true;
+                }
+
+                for (uint_t j = 0; j < alreadyrecordedlist.Count(); j++) {
+                    const auto& prog2 = alreadyrecordedlist[j];
+
+                    if (report || !prog2.IsRecordingComplete()) {
+                        config.logit("    Recorded '%s': %s / %s'",
+                                     prog2.GetQuickDescription().str(),
+                                     prog2.IsAvailable()         ? "available" : "**unavailable**",
+                                     prog2.IsRecordingComplete() ? "complete"  : "**incomplete**");
+                    }
+                }
+            }
+
+            deleteprog = false;
+        }
 
         if (deleteprog) {
             DeleteProg(i);
