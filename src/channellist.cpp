@@ -112,7 +112,7 @@ bool ADVBChannelList::Read()
         json.ReadFromFile(config.GetDVBChannelsJSONFile())) {
         rapidjson::Document doc;
 
-        //config.printf("Reading channels from '%s'...", config.GetDVBChannelsJSONFile().str());
+        config.printf("Reading channels from '%s'...", config.GetDVBChannelsJSONFile().str());
 
         if (!doc.Parse(json).HasParseError()) {
             if (doc.IsArray()) {
@@ -233,7 +233,7 @@ bool ADVBChannelList::Read()
         fp.open(config.GetDVBChannelsFile())) {
         AString line;
 
-        //config.printf("Reading channels from '%s'...", config.GetDVBChannelsFile().str());
+        config.printf("Reading channels from '%s'...", config.GetDVBChannelsFile().str());
 
         while (line.ReadLn(fp) >= 0) {
             CHANNEL *chan = NULL;
@@ -244,24 +244,40 @@ bool ADVBChannelList::Read()
                 (line.GetFieldNumber(":", 10, _pid1) >= 0) &&
                 (line.GetFieldNumber(":", 11, _pid2) >= 0)) {
                 if ((chan = GetChannelByName(name, true)) != NULL) {
-                    chan->dvb.freq = (uint32_t)_freq;
-                    chan->dvb.pidlist.clear();
+                    if (chan->dvb.pidlist.size() >= 2) {
+                        const auto& pidlist = chan->dvb.pidlist;
+                        AString pidliststr1;
+                        AString pidliststr2;
 
-                    if ((uint_t)_pid1) {
-                        chan->dvb.pidlist.push_back((uint_t)_pid1);
-                        chan->dvb.hasvideo = true;
+                        pidliststr1.printf("%u", pidlist[0]);
+                        for (size_t i = 1; i < pidlist.size(); i++) {
+                            pidliststr1.printf(", %u", pidlist[i]);
+                        }
+
+                        pidliststr2.printf("%s, %s", _pid1.str(), _pid2.str());
+
+                        config.printf("Warning: NOT going replace pidlist '%s' with '%s' for channel '%s'", pidliststr1.str(), pidliststr2.str(), name.str());
                     }
-                    else chan->dvb.hasvideo = false;
+                    else {
+                        chan->dvb.freq = (uint32_t)_freq;
+                        chan->dvb.pidlist.clear();
 
-                    if ((uint_t)_pid2) {
-                        chan->dvb.pidlist.push_back((uint_t)_pid2);
-                        chan->dvb.hasaudio = true;
+                        if ((uint_t)_pid1) {
+                            chan->dvb.pidlist.push_back((uint_t)_pid1);
+                            chan->dvb.hasvideo = true;
+                        }
+                        else chan->dvb.hasvideo = false;
+
+                        if ((uint_t)_pid2) {
+                            chan->dvb.pidlist.push_back((uint_t)_pid2);
+                            chan->dvb.hasaudio = true;
+                        }
+                        else chan->dvb.hasaudio = false;
+
+                        chan->dvb.hassubtitle = false;
+
+                        changed = true;
                     }
-                    else chan->dvb.hasaudio = false;
-
-                    chan->dvb.hassubtitle = false;
-
-                    changed = true;
                 }
             }
             else if ((name = line.Column(0)).Valid() && (_freq = line.Column(1)).Valid()) {
@@ -272,18 +288,37 @@ bool ADVBChannelList::Read()
                 }
 
                 if ((chan = GetChannelByName(name, true, lcn)) != NULL) {
-                    chan->dvb.freq = (uint32_t)_freq;
-                    chan->dvb.pidlist.clear();
+                    if (chan->dvb.pidlist.size() >= 2) {
+                        const auto& pidlist = chan->dvb.pidlist;
+                        AString pidliststr1;
+                        AString pidliststr2;
 
-                    uint_t i, n = line.CountColumns();
-                    for (i = 2; (i < n); i++) {
-                        AString col = line.Column(i);
+                        pidliststr1.printf("%u", pidlist[0]);
+                        for (size_t i = 1; i < pidlist.size(); i++) {
+                            pidliststr1.printf(", %u", pidlist[i]);
+                        }
 
-                        chan->dvb.pidlist.push_back((uint_t)col);
+                        pidliststr2.printf("%s", line.Column(2).str());
+                        for (int i = 3; i < line.CountColumns(); i++) {
+                            pidliststr2.printf(", %s", line.Column(i).str());
+                        }
+
+                        config.printf("Warning: NOT going replace pidlist '%s' with '%s' for channel '%s'", pidliststr1.str(), pidliststr2.str(), name.str());
                     }
+                    else {
+                        chan->dvb.freq = (uint32_t)_freq;
+                        chan->dvb.pidlist.clear();
 
-                    // set video and audio flags based on number of PIDs in list
-                    changed |= ForceChannelAudioAndVideoFlags(chan);
+                        int i, n = line.CountColumns();
+                        for (i = 2; (i < n); i++) {
+                            AString col = line.Column(i);
+
+                            chan->dvb.pidlist.push_back((uint_t)col);
+                        }
+
+                        // set video and audio flags based on number of PIDs in list
+                        changed |= ForceChannelAudioAndVideoFlags(chan);
+                    }
                 }
             }
         }
