@@ -1838,6 +1838,9 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 
             uint_t rate = GetRate() / 1024;
             if (rate) str1.printf(" (rate %ukbits/s)", rate);
+
+            if (!IsRecordingComplete()) str.printf(" **INCOMPLETE**");
+
             str1.printf(".");
         }
 
@@ -2711,7 +2714,7 @@ void ADVBProg::Record()
         }
 
         if (record) {
-            if (!AllowRepeats()) {
+            if (!AllowRepeats() && !RecordIfMissing()) {
                 const ADVBProg *recordedprog = NULL;
                 ADVBProgList recordedlist;
 

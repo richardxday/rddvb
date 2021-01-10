@@ -22,6 +22,7 @@
 #include "dvblock.h"
 #include "dvbpatterns.h"
 #include "iconcache.h"
+#include "rdlib/strsup.h"
 
 /*--------------------------------------------------------------------------------*/
 
@@ -1071,7 +1072,9 @@ int ADVBProgList::FindUUIDIndex(const AString& uuid) const
 {
     int res = -1;
 
-    if (proghash.GetItems()) res = proglist.Find(proghash.Read(uuid));
+    if (proghash.GetItems() > 0) {
+        res = proglist.Find(proghash.Read(uuid));
+    }
     else {
         uint_t i, n = Count();
 
@@ -1195,7 +1198,7 @@ uint_t ADVBProgList::FindSimilarProgrammes(ADVBProgList& dest, const ADVBProg& p
 
 const ADVBProg *ADVBProgList::GetNextProgramme(const ADVBProg *prog, uint_t *index) const
 {
-    if (prog) {
+    if (prog != NULL) {
         const ADVBProg *tmpprog;
         uint_t progindex;
         int p;
@@ -1204,8 +1207,8 @@ const ADVBProg *ADVBProgList::GetNextProgramme(const ADVBProg *prog, uint_t *ind
              (((tmpprog = FindUUID(*prog)) != NULL) &&
               ((p = proglist.Find((uptr_t)tmpprog)) >= 0))) &&
             (p < ((int)Count() - 1))) {
-            progindex = p + 1;
-            if (index) index[0] = progindex;
+            progindex = (uint_t)p + 1;
+            if (index != NULL) index[0] = progindex;
             prog = &GetProg(progindex);
         }
         else prog = NULL;
@@ -1216,7 +1219,7 @@ const ADVBProg *ADVBProgList::GetNextProgramme(const ADVBProg *prog, uint_t *ind
 
 const ADVBProg *ADVBProgList::GetPrevProgramme(const ADVBProg *prog, uint_t *index) const
 {
-    if (prog) {
+    if (prog != NULL) {
         const ADVBProg *tmpprog;
         uint_t progindex;
         int p;
@@ -1225,8 +1228,8 @@ const ADVBProg *ADVBProgList::GetPrevProgramme(const ADVBProg *prog, uint_t *ind
              (((tmpprog = FindUUID(*prog)) != NULL) &&
               ((p = proglist.Find((uptr_t)tmpprog)) >= 0))) &&
             (p > 0)) {
-            progindex = p - 1;
-            if (index) index[0] = progindex;
+            progindex = (uint_t)p - 1;
+            if (index != NULL) index[0] = progindex;
             prog = &GetProg(progindex);
         }
         else prog = NULL;
@@ -1240,8 +1243,10 @@ const ADVBProg *ADVBProgList::FindSimilar(const ADVBProg& prog, const ADVBProg *
     const ADVBProg *res = NULL;
     uint_t i = 0;
 
-    if (startprog) {
-        GetNextProgramme(startprog, &i);
+    if (startprog != NULL) {
+        if (GetNextProgramme(startprog, &i) == NULL) {
+            return res;
+        }
     }
 
     for (; i < Count(); i++) {
@@ -1264,7 +1269,9 @@ const ADVBProg *ADVBProgList::FindLastSimilar(const ADVBProg& prog, const ADVBPr
         uint_t i = Count() - 1;
 
         if (startprog) {
-            GetPrevProgramme(startprog, &i);
+            if (GetPrevProgramme(startprog, &i) == NULL) {
+                return res;
+            }
         }
 
         do {
@@ -1286,7 +1293,9 @@ ADVBProg *ADVBProgList::FindSimilarWritable(const ADVBProg& prog, ADVBProg *star
     uint_t i = 0;
 
     if (startprog) {
-        GetNextProgramme(startprog, &i);
+        if (GetNextProgramme(startprog, &i) == NULL) {
+            return res;
+        }
     }
 
     for (; i < Count(); i++) {
@@ -1309,7 +1318,9 @@ ADVBProg *ADVBProgList::FindLastSimilarWritable(const ADVBProg& prog, ADVBProg *
         uint_t i = Count() - 1;
 
         if (startprog) {
-            GetPrevProgramme(startprog, &i);
+            if (GetPrevProgramme(startprog, &i) == NULL) {
+                return res;
+            }
         }
 
         do {
@@ -2041,7 +2052,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
     // or are being recorded now
     // or have been on too long
     for (i = 0; i < Count();) {
-        const ADVBProg *otherprog;
+        const ADVBProg *otherprog = NULL;
         ADVBProg& prog = GetProgWritable(i);
         bool deleteprog = true;
 
