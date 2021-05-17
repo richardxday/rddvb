@@ -1,6 +1,4 @@
 
-#include "json/forwards.h"
-#include "json/reader.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +12,9 @@
 #include <rdlib/Recurse.h>
 #include <rdlib/XMLDecode.h>
 #include <json/json.h>
+
+#include <json/forwards.h>
+#include <json/reader.h>
 
 #include "config.h"
 #include "proglist.h"
