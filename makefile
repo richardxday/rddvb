@@ -105,6 +105,8 @@ $(HEADERSSRC)/configlivevalues.def: $(HEADERSSRC)/config.h
 	@echo "Generating $@"
 	@grep -o -E "^[ \t]+AString Get[A-Za-z0-9]+\(\)" $< | sed -E "s/^[ \t]+AString[ \t]+//" | sed -E "s/\(\)//" | sed -E "s/Get(.+)$$/\1,\L\1/" | sed -E "s/^([A-Za-z0-9]+),([A-Za-z0-9]+)$$/CONFIG_GETVALUE(\"\2\", Get\1)/" >$@
 
+default-build: $(HEADERSSRC)/configlivevalues.def
+
 APPLICATION := extractconfig
 OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
@@ -126,6 +128,7 @@ $(DEFAULTCONFIG): $(EXTRACTCONFIG)
 endif
 
 CLEANFILES	+= $(HEADERSSRC)/config.extract.h $(DEFAULTCONFIG)
+CLEANFILES  += $(HEADERSSRC)/configlivevalues.def
 
 APPLICATION := comparechannels
 OBJECTS		:= $(APPLICATION:%=%.o)
