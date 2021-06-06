@@ -1067,7 +1067,7 @@ AString ADVBConfig::GetHLSCleanCommand() const
 AString ADVBConfig::GetHTTPStreamCommand(const AString& args) const
 {
     AString dest = args.Valid() ? args : "8555";
-    return GetConfigItem("httpstreamcmd", AString("vlc -I dummy - --demux ffmpeg ") + ReplaceTerms(GetConfigItem("vlcargs")) + AString(" \"--sout='#std{access=http,mux=ts,dst=:") + dest + AString("}'\""));
+    return GetConfigItem("httpstreamcmd", AString("vlc -I dummy - --demux ffmpeg ") + ReplaceTerms(GetConfigItem("vlcargs")) + AString(" \"--sout='#std{access=http,mux=ts,dst=:") + dest + AString("}'\" 2>/dev/null >/dev/null"));
 }
 
 AString ADVBConfig::GetTempFileSuffix() const
