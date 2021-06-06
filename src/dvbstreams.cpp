@@ -93,13 +93,20 @@ static bool PrepareHLSStreaming(const AString& name)
     return success;
 }
 
-bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dvbcardstr)
+bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& dvbcardstr)
 {
     const ADVBConfig& config = ADVBConfig::Get();
+    AString name = _name, args;
     AString cmd, pipecmd;
     uint_t dvbcard = (uint_t)dvbcardstr;
     bool dvbcardspecified = dvbcardstr.Valid();
     bool success = false;
+    int p;
+
+    if ((p = name.PosNoCase(";")) >= 0) {
+        args = name.Mid(p + 1);
+        name = name.Left(p);
+    }
 
     // ensure output is disabled
     ADVBConfig::GetWriteable().DisableOutput();
@@ -119,13 +126,29 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dv
             pipecmd.printf("| %s", config.GetStreamEncoderCommand().str());
             break;
 
+        case StreamType_HTTP:
+            if (config.GetStreamSlave().Empty()) {
+                pipecmd.printf("| %s", config.GetHTTPStreamCommand(args).str());
+            }
+            break;
+
+        case StreamType_LocalHTTP:
+            pipecmd.printf("| %s", config.GetHTTPStreamCommand(args).str());
+            break;
+
         case StreamType_Video:
             pipecmd.printf("| %s", config.GetVideoPlayerCommand().str());
             break;
     }
 
     if (config.GetStreamSlave().Valid()) {
-        cmd.printf("dvb %s --rawstream \"%s\"", dvbcardspecified ? AString("--dvbcard %").Arg(dvbcard).str() : "", name.str());
+        if (type == StreamType_HTTP) {
+            // ensure HTTP encoding is done on the remove device
+            cmd.printf("dvb %s --httpstream \"%s\"", dvbcardspecified ? AString("--dvbcard %").Arg(dvbcard).str() : "", _name.str());
+        }
+        else {
+            cmd.printf("dvb %s --rawstream \"%s\"", dvbcardspecified ? AString("--dvbcard %").Arg(dvbcard).str() : "", name.str());
+        }
 
         cmd = GetRemoteCommand(cmd, pipecmd, false, true);
     }

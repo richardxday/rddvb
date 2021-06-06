@@ -7,6 +7,8 @@ typedef enum {
     StreamType_Raw = 0,
     StreamType_HLS,
     StreamType_MP4,
+    StreamType_HTTP,
+    StreamType_LocalHTTP,
     StreamType_Video,
 } dvbstreamtype_t;
 
@@ -19,7 +21,7 @@ typedef struct {
 } dvbstream_t;
 
 extern bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& pattern = ".+");
-extern bool StartDVBStream(dvbstreamtype_t type, const AString& name, const AString& dvbcardstr = "");
+extern bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& dvbcardstr = "");
 extern bool StopDVBStream(const AString& name, std::vector<dvbstream_t>& stoppedstreams);
 extern bool StopDVBStreams(const AString& pattern, std::vector<dvbstream_t>& stoppedstreams);
 

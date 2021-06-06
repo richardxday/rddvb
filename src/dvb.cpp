@@ -205,6 +205,8 @@ int main(int argc, const char *argv[])
         {"--rawstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
         {"--mp4stream",                             "<text>",                           "Stream DVB channel or programme being recorded <text>, encoding as mp4 to console (for piping to arbitrary programs)"},
         {"--hlsstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text>, encoding as HLS"},
+        {"--httpstream",                            "<text>[;<port>]",                  "Stream DVB channel or programme being recorded <text>, encoding as http"},
+        {"--lhttpstream",                           "<text>[;<port>]",                  "Stream DVB channel or programme being recorded <text>, encoding as http on local machine"},
         {"--list-streams",                          "",                                 "List active stream(s)"},
         {"--stop-streams",                          "<pattern>",                        "Stop stream(s) matching <pattern>"},
         {"--stop-stream",                           "<name>",                           "Stop specific stream"},
@@ -2156,7 +2158,9 @@ int main(int argc, const char *argv[])
             else if ((stricmp(argv[i], "--stream") == 0) ||
                      (stricmp(argv[i], "--rawstream") == 0) ||
                      (stricmp(argv[i], "--mp4stream") == 0) ||
-                     (stricmp(argv[i], "--hlsstream") == 0)) {
+                     (stricmp(argv[i], "--hlsstream") == 0) ||
+                     (stricmp(argv[i], "--httpstream") == 0) ||
+                     (stricmp(argv[i], "--lhttpstream") == 0)) {
                 dvbstreamtype_t type = StreamType_Raw;
                 AString streamtype = argv[i];
                 AString name       = argv[++i];
@@ -2172,6 +2176,12 @@ int main(int argc, const char *argv[])
                 }
                 else if (streamtype == "--hlsstream") {
                     type = StreamType_HLS;
+                }
+                else if (streamtype == "--httpstream") {
+                    type = StreamType_HTTP;
+                }
+                else if (streamtype == "--lhttpstream") {
+                    type = StreamType_LocalHTTP;
                 }
 
                 StartDVBStream(type, name, dvbcardspecified ? AString("%").Arg(dvbcard) : "");

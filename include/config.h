@@ -350,6 +350,7 @@ public:
     AString GetHLSCleanCommand()             const; // extractconfig()
     AString ReplaceHLSTerms(const AString& str, const AString& name) const;
     AString GetHLSConfigItem(const AString& item, const AString& name) const;
+    AString GetHTTPStreamCommand(const AString& args) const; // extractconfig("<args>")
 
     AString GetTempFileSuffix()              const; // extractconfig()
     AString GetRecordedFileSuffix()          const; // extractconfig()
