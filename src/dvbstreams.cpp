@@ -4,19 +4,77 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <regex>
+
+#include "dvbmisc.h"
 #include "dvbstreams.h"
 #include "channellist.h"
 #include "proglist.h"
 #include "dvbprog.h"
 #include "rdlib/Recurse.h"
+#include "rdlib/Regex.h"
 #include "rdlib/misc.h"
 #include "rdlib/strsup.h"
+
+AString ConvertStream(const dvbstream_t& stream)
+{
+    AString str;
+
+    str.printf("type %s\n", stream.type.str());
+    str.printf("cmd %s\n", stream.cmd.str());
+    str.printf("name %s\n", stream.name.str());
+    str.printf("url %s\n", stream.url.str());
+    str.printf("htmlfile %s\n", stream.htmlfile.str());
+    str.printf("hlsfile %s\n", stream.hlsfile.str());
+
+    return str.Base64Encode();
+}
+
+bool ConvertStream(const AString& base64str, dvbstream_t& stream)
+{
+    AString str = base64str.Base64Decode();
+    bool success = false;
+
+    if (str.Valid()) {
+        sint_t i, n = str.CountLines();
+
+        for (i = 0; i < n; i++) {
+            AString line = str.Line(i);
+            AString cmd  = line.Word(0);
+            AString args = line.Words(1);
+
+            if (cmd == "type") {
+                stream.type = args;
+            }
+            else if (cmd == "cmd") {
+                stream.cmd = args;
+            }
+            else if (cmd == "name") {
+                stream.name = args;
+            }
+            else if (cmd == "url") {
+                stream.url = args;
+            }
+            else if (cmd == "htmlfile") {
+                stream.htmlfile = args;
+            }
+            else if (cmd == "hlsfile") {
+                stream.hlsfile = args;
+            }
+        }
+
+        success = true;
+    }
+
+    return success;
+}
 
 bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& pattern)
 {
     const ADVBConfig& config = ADVBConfig::Get();
     AString tempfile = config.GetTempFile("streams", ".txt");
-    AString cmd      = config.GetStreamListingCommand(pattern, tempfile);
+    AString cmd      = config.GetStreamListingCommand(tempfile);
+    AString pat      = ParseRegex(pattern);
     bool success = false;
 
     if (system(cmd) == 0) {
@@ -26,19 +84,14 @@ bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& patt
             AString line;
 
             while (line.ReadLn(fp) >= 0) {
+                uint32_t pid = (uint32_t)line.Word(0);
+                AString  str = line.Words(1);
                 dvbstream_t stream;
 
-                stream.pid  = (uint_t)line.Word(0);
-                stream.name = line.Words(1);
-
-                stream.htmlfile = config.GetHLSConfigItem("hlsstreamhtmldestfile", stream.name);
-                stream.hlsfile  = config.GetHLSConfigItem("hlsoutputfullpath", stream.name);
-                if (AStdFile::exists(stream.htmlfile) &&
-                    AStdFile::exists(stream.hlsfile)) {
-                    stream.url  = config.GetHLSConfigItem("hlsstreamurl", stream.name);
+                if (ConvertStream(str, stream) && MatchRegex(stream.name, pat)) {
+                    stream.pid = pid;
+                    activestreams.push_back(stream);
                 }
-
-                activestreams.push_back(stream);
             }
 
             fp.close();
@@ -52,9 +105,10 @@ bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& patt
     return success;
 }
 
-static bool PrepareHLSStreaming(const AString& name)
+static bool PrepareHLSStreaming(dvbstream_t& stream)
 {
     const ADVBConfig& config   = ADVBConfig::Get();
+    const AString&    name     = stream.name;
     const AString     dir      = config.GetHLSConfigItem("hlsoutputpath", name);
     const AString     srcfile  = config.GetHLSConfigItem("hlsstreamhtmlsourcefile", name);
     const AString     destfile = config.GetHLSConfigItem("hlsstreamhtmldestfile", name);
@@ -73,6 +127,14 @@ static bool PrepareHLSStreaming(const AString& name)
                 }
 
                 ofp.close();
+
+                stream.type     = "hls";
+                stream.htmlfile = destfile;
+                stream.hlsfile  = config.GetHLSConfigItem("hlsoutputfullpath", name);
+                if (AStdFile::exists(stream.htmlfile) &&
+                    AStdFile::exists(stream.hlsfile)) {
+                    stream.url  = config.GetHLSConfigItem("hlsstreamurl", name);
+                }
 
                 success = true;
             }
@@ -96,65 +158,19 @@ static bool PrepareHLSStreaming(const AString& name)
 bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& dvbcardstr)
 {
     const ADVBConfig& config = ADVBConfig::Get();
-    AString name = _name, args;
-    AString cmd, pipecmd;
-    uint_t dvbcard = (uint_t)dvbcardstr;
-    bool dvbcardspecified = dvbcardstr.Valid();
+    const bool   useslave         = config.GetStreamSlave().Valid();
+    const uint_t dvbcard          = (uint_t)dvbcardstr;
+    const bool   dvbcardspecified = dvbcardstr.Valid();
+    AString      name             = _name;
     bool success = false;
-    int p;
-
-    if ((p = name.PosNoCase(";")) >= 0) {
-        args = name.Mid(p + 1);
-        name = name.Left(p);
-    }
 
     // ensure output is disabled
     ADVBConfig::GetWriteable().DisableOutput();
 
-    switch (type) {
-        default:
-        case StreamType_Raw:
-            break;
-
-        case StreamType_HLS:
-            PrepareHLSStreaming(name);
-            pipecmd.printf("| %s", config.ReplaceHLSTerms(config.GetHLSEncoderCommand(), name).str());
-            pipecmd.printf(" ; %s", config.ReplaceHLSTerms(config.GetHLSCleanCommand(), name).str());
-            break;
-
-        case StreamType_MP4:
-            pipecmd.printf("| %s", config.GetStreamEncoderCommand().str());
-            break;
-
-        case StreamType_HTTP:
-            if (config.GetStreamSlave().Empty()) {
-                pipecmd.printf("| %s", config.GetHTTPStreamCommand(args).str());
-            }
-            break;
-
-        case StreamType_LocalHTTP:
-            pipecmd.printf("| %s", config.GetHTTPStreamCommand(args).str());
-            break;
-
-        case StreamType_Video:
-            pipecmd.printf("| %s", config.GetVideoPlayerCommand().str());
-            break;
-    }
-
-    if (config.GetStreamSlave().Valid()) {
-        if (type == StreamType_HTTP) {
-            // ensure HTTP encoding is done on the remove device
-            cmd.printf("dvb %s --httpstream \"%s\"", dvbcardspecified ? AString("--dvbcard %").Arg(dvbcard).str() : "", _name.str());
-        }
-        else {
-            cmd.printf("dvb %s --rawstream \"%s\"", dvbcardspecified ? AString("--dvbcard %").Arg(dvbcard).str() : "", name.str());
-        }
-
-        cmd = GetRemoteCommand(cmd, pipecmd, false, true);
-    }
-    else {
+    if ((type == StreamType_Raw) && !useslave) {
         ADVBChannelList& channellist = ADVBChannelList::Get();
         AString pids;
+        AString cmd;
 
         if (channellist.GetPIDList(0U, name, pids, false)) {
             ADVBProgList list;
@@ -196,10 +212,6 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
 
                     if (pids.Valid()) {
                         cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)std::min(maxtime.GetAbsoluteSecond(), (uint64_t)0xffffffff), pids);
-
-                        if (pipecmd.Valid()) {
-                            cmd += " " + pipecmd;
-                        }
                     }
                     else fprintf(stderr, "Failed to find PIDs for channel '%s'\n", name.str());
                 }
@@ -246,7 +258,7 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
                 if (filename.Valid()) {
                     const ADVBProg& prog = list1[i];
 
-                    cmd.printf("cat \"%s\"", filename.str());
+                    cmd.printf("nice 10 cat \"%s\"", filename.str());
 
                     fprintf(stderr, "Streaming '%s'\n", prog.GetDescription(1).str());
                 }
@@ -258,23 +270,69 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
                 fprintf(stderr, "No programmes found with pattern\n");
             }
         }
-    }
 
-    if (cmd.Valid()) {
+        if (cmd.Valid()) {
+            //fprintf(stderr, "Cmd: %s\n", cmd2.str());
+            success = (system(cmd) == 0);
+        }
+    }
+    else {
+        dvbstream_t stream;
+        AString cmd, args, pipecmd;
+        int p;
+
+        if ((p = name.PosNoCase(";")) >= 0) {
+            args = name.Mid(p + 1);
+            name = name.Left(p);
+        }
+
+        stream.name = name;
+
+        switch (type) {
+            default:
+            case StreamType_Raw:
+                stream.type = "raw";
+                break;
+
+            case StreamType_HLS:
+                stream.type = "hls";
+                PrepareHLSStreaming(stream);
+                pipecmd.printf("| %s", config.ReplaceHLSTerms(config.GetHLSEncoderCommand(), name).str());
+                pipecmd.printf(" ; %s", config.ReplaceHLSTerms(config.GetHLSCleanCommand(), name).str());
+                break;
+
+            case StreamType_MP4:
+                stream.type = "mp4";
+                pipecmd.printf("| %s", config.GetStreamEncoderCommand().str());
+                break;
+
+            case StreamType_HTTP:
+            case StreamType_LocalHTTP:
+                stream.type = "http";
+                stream.url  = config.GetHTTPStreamURL(args);
+                if ((type == StreamType_LocalHTTP) || !useslave) {
+                    pipecmd.printf("| %s", config.GetHTTPStreamCommand(args).str());
+                }
+                break;
+
+            case StreamType_Video:
+                stream.type = "video";
+                pipecmd.printf("| %s", config.GetVideoPlayerCommand().str());
+                break;
+        }
+
+        cmd.printf("dvb ---stream \"%s\"", ConvertStream(stream).str());
+        if (useslave) {
+            cmd = GetRemoteCommand(cmd, pipecmd, true, true);
+        }
+        else cmd += pipecmd;
+
         if (config.LogRemoteCommands()) {
             config.logit("Running command '%s'", cmd.str());
         }
 
-        AString cmd2;
-        if (pipecmd.Valid()) {
-            cmd2.printf("bash -c '%s' >/dev/null &", cmd.str());
-        }
-        else {
-            cmd2.printf("bash -c '%s'", cmd.str());
-        }
-
         //fprintf(stderr, "Cmd: %s\n", cmd2.str());
-        success = (system(cmd2) == 0);
+        success = (system(cmd) == 0);
     }
 
     return success;

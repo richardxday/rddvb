@@ -201,6 +201,7 @@ int main(int argc, const char *argv[])
         {"--find-gaps",                             "",                                 "Find gap from now until the next working for each card"},
         {"--find-new-programmes",                   "",                                 "Find programmes that have been scheduled that are either new or from a new series"},
         {"--check-video-files",                     "",                                 "Check archived video files for errors"},
+        {"---stream",                               "<base64>",                         "Process stream described by <base64>"},
         {"--stream",                                "<text>",                           "Stream DVB channel or programme being recorded <text> to mplayer (or other player)"},
         {"--rawstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
         {"--mp4stream",                             "<text>",                           "Stream DVB channel or programme being recorded <text>, encoding as mp4 to console (for piping to arbitrary programs)"},
@@ -2154,6 +2155,14 @@ int main(int argc, const char *argv[])
                         printf("%s: %u\n", prog.GetQuickDescription().str(), nerrors);
                     }
                 }
+            }
+            else if (stricmp(argv[i], "---stream") == 0) {
+                dvbstream_t stream;
+
+                if (ConvertStream(argv[++i], stream)) {
+                    res = system(stream.cmd.str());
+                }
+                else fprintf(stderr, "Invalid base64 value '%s'\n", argv[i]);
             }
             else if ((stricmp(argv[i], "--stream") == 0) ||
                      (stricmp(argv[i], "--rawstream") == 0) ||

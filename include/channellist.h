@@ -52,6 +52,8 @@ public:
     const CHANNEL *GetChannelByDVBChannelName(const AString& name)   const;
     const CHANNEL *GetChannelByXMLTVChannelName(const AString& name) const;
     const CHANNEL *GetChannelByName(const AString& name) const;
+    const CHANNEL *GetChannelByFrequencyAndPIDs(uint32_t freq, const AString& pids) const;
+    const CHANNEL *GetChannelByFrequencyAndPIDs(uint32_t freq, const PIDLIST& pidlist) const;
 
     const CHANNEL *AssignOrAddXMLTVChannel(uint_t lcn, const AString& name, const AString& id);
 

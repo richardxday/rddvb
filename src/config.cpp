@@ -1064,10 +1064,27 @@ AString ADVBConfig::GetHLSCleanCommand() const
     return GetConfigItem("hlscleanupcmd", ReplaceTerms(GetConfigItem("hlscleanup")));
 }
 
+uint_t ADVBConfig::GetHTTPStreamPort() const
+{
+    return (uint_t)GetConfigItem("httpstreamport", "8555");
+}
+
 AString ADVBConfig::GetHTTPStreamCommand(const AString& args) const
 {
-    AString dest = args.Valid() ? args : "8555";
-    return GetConfigItem("httpstreamcmd", AString("vlc -I dummy - --demux ffmpeg ") + ReplaceTerms(GetConfigItem("vlcargs")) + AString(" \"--sout='#std{access=http,mux=ts,dst=:") + dest + AString("}'\" 2>/dev/null >/dev/null"));
+    uint_t port = args.Valid() ? (uint_t)args : GetHTTPStreamPort();
+    return GetConfigItem("httpstreamcmd", AString("vlc -I dummy - --demux ffmpeg ") + ReplaceTerms(GetConfigItem("vlcargs")) + AString(" \"--sout='#std{access=http,mux=ts,dst=:%;}'\" 2>/dev/null >/dev/null").Arg(port));
+}
+
+AString ADVBConfig::GetHTTPStreamURL(const AString& args) const
+{
+    uint_t port = args.Valid() ? (uint_t)args : GetHTTPStreamPort();
+    return AString("http://%;:%;").Arg(GetStreamSlave().Valid() ? GetStreamSlave() : "localhost").Arg(port);
+}
+
+AString ADVBConfig::GetLocalHTTPStreamURL(const AString& args) const
+{
+    uint_t port = args.Valid() ? (uint_t)args : GetHTTPStreamPort();
+    return AString("http://localhost:%;").Arg(port);
 }
 
 AString ADVBConfig::GetTempFileSuffix() const
@@ -1300,15 +1317,16 @@ AString ADVBConfig::GetGraphSuffix() const
     return GetConfigItem("graphsuffix", "svg");
 }
 
-AString ADVBConfig::GetStreamListingCommand(const AString& pattern, const AString& tempfile) const
+AString ADVBConfig::GetStreamListingCommand(const AString& tempfile) const
 {
+    const AString cmd0 = "pgrep -a dvb | grep -E \"dvb ---stream \" | sed -E \"s/dvb ---stream //\"";
     AString cmd;
 
     if (GetStreamSlave().Valid()) {
-        cmd.printf("bash -c 'pgrep -a -f \"bash .+ %s .+dvb +--rawstream \\\\\\\\\\\"%s\\\\\\\\\\\"\" | sed -E \"s/^([0-9]+) .+ --rawstream \\\\\\\\\\\"(.+)\\\\\\\\\\\".+$/\\1 \\2/\" >\"%s\"'", GetStreamSlave().str(), pattern.str(), tempfile.str());
+        cmd = GetRemoteCommand(cmd0, AString::Formatify(" >\"%s\"", tempfile.str()), true, true);
     }
     else {
-        cmd.printf("bash -c 'pgrep -a dvb | grep -i -E \"\\--stream %s\" | sed -E \"s/^([0-9]+).+--stream (.+)$/\\1 \\2/\" >\"%s\"'", pattern.str(), tempfile.str());
+        cmd = AString::Formatify("%s >\"%s\"", cmd0.str(), tempfile.str());
     }
 
     return cmd;
@@ -1318,11 +1336,9 @@ AString ADVBConfig::GetStreamListingKillingCommand(uint32_t pid) const
 {
     AString cmd;
 
+    cmd.printf("kill -SIGINT $(pgrep -P $(pgrep -P $(pgrep -P %u))) 2>/dev/null >/dev/null", pid);
     if (GetStreamSlave().Valid()) {
-        cmd.printf("bash -c 'kill -SIGINT $(pgrep -P %u | tail -n 1) 2>/dev/null >/dev/null'", pid);
-    }
-    else {
-        cmd.printf("bash -c 'kill -SIGINT $(pgrep -P $(pgrep -P %u) \"dvbstream\") 2>/dev/null >/dev/null'", pid);
+        cmd = GetRemoteCommand(cmd.SearchAndReplace("$(", "\\$("), "", false, true);
     }
 
     return cmd;

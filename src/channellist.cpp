@@ -628,6 +628,38 @@ ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByDVBChannelName(const AStr
     return chan;
 }
 
+const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByFrequencyAndPIDs(uint32_t freq, const AString& pids) const
+{
+    PIDLIST pidlist;
+    sint_t  i, n = pids.CountWords();
+
+    for (i = 0; i < n; i++) {
+        pidlist.push_back((uint_t)pids.Word(i));
+    }
+
+    return GetChannelByFrequencyAndPIDs(freq, pidlist);
+}
+
+const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByFrequencyAndPIDs(uint32_t freq, const PIDLIST& pidlist) const
+{
+    const CHANNEL *channel = NULL;
+    size_t i, j;
+
+    for (i = 0; i < list.size(); i++) {
+        const auto& chan = *list[i];
+
+        if (freq == chan.dvb.freq) {
+            for (j = 0; (j < pidlist.size()) && (j < chan.dvb.pidlist.size()) && (pidlist[j] == chan.dvb.pidlist[j]); j++) ;
+            if (j == pidlist.size()) {
+                channel = &chan;
+                break;
+            }
+        }
+    }
+
+    return channel;
+}
+
 const ADVBChannelList::CHANNEL *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t lcn, const AString& name, const AString& id)
 {
     const ADVBConfig& config = ADVBConfig::Get();

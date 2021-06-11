@@ -350,7 +350,10 @@ public:
     AString GetHLSCleanCommand()             const; // extractconfig()
     AString ReplaceHLSTerms(const AString& str, const AString& name) const;
     AString GetHLSConfigItem(const AString& item, const AString& name) const;
+    uint_t  GetHTTPStreamPort()              const; // extractconfig()
     AString GetHTTPStreamCommand(const AString& args) const; // extractconfig("<args>")
+    AString GetHTTPStreamURL(const AString& args) const; // extractconfig("<args>")
+    AString GetLocalHTTPStreamURL(const AString& args) const; // extractconfig("<args>")
 
     AString GetTempFileSuffix()              const; // extractconfig()
     AString GetRecordedFileSuffix()          const; // extractconfig()
@@ -421,7 +424,7 @@ public:
 
     AString GetGraphSuffix()                 const; // extractconfig()
 
-    AString GetStreamListingCommand(const AString& pattern, const AString& tempfile) const; // extractconfig("<pattern>", "<tempfile>")
+    AString GetStreamListingCommand(const AString& tempfile) const; // extractconfig("<tempfile>")
     AString GetStreamListingKillingCommand(uint32_t pid) const; // extractconfig(0)
 
     uint_t  GetMinimalDataRate(const AString& filesuffix) const; // extractconfig("<filesuffix>")

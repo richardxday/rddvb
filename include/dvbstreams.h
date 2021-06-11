@@ -14,13 +14,19 @@ typedef enum {
 
 typedef struct {
     uint32_t pid;
+    AString  type;
+    AString  cmd;
     AString  name;
+    AString  url;
     AString  htmlfile;
     AString  hlsfile;
-    AString  url;
 } dvbstream_t;
 
-extern bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& pattern = ".+");
+
+extern AString ConvertStream(const dvbstream_t& stream);
+extern bool ConvertStream(const AString& base64str, dvbstream_t& stream);
+
+extern bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& pattern = "*");
 extern bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& dvbcardstr = "");
 extern bool StopDVBStream(const AString& name, std::vector<dvbstream_t>& stoppedstreams);
 extern bool StopDVBStreams(const AString& pattern, std::vector<dvbstream_t>& stoppedstreams);
