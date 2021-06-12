@@ -310,16 +310,41 @@ int main(int argc, char *argv[])
         ADVBProgList::SchedulePatterns(ADateTime().TimeStamp(true), commit);
     }
 
+    std::vector<dvbstream_t> activestreams;
     bool liststreams = (Value(vars, val, "showchannels") && ((uint_t)val > 0));
 
-    if (Value(vars, val, "startstream")) {
+    if (Value(vars, val, "starthlsstream")) {
         rapidjson::Value subobj;
-        AString tempfile = config.GetTempFile("hlsstream", ".txt");
-        AString cmd;
+        dvbstream_t stream;
 
         subobj.SetArray();
 
-        if (StartDVBStream(StreamType_HLS, val)) {
+        if (StartDVBStream(stream, StreamType_HLS, val)) {
+            activestreams.push_back(stream);
+
+            subobj.PushBack(rapidjson::Value(val.str(), allocator), allocator);
+
+            doc.AddMember("startedstreams", subobj, allocator);
+        }
+        else
+        {
+            subobj.PushBack(rapidjson::Value(val.str(), allocator), allocator);
+
+            doc.AddMember("failedstreams", subobj, allocator);
+        }
+
+        liststreams = true;
+    }
+
+    if (Value(vars, val, "starthttpstream")) {
+        rapidjson::Value subobj;
+        dvbstream_t stream;
+
+        subobj.SetArray();
+
+        if (StartDVBStream(stream, StreamType_HTTP, val)) {
+            activestreams.push_back(stream);
+
             subobj.PushBack(rapidjson::Value(val.str(), allocator), allocator);
 
             doc.AddMember("startedstreams", subobj, allocator);
@@ -370,16 +395,16 @@ int main(int argc, char *argv[])
 
     if (liststreams) {
         rapidjson::Value obj;
-        std::vector<dvbstream_t> streams;
 
         obj.SetArray();
 
-        if (ListDVBStreams(streams)) {
-            for (size_t j = 0; j < streams.size(); j++) {
+        if (ListDVBStreams(activestreams)) {
+            for (size_t j = 0; j < activestreams.size(); j++) {
                 rapidjson::Value subobj;
-                const auto& stream = streams[j];
+                const auto& stream = activestreams[j];
 
                 subobj.SetObject();
+                subobj.AddMember("type", rapidjson::Value(stream.type.str(), allocator), allocator);
                 subobj.AddMember("name", rapidjson::Value(stream.name.str(), allocator), allocator);
                 subobj.AddMember("url",  rapidjson::Value(stream.url.str(), allocator), allocator);
 

@@ -2195,7 +2195,8 @@ int main(int argc, const char *argv[])
                     type = StreamType_LocalHTTP;
                 }
 
-                StartDVBStream(type, name, dvbcardspecified ? AString("%").Arg(dvbcard) : "");
+                dvbstream_t stream;
+                StartDVBStream(stream, type, name, dvbcardspecified ? AString::Formatify("%u", dvbcard) : "");
             }
             else if (stricmp(argv[i], "--list-streams") == 0) {
                 std::vector<dvbstream_t> streams;

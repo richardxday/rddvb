@@ -89,8 +89,24 @@ bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& patt
                 dvbstream_t stream;
 
                 if (ConvertStream(str, stream) && MatchRegex(stream.name, pat)) {
+                    size_t i;
+
                     stream.pid = pid;
-                    activestreams.push_back(stream);
+
+                    for (i = 0; i < activestreams.size(); i++) {
+                        dvbstream_t& stream1 = activestreams[i];
+
+                        if ((stream.type == stream1.type) &&
+                            (stream.name == stream1.name) &&
+                            (stream.url  == stream1.url)) {
+                            activestreams[i] = stream;
+                            break;
+                        }
+                    }
+
+                    if (i == activestreams.size()) {
+                        activestreams.push_back(stream);
+                    }
                 }
             }
 
@@ -152,7 +168,7 @@ static bool PrepareHLSStreaming(dvbstream_t& stream)
     return success;
 }
 
-bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& dvbcardstr)
+bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _name, const AString& dvbcardstr)
 {
     const ADVBConfig& config = ADVBConfig::Get();
     const bool   useslave         = config.GetStreamSlave().Valid();
@@ -164,10 +180,20 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
     // ensure output is disabled
     ADVBConfig::GetWriteable().DisableOutput();
 
+    stream.pid = 0U;
+    stream.type.Delete();
+    stream.cmd.Delete();
+    stream.name.Delete();
+    stream.url.Delete();
+    stream.htmlfile.Delete();
+    stream.hlsfile.Delete();
+
     if ((type == StreamType_Raw) && !useslave) {
         ADVBChannelList& channellist = ADVBChannelList::Get();
         AString pids;
-        AString cmd;
+
+        stream.type = "raw";
+        stream.name = name;
 
         if (channellist.GetPIDList(0U, name, pids, false)) {
             ADVBProgList list;
@@ -208,7 +234,7 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
                     }
 
                     if (pids.Valid()) {
-                        cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)std::min(maxtime.GetAbsoluteSecond(), (uint64_t)0xffffffff), pids);
+                        stream.cmd = ADVBProg::GenerateStreamCommand(best.card, (uint_t)std::min(maxtime.GetAbsoluteSecond(), (uint64_t)0xffffffff), pids);
                     }
                     else fprintf(stderr, "Failed to find PIDs for channel '%s'\n", name.str());
                 }
@@ -255,7 +281,7 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
                 if (filename.Valid()) {
                     const ADVBProg& prog = list1[i];
 
-                    cmd.printf("nice 10 cat \"%s\"", filename.str());
+                    stream.cmd.printf("nice 10 cat \"%s\"", filename.str());
 
                     fprintf(stderr, "Streaming '%s'\n", prog.GetDescription(1).str());
                 }
@@ -268,13 +294,12 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
             }
         }
 
-        if (cmd.Valid()) {
+        if (stream.cmd.Valid()) {
             //fprintf(stderr, "Cmd: %s\n", cmd2.str());
-            success = (system(cmd) == 0);
+            success = (system(stream.cmd) == 0);
         }
     }
     else {
-        dvbstream_t stream;
         AString cmd, cardstr, args, pipecmd;
         int p;
 
@@ -330,16 +355,16 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
         if (useslave) {
             cmd = GetRemoteCommand(cmd, pipecmd, true, true);
         }
-        else {
+        else if (pipecmd.Valid()) {
             cmd += " " + pipecmd;
+        }
+
+        if (type != StreamType_Raw) {
+            cmd = AString::Formatify("bash -c '%s' 2>/dev/null >/dev/null &", cmd.str());
         }
 
         if (config.LogRemoteCommands()) {
             config.logit("Running command '%s'", cmd.str());
-        }
-
-        if (useslave) {
-            cmd = AString::Formatify("bash -c '%s' &", cmd.str());
         }
 
         success = (system(cmd) == 0);

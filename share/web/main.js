@@ -2165,6 +2165,44 @@ function requeststreams()
     dvbrequest({},"showchannels=1", false, true);
 }
 
+function addstreamcontrol(type, channel, activestreams)
+{
+    var str = '';
+
+    if ((typeof channel.dvb != 'undefined') &&
+		(typeof channel.dvb.hasvideo != 'undefined') &&
+		(typeof channel.dvb.hasaudio != 'undefined') &&
+        channel.dvb.hasvideo &&
+        channel.dvb.hasaudio) {
+		str += '<td>';
+        if ((typeof activestreams != 'undefined') &&
+            (((typeof channel.dvb.name != 'undefined') &&
+              (typeof (stream = activestreams.find(stream => ((stream.type == type) && (stream.name.toLowerCase() == channel.dvb.name.toLowerCase())))) != 'undefined')) ||
+             ((typeof channel.dvb.convertedname != 'undefined') &&
+              (typeof (stream = activestreams.find(stream => ((stream.type == type) && (stream.name.toLowerCase() == channel.dvb.convertedname.toLowerCase())))) != 'undefined')) ||
+             ((typeof channel.xmltv != 'undefined') &&
+              (((typeof channel.xmltv.name != 'undefined') &&
+                (typeof (stream = activestreams.find(stream => ((stream.type == type) && (stream.name.toLowerCase() == channel.xmltv.name.toLowerCase())))) != 'undefined')) ||
+               ((typeof channel.xmltv.convertedname != 'undefined') &&
+                (typeof (stream = activestreams.find(stream => ((stream.type == type) && (stream.name.toLowerCase() == channel.xmltv.convertedname.toLowerCase())))) != 'undefined')))))) {
+            str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstream=' + stream.name + '\\nshowchannels=1&quot;)">Stop</a>';
+        }
+        else if ((typeof channel.xmltv != 'undefined') &&
+                 (typeof channel.xmltv.convertedname != 'undefined')) {
+            str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;start' + type + 'stream=' + channel.xmltv.convertedname + '\\nshowchannels=1&quot;)">Start</a>';
+        }
+        else if ((typeof channel.dvb != 'undefined') &&
+                 (typeof channel.dvb.convertedname != 'undefined')) {
+            str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;start' + type + 'stream=' + channel.dvb.convertedname + '\\nshowchannels=1&quot;)">Start</a>';
+        }
+        else str += '&nbsp;';
+		str += '</td>';
+    }
+	else str += '<td>&nbsp;</td>';
+
+    return str;
+}
+
 function showchannels()
 {
 	var str = '', i, j;
@@ -2177,27 +2215,27 @@ function showchannels()
         var str = '';
 
 	    str += '<table class="streamlist"><tr>';
-        str += '<th style="text-align:left">Channel</th><th>Watch</th><th>Stop</th></tr>'
+        str += '<th style="text-align:left">Channel</th><th>Type</th><th>URL</th><th>Stop</th></tr>'
 
         for (i = 0; i < activestreams.length; i++) {
             var stream = activestreams[i];
 
-            str += '<tr><td style="text-align:left">' + stream.name + '</td><td>';
+            str += '<tr><td style="text-align:left">' + stream.name + '</td>';
+            str += '<td>' + stream.type.toUpperCase() + '</td>';
             if (stream.url.length > 0) {
-                str += '<a href="' + stream.url + '" title="Watch ' + stream.name + ' in browser" target=_blank>Watch</a>';
+                str += '<td style="text-align:left"><a href="' + stream.url + '" title="Watch ' + stream.name + ' in browser" target=_blank>' + stream.url + '</a></td>';
             }
             else {
-                str += 'Waiting for stream...';
+                str += '<td>Waiting for stream...</td>';
                 waitingforstreamurls = true;
             }
 
-            str += '</td><td>';
-            str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstream=' + stream.name + '\\nshowchannels=1&quot;)">Stop</a>';
-            str += '</td></tr>';
+            str += '<td><a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstream=' + stream.name + '\\nshowchannels=1&quot;)">Stop</a></td>';
+            str += '</tr>';
         }
 
 	    str += '</table>';
-        str += '<h2><a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstreams=.+\\nshowchannels=1&quot;)">Stop All Streams</a></h2>';
+        str += '<h2><a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstreams=*\\nshowchannels=1&quot;)">Stop All Streams</a></h2>';
         document.getElementById("status").innerHTML = str;
     }
 
@@ -2209,7 +2247,8 @@ function showchannels()
 	str += '<th>LCN</th>';
 	str += '<th style="text-align:left">XMLTV Channel</th>';
 	str += '<th style="text-align:left">DVB Channel</th>';
-	str += '<th>Streaming</th>';
+	str += '<th>HLS Streaming</th>';
+	str += '<th>HTTP Streaming</th>';
 	str += '<th>DVB Frequency</th>';
 	str += '<th>DVB PID List</th>';
 	str += '<th>Type</th>';
@@ -2223,10 +2262,6 @@ function showchannels()
 			var channel = channels.channels[i];
 			var valid = false;
 
-			// if ((typeof channel.dvb != 'undefined') &&
-			//	(typeof channel.dvb.frequency != 'undefined') &&
-			//	(typeof channel.dvb.pidlist != 'undefined') &&
-			//	(channel.dvb.pidlist.length > 0)) {
 			{
 				str += '<tr';
 
@@ -2279,35 +2314,8 @@ function showchannels()
 				}
 				else str += '<td>&nbsp;</td>';
 
-				if ((typeof channel.dvb != 'undefined') &&
-					(typeof channel.dvb.hasvideo != 'undefined') &&
-					(typeof channel.dvb.hasaudio != 'undefined') &&
-                    channel.dvb.hasvideo &&
-                    channel.dvb.hasaudio) {
-					str += '<td>';
-                    if ((typeof activestreams != 'undefined') &&
-                        (((typeof channel.dvb.name != 'undefined') &&
-                          (typeof (stream = activestreams.find(stream => stream.name.toLowerCase() == channel.dvb.name.toLowerCase())) != 'undefined')) ||
-                         ((typeof channel.dvb.convertedname != 'undefined') &&
-                          (typeof (stream = activestreams.find(stream => stream.name.toLowerCase() == channel.dvb.convertedname.toLowerCase())) != 'undefined')) ||
-                         ((typeof channel.xmltv != 'undefined') &&
-                          (((typeof channel.xmltv.name != 'undefined') &&
-                            (typeof (stream = activestreams.find(stream => stream.name.toLowerCase() == channel.xmltv.name.toLowerCase())) != 'undefined')) ||
-                           ((typeof channel.xmltv.convertedname != 'undefined') &&
-                            (typeof (stream = activestreams.find(stream => stream.name.toLowerCase() == channel.xmltv.convertedname.toLowerCase())) != 'undefined')))))) {
-                        str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;stopstream=' + stream.name + '\\nshowchannels=1&quot;)">Stop</a>';
-                    }
-                    else if ((typeof channel.xmltv != 'undefined') &&
-                             (typeof channel.xmltv.convertedname != 'undefined')) {
-                        str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;startstream=' + channel.xmltv.convertedname + '\\nshowchannels=1&quot;)">Start</a>';
-                    }
-                    else if ((typeof channel.dvb != 'undefined') &&
-                             (typeof channel.dvb.convertedname != 'undefined')) {
-                        str += '<a href="javascript:void(0);" onclick="dvbrequest({},&quot;startstream=' + channel.dvb.convertedname + '\\nshowchannels=1&quot;)">Start</a>';
-                    }
-					str += '</td>';
-                }
-				else str += '<td>&nbsp;</td>';
+                str += addstreamcontrol('hls', channel, activestreams);
+                str += addstreamcontrol('http', channel, activestreams);
 
 				if ((typeof channel.dvb != 'undefined') &&
 					(typeof channel.dvb.frequency != 'undefined')) {
