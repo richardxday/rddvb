@@ -46,4 +46,35 @@ typedef struct {
 } dvbstreamprocs_t;
 extern bool FindActiveStreamingProcesses(std::vector<dvbstreamprocs_t>& procs);
 
+extern AString RunCommandAndGetResult(const AString& cmd);
+extern AString GetCommandFromPID(uint32_t pid);
+extern AString FindChildCommandsFromPID(uint32_t pid);
+
+class APIDTree
+{
+public:
+    APIDTree(uint32_t _pid);
+    APIDTree(uint32_t _pid, const AString& _cmd);
+    APIDTree(const AString& description);
+    APIDTree(const AString& description, int& ln);
+    ~APIDTree();
+
+    const std::vector<const APIDTree *>& GetChildren() const {return children;}
+
+    bool Kill() const;
+
+    AString Describe() const {return DescribeEx(0);}
+
+protected:
+    void FindChildren();
+    void Populate(const AString& description, int& ln);
+
+    AString DescribeEx(uint_t level) const;
+
+protected:
+    std::vector<const APIDTree *> children;
+    uint32_t pid;
+    AString  cmd;
+};
+
 #endif

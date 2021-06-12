@@ -2,6 +2,7 @@
 #define __DVBSTREAMS_H__
 
 #include "config.h"
+#include <cassert>
 
 typedef enum {
     StreamType_Raw = 0,
@@ -22,7 +23,6 @@ typedef struct {
     AString  hlsfile;
 } dvbstream_t;
 
-
 extern AString ConvertStream(const dvbstream_t& stream);
 extern bool ConvertStream(const AString& base64str, dvbstream_t& stream);
 
@@ -30,5 +30,6 @@ extern bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AStrin
 extern bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& dvbcardstr = "");
 extern bool StopDVBStream(const AString& name, std::vector<dvbstream_t>& stoppedstreams);
 extern bool StopDVBStreams(const AString& pattern, std::vector<dvbstream_t>& stoppedstreams);
+extern bool GetDVBStreamPIDTree(uint32_t pid);
 
 #endif /* __DVBSTREAMS_H__ */

@@ -278,7 +278,7 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
     }
     else {
         dvbstream_t stream;
-        AString cmd, args, pipecmd;
+        AString cmd, cardstr, args, pipecmd;
         int p;
 
         if ((p = name.PosNoCase(";")) >= 0) {
@@ -310,9 +310,7 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
             case StreamType_LocalHTTP:
                 stream.type = "http";
                 stream.url  = config.GetHTTPStreamURL(args);
-                if ((type == StreamType_LocalHTTP) || !useslave) {
-                    pipecmd.printf("| %s", config.GetHTTPStreamCommand(args).str());
-                }
+                pipecmd.printf("| %s", config.GetHTTPStreamCommand(args).str());
                 break;
 
             case StreamType_Video:
@@ -321,35 +319,44 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
                 break;
         }
 
+        if (dvbcardspecified) {
+            cardstr.printf("--dvbcard %u", dvbcard);
+        }
+
+        stream.cmd.printf("dvb %s --rawstream \"%s\"", cardstr.str(), _name.str());
+        if (type == StreamType_HTTP) {
+            stream.cmd += " " + pipecmd;
+            pipecmd.Delete();
+        }
+
+        fprintf(stderr, "Stream cmd: %s\n", stream.cmd.str());
+
         cmd.printf("dvb ---stream \"%s\"", ConvertStream(stream).str());
         if (useslave) {
             cmd = GetRemoteCommand(cmd, pipecmd, true, true);
         }
-        else cmd += pipecmd;
+        else {
+            cmd += " " + pipecmd;
+        }
 
         if (config.LogRemoteCommands()) {
             config.logit("Running command '%s'", cmd.str());
         }
 
-        //fprintf(stderr, "Cmd: %s\n", cmd2.str());
+        fprintf(stderr, "Cmd: %s\n", cmd.str());
         success = (system(cmd) == 0);
     }
 
     return success;
 }
 
-static bool KillStream(uint32_t pid)
+static bool KillStream(const dvbstream_t& stream)
 {
-    static const uint32_t maxattempts = 20;
     const ADVBConfig& config = ADVBConfig::Get();
-    AString cmd = config.GetStreamListingKillingCommand(pid);
-    uint32_t attempts;
+    const uint32_t pid = stream.pid;
+    const AString cmd = config.GetStreamListingKillingCommand(pid);
 
-    for (attempts = 0; (system(cmd) == 0); attempts++) {
-        Sleep(200);
-    }
-
-    return ((attempts > 0) && (attempts < maxattempts));
+    return (system(cmd) == 0);
 }
 
 bool StopDVBStream(const AString& name, std::vector<dvbstream_t>& stoppedstreams)
@@ -362,7 +369,7 @@ bool StopDVBStream(const AString& name, std::vector<dvbstream_t>& stoppedstreams
             const auto& stream = streams[i];
 
             if (CompareNoCase(stream.name, name) == 0) {
-                if (KillStream(stream.pid)) {
+                if (KillStream(stream)) {
                     stoppedstreams.push_back(stream);
                     success = true;
                 }
@@ -389,7 +396,7 @@ bool StopDVBStreams(const AString& pattern, std::vector<dvbstream_t>& stoppedstr
         for (size_t i = 0; i < streams.size(); i++) {
             const auto& stream = streams[i];
 
-            if (KillStream(stream.pid)) {
+            if (KillStream(stream)) {
                 stoppedstreams.push_back(stream);
                 success = true;
             }

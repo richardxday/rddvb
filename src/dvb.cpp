@@ -211,6 +211,8 @@ int main(int argc, const char *argv[])
         {"--list-streams",                          "",                                 "List active stream(s)"},
         {"--stop-streams",                          "<pattern>",                        "Stop stream(s) matching <pattern>"},
         {"--stop-stream",                           "<name>",                           "Stop specific stream"},
+        {"--describe-pid",                          "<pid>",                            "Describe PID tree of <pid>"},
+        {"--kill-stream-pid",                       "<pid>",                            "Stop specific stream specified by <pid>"},
         {"--drawprogrammes",                        "<scale>",                          "Draw current list of programmes using a scale of <scale> characters per hour"},
         {"--list-config-values",                    "",                                 "List all config values"},
         {"--config-item",                           "<item>",                           "Return value for config item"},
@@ -2227,6 +2229,17 @@ int main(int argc, const char *argv[])
                     }
                 }
                 else fprintf(stderr, "Failed to stop DVB streams\n");
+            }
+            else if (stricmp(argv[i], "--describe-pid") == 0) {
+                APIDTree tree((uint32_t)AString(argv[++i]));
+
+                printf("%s", tree.Describe().str());
+            }
+            else if (stricmp(argv[i], "--kill-stream-pid") == 0) {
+                APIDTree tree((uint32_t)AString(argv[++i]));
+
+                fprintf(stderr, "Found tree:\n%s", tree.Describe().str());
+                res = tree.Kill() ? 0 : -1;
             }
             else if (stricmp(argv[i], "--return-count") == 0) {
                 res = (int)proglist.Count();

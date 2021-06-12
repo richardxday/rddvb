@@ -1072,7 +1072,7 @@ uint_t ADVBConfig::GetHTTPStreamPort() const
 AString ADVBConfig::GetHTTPStreamCommand(const AString& args) const
 {
     uint_t port = args.Valid() ? (uint_t)args : GetHTTPStreamPort();
-    return GetConfigItem("httpstreamcmd", AString("vlc -I dummy - --demux ffmpeg ") + ReplaceTerms(GetConfigItem("vlcargs")) + AString(" \"--sout='#std{access=http,mux=ts,dst=:%;}'\" 2>/dev/null >/dev/null").Arg(port));
+    return GetConfigItem("httpstreamcmd", AString("vlc -I dummy - --demux ffmpeg ") + ReplaceTerms(GetConfigItem("vlcargs")) + AString(" \"--sout=#std{access=http,mux=ts,dst=:%;}\" 2>/dev/null >/dev/null").Arg(port));
 }
 
 AString ADVBConfig::GetHTTPStreamURL(const AString& args) const
@@ -1319,7 +1319,7 @@ AString ADVBConfig::GetGraphSuffix() const
 
 AString ADVBConfig::GetStreamListingCommand(const AString& tempfile) const
 {
-    const AString cmd0 = "pgrep -a dvb | grep -E \"dvb ---stream \" | sed -E \"s/dvb ---stream //\"";
+    const AString cmd0 = "pgrep -a dvb | grep -E \"dvb .*---stream \" | sed -E \"s/dvb .*---stream //\"";
     AString cmd;
 
     if (GetStreamSlave().Valid()) {
@@ -1336,9 +1336,9 @@ AString ADVBConfig::GetStreamListingKillingCommand(uint32_t pid) const
 {
     AString cmd;
 
-    cmd.printf("kill -SIGINT $(pgrep -P $(pgrep -P $(pgrep -P %u))) 2>/dev/null >/dev/null", pid);
+    cmd.printf("dvb --kill-stream-pid %u", pid);
     if (GetStreamSlave().Valid()) {
-        cmd = GetRemoteCommand(cmd.SearchAndReplace("$(", "\\$("), "", false, true);
+        cmd = GetRemoteCommand(cmd, "", false, true);
     }
 
     return cmd;

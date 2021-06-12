@@ -310,3 +310,130 @@ bool FindActiveStreamingProcesses(std::vector<dvbstreamprocs_t>& procs)
 
     return success;
 }
+
+AString RunCommandAndGetResult(const AString& cmd)
+{
+    const ADVBConfig& config = ADVBConfig::Get();
+    AString tempfile = config.GetTempFile("command", ".txt");
+    AString res;
+
+    if (system(cmd + " >" + tempfile) == 0) {
+        res.ReadFromFile(tempfile);
+    }
+
+    remove(tempfile);
+
+    return res;
+}
+
+AString GetCommandFromPID(uint32_t pid)
+{
+    AString commands = RunCommandAndGetResult("pgrep -a .+");
+    AString res;
+    int i, n = commands.CountLines();
+
+    for (i = 0; i < n; i++) {
+        AString cmd = commands.Line(i);
+
+        if ((uint32_t)cmd.Word(0) == pid) {
+            res = cmd.Words(1);
+            break;
+        }
+    }
+
+    return res;
+}
+
+AString FindChildCommandsFromPID(uint32_t pid)
+{
+    return RunCommandAndGetResult(AString("pgrep -a -P %").Arg(pid));
+}
+
+APIDTree::APIDTree(uint32_t _pid) : pid(_pid),
+                                    cmd(GetCommandFromPID(pid))
+{
+    FindChildren();
+}
+
+APIDTree::APIDTree(uint32_t _pid, const AString& _cmd) : pid(_pid),
+                                                         cmd(_cmd)
+{
+    FindChildren();
+}
+
+APIDTree::APIDTree(const AString& description)
+{
+    int ln = 0;
+    Populate(description, ln);
+}
+
+APIDTree::APIDTree(const AString& description, int& ln)
+{
+    Populate(description, ln);
+}
+
+APIDTree::~APIDTree()
+{
+    for (size_t i = 0; i < children.size(); i++) {
+        delete children[i];
+    }
+}
+
+void APIDTree::Populate(const AString& description, int& ln)
+{
+    AString line = description.Line(ln++);
+    int indent = line.Pos(line.Word(0));
+
+    pid = (uint32_t)line.Word(0);
+    cmd = line.Words(1);
+
+    while (((line = description.Line(ln)).Valid()) && (line.Pos(line.Word(0)) > indent)) {
+        children.push_back(new APIDTree(description, ln));
+    }
+}
+
+void APIDTree::FindChildren()
+{
+    AString childcmds = FindChildCommandsFromPID(pid);
+    int i, n = childcmds.CountLines();
+
+    for (i = 0; i < n; i++) {
+        AString str = childcmds.Line(i);
+
+        children.push_back(new APIDTree((uint32_t)str.Word(0), str.Words(1)));
+    }
+}
+
+bool APIDTree::Kill() const
+{
+    bool success = false;
+
+    if (children.size() > 0) {
+        for (size_t i = 0; i < children.size(); i++) {
+            success = (success || children[i]->Kill());
+        }
+    }
+    else {
+        AString _cmd;
+
+        fprintf(stderr, "Killing pid %u\n", pid);
+        _cmd.printf("kill -SIGINT %u", pid);
+        success = (system(_cmd) == 0);
+    }
+
+    return success;
+}
+
+AString APIDTree::DescribeEx(uint_t level) const
+{
+    AString str = AString("  ").Copies((int)level);
+    AString res;
+
+    res.printf("%s%u %s\n", str.str(), pid, cmd.str());
+
+    for (size_t i = 0; i < children.size(); i++) {
+        res += children[i]->DescribeEx(level + 1);
+    }
+
+    return res;
+}
