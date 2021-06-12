@@ -131,10 +131,7 @@ static bool PrepareHLSStreaming(dvbstream_t& stream)
                 stream.type     = "hls";
                 stream.htmlfile = destfile;
                 stream.hlsfile  = config.GetHLSConfigItem("hlsoutputfullpath", name);
-                if (AStdFile::exists(stream.htmlfile) &&
-                    AStdFile::exists(stream.hlsfile)) {
-                    stream.url  = config.GetHLSConfigItem("hlsstreamurl", name);
-                }
+                stream.url      = config.GetHLSConfigItem("hlsstreamurl", name);
 
                 success = true;
             }
