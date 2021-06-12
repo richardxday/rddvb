@@ -59,6 +59,8 @@ public:
     APIDTree(const AString& description, int& ln);
     ~APIDTree();
 
+    bool Valid() const {return ((pid > 0) && cmd.Valid());}
+
     const std::vector<const APIDTree *>& GetChildren() const {return children;}
 
     bool Kill() const;

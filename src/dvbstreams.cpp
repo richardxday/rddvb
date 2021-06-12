@@ -329,8 +329,6 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
             pipecmd.Delete();
         }
 
-        fprintf(stderr, "Stream cmd: %s\n", stream.cmd.str());
-
         cmd.printf("dvb ---stream \"%s\"", ConvertStream(stream).str());
         if (useslave) {
             cmd = GetRemoteCommand(cmd, pipecmd, true, true);
@@ -343,7 +341,10 @@ bool StartDVBStream(dvbstreamtype_t type, const AString& _name, const AString& d
             config.logit("Running command '%s'", cmd.str());
         }
 
-        fprintf(stderr, "Cmd: %s\n", cmd.str());
+        if (useslave) {
+            cmd = AString::Formatify("bash -c '%s' &", cmd.str());
+        }
+
         success = (system(cmd) == 0);
     }
 

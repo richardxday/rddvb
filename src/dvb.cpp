@@ -2231,15 +2231,22 @@ int main(int argc, const char *argv[])
                 else fprintf(stderr, "Failed to stop DVB streams\n");
             }
             else if (stricmp(argv[i], "--describe-pid") == 0) {
-                APIDTree tree((uint32_t)AString(argv[++i]));
+                uint32_t pid = (uint32_t)AString(argv[++i]);
+                APIDTree tree(pid);
 
-                printf("%s", tree.Describe().str());
-            }
+                if (tree.Valid()) {
+                    printf("%s", tree.Describe().str());
+                }
+                else fprintf(stderr, "Invalid pid %u\n", pid);
+           }
             else if (stricmp(argv[i], "--kill-stream-pid") == 0) {
-                APIDTree tree((uint32_t)AString(argv[++i]));
+                uint32_t pid = (uint32_t)AString(argv[++i]);
+                APIDTree tree(pid);
 
-                fprintf(stderr, "Found tree:\n%s", tree.Describe().str());
-                res = tree.Kill() ? 0 : -1;
+                if (tree.Valid()) {
+                    res = tree.Kill() ? 0 : -1;
+                }
+                else fprintf(stderr, "Invalid pid %u\n", pid);
             }
             else if (stricmp(argv[i], "--return-count") == 0) {
                 res = (int)proglist.Count();

@@ -346,7 +346,7 @@ AString GetCommandFromPID(uint32_t pid)
 
 AString FindChildCommandsFromPID(uint32_t pid)
 {
-    return RunCommandAndGetResult(AString("pgrep -a -P %").Arg(pid));
+    return RunCommandAndGetResult(AString::Formatify("pgrep -a -P %u", pid));
 }
 
 APIDTree::APIDTree(uint32_t _pid) : pid(_pid),
@@ -408,17 +408,16 @@ bool APIDTree::Kill() const
 {
     bool success = false;
 
-    if (children.size() > 0) {
-        for (size_t i = 0; i < children.size(); i++) {
-            success = (success || children[i]->Kill());
+    if (Valid()) {
+        if (children.size() > 0) {
+            for (size_t i = 0; i < children.size(); i++) {
+                success = (success || children[children.size() - 1 - i]->Kill());
+            }
         }
-    }
-    else {
-        AString _cmd;
 
-        fprintf(stderr, "Killing pid %u\n", pid);
-        _cmd.printf("kill -SIGINT %u", pid);
-        success = (system(_cmd) == 0);
+        AString _cmd;
+        _cmd.printf("kill -9 %u", pid);
+        success = (success || (system(_cmd) == 0));
     }
 
     return success;
