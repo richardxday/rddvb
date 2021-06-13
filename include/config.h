@@ -350,10 +350,9 @@ public:
     AString GetHLSCleanCommand()             const; // extractconfig()
     AString ReplaceHLSTerms(const AString& str, const AString& name) const;
     AString GetHLSConfigItem(const AString& item, const AString& name) const;
-    uint_t  GetHTTPStreamPort()              const; // extractconfig()
+    uint_t  GetHTTPStreamPort(const AString& args) const; // extractconfig("<args")
     AString GetHTTPStreamCommand(const AString& args) const; // extractconfig("<args>")
     AString GetHTTPStreamURL(const AString& args) const; // extractconfig("<args>")
-    AString GetLocalHTTPStreamURL(const AString& args) const; // extractconfig("<args>")
 
     AString GetTempFileSuffix()              const; // extractconfig()
     AString GetRecordedFileSuffix()          const; // extractconfig()
@@ -476,6 +475,12 @@ protected:
 
     void MapDVBCards();
     void CheckUpdate() const;
+
+    typedef std::map<AString,AString> args_t;
+    args_t GetCommaSeparatedArgs(const AString& args) const;
+    AString GetArg(const args_t& args, const AString& arg, const AString& def = "") const;
+
+    uint_t GetHTTPStreamPort(const args_t& args) const;
 
 private:
     ADVBConfig();

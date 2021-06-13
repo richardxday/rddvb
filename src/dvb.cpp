@@ -207,7 +207,7 @@ int main(int argc, const char *argv[])
         {"--mp4stream",                             "<text>",                           "Stream DVB channel or programme being recorded <text>, encoding as mp4 to console (for piping to arbitrary programs)"},
         {"--hlsstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text>, encoding as HLS"},
         {"--httpstream",                            "<text>[;<port>]",                  "Stream DVB channel or programme being recorded <text>, encoding as http"},
-        {"--lhttpstream",                           "<text>[;<port>]",                  "Stream DVB channel or programme being recorded <text>, encoding as http on local machine"},
+        {"--rhttpstream",                           "<text>[;<port>]",                  "Stream DVB channel or programme being recorded <text>, encoding as http on remote machine"},
         {"--list-streams",                          "",                                 "List active stream(s)"},
         {"--stop-streams",                          "<pattern>",                        "Stop stream(s) matching <pattern>"},
         {"--stop-stream",                           "<name>",                           "Stop specific stream"},
@@ -2171,7 +2171,7 @@ int main(int argc, const char *argv[])
                      (stricmp(argv[i], "--mp4stream") == 0) ||
                      (stricmp(argv[i], "--hlsstream") == 0) ||
                      (stricmp(argv[i], "--httpstream") == 0) ||
-                     (stricmp(argv[i], "--lhttpstream") == 0)) {
+                     (stricmp(argv[i], "--rhttpstream") == 0)) {
                 dvbstreamtype_t type = StreamType_Raw;
                 AString streamtype = argv[i];
                 AString name       = argv[++i];
@@ -2191,8 +2191,8 @@ int main(int argc, const char *argv[])
                 else if (streamtype == "--httpstream") {
                     type = StreamType_HTTP;
                 }
-                else if (streamtype == "--lhttpstream") {
-                    type = StreamType_LocalHTTP;
+                else if (streamtype == "--rhttpstream") {
+                    type = StreamType_RemoteHTTP;
                 }
 
                 dvbstream_t stream;

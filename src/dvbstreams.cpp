@@ -168,7 +168,7 @@ static bool PrepareHLSStreaming(dvbstream_t& stream)
     return success;
 }
 
-bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _name, const AString& dvbcardstr)
+bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _name, const AString& dvbcardstr, bool background)
 {
     const ADVBConfig& config = ADVBConfig::Get();
     const bool   useslave         = config.GetStreamSlave().Valid();
@@ -295,15 +295,20 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
         }
 
         if (stream.cmd.Valid()) {
-            //fprintf(stderr, "Cmd: %s\n", cmd2.str());
-            success = (system(stream.cmd) == 0);
+            AString cmd = stream.cmd;
+
+            if (background) {
+                cmd = AString::Formatify("%s &", cmd.str());
+            }
+
+            success = (system(cmd) == 0);
         }
     }
     else {
         AString cmd, cardstr, args, pipecmd;
         int p;
 
-        if ((p = name.PosNoCase(";")) >= 0) {
+        if ((p = name.Pos(";")) >= 0) {
             args = name.Mid(p + 1);
             name = name.Left(p);
         }
@@ -328,8 +333,8 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
                 pipecmd.printf("| %s", config.GetStreamEncoderCommand().str());
                 break;
 
+            case StreamType_RemoteHTTP:
             case StreamType_HTTP:
-            case StreamType_LocalHTTP:
                 stream.type = "http";
                 stream.url  = config.GetHTTPStreamURL(args);
                 pipecmd.printf("| %s", config.GetHTTPStreamCommand(args).str());
@@ -345,8 +350,8 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
             cardstr.printf("--dvbcard %u", dvbcard);
         }
 
-        stream.cmd.printf("dvb %s --rawstream \"%s\"", cardstr.str(), _name.str());
-        if (type == StreamType_HTTP) {
+        stream.cmd.printf("dvb %s --rawstream \"%s\"", cardstr.str(), name.str());
+        if (type == StreamType_RemoteHTTP) {
             stream.cmd += " " + pipecmd;
             pipecmd.Delete();
         }
@@ -359,14 +364,15 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
             cmd += " " + pipecmd;
         }
 
-        if (type != StreamType_Raw) {
-            cmd = AString::Formatify("bash -c '%s' 2>/dev/null >/dev/null &", cmd.str());
+        if (background) {
+            cmd = AString::Formatify("bash -c '%s' &", cmd.str());
         }
 
         if (config.LogRemoteCommands()) {
             config.logit("Running command '%s'", cmd.str());
         }
 
+        //fprintf(stderr, "Cmd: %s (%s)\n", cmd.str(), stream.cmd.str());
         success = (system(cmd) == 0);
     }
 

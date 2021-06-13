@@ -1064,27 +1064,63 @@ AString ADVBConfig::GetHLSCleanCommand() const
     return GetConfigItem("hlscleanupcmd", ReplaceTerms(GetConfigItem("hlscleanup")));
 }
 
-uint_t ADVBConfig::GetHTTPStreamPort() const
+ADVBConfig::args_t ADVBConfig::GetCommaSeparatedArgs(const AString& args) const
 {
-    return (uint_t)GetConfigItem("httpstreamport", "8555");
+    args_t argsmap;
+    int i, n = args.CountLines(";");
+
+    for (i = 0; i < n; i++) {
+        AString arg = args.Line(i, ";");
+        int p;
+
+        if ((p = arg.Pos("=")) > 0) {
+            argsmap[arg.Left(p)] = arg.Mid(p+1).DeQuotify();
+        }
+        else argsmap[arg] = "";
+    }
+
+    return argsmap;
+}
+
+AString ADVBConfig::GetArg(const args_t& args, const AString& arg, const AString& def) const
+{
+    const auto it = args.find(arg);
+    return (it != args.end()) ? it->second : def;
+}
+
+uint_t ADVBConfig::GetHTTPStreamPort(const AString& args) const
+{
+    return GetHTTPStreamPort(GetCommaSeparatedArgs(args));
+}
+
+uint_t ADVBConfig::GetHTTPStreamPort(const args_t& args) const
+{
+    return (uint_t)GetArg(args, "port", GetConfigItem("httpstreamport", "8555"));
 }
 
 AString ADVBConfig::GetHTTPStreamCommand(const AString& args) const
 {
-    uint_t port = args.Valid() ? (uint_t)args : GetHTTPStreamPort();
-    return GetConfigItem("httpstreamcmd", AString("vlc -I dummy - --demux ffmpeg ") + ReplaceTerms(GetConfigItem("vlcargs")) + AString(" \"--sout=#std{access=http,mux=ts,dst=:%;}\" 2>/dev/null >/dev/null").Arg(port));
+    const auto argsmap = GetCommaSeparatedArgs(args);
+    uint_t  port     = GetHTTPStreamPort(argsmap);
+    AString vcodec   = GetArg(argsmap, "vcodec", GetConfigItem("httpstreamvcodec",   "h264"));
+    AString acodec   = GetArg(argsmap, "acodec", GetConfigItem("httpstreamacodec",   "mp3"));
+    AString vbitrate = GetArg(argsmap, "vb",     GetConfigItem("httpstreamvbitrate", "1000"));
+    AString abitrate = GetArg(argsmap, "ab",     GetConfigItem("httpstreamabitrate", "128"));
+    AString transcodeargs;
+    if (GetArg(argsmap, "transcode", "1").Empty() ||
+        GetArg(argsmap, "vcodec").Valid()         ||
+        GetArg(argsmap, "vb").Valid()             ||
+        GetArg(argsmap, "acodec").Valid()         ||
+        GetArg(argsmap, "ab").Valid()) {
+        transcodeargs = AString("transcode{vcodec=%;,acodec=%;,vb=%;,ab=%;}:").Arg(vcodec).Arg(acodec).Arg(vbitrate).Arg(abitrate);
+    }
+    return GetConfigItem("httpstreamcmd", AString("vlc -I dummy - --demux ffmpeg ") + ReplaceTerms(GetConfigItem("vlcargs")) + AString(" --sout \"#%;std{access=http,mux=ts,dst=:%;}\" 2>/dev/null >/dev/null").Arg(transcodeargs).Arg(port));
 }
 
 AString ADVBConfig::GetHTTPStreamURL(const AString& args) const
 {
-    uint_t port = args.Valid() ? (uint_t)args : GetHTTPStreamPort();
+    uint_t port = GetHTTPStreamPort(args);
     return AString("http://%;:%;").Arg(GetStreamSlave().Valid() ? GetStreamSlave() : "localhost").Arg(port);
-}
-
-AString ADVBConfig::GetLocalHTTPStreamURL(const AString& args) const
-{
-    uint_t port = args.Valid() ? (uint_t)args : GetHTTPStreamPort();
-    return AString("http://localhost:%;").Arg(port);
 }
 
 AString ADVBConfig::GetTempFileSuffix() const
