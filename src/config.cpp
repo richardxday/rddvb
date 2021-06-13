@@ -1114,7 +1114,7 @@ AString ADVBConfig::GetHTTPStreamCommand(const AString& args) const
         GetArg(argsmap, "ab").Valid()) {
         transcodeargs = AString("transcode{vcodec=%;,acodec=%;,vb=%;,ab=%;}:").Arg(vcodec).Arg(acodec).Arg(vbitrate).Arg(abitrate);
     }
-    return GetConfigItem("httpstreamcmd", AString("vlc -I dummy - --demux ffmpeg ") + ReplaceTerms(GetConfigItem("vlcargs")) + AString(" --sout \"#%;std{access=http,mux=ts,dst=:%;}\" 2>/dev/null >/dev/null").Arg(transcodeargs).Arg(port));
+    return GetConfigItem("httpstreamcmd", AString("vlc -I dummy - --demux ffmpeg ") + ReplaceTerms(GetConfigItem("vlcargs")) + AString(" --sout \"#%;std{access=http,mux=ts,dst=:%;}\"").Arg(transcodeargs).Arg(port));
 }
 
 AString ADVBConfig::GetHTTPStreamURL(const AString& args) const

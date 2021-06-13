@@ -298,7 +298,7 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
             AString cmd = stream.cmd;
 
             if (background) {
-                cmd = AString::Formatify("%s &", cmd.str());
+                cmd = AString::Formatify("bash -c '%s' 2>/dev/null >/dev/null &", cmd.str());
             }
 
             success = (system(cmd) == 0);
@@ -365,7 +365,7 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
         }
 
         if (background) {
-            cmd = AString::Formatify("bash -c '%s' &", cmd.str());
+            cmd = AString::Formatify("bash -c '%s' 2>/dev/null >/dev/null &", cmd.str());
         }
 
         if (config.LogRemoteCommands()) {
