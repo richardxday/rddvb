@@ -1106,15 +1106,19 @@ AString ADVBConfig::GetHTTPStreamCommand(const AString& args) const
     AString acodec   = GetArg(argsmap, "acodec", GetConfigItem("httpstreamacodec",   "mp3"));
     AString vbitrate = GetArg(argsmap, "vb",     GetConfigItem("httpstreamvbitrate", "1000"));
     AString abitrate = GetArg(argsmap, "ab",     GetConfigItem("httpstreamabitrate", "128"));
-    AString transcodeargs;
+    AString soutargs;
+
     if (GetArg(argsmap, "transcode", "1").Empty() ||
         GetArg(argsmap, "vcodec").Valid()         ||
         GetArg(argsmap, "vb").Valid()             ||
         GetArg(argsmap, "acodec").Valid()         ||
         GetArg(argsmap, "ab").Valid()) {
-        transcodeargs = AString("transcode{vcodec=%;,acodec=%;,vb=%;,ab=%;}:").Arg(vcodec).Arg(acodec).Arg(vbitrate).Arg(abitrate);
+        soutargs += AString("%;transcode{vcodec=%;,acodec=%;,vb=%;,ab=%;}").Arg(soutargs.Valid() ? ":" : "").Arg(vcodec).Arg(acodec).Arg(vbitrate).Arg(abitrate);
     }
-    return GetConfigItem("httpstreamcmd", AString("vlc -I dummy - --demux ffmpeg ") + ReplaceTerms(GetConfigItem("vlcargs")) + AString(" --sout \"#%;std{access=http,mux=ts,dst=:%;}\"").Arg(transcodeargs).Arg(port));
+
+    soutargs += AString("%;std{access=http,mux=ts,dst=:%;};").Arg(soutargs.Valid() ? ":" : "").Arg(port);
+
+    return GetConfigItem("httpstreamcmd", AString("vlc -I dummy - --demux ffmpeg ") + ReplaceTerms(GetConfigItem("vlcargs")) + AString(" --sout \"#%;\"").Arg(soutargs));
 }
 
 AString ADVBConfig::GetHTTPStreamURL(const AString& args) const

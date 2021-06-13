@@ -372,7 +372,7 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
             config.logit("Running command '%s'", cmd.str());
         }
 
-        //fprintf(stderr, "Cmd: %s (%s)\n", cmd.str(), stream.cmd.str());
+        fprintf(stderr, "Cmd: %s (%s)\n", cmd.str(), stream.cmd.str());
         success = (system(cmd) == 0);
     }
 
