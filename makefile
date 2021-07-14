@@ -41,15 +41,15 @@ HEADERS :=										\
 	iconcache.h									\
 	proglist.h
 
-GLOBAL_CFLAGS       += $(call pkgcflags,rdlib-0.1)
-GLOBAL_CXXFLAGS     += $(call pkgcxxflags,rdlib-0.1)
-GLOBAL_LIBS	        += $(call pkglibs,rdlib-0.1)
+GLOBAL_CFLAGS		+= $(call pkgcflags,rdlib-0.1)
+GLOBAL_CXXFLAGS		+= $(call pkgcxxflags,rdlib-0.1)
+GLOBAL_LIBS			+= $(call pkglibs,rdlib-0.1)
 
 GLOBAL_COMMON_FLAGS += $(call pkgcflags,jsoncpp)
-GLOBAL_LIBS	        += $(call pkglibs,jsoncpp)
+GLOBAL_LIBS			+= $(call pkglibs,jsoncpp)
 
 GLOBAL_COMMON_FLAGS += $(shell curl-config --cflags)
-GLOBAL_LIBS	        += $(shell curl-config --libs) -lcrypto
+GLOBAL_LIBS			+= $(shell curl-config --libs) -lcrypto
 
 include $(MAKEFILEDIR)/makefile.prebuild
 
@@ -89,7 +89,7 @@ INSTALL_BINARIES := 0
 
 DEFAULTCONFIG := share/default-config-values.txt
 
-share/%: share/%.in
+%: %.in
 	@cat $< \
 	| sed -E "s#@root@#$(ROOTDIR)#g" \
 	| sed -E "s#@prefix@#$(PREFIX)#g" \
@@ -128,7 +128,7 @@ $(DEFAULTCONFIG): $(EXTRACTCONFIG)
 endif
 
 CLEANFILES	+= $(HEADERSSRC)/config.extract.h $(DEFAULTCONFIG)
-CLEANFILES  += $(HEADERSSRC)/configlivevalues.def
+CLEANFILES	+= $(HEADERSSRC)/configlivevalues.def
 
 APPLICATION := comparechannels
 OBJECTS		:= $(APPLICATION:%=%.o)
@@ -138,13 +138,18 @@ APPLICATION := sdfetch
 OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
-LOCAL_INSTALLED_SCRIPTS := $(shell find scripts -type f)
+LOCAL_INSTALLED_SCRIPTS := $(shell find scripts -type f | sed -E "s/\.in$$//" | uniq)
 GLOBAL_INSTALLED_SCRIPTS := $(LOCAL_INSTALLED_SCRIPTS:scripts/%=$(INSTALLBINDST)/%)
 INSTALLEDBINARIES += $(GLOBAL_INSTALLED_SCRIPTS)
 UNINSTALLFILES += $(GLOBAL_INSTALLED_SCRIPTS)
 
-$(INSTALLBINDST)/%: scripts/%
-	@$(SUDO) $(MAKEFILEDIR)/copyifnewer "$<" "$@"
+$(INSTALLBINDST)/%: scripts/%.in
+	@cat $< \
+	| sed -E "s#@root@#$(ROOTDIR)#g" \
+	| sed -E "s#@prefix@#$(PREFIX)#g" \
+	| sed -E "s#@share@#$(INSTALLSHAREDST)#g" \
+	| $(SUDO) tee $@ >/dev/null
+	@$(SUDO) chmod a+x $@
 
 APACHESRC := share/apache
 APACHEDST := $(ROOTDIR)etc/apache2
@@ -154,8 +159,13 @@ GLOBAL_APACHE_FILES := $(LOCAL_APACHE_FILES:$(APACHESRC)/%=$(APACHEDST)/%)
 INSTALLEDSHAREFILES += $(GLOBAL_APACHE_FILES)
 UNINSTALLFILES += $(GLOBAL_APACHE_FILES)
 
-$(APACHEDST)/%: $(APACHESRC)/%
-	@$(SUDO) $(MAKEFILEDIR)/copyifnewer "$<" "$@"
+$(APACHEDST)/%: $(APACHESRC)/%.in
+	cat $< \
+	| sed -E "s#@root@#$(ROOTDIR)#g" \
+	| sed -E "s#@prefix@#$(PREFIX)#g" \
+	| sed -E "s#@share@#$(INSTALLSHAREDST)#g" \
+	| $(SUDO) tee $@ >/dev/null
+	@$(SUDO) chmod a+x $@
 
 all: $(DEFAULTCONFIG)
 

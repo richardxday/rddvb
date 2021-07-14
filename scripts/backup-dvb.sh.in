@@ -1,4 +1,4 @@
-#!/bin/sh
+#!@root@bin/sh
 DATA="/var/dvb"
 CONFIG="/etc/dvb"
 DEST="/home/richard/Dropbox/Personal/dvb"

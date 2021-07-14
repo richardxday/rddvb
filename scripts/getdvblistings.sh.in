@@ -1,4 +1,4 @@
-#!/bin/sh
+#!@root@bin/sh
 DATADIR="`dvb --datadir`"
 CONFDIR="`dvb --confdir`"
 
