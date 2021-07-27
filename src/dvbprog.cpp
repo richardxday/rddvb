@@ -3320,287 +3320,208 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         remove(basename + ".sup.IFO");
     }
 
-    std::vector<SPLIT> splits;
-    std::map<AString,uint64_t> lengths;
-    AString bestaspect;
-    std::vector<MEDIAFILE> videofiles;
-    std::vector<MEDIAFILE> audiofiles;
-    std::vector<AString>   subtitlefiles;
-    size_t i;
-
-    if (success) {
-        AStdFile fp;
-
-        if (fp.open(logfile)) {
-            static const AString formatmarker = "new format in next leading sequenceheader detected";
-            static const AString videomarker  = "video basics";
-            static const AString lengthmarker = "video length:";
-            static const AString filemarker   = "---> new File:";
-            static const AString pidmarker    = "++> Mpg ";
-            static const AString pidmarker2   = "PID";
-            AString  line;
-            AString  aspect   = "16:9";
-            uint64_t t1       = 0;
-            uint64_t t2       = 0;
-            uint64_t totallen = 0;
-            uint_t   pid = 0;
-
-            config.printf("Analysing logfile:");
-
-            while (line.ReadLn(fp) >= 0) {
-                int p;
-
-                if ((p = line.PosNoCase(videomarker)) >= 0) {
-                    aspect = GetParentheses(line, p);
-                    config.printf("Found aspect '%s'", aspect.str());
-                }
-
-                if ((p = line.PosNoCase(formatmarker)) >= 0) {
-                    t2 = CalcTime(GetParentheses(line, p));
-
-                    if (t2 > t1) {
-                        SPLIT split = {aspect, t1, t2 - t1};
-
-                        config.printf("%-6s @ %s for %s", split.aspect.str(), GenTime(split.start).str(), GenTime(split.length).str());
-
-                        splits.push_back(split);
-
-                        lengths[aspect] += split.length;
-                        if (bestaspect.Empty() || (lengths[aspect] > lengths[bestaspect])) bestaspect = aspect;
-
-                        t1 = t2;
-                    }
-                }
-
-                if ((p = line.PosNoCase(lengthmarker)) >= 0) {
-                    if ((p = line.Pos(" @ ", p)) >= 0) {
-                        p += 3;
-                        totallen = CalcTime(line.str() + p);
-                        config.printf("Total length %s", GenTime(totallen).str());
-                    }
-                }
-
-                if (((p = line.PosNoCase(pidmarker)) >= 0) &&
-                    ((p = line.PosNoCase(pidmarker2, p + pidmarker.len())) >= 0)) {
-                    pid = (uint16_t)line.Mid(p).Word(1);
-                }
-
-                if ((p = line.PosNoCase(filemarker)) >= 0) {
-                    p += filemarker.len();
-
-                    AString filename = line.Mid(p).Words(0).DeQuotify();
-                    config.printf("Created file: %s%s (PID %u)", filename.str(), AStdFile::exists(filename) ? "" : " (DOES NOT EXIST!)", pid);
-
-                    if (AStdFile::exists(filename)) {
-                        MEDIAFILE file = {pid, filename};
-
-                        if (filename.Suffix() == videofilesuffix) {
-                            videofiles.push_back(file);
-                        }
-                        else if (filename.Suffix() == audiofilesuffix) {
-                            audiofiles.push_back(file);
-                        }
-                        else if (filename.Suffix() == subtitlefilesuffix) {
-                            if (AStdFile::exists(filename + "." + subtitleindexfilesuffix)) {
-                                subtitlefiles.push_back(filename + "." + subtitleindexfilesuffix);
-                            }
-                            subtitlefiles.push_back(filename);
-                        }
-                    }
-                }
-            }
-
-            {
-                SPLIT split = {aspect, t1, 0};
-                splits.push_back(split);
-
-                config.printf("%-6s @ %s for %s", split.aspect.str(), GenTime(split.start).str(), GenTime(totallen - split.start).str());
-
-                if (totallen > 0) lengths[aspect] += totallen - t1;
-                if (bestaspect.Empty() || (lengths[aspect] > lengths[bestaspect])) bestaspect = aspect;
-            }
-
-            fp.close();
-
-            if (bestaspect.Valid()) config.printf("Best aspect is %s with %s", bestaspect.str(), GenTime(lengths[bestaspect]).str());
-        }
-        else {
-            config.printf("Failed to open log file '%s'", logfile.str());
-            success = false;
-        }
-    }
-
-    if (videofiles.size() > 0) {
-        std::sort(videofiles.begin(), videofiles.end(), CompareMediaFiles);
-
-        config.printf("Video files:");
-        for (i = 0; i < videofiles.size(); i++) {
-            config.printf("%2u: PID %5u %s", (uint_t)i, videofiles[i].pid, videofiles[i].filename.str());
-        }
-    }
-    if (audiofiles.size() > 0) {
-        std::sort(audiofiles.begin(), audiofiles.end(), CompareMediaFiles);
-
-        config.printf("Audio files:");
-        for (i = 0; i < audiofiles.size(); i++) {
-            config.printf("%2u: PID %5u %s", (uint_t)i, audiofiles[i].pid, audiofiles[i].filename.str());
-        }
-    }
-    if (subtitlefiles.size() > 0) {
-        config.printf("Subtitle files:");
-        for (i = 0; i < subtitlefiles.size(); i++) {
-            config.printf("%2u: %s", (uint_t)i, subtitlefiles[i].str());
-        }
-    }
-
-    AString m2vfile;
-    AString mp2file;
-    uint_t  videotrack = (uint_t)GetAttributedConfigItem(videotrackname, "0");
-
-    if (videotrack < (uint_t)videofiles.size()) {
-        m2vfile = videofiles[videotrack].filename;
-        config.printf("Using video track %u of '%s', file '%s'", videotrack, GetQuickDescription().str(), m2vfile.str());
-    }
-    else if (videofiles.size() > 0) {
-        m2vfile = videofiles[0].filename;
-        config.printf("Video track %u of '%s' doesn't exists, using file '%s' instead", videotrack, GetQuickDescription().str(), m2vfile.str());
-    }
-    else config.printf("Warning: no video file(s) associated with '%s'", GetQuickDescription().str());
-
-    uint_t audiotrack = (uint_t)GetAttributedConfigItem(audiotrackname, "0");
-
-    if (audiotrack < (uint_t)audiofiles.size()) {
-        mp2file = audiofiles[audiotrack].filename;
-        config.printf("Using audio track %u of '%s', file '%s'", audiotrack, GetQuickDescription().str(), mp2file.str());
-    }
-    else if (audiofiles.size() > 0) {
-        mp2file = audiofiles[0].filename;
-        config.printf("Audio track %u of '%s' doesn't exists, using file '%s' instead", audiotrack, GetQuickDescription().str(), mp2file.str());
-    }
-    else {
-        config.printf("Warning: no audio file(s) associated with '%s'", GetQuickDescription().str());
-        success = false;
-    }
-
-    if (success) {
-        if (m2vfile.Empty() && mp2file.Valid()) {
-            config.printf("No video: audio only");
-
-            dst = dst.Prefix() + "." + config.GetAudioDestFileSuffix();
-            AString tempdst = config.GetRecordingsStorageDir().CatPath(dst.FilePart().Prefix() + "_temp." + dst.Suffix());
-
-            AString cmd;
-            cmd.printf("nice %s -i \"%s\" -v %s %s -y \"%s\"",
-                       config.GetEncodeCommand(GetUser(), GetModifiedCategory()).str(),
-                       mp2file.str(),
-                       config.GetEncodeLogLevel(GetUser(), verbose).str(),
-                       config.GetEncodeAudioOnlyArgs(GetUser(), GetModifiedCategory()).str(),
-                       tempdst.str());
-
-            if (RunCommand(cmd, !verbose)) {
-                success &= MoveFile(tempdst, dst, true);
-            }
-            else success = false;
-        }
-        else if (splits.size() == 1) {
-            config.printf("No need to split file");
-
-            ConvertSubtitles(src, dst, splits, bestaspect);
-
+    if (config.GetUseSimpleEncoding()) {
+        if (success) {
+            AString bestaspect = "16:9";
             AString inputfiles;
-            inputfiles.printf("-i \"%s\" -i \"%s\"",
-                              m2vfile.str(),
-                              mp2file.str());
-            for (i = 0; i < subtitlefiles.size(); i++) {
-                inputfiles.printf(" -i \"%s\"", subtitlefiles[i].str());
-            }
-            if (subtitlefiles.size() > 0) {
-                inputfiles.printf(" -scodec copy -metadata:s:s:0 language=eng");
-            }
+
+            inputfiles.printf("-i \"%s\"", src.str());
 
             success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
         }
-        else {
-            AString remuxsrc = basename + "_Remuxed." + recordedfilesuffix;
+    }
+    else {
+        std::vector<SPLIT> splits;
+        std::map<AString,uint64_t> lengths;
+        AString bestaspect;
+        std::vector<MEDIAFILE> videofiles;
+        std::vector<MEDIAFILE> audiofiles;
+        std::vector<AString>   subtitlefiles;
+        size_t i;
 
-            config.printf("Splitting file...");
+        if (success) {
+            AStdFile fp;
 
-            if (!AStdFile::exists(remuxsrc)) {
-                AString cmd;
+            if (fp.open(logfile)) {
+                static const AString formatmarker = "new format in next leading sequenceheader detected";
+                static const AString videomarker  = "video basics";
+                static const AString lengthmarker = "video length:";
+                static const AString filemarker   = "---> new File:";
+                static const AString pidmarker    = "++> Mpg ";
+                static const AString pidmarker2   = "PID";
+                AString  line;
+                AString  aspect   = "16:9";
+                uint64_t t1       = 0;
+                uint64_t t2       = 0;
+                uint64_t totallen = 0;
+                uint_t   pid = 0;
 
-                cmd.printf("nice %s -fflags +genpts -i \"%s.%s\" -i \"%s.%s\"",
-                           proccmd.str(),
-                           basename.str(), videofilesuffix.str(),
-                           basename.str(), audiofilesuffix.str());
-                for (i = 0; i < subtitlefiles.size(); i++) {
-                    cmd.printf(" -i \"%s\"", subtitlefiles[i].str());
-                }
-                if (subtitlefiles.size() > 0) {
-                    cmd.printf(" -scodec copy -metadata:s:s:0 language=eng");
-                }
-                cmd.printf(" -acodec copy -vcodec copy -v warning -f mpegts \"%s\"",
-                           remuxsrc.str());
+                config.printf("Analysing logfile:");
 
-                success &= RunCommand(cmd, !verbose);
-            }
+                while (line.ReadLn(fp) >= 0) {
+                    int p;
 
-            std::vector<AString> files;
-            for (i = 0; i < splits.size(); i++) {
-                const auto& split = splits[i];
+                    if ((p = line.PosNoCase(videomarker)) >= 0) {
+                        aspect = GetParentheses(line, p);
+                        config.printf("Found aspect '%s'", aspect.str());
+                    }
 
-                if (split.aspect == bestaspect) {
-                    AString cmd;
-                    AString outfile;
+                    if ((p = line.PosNoCase(formatmarker)) >= 0) {
+                        t2 = CalcTime(GetParentheses(line, p));
 
-                    outfile.printf("%s-%s-%u.%s", basename.str(), bestaspect.SearchAndReplace(":", "_").str(), (uint_t)i, recordedfilesuffix.str());
+                        if (t2 > t1) {
+                            SPLIT split = {aspect, t1, t2 - t1};
 
-                    if (!AStdFile::exists(outfile)) {
-                        cmd.printf("nice %s -fflags +genpts -i \"%s\"", proccmd.str(), remuxsrc.str());
-                        for (size_t j = 0; j < subtitlefiles.size(); j++) {
-                            cmd.printf(" -i \"%s\"", subtitlefiles[j].str());
+                            config.printf("%-6s @ %s for %s", split.aspect.str(), GenTime(split.start).str(), GenTime(split.length).str());
+
+                            splits.push_back(split);
+
+                            lengths[aspect] += split.length;
+                            if (bestaspect.Empty() || (lengths[aspect] > lengths[bestaspect])) bestaspect = aspect;
+
+                            t1 = t2;
                         }
-                        cmd.printf(" -ss %s", GenTime(split.start).str());
-                        if (split.length > 0) cmd.printf(" -t %s", GenTime(split.length).str());
-                        cmd.printf(" -acodec copy -vcodec copy -scodec copy -metadata:s:s:0 language=eng -v warning -y -f mpegts \"%s\"", outfile.str());
-
-                        success &= RunCommand(cmd, !verbose);
-                        if (!success) break;
                     }
 
-                    files.push_back(outfile);
+                    if ((p = line.PosNoCase(lengthmarker)) >= 0) {
+                        if ((p = line.Pos(" @ ", p)) >= 0) {
+                            p += 3;
+                            totallen = CalcTime(line.str() + p);
+                            config.printf("Total length %s", GenTime(totallen).str());
+                        }
+                    }
+
+                    if (((p = line.PosNoCase(pidmarker)) >= 0) &&
+                        ((p = line.PosNoCase(pidmarker2, p + pidmarker.len())) >= 0)) {
+                        pid = (uint16_t)line.Mid(p).Word(1);
+                    }
+
+                    if ((p = line.PosNoCase(filemarker)) >= 0) {
+                        p += filemarker.len();
+
+                        AString filename = line.Mid(p).Words(0).DeQuotify();
+                        config.printf("Created file: %s%s (PID %u)", filename.str(), AStdFile::exists(filename) ? "" : " (DOES NOT EXIST!)", pid);
+
+                        if (AStdFile::exists(filename)) {
+                            MEDIAFILE file = {pid, filename};
+
+                            if (filename.Suffix() == videofilesuffix) {
+                                videofiles.push_back(file);
+                            }
+                            else if (filename.Suffix() == audiofilesuffix) {
+                                audiofiles.push_back(file);
+                            }
+                            else if (filename.Suffix() == subtitlefilesuffix) {
+                                if (AStdFile::exists(filename + "." + subtitleindexfilesuffix)) {
+                                    subtitlefiles.push_back(filename + "." + subtitleindexfilesuffix);
+                                }
+                                subtitlefiles.push_back(filename);
+                            }
+                        }
+                    }
                 }
-            }
 
-            AStdFile ofp;
-            AString  concatfile = basename + "_Concat." + recordedfilesuffix;
-            if (ofp.open(concatfile, "wb")) {
-                for (i = 0; i < files.size(); i++) {
-                    AStdFile ifp;
+                {
+                    SPLIT split = {aspect, t1, 0};
+                    splits.push_back(split);
 
-                    if (ifp.open(files[i], "rb")) {
-                        config.printf("Adding '%s'...", files[i].str());
-                        CopyFile(ifp, ofp);
-                        ifp.close();
-                    }
-                    else {
-                        config.printf("Failed to open '%s' for reading", files[i].str());
-                        success = false;
-                        break;
-                    }
+                    config.printf("%-6s @ %s for %s", split.aspect.str(), GenTime(split.start).str(), GenTime(totallen - split.start).str());
+
+                    if (totallen > 0) lengths[aspect] += totallen - t1;
+                    if (bestaspect.Empty() || (lengths[aspect] > lengths[bestaspect])) bestaspect = aspect;
                 }
 
-                ofp.close();
+                fp.close();
+
+                if (bestaspect.Valid()) config.printf("Best aspect is %s with %s", bestaspect.str(), GenTime(lengths[bestaspect]).str());
             }
             else {
-                config.printf("Failed to open '%s' for writing", concatfile.str());
+                config.printf("Failed to open log file '%s'", logfile.str());
                 success = false;
             }
+        }
 
-            if (success) {
+        if (videofiles.size() > 0) {
+            std::sort(videofiles.begin(), videofiles.end(), CompareMediaFiles);
+
+            config.printf("Video files:");
+            for (i = 0; i < videofiles.size(); i++) {
+                config.printf("%2u: PID %5u %s", (uint_t)i, videofiles[i].pid, videofiles[i].filename.str());
+            }
+        }
+        if (audiofiles.size() > 0) {
+            std::sort(audiofiles.begin(), audiofiles.end(), CompareMediaFiles);
+
+            config.printf("Audio files:");
+            for (i = 0; i < audiofiles.size(); i++) {
+                config.printf("%2u: PID %5u %s", (uint_t)i, audiofiles[i].pid, audiofiles[i].filename.str());
+            }
+        }
+        if (subtitlefiles.size() > 0) {
+            config.printf("Subtitle files:");
+            for (i = 0; i < subtitlefiles.size(); i++) {
+                config.printf("%2u: %s", (uint_t)i, subtitlefiles[i].str());
+            }
+        }
+
+        AString m2vfile;
+        AString mp2file;
+        uint_t  videotrack = (uint_t)GetAttributedConfigItem(videotrackname, "0");
+
+        if (videotrack < (uint_t)videofiles.size()) {
+            m2vfile = videofiles[videotrack].filename;
+            config.printf("Using video track %u of '%s', file '%s'", videotrack, GetQuickDescription().str(), m2vfile.str());
+        }
+        else if (videofiles.size() > 0) {
+            m2vfile = videofiles[0].filename;
+            config.printf("Video track %u of '%s' doesn't exists, using file '%s' instead", videotrack, GetQuickDescription().str(), m2vfile.str());
+        }
+        else config.printf("Warning: no video file(s) associated with '%s'", GetQuickDescription().str());
+
+        uint_t audiotrack = (uint_t)GetAttributedConfigItem(audiotrackname, "0");
+
+        if (audiotrack < (uint_t)audiofiles.size()) {
+            mp2file = audiofiles[audiotrack].filename;
+            config.printf("Using audio track %u of '%s', file '%s'", audiotrack, GetQuickDescription().str(), mp2file.str());
+        }
+        else if (audiofiles.size() > 0) {
+            mp2file = audiofiles[0].filename;
+            config.printf("Audio track %u of '%s' doesn't exists, using file '%s' instead", audiotrack, GetQuickDescription().str(), mp2file.str());
+        }
+        else {
+            config.printf("Warning: no audio file(s) associated with '%s'", GetQuickDescription().str());
+            success = false;
+        }
+
+        if (success) {
+            if (m2vfile.Empty() && mp2file.Valid()) {
+                config.printf("No video: audio only");
+
+                dst = dst.Prefix() + "." + config.GetAudioDestFileSuffix();
+                AString tempdst = config.GetRecordingsStorageDir().CatPath(dst.FilePart().Prefix() + "_temp." + dst.Suffix());
+
+                AString cmd;
+                cmd.printf("nice %s -i \"%s\" -v %s %s -y \"%s\"",
+                           config.GetEncodeCommand(GetUser(), GetModifiedCategory()).str(),
+                           mp2file.str(),
+                           config.GetEncodeLogLevel(GetUser(), verbose).str(),
+                           config.GetEncodeAudioOnlyArgs(GetUser(), GetModifiedCategory()).str(),
+                           tempdst.str());
+
+                if (RunCommand(cmd, !verbose)) {
+                    success &= MoveFile(tempdst, dst, true);
+                }
+                else success = false;
+            }
+            else if (splits.size() == 1) {
+                config.printf("No need to split file");
+
                 ConvertSubtitles(src, dst, splits, bestaspect);
 
                 AString inputfiles;
-                inputfiles.printf("-i \"%s\"", concatfile.str());
+                inputfiles.printf("-i \"%s\" -i \"%s\"",
+                                  m2vfile.str(),
+                                  mp2file.str());
                 for (i = 0; i < subtitlefiles.size(); i++) {
                     inputfiles.printf(" -i \"%s\"", subtitlefiles[i].str());
                 }
@@ -3610,13 +3531,104 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
                 success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
             }
+            else {
+                AString remuxsrc = basename + "_Remuxed." + recordedfilesuffix;
 
-            if (success && cleanup) {
-                remove(concatfile);
-                remove(remuxsrc);
+                config.printf("Splitting file...");
 
-                for (i = 0; i < files.size(); i++) {
-                    remove(files[i]);
+                if (!AStdFile::exists(remuxsrc)) {
+                    AString cmd;
+
+                    cmd.printf("nice %s -fflags +genpts -i \"%s.%s\" -i \"%s.%s\"",
+                               proccmd.str(),
+                               basename.str(), videofilesuffix.str(),
+                               basename.str(), audiofilesuffix.str());
+                    for (i = 0; i < subtitlefiles.size(); i++) {
+                        cmd.printf(" -i \"%s\"", subtitlefiles[i].str());
+                    }
+                    if (subtitlefiles.size() > 0) {
+                        cmd.printf(" -scodec copy -metadata:s:s:0 language=eng");
+                    }
+                    cmd.printf(" -acodec copy -vcodec copy -v warning -f mpegts \"%s\"",
+                               remuxsrc.str());
+
+                    success &= RunCommand(cmd, !verbose);
+                }
+
+                std::vector<AString> files;
+                for (i = 0; i < splits.size(); i++) {
+                    const auto& split = splits[i];
+
+                    if (split.aspect == bestaspect) {
+                        AString cmd;
+                        AString outfile;
+
+                        outfile.printf("%s-%s-%u.%s", basename.str(), bestaspect.SearchAndReplace(":", "_").str(), (uint_t)i, recordedfilesuffix.str());
+
+                        if (!AStdFile::exists(outfile)) {
+                            cmd.printf("nice %s -fflags +genpts -i \"%s\"", proccmd.str(), remuxsrc.str());
+                            for (size_t j = 0; j < subtitlefiles.size(); j++) {
+                                cmd.printf(" -i \"%s\"", subtitlefiles[j].str());
+                            }
+                            cmd.printf(" -ss %s", GenTime(split.start).str());
+                            if (split.length > 0) cmd.printf(" -t %s", GenTime(split.length).str());
+                            cmd.printf(" -acodec copy -vcodec copy -scodec copy -metadata:s:s:0 language=eng -v warning -y -f mpegts \"%s\"", outfile.str());
+
+                            success &= RunCommand(cmd, !verbose);
+                            if (!success) break;
+                        }
+
+                        files.push_back(outfile);
+                    }
+                }
+
+                AStdFile ofp;
+                AString  concatfile = basename + "_Concat." + recordedfilesuffix;
+                if (ofp.open(concatfile, "wb")) {
+                    for (i = 0; i < files.size(); i++) {
+                        AStdFile ifp;
+
+                        if (ifp.open(files[i], "rb")) {
+                            config.printf("Adding '%s'...", files[i].str());
+                            CopyFile(ifp, ofp);
+                            ifp.close();
+                        }
+                        else {
+                            config.printf("Failed to open '%s' for reading", files[i].str());
+                            success = false;
+                            break;
+                        }
+                    }
+
+                    ofp.close();
+                }
+                else {
+                    config.printf("Failed to open '%s' for writing", concatfile.str());
+                    success = false;
+                }
+
+                if (success) {
+                    ConvertSubtitles(src, dst, splits, bestaspect);
+
+                    AString inputfiles;
+                    inputfiles.printf("-i \"%s\"", concatfile.str());
+                    for (i = 0; i < subtitlefiles.size(); i++) {
+                        inputfiles.printf(" -i \"%s\"", subtitlefiles[i].str());
+                    }
+                    if (subtitlefiles.size() > 0) {
+                        inputfiles.printf(" -scodec copy -metadata:s:s:0 language=eng");
+                    }
+
+                    success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
+                }
+
+                if (success && cleanup) {
+                    remove(concatfile);
+                    remove(remuxsrc);
+
+                    for (i = 0; i < files.size(); i++) {
+                        remove(files[i]);
+                    }
                 }
             }
         }
