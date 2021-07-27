@@ -3311,24 +3311,13 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         dircreationerrors.printf("Failed to create directory '%s' for destination file", dst.PathPart().str());
     }
 
-    if (AStdFile::exists(src)) {
-        AString cmd;
-
-        cmd.printf("nice projectx -ini %s/X.ini \"%s\"", config.GetConfigDir().str(), src.str());
-
-        success &= RunCommand(cmd, !verbose);
-        remove(basename + ".sup.IFO");
-    }
-
     if (config.GetUseSimpleEncoding()) {
-        if (success) {
-            AString bestaspect = "16:9";
-            AString inputfiles;
+        AString bestaspect = "16:9";
+        AString inputfiles;
 
-            inputfiles.printf("-i \"%s\"", src.str());
+        inputfiles.printf("-i \"%s\"", src.str());
 
-            success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
-        }
+        success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
     }
     else {
         std::vector<SPLIT> splits;
@@ -3338,6 +3327,15 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         std::vector<MEDIAFILE> audiofiles;
         std::vector<AString>   subtitlefiles;
         size_t i;
+
+        if (AStdFile::exists(src)) {
+            AString cmd;
+
+            cmd.printf("nice projectx -ini %s/X.ini \"%s\"", config.GetConfigDir().str(), src.str());
+
+            success &= RunCommand(cmd, !verbose);
+            remove(basename + ".sup.IFO");
+        }
 
         if (success) {
             AStdFile fp;
