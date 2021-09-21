@@ -2380,18 +2380,25 @@ int main(int argc, const char *argv[])
 #endif
             else if (stricmp(argv[i], "--test-cards") == 0) {
                 const auto& channels = ADVBChannelList::Get();
-                const auto *channel  = channels.GetChannelByName(config.GetTestCardChannel());
+                const auto  name     = config.GetTestCardChannel();
+                const auto *channel  = channels.GetChannelByName(name);
                 uint_t seconds = 10;
 
                 if (channel != NULL) {
+                    // map DVB cards
+                    (void)config.GetPhysicalDVBCard(0);
                     for (uint_t i = 0; i < config.GetMaxDVBCards(); i++) {
                         uint32_t bytes   = channels.TestCard(config.GetPhysicalDVBCard(i), channel, seconds);
                         double   rate    = (double)bytes / (1024.0 * (double)seconds);
                         bool     invalid = (rate < 100.0);
 
-                        config.printf("Card %u: %0.1fkb/s%s", i, rate, invalid ? " **INVALID**" : "");
+                        printf("Card %u: %0.1fkb/s%s\n", i, rate, invalid ? " **INVALID**" : "");
+
                         if (invalid) res = -1;
                     }
+                }
+                else {
+                    fprintf(stderr, "Unknown channel '%s'\n", name.str());
                 }
             }
         }
