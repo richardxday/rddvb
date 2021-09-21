@@ -3311,7 +3311,8 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         dircreationerrors.printf("Failed to create directory '%s' for destination file", dst.PathPart().str());
     }
 
-    if (config.GetUseSimpleEncoding()) {
+    if (!config.GetUseAdvancedEncoding()) {
+        // use simple one-shot encoding, doesn't require ProjectX but is fixed at 16:9 and does not remove 4:3 sections
         AString bestaspect = "16:9";
         AString inputfiles;
 
@@ -3320,6 +3321,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
     }
     else {
+        // use advanced encoding, requires ProjectX and can split a file into the most common aspect ratio
         std::vector<SPLIT> splits;
         std::map<AString,uint64_t> lengths;
         AString bestaspect;

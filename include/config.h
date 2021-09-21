@@ -338,7 +338,7 @@ public:
     AString ReplaceTerms(const AString& pre, const AString& _str, const AString& post) const;
     AString ReplaceTerms(const AString& _str) const {return ReplaceTerms("", _str, "");}
 
-    bool    GetUseSimpleEncoding()           const; // extractconfig()
+    bool    GetUseAdvancedEncoding()         const; // extractconfig()
     AString GetVideoEncoder()                const; // extractconfig()
     AString GetDVBStreamCommand()            const; // extractconfig()
 

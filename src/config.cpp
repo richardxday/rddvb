@@ -1023,9 +1023,9 @@ AString ADVBConfig::GetDVBStreamCommand() const
     return GetConfigItem("dvbstreamcmd", "dvbstream");
 }
 
-bool ADVBConfig::GetUseSimpleEncoding() const
+bool ADVBConfig::GetUseAdvancedEncoding() const
 {
-    return ((uint_t)GetConfigItem("usesimpleencoding", "1") != 0);
+    return ((uint_t)GetConfigItem("useadvancedencoding", "0") != 0);
 }
 
 AString ADVBConfig::GetVideoEncoder() const
