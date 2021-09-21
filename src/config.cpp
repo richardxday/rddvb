@@ -1171,12 +1171,17 @@ AString ADVBConfig::GetAudioDestFileSuffix() const
 
 uint_t ADVBConfig::GetMaxDVBCards() const
 {
-    return dvbcards.size();
+    return (uint_t)dvbcards.size();
 }
 
 AString ADVBConfig::GetDVBFrequencyRange() const
 {
     return GetConfigItem("dvbfreqrange", "474,530,8");
+}
+
+AString ADVBConfig::GetTestCardChannel() const
+{
+    return GetConfigItem("testcardchannel", "BBC1");
 }
 
 uint_t ADVBConfig::GetLatestStart() const

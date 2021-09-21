@@ -44,6 +44,10 @@ public:
         } xmltv;
     } CHANNEL;
 
+    AString GetPIDList(const PIDLIST& pidlist) const;
+    AString GetPIDList(const CHANNEL& channel) const {return GetPIDList(channel.dvb.pidlist);}
+    AString GetPIDList(const CHANNEL *channel) const {return GetPIDList(channel->dvb.pidlist);}
+
     uint_t GetChannelCount() const {return (uint_t)list.size();}
     uint_t GetLCNCount() const {return (uint_t)lcnlist.size();}
     const CHANNEL *GetChannel(uint_t n)      const {return (n < list.size())    ? (const CHANNEL *)list[n]    : NULL;}
@@ -61,6 +65,8 @@ public:
     AString LookupXMLTVChannel(const AString& channel) const;
 
     void GenerateChanneList(rapidjson::Document& doc, rapidjson::Value& obj, bool incconverted = false) const;
+
+    uint32_t TestCard(uint_t card, const CHANNEL *channel, uint_t seconds) const;
 
 private:
     ADVBChannelList();

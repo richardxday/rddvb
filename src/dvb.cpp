@@ -21,8 +21,8 @@
 #include "proglist.h"
 #include "channellist.h"
 #include "findcards.h"
-#include "dvbdatabase.h"
 #include "dvbstreams.h"
+#include "rdlib/misc.h"
 
 #define EVALTEST 0
 
@@ -219,6 +219,7 @@ int main(int argc, const char *argv[])
         {"--config-item",                           "<item>",                           "Return value for config item"},
         {"--user-config-item",                      "<user> <item>",                    "Return value for user's config item"},
         {"--user-category-config-item",             "<user> <category> <item>",         "Return value for user's config item for specified programme category"},
+        {"--test-cards",                            "",                                 "Test each DVB card to ensure card is working correctly"},
         {"--return-count",                          "",                                 "Return programme list count in error code"},
     };
     const ADVBConfig& config = ADVBConfig::Get();
@@ -2377,9 +2378,21 @@ int main(int argc, const char *argv[])
                 else printf("Failed to evaluate expression '%s'\n", str.str());
             }
 #endif
-            else if (stricmp(argv[i], "--db") == 0) {
-                ADVBDatabase db;
+            else if (stricmp(argv[i], "--test-cards") == 0) {
+                const auto& channels = ADVBChannelList::Get();
+                const auto *channel  = channels.GetChannelByName(config.GetTestCardChannel());
+                uint_t seconds = 10;
 
+                if (channel != NULL) {
+                    for (uint_t i = 0; i < config.GetMaxDVBCards(); i++) {
+                        uint32_t bytes   = channels.TestCard(config.GetPhysicalDVBCard(i), channel, seconds);
+                        double   rate    = (double)bytes / (1024.0 * (double)seconds);
+                        bool     invalid = (rate < 100.0);
+
+                        config.printf("Card %u: %0.1fkb/s%s", i, rate, invalid ? " **INVALID**" : "");
+                        if (invalid) res = -1;
+                    }
+                }
             }
         }
     }

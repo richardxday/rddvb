@@ -542,6 +542,17 @@ AString ADVBChannelList::ConvertXMLTVChannel(const AString& str)
     return ReplaceStrings(str, &replacements[0], (uint_t)replacements.size());
 }
 
+AString ADVBChannelList::GetPIDList(const PIDLIST& pidlist) const
+{
+    AString str;
+
+    for (size_t i = 0; i < pidlist.size(); i++) {
+        str.printf(" %u", pidlist[i]);
+    }
+
+    return str.Words(0);
+}
+
 const ADVBChannelList::CHANNEL *ADVBChannelList::GetChannelByDVBChannelName(const AString& name) const
 {
     CHANNELMAP::const_iterator it;
@@ -1040,4 +1051,9 @@ AString ADVBChannelList::LookupXMLTVChannel(const AString& channel) const
     }
 
     return channel1;
+}
+
+uint32_t ADVBChannelList::TestCard(uint_t card, const CHANNEL *channel, uint_t seconds) const
+{
+    return ::TestCard(card, channel->dvb.freq, GetPIDList(channel), seconds);
 }

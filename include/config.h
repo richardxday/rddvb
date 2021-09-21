@@ -370,6 +370,8 @@ public:
     bool    IgnoreDVBCard(uint_t n)          const;
     AString GetDVBFrequencyRange()           const; // extractconfig()
 
+    AString GetTestCardChannel()             const; // extractconfig()
+
     uint_t  GetLatestStart()                 const; // extractconfig()
     uint_t  GetDaysToKeep()                  const; // extractconfig()
     sint_t  GetScoreThreshold()              const; // extractconfig()

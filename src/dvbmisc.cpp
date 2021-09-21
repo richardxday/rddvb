@@ -6,6 +6,7 @@
 #include <rdlib/Recurse.h>
 #include <rdlib/StdSocket.h>
 
+#include "channellist.h"
 #include "config.h"
 #include "dvbmisc.h"
 
@@ -39,10 +40,11 @@ AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint
 bool RunAndLogCommand(const AString& cmd)
 {
     const ADVBConfig& config = ADVBConfig::Get();
+    const AString logfile = config.GetLogFile(ADateTime().GetDays());
     AString cmd1 = cmd;
 
-    if (config.IsOutputDisabled()) cmd1.printf(" >>\"%s\" 2>&1", config.GetLogFile(ADateTime().GetDays()).str());
-    else                           cmd1.printf(" 2>&1 | tee -a \"%s\"", config.GetLogFile(ADateTime().GetDays()).str());
+    if (config.IsOutputDisabled()) cmd1.printf(" >>\"%s\" 2>&1", logfile.str());
+    else                           cmd1.printf(" 2>&1 | tee -a \"%s\"", logfile.str());
 
     if (config.LogRemoteCommands()) {
         config.logit("Running '%s'", cmd1.str());
@@ -435,4 +437,23 @@ AString APIDTree::DescribeEx(uint_t level) const
     }
 
     return res;
+}
+
+uint32_t TestCard(uint_t card, uint32_t freq, const AString& pidlist, uint_t seconds)
+{
+    const ADVBConfig& config = ADVBConfig::Get();
+    const AString logfile = config.GetLogFile(ADateTime().GetDays());
+    AString cmd;
+
+    cmd.printf("dvbstream -c %u -f %u %s -n %u -o 2>>\"%s\" | wc -c", card, freq, pidlist.str(), seconds, logfile.str());
+
+    return (uint32_t)RunCommandAndGetResult(cmd);
+}
+
+uint32_t TestCard(uint_t card, const AString& channel, uint_t seconds)
+{
+    const auto& channels = ADVBChannelList::Get();
+    const auto *pchannel = channels.GetChannelByName(channel);
+
+    return (pchannel != NULL) ? TestCard(card, pchannel, seconds) : 0;
 }

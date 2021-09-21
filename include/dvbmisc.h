@@ -79,4 +79,7 @@ protected:
     AString  cmd;
 };
 
+extern uint32_t TestCard(uint_t card, uint32_t freq, const AString& pidlist, uint_t seconds);
+extern uint32_t TestCard(uint_t card, const AString& channel, uint_t seconds);
+
 #endif
