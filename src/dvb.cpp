@@ -219,18 +219,25 @@ int main(int argc, const char *argv[])
         {"--config-item",                           "<item>",                           "Return value for config item"},
         {"--user-config-item",                      "<user> <item>",                    "Return value for user's config item"},
         {"--user-category-config-item",             "<user> <category> <item>",         "Return value for user's config item for specified programme category"},
+        {"--test-card-channel",                     "<channel>",                        "Channel used for --test-cards"},
+        {"--test-card-seconds",                     "<seconds>",                        "Amount of time in seconds to collect data for for --test-cards"},
         {"--test-cards",                            "",                                 "Test each DVB card to ensure card is working correctly"},
         {"--return-count",                          "",                                 "Return programme list count in error code"},
     };
     const ADVBConfig& config = ADVBConfig::Get();
     ADVBProgList proglist;
     ADateTime starttime = ADateTime().TimeStamp(true);
-    uint_t dvbcard   = 0;
-    uint_t verbosity = 0;
-    uint_t nopt, nsubopt;
-    bool   dvbcardspecified = false;
-    int    i;
-    int    res = 0;
+    auto    testcardchannel = config.GetTestCardChannel();
+    uint_t  testcardseconds = config.GetTestCardTime();
+    AString testcardremotecmd;
+    bool    testcardsuccess   = false;
+    bool    testcardperformed = false;
+    uint_t  dvbcard   = 0;
+    uint_t  verbosity = 0;
+    uint_t  nopt, nsubopt;
+    bool    dvbcardspecified = false;
+    int     i;
+    int     res = 0;
 
     {   // ensure ADVBProg initialisation takes place
         ADVBProg prog;
@@ -2378,30 +2385,68 @@ int main(int argc, const char *argv[])
                 else printf("Failed to evaluate expression '%s'\n", str.str());
             }
 #endif
-            else if (stricmp(argv[i], "--test-cards") == 0) {
-                const auto& channels = ADVBChannelList::Get();
-                const auto  name     = config.GetTestCardChannel();
-                const auto *channel  = channels.GetChannelByName(name);
-                uint_t seconds = 10;
+            else if (stricmp(argv[i], "--test-card-channel") == 0) {
+                const auto&   channels = ADVBChannelList::Get();
+                const AString name     = argv[++i];
+                const auto    *channel = channels.GetChannelByName(name);
 
                 if (channel != NULL) {
-                    // map DVB cards
-                    (void)config.GetPhysicalDVBCard(0);
-                    for (uint_t i = 0; i < config.GetMaxDVBCards(); i++) {
-                        uint32_t bytes   = channels.TestCard(config.GetPhysicalDVBCard(i), channel, seconds);
-                        double   rate    = (double)bytes / (1024.0 * (double)seconds);
-                        bool     invalid = (rate < 100.0);
-
-                        printf("Card %u: %0.1fkb/s%s\n", i, rate, invalid ? " **INVALID**" : "");
-
-                        if (invalid) res = -1;
-                    }
+                    testcardchannel = name;
                 }
                 else {
-                    fprintf(stderr, "Unknown channel '%s'\n", name.str());
+                    fprintf(stderr, "Unknown channel for testing cards with '%s'\n", name.str());
+                }
+            }
+            else if (stricmp(argv[i], "--test-card-seconds") == 0) {
+                testcardseconds = (uint_t)AString(argv[++i]);
+            }
+            else if (stricmp(argv[i], "--test-cards") == 0) {
+                if (config.GetRecordingSlave().Valid()) {
+                    if (testcardremotecmd.Empty()) {
+                        testcardremotecmd.printf("dvb");
+                    }
+
+                    testcardremotecmd.printf(" --test-card-channel \"%s\" --test-card-seconds %u --test-cards", testcardchannel.str(), testcardseconds);
+                }
+                else if (!testcardsuccess) {
+                    const auto&  channels = ADVBChannelList::Get();
+                    const auto   *channel = channels.GetChannelByName(testcardchannel);
+
+                    if (channel != NULL) {
+                        // map DVB cards
+                        (void)config.GetPhysicalDVBCard(0);
+
+                        bool success = true;
+                        for (uint_t i = 0; i < config.GetMaxDVBCards(); i++) {
+                            uint32_t bytes   = channels.TestCard(config.GetPhysicalDVBCard(i), channel, testcardseconds);
+                            double   rate    = (double)bytes / (1024.0 * (double)testcardseconds);
+                            bool     invalid = (rate < 100.0);
+
+                            printf("Card %u: %0.1fkb/s%s\n", i, rate, invalid ? " **INVALID**" : "");
+
+                            if (invalid) {
+                                success = false;
+                            }
+                        }
+
+                        testcardsuccess   = success;
+                        testcardperformed = true;
+                    }
+                    else {
+                        fprintf(stderr, "Unknown channel '%s'\n", testcardchannel.str());
+                    }
                 }
             }
         }
+    }
+
+    if (testcardremotecmd.Valid()) {
+        testcardsuccess   = RunAndLogRemoteCommand(testcardremotecmd);
+        testcardperformed = true;
+    }
+
+    if ((res == 0) && testcardperformed && !testcardsuccess) {
+        res = -1;
     }
 
     return res;

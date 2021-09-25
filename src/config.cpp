@@ -1184,6 +1184,11 @@ AString ADVBConfig::GetTestCardChannel() const
     return GetConfigItem("testcardchannel", "BBC1");
 }
 
+uint_t ADVBConfig::GetTestCardTime() const
+{
+    return (uint_t)GetConfigItem("testcardtime", "5");
+}
+
 uint_t ADVBConfig::GetLatestStart() const
 {
     return (uint_t)GetConfigItem("lateststart", "5");

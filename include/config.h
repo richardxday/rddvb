@@ -371,6 +371,7 @@ public:
     AString GetDVBFrequencyRange()           const; // extractconfig()
 
     AString GetTestCardChannel()             const; // extractconfig()
+    uint_t  GetTestCardTime()                const; // extractconfig()
 
     uint_t  GetLatestStart()                 const; // extractconfig()
     uint_t  GetDaysToKeep()                  const; // extractconfig()
