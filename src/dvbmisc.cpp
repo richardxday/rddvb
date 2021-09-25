@@ -56,16 +56,30 @@ bool RunAndLogCommand(const AString& cmd)
     return success;
 }
 
+uint_t GetRemotePort(bool streamslave)
+{
+    const ADVBConfig& config = ADVBConfig::Get();
+    return streamslave ? config.GetStreamSlavePort() : config.GetRecordingSlavePort();
+}
+
+AString GetRemoteHostID(bool streamslave)
+{
+    const ADVBConfig& config = ADVBConfig::Get();
+    const AString host = streamslave ? config.GetStreamSlave()     : config.GetRecordingSlave();
+    const AString user = streamslave ? config.GetStreamSlaveUser() : config.GetRecordingSlaveUser();
+
+    return AString::Formatify("%s%s%s", user.str(), user.Valid() ? "@" : "", host.str());
+}
+
 bool SendFileToRecordingSlave(const AString& filename)
 {
     const ADVBConfig& config = ADVBConfig::Get();
+    const AString args = config.GetSCPArgs();
     AString cmd;
     bool    success;
 
-    //config.logit("'%s' -> '%s:%s'...", filename.str(), config.GetRecordingSlave().str(), filename.str());
-    cmd.printf("scp -p -C -P %u %s \"%s\" %s:\"%s\"", config.GetRecordingSlavePort(), config.GetSCPArgs().str(), filename.str(), config.GetRecordingSlave().str(), filename.str());
+    cmd.printf("scp -p -C -P %u %s \"%s\" %s:\"%s\"", GetRemotePort(), args.str(), filename.str(), GetRemoteHostID().str(), filename.str());
     success = RunAndLogCommand(cmd);
-    //config.logit("'%s' -> '%s:%s' %s", filename.str(), config.GetRecordingSlave().str(), filename.str(), success ? "success" : "failed");
 
     return success;
 }
@@ -78,14 +92,14 @@ bool GetFileFromRecordingSlave(const AString& filename)
 bool GetFileFromRecordingSlave(const AString& filename, const AString& localfilename)
 {
     const ADVBConfig& config = ADVBConfig::Get();
+    const AString args = config.GetSCPArgs();
     AString cmd;
     bool    success;
 
     remove(localfilename);
-    //config.logit("'%s:%s' -> '%s'...", config.GetRecordingSlave().str(), filename.str(), localfilename.str());
-    cmd.printf("scp -p -C -P %u %s %s:\"%s\" \"%s\"", config.GetRecordingSlavePort(), config.GetSCPArgs().str(), config.GetRecordingSlave().str(), filename.str(), localfilename.str());
+
+    cmd.printf("scp -p -C -P %u %s %s:\"%s\" \"%s\"", GetRemotePort(), args.str(), GetRemoteHostID().str(), filename.str(), localfilename.str());
     success = RunAndLogCommand(cmd);
-    //config.logit("'%s:%s' -> '%s' %s", config.GetRecordingSlave().str(), filename.str(), localfilename.str(), success ? "success" : "failed");
 
     return success;
 }
@@ -93,11 +107,9 @@ bool GetFileFromRecordingSlave(const AString& filename, const AString& localfile
 AString GetRemoteCommand(const AString& cmd, const AString& postcmd, bool compress, bool streamslave)
 {
     const ADVBConfig& config = ADVBConfig::Get();
-    AString host = streamslave ? config.GetStreamSlave()     : config.GetRecordingSlave();
-    uint_t  port = streamslave ? config.GetStreamSlavePort() : config.GetRecordingSlavePort();
     AString cmd1;
 
-    cmd1.printf("ssh %s %s -p %u %s \"%s\" %s", compress ? "-C" : "", config.GetSSHArgs().str(), port, host.str(), cmd.Escapify().str(), postcmd.str());
+    cmd1.printf("ssh %s %s -p %u %s \"%s\" %s", compress ? "-C" : "", config.GetSSHArgs().str(), GetRemotePort(streamslave), GetRemoteHostID(streamslave).str(), cmd.Escapify().str(), postcmd.str());
 
     return cmd1;
 }

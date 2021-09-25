@@ -219,8 +219,8 @@ int main(int argc, const char *argv[])
         {"--config-item",                           "<item>",                           "Return value for config item"},
         {"--user-config-item",                      "<user> <item>",                    "Return value for user's config item"},
         {"--user-category-config-item",             "<user> <category> <item>",         "Return value for user's config item for specified programme category"},
-        {"--test-card-channel",                     "<channel>",                        "Channel used for --test-cards"},
-        {"--test-card-seconds",                     "<seconds>",                        "Amount of time in seconds to collect data for for --test-cards"},
+        {"--test-cards-channel",                    "<channel>",                        "Channel used for --test-cards"},
+        {"--test-cards-seconds",                    "<seconds>",                        "Amount of time in seconds to collect data for for --test-cards"},
         {"--test-cards",                            "",                                 "Test each DVB card to ensure card is working correctly"},
         {"--return-count",                          "",                                 "Return programme list count in error code"},
     };
@@ -2385,7 +2385,7 @@ int main(int argc, const char *argv[])
                 else printf("Failed to evaluate expression '%s'\n", str.str());
             }
 #endif
-            else if (stricmp(argv[i], "--test-card-channel") == 0) {
+            else if (stricmp(argv[i], "--test-cards-channel") == 0) {
                 const auto&   channels = ADVBChannelList::Get();
                 const AString name     = argv[++i];
                 const auto    *channel = channels.GetChannelByName(name);
@@ -2397,7 +2397,7 @@ int main(int argc, const char *argv[])
                     fprintf(stderr, "Unknown channel for testing cards with '%s'\n", name.str());
                 }
             }
-            else if (stricmp(argv[i], "--test-card-seconds") == 0) {
+            else if (stricmp(argv[i], "--test-cards-seconds") == 0) {
                 testcardseconds = (uint_t)AString(argv[++i]);
             }
             else if (stricmp(argv[i], "--test-cards") == 0) {
@@ -2406,7 +2406,7 @@ int main(int argc, const char *argv[])
                         testcardremotecmd.printf("dvb");
                     }
 
-                    testcardremotecmd.printf(" --test-card-channel \"%s\" --test-card-seconds %u --test-cards", testcardchannel.str(), testcardseconds);
+                    testcardremotecmd.printf(" --test-cards-channel \"%s\" --test-cards-seconds %u --test-cards", testcardchannel.str(), testcardseconds);
                 }
                 else if (!testcardsuccess) {
                     const auto&  channels = ADVBChannelList::Get();

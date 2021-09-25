@@ -1309,6 +1309,11 @@ uint_t ADVBConfig::GetRecordingSlavePort() const
     return (uint_t)GetConfigItem("recordingslaveport", "22");
 }
 
+AString ADVBConfig::GetRecordingSlaveUser() const
+{
+    return GetConfigItem("recordingslaveuser", "");
+}
+
 AString ADVBConfig::GetStreamSlave() const
 {
     return GetConfigItem("streamslave", GetRecordingSlave());
@@ -1317,6 +1322,11 @@ AString ADVBConfig::GetStreamSlave() const
 uint_t ADVBConfig::GetStreamSlavePort() const
 {
     return (uint_t)GetConfigItem("streamslaveport", GetRecordingSlavePort());
+}
+
+AString ADVBConfig::GetStreamSlaveUser() const
+{
+    return GetConfigItem("streamslaveuser", GetRecordingSlaveUser());
 }
 
 AString ADVBConfig::GetSSHArgs() const

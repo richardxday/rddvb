@@ -18,6 +18,8 @@ typedef struct {
 extern AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint_t n);
 
 extern bool RunAndLogCommand(const AString& cmd);
+extern uint_t GetRemotePort(bool streamslave = false);
+extern AString GetRemoteHostID(bool streamslave = false);
 extern bool SendFileToRecordingSlave(const AString& filename);
 extern bool GetFileFromRecordingSlave(const AString& filename);
 extern bool GetFileFromRecordingSlave(const AString& filename, const AString& localfilename);
