@@ -144,10 +144,11 @@ static bool PrepareHLSStreaming(dvbstream_t& stream)
 
                 ofp.close();
 
-                stream.type     = "hls";
-                stream.htmlfile = destfile;
-                stream.hlsfile  = config.GetHLSConfigItem("hlsoutputfullpath", name);
-                stream.url      = config.GetHLSConfigItem("hlsstreamurl", name);
+                stream.type       = "hls";
+                stream.htmlfile   = destfile;
+                stream.hlsfile    = config.GetHLSConfigItem("hlsoutputfullpath", name);
+                stream.url        = config.GetHLSConfigItem("hlsstreamurl", name);
+                stream.cleanupcmd = config.ReplaceHLSTerms(config.GetHLSCleanCommand(), name);
 
                 success = true;
             }
@@ -170,7 +171,7 @@ static bool PrepareHLSStreaming(dvbstream_t& stream)
 
 bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _name, const AString& dvbcardstr, bool background)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const ADVBConfig& config      = ADVBConfig::Get();
     const bool   useslave         = config.GetStreamSlave().Valid();
     const uint_t dvbcard          = (uint_t)dvbcardstr;
     const bool   dvbcardspecified = dvbcardstr.Valid();
@@ -187,6 +188,7 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
     stream.url.Delete();
     stream.htmlfile.Delete();
     stream.hlsfile.Delete();
+    stream.cleanupcmd.Delete();
 
     if ((type == StreamType_Raw) && !useslave) {
         ADVBChannelList& channellist = ADVBChannelList::Get();
@@ -298,10 +300,19 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
             AString cmd = stream.cmd;
 
             if (background) {
+                if (stream.cleanupcmd.Valid()) {
+                    cmd.printf(" ; %s", stream.cleanupcmd.str());
+                    stream.cleanupcmd.Delete();
+                }
                 cmd = AString::Formatify("bash -c '%s' 2>/dev/null >/dev/null &", cmd.str());
             }
 
             success = (system(cmd) == 0);
+
+            if (stream.cleanupcmd.Valid()) {
+                int res = system(stream.cleanupcmd);
+                (void)res;
+            }
         }
     }
     else {
@@ -325,7 +336,7 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
                 stream.type = "hls";
                 PrepareHLSStreaming(stream);
                 pipecmd.printf("| %s", config.ReplaceHLSTerms(config.GetHLSEncoderCommand(), name).str());
-                pipecmd.printf(" ; %s", config.ReplaceHLSTerms(config.GetHLSCleanCommand(), name).str());
+                //pipecmd.printf(" ; %s", stream.cleanupcmd.str());
                 break;
 
             case StreamType_MP4:
@@ -365,6 +376,10 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
         }
 
         if (background) {
+            if (stream.cleanupcmd.Valid()) {
+                cmd.printf(" ; %s", stream.cleanupcmd.str());
+                stream.cleanupcmd.Delete();
+            }
             cmd = AString::Formatify("bash -c '%s' 2>/dev/null >/dev/null &", cmd.str());
         }
 
@@ -374,6 +389,11 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
 
         //fprintf(stderr, "Cmd: %s (%s)\n", cmd.str(), stream.cmd.str());
         success = (system(cmd) == 0);
+
+        if (stream.cleanupcmd.Valid()) {
+            int res = system(stream.cleanupcmd);
+            (void)res;
+        }
     }
 
     return success;

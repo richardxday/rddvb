@@ -21,6 +21,7 @@ typedef struct {
     AString  url;
     AString  htmlfile;
     AString  hlsfile;
+    AString  cleanupcmd;
 } dvbstream_t;
 
 extern AString ConvertStream(const dvbstream_t& stream);
