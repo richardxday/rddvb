@@ -3088,10 +3088,13 @@ bool ADVBProgList::GetAndConvertRecordings()
 
         tick = GetTickCount();
         cmd.Delete();
-        cmd.printf("nice rsync -v --partial --remove-source-files --ignore-missing-args %s %s%s %s:%s/'*.mpg' %s",
+        cmd.printf("nice rsync -v --partial --remove-source-files --ignore-missing-args %s %s%s -e 'ssh -p %u' %s%s%s:%s/'*.mpg' %s",
                    config.GetRsyncArgs().str(),
                    config.GetRsyncBandwidthLimit().Valid() ? "--bwlimit=" : "",
                    config.GetRsyncBandwidthLimit().str(),
+                   config.GetRecordingSlavePort(),
+                   config.GetRecordingSlaveUser().str(),
+                   config.GetRecordingSlaveUser().Valid() ? "@" : "",
                    config.GetRecordingSlave().str(),
                    config.GetRecordingsStorageDir().str(),
                    config.GetRecordingsStorageDir().str());
@@ -3103,10 +3106,13 @@ bool ADVBProgList::GetAndConvertRecordings()
 
         tick = GetTickCount();
         cmd.Delete();
-        cmd.printf("nice rsync -z --partial --ignore-missing-args %s %s%s %s:%s/'dvb*.txt' %s",
+        cmd.printf("nice rsync -z --partial --ignore-missing-args %s %s%s -e 'ssh -p %u' %s%s%s:%s/'dvb*.txt' %s",
                    config.GetRsyncArgs().str(),
                    config.GetRsyncBandwidthLimit().Valid() ? "--bwlimit=" : "",
                    config.GetRsyncBandwidthLimit().str(),
+                   config.GetRecordingSlavePort(),
+                   config.GetRecordingSlaveUser().str(),
+                   config.GetRecordingSlaveUser().Valid() ? "@" : "",
                    config.GetRecordingSlave().str(),
                    config.GetLogDir().str(),
                    config.GetSlaveLogDir().str());
