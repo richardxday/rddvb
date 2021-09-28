@@ -11,6 +11,7 @@
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
 #include <rdlib/XMLDecode.h>
+#include "rdlib/strsup.h"
 #include <json/json.h>
 
 #include <json/forwards.h>
@@ -23,7 +24,6 @@
 #include "dvblock.h"
 #include "dvbpatterns.h"
 #include "iconcache.h"
-#include "rdlib/strsup.h"
 
 /*--------------------------------------------------------------------------------*/
 
