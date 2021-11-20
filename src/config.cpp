@@ -1376,7 +1376,7 @@ AString ADVBConfig::GetServerRescheduleCommand() const
 
 AString ADVBConfig::GetVideoErrorCheckCommand() const
 {
-    return GetConfigItem("videocheckcmd", GetVideoEncoder() + " -t 60 -v error -i \"{filename}\" -f null - 2>&1 | wc -l >{logfile}");
+    return GetConfigItem("videocheckcmd", GetVideoEncoder() + " -t 60 -v error -i \"{filename}\" -f null - 2>&1 | grep \"mpeg2video\" | wc -l >{logfile}");
 }
 
 AString ADVBConfig::GetGraphSuffix() const
