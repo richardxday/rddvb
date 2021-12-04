@@ -558,7 +558,7 @@ public:
     void GetEncodedFiles(AList& files) const;
     bool DeleteEncodedFiles() const;
 
-    bool GetVideoErrorCount(uint_t& count) const;
+    bool GetVideoErrorCount(double& duration, uint_t& count) const;
 
     bool FixData();
 

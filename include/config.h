@@ -340,6 +340,7 @@ public:
 
     bool    GetUseAdvancedEncoding()         const; // extractconfig()
     AString GetVideoEncoder()                const; // extractconfig()
+    AString GetVideoProber()                 const; // extractconfig()
     AString GetDVBStreamCommand()            const; // extractconfig()
 
     AString GetMPlayerArgs()                 const; // extractconfig()
@@ -425,6 +426,7 @@ public:
     AString GetServerUpdateRecordingsCommand() const; // extractconfig()
     AString GetServerRescheduleCommand()     const; // extractconfig()
 
+    AString GetVideoDurationCommand()        const; // extractconfig()
     AString GetVideoErrorCheckCommand()      const; // extractconfig()
 
     AString GetGraphSuffix()                 const; // extractconfig()

@@ -3276,9 +3276,10 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
     }
 
     {
+        double duration;
         uint_t nerrors;
-        if (!config.IsRecordingSlave() && GetVideoErrorCount(nerrors)) {
-            config.printf("'%s': %u video errors", GetQuickDescription().str(), nerrors);
+        if (!config.IsRecordingSlave() && GetVideoErrorCount(duration, nerrors)) {
+            config.printf("'%s': %0.2f min, %u video errors (%0.1f errors/min)", GetQuickDescription().str(), duration, nerrors, (double)nerrors / duration);
         }
     }
 
@@ -3846,47 +3847,42 @@ bool ADVBProg::DeleteEncodedFiles() const
     return success;
 }
 
-bool ADVBProg::GetVideoErrorCount(uint_t& count) const
+bool ADVBProg::GetVideoErrorCount(double& duration, uint_t& count) const
 {
     const ADVBConfig& config = ADVBConfig::Get();
+    AString filename = GenerateFilename();
     AString cmd;
     bool success = false;
 
-    if ((cmd = config.GetVideoErrorCheckCommand()).Valid()) {
-        AString filename = GenerateFilename();
-
-        if (!AStdFile::exists(filename)) {
-            config.logit("File '%s' doesn't exist, trying archive filename '%s'", filename.str(), GetArchiveRecordingFilename().str());
-            filename = GetArchiveRecordingFilename();
-        }
-
-        if (AStdFile::exists(filename)) {
-            AString tempfile = config.GetTempFile("errorcheck", ".txt");
-
-            cmd = cmd.SearchAndReplace("{filename}", filename).SearchAndReplace("{logfile}", tempfile);
-
-            if (system(cmd) == 0) {
-                AStdFile fp;
-
-                if (fp.open(tempfile)) {
-                    AString line;
-
-                    if (line.ReadLn(fp) >= 0) {
-                        if (sscanf(line, "%u", &count) > 0) {
-                            success = true;
-                        }
-                        else config.logit("'%s': failed to extract count from '%s'", GetTitleAndSubtitle().str(), line.str());
-                    }
-                    else config.logit("'%s': failed to read line from log file '%s'", GetTitleAndSubtitle().str(), tempfile.str());
-                }
-                else config.logit("'%s': failed to open log file '%s'", GetTitleAndSubtitle().str(), tempfile.str());
-            }
-            else config.logit("'%s': failed to run command '%s'", GetTitleAndSubtitle().str(), cmd.str());
-
-            remove(tempfile);
-        }
-        else config.logit("'%s': archive file '%s' doesn't exist", GetTitleAndSubtitle().str(), filename.str());
+    if (!AStdFile::exists(filename)) {
+        config.logit("File '%s' doesn't exist, trying archive filename '%s'", filename.str(), GetArchiveRecordingFilename().str());
+        filename = GetArchiveRecordingFilename();
     }
+
+    if (AStdFile::exists(filename)) {
+        AString tempfile = config.GetTempFile("errorcheck", ".txt");
+        AString duration_str;
+        AString count_str;
+
+        if ((cmd = config.GetVideoDurationCommand()).Valid()) {
+            cmd = cmd.SearchAndReplace("{filename}", filename);
+
+            duration_str = RunCommandAndGetResult(cmd);
+        }
+        if ((cmd = config.GetVideoErrorCheckCommand()).Valid()) {
+            cmd = cmd.SearchAndReplace("{filename}", filename);
+
+            count_str = RunCommandAndGetResult(cmd);
+        }
+
+        if (duration_str.Valid() && count_str.Valid()) {
+            if ((sscanf(duration_str.str(), "%lf", &duration) > 0) &&
+                (sscanf(count_str.str(), "%u", &count) > 0)) {
+                success = true;
+            }
+        }
+    }
+    else config.logit("'%s': archive file '%s' doesn't exist", GetTitleAndSubtitle().str(), filename.str());
 
     return success;
 }

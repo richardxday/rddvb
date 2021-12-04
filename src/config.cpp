@@ -1033,6 +1033,11 @@ AString ADVBConfig::GetVideoEncoder() const
     return GetConfigItem("videoencoder", "ffmpeg");
 }
 
+AString ADVBConfig::GetVideoProber() const
+{
+    return GetConfigItem("videoprober", "ffprobe");
+}
+
 AString ADVBConfig::GetMPlayerArgs() const
 {
     return GetConfigItem("mplayerargs", "-autosync 1 -vf {conf:videodeinterlace}=1");
@@ -1374,9 +1379,14 @@ AString ADVBConfig::GetServerRescheduleCommand() const
     return GetConfigItem("serverreschedulecommand", "dvbreschedule");
 }
 
+AString ADVBConfig::GetVideoDurationCommand() const
+{
+    return GetConfigItem("videoprobecmd", GetVideoProber() + " \"{filename}\" | grep \"^  Duration:\" | sed -E \"s/^.+([0-9]+):([0-9]+):([0-9\\.]+).+/scale=2; (\\1*3600.0+\\2*60.0+\\3)\\/60.0/\" | bc -l");
+}
+
 AString ADVBConfig::GetVideoErrorCheckCommand() const
 {
-    return GetConfigItem("videocheckcmd", GetVideoEncoder() + " -t 60 -v error -i \"{filename}\" -f null - 2>&1 | grep \"mpeg2video\" | wc -l >{logfile}");
+    return GetConfigItem("videoerrorscmd", GetVideoEncoder() + " -v repeat+error -i \"{filename}\" -f null - 2>&1 | grep \"mpeg2video\" | wc -l");
 }
 
 AString ADVBConfig::GetGraphSuffix() const

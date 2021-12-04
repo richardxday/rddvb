@@ -2160,10 +2160,11 @@ int main(int argc, const char *argv[])
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
                     const ADVBProg& prog = proglist.GetProg(j);
+                    double duration;
                     uint_t nerrors;
 
-                    if (prog.GetVideoErrorCount(nerrors)) {
-                        printf("%s: %u\n", prog.GetQuickDescription().str(), nerrors);
+                    if (prog.GetVideoErrorCount(duration, nerrors)) {
+                        printf("%s: %0.2f min, %u errors (%0.1f errors/min)\n", prog.GetQuickDescription().str(), duration, nerrors, (double)nerrors / duration);
                     }
                 }
             }
