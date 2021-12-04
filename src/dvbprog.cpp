@@ -2973,12 +2973,13 @@ AString ADVBProg::GetLogFile() const
     return config.GetLogDir().CatPath(AString(GetFilename()).FilePart().Prefix() + ".txt");
 }
 
-bool ADVBProg::RunCommand(const AString& cmd, bool logoutput) const
+bool ADVBProg::RunCommand(const AString& cmd, bool logoutput, const AString& postcmd, AString *result) const
 {
     const ADVBConfig& config = ADVBConfig::Get();
     AString   scmd;
     AString   cmdlogfile = config.GetLogDir().CatPath(AString(GetFilename()).FilePart().Prefix() + "_cmd.txt");
     AString   logfile = GetLogFile();
+    AString   tempfile = config.GetTempFile("command", ".txt");
     bool success = false;
 
     if (cmd.Pos(logfile) >= 0) {
@@ -2991,10 +2992,24 @@ bool ADVBProg::RunCommand(const AString& cmd, bool logoutput) const
         config.ExtractLogData(starttime, stoptime, logfile);
     }
 
-    config.printf("Running command '%s'", cmd.str());
-
     scmd = cmd;
-    if (logoutput) scmd.printf(" >\"%s\" 2>&1", cmdlogfile.str());
+    scmd.printf(" 2>&1");
+    if (logoutput) {
+        scmd.printf(" | tee -a \"%s\"", cmdlogfile.str());
+    }
+
+    if (postcmd.Valid()) {
+        scmd.printf(" | %s", postcmd.str());
+    }
+
+    if (result != NULL) {
+        scmd.printf(" >%s", tempfile.str());
+    }
+    else {
+        scmd.printf(" >/dev/null");
+    }
+
+    config.printf("Running command '%s'", scmd.str());
 
     success = (system(scmd) == 0);
 
@@ -3009,9 +3024,14 @@ bool ADVBProg::RunCommand(const AString& cmd, bool logoutput) const
         remove(cmdlogfile);
     }
 
-    if (!success) config.printf("Command '%s' failed!", cmd.str());
+    if (!success) config.printf("Command '%s' failed!", scmd.str());
 
     remove(logfile);
+
+    if (result != NULL) {
+        result->ReadFromFile(tempfile);
+        remove(tempfile);
+    }
 
     return success;
 }
@@ -3207,7 +3227,7 @@ bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
     return success;
 }
 
-bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose) const
+bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose)
 {
     const ADVBConfig& config = ADVBConfig::Get();
     AString proccmd = config.GetEncodeCommand(GetUser(), GetModifiedCategory());
@@ -3217,23 +3237,48 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
     bool    success = true;
 
     for (i = 0; i < n; i++) {
+        const AString filename = args.Line(i, ";").Words(0);
         AString cmd;
+        AString result;
+        double  duration = 0.0;
+        bool    duration_valid = false;
 
-        cmd.printf("nice %s %s -v %s -aspect %s %s -y \"%s\"",
+        if ((cmd = config.GetVideoDurationCommand()).Valid()) {
+            cmd = cmd.SearchAndReplace("{filename}", filename);
+
+            AString duration_str = RunCommandAndGetResult(cmd);
+            if (duration_str.Valid()) {
+                double hours, minutes, seconds;
+                if (sscanf(duration_str.str(), "%lf %lf %lf", &hours, &minutes, &seconds) >= 3) {
+                    // duration is in minutes
+                    duration = hours * 60.0 + minutes + seconds / 60.0;
+                    duration_valid = true;
+                }
+                else config.logit("'%s': invalid duration '%s'", filename.str(), duration_str.str());
+            }
+            else config.logit("'%s': error whilst finding video duration", filename.str());
+        }
+
+        cmd.Delete();
+        cmd.printf("nice %s %s -v repeat+error -t 10 -aspect %s %s -y \"%s\"",
                    proccmd.str(),
                    inputfiles.str(),
-                   config.GetEncodeLogLevel(GetUser(), verbose).str(),
                    aspect.str(),
-                   args.Line(i, ";").Words(0).str(),
+                   filename.str(),
                    tempdst.str());
 
-        if (RunCommand(cmd, !verbose)) {
+        if (RunCommand(cmd, !verbose, "grep \"mpeg2video\" | wc -l", &result)) {
             AString finaldst;
             AString append;
 
             if (i > 0) append.printf("-%u", i);
 
             finaldst = outputfile.Prefix() + append + "." + outputfile.Suffix();
+
+            if (duration_valid && result.Valid()) {
+                uint_t errors = (uint_t)result;
+                config.printf("File '%s' is %0.1f min long and has %u errors (%0.1f errors/min)", filename.str(), duration, errors, (double)errors / duration);
+            }
 
             config.printf("Moving file '%s' to final destination '%s'", tempdst.str(), finaldst.str());
             success &= MoveFile(tempdst, finaldst, true);
@@ -3275,13 +3320,15 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         return false;
     }
 
+#if 0
     {
         double duration;
         uint_t nerrors;
-        if (!config.IsRecordingSlave() && GetVideoErrorCount(duration, nerrors)) {
+        if (!config.IsRecordingSlave() && GetVideoDuration(duration) && GetVideoErrorCount(nerrors)) {
             config.printf("'%s': %0.2f min, %u video errors (%0.1f errors/min)", GetQuickDescription().str(), duration, nerrors, (double)nerrors / duration);
         }
     }
+#endif
 
     if (!force && AStdFile::exists(dst)) {
         config.printf("Warning: destination '%s' exists, assuming conversion is complete", dst.str());
@@ -3847,7 +3894,7 @@ bool ADVBProg::DeleteEncodedFiles() const
     return success;
 }
 
-bool ADVBProg::GetVideoErrorCount(double& duration, uint_t& count) const
+bool ADVBProg::GetVideoDuration(double& duration) const
 {
     const ADVBConfig& config = ADVBConfig::Get();
     AString filename = GenerateFilename();
@@ -3855,37 +3902,62 @@ bool ADVBProg::GetVideoErrorCount(double& duration, uint_t& count) const
     bool success = false;
 
     if (!AStdFile::exists(filename)) {
-        config.logit("File '%s' doesn't exist, trying archive filename '%s'", filename.str(), GetArchiveRecordingFilename().str());
         filename = GetArchiveRecordingFilename();
     }
 
     if (AStdFile::exists(filename)) {
-        AString tempfile = config.GetTempFile("errorcheck", ".txt");
         AString duration_str;
-        AString count_str;
 
         if ((cmd = config.GetVideoDurationCommand()).Valid()) {
             cmd = cmd.SearchAndReplace("{filename}", filename);
 
             duration_str = RunCommandAndGetResult(cmd);
         }
+
+        if (duration_str.Valid()) {
+            double hours, minutes, seconds;
+            if (sscanf(duration_str.str(), "%lf %lf %lf", &hours, &minutes, &seconds) >= 3){
+                // duration is in minutes
+                duration = hours * 60.0 + minutes + seconds / 60.0;
+                success  = true;
+            }
+            else config.logit("'%s': invalid duration '%s'", GetTitleAndSubtitle().str(), duration_str.str());
+        }
+        else config.logit("'%s': error whilst finding video duration", GetTitleAndSubtitle().str());
+    }
+    else config.logit("'%s': video file '%s' doesn't exist", GetTitleAndSubtitle().str(), filename.str());
+
+    return success;
+}
+
+bool ADVBProg::GetVideoErrorCount(uint_t& count) const
+{
+    const ADVBConfig& config = ADVBConfig::Get();
+    AString filename = GenerateFilename();
+    AString cmd;
+    bool success = false;
+
+    if (!AStdFile::exists(filename)) {
+        filename = GetArchiveRecordingFilename();
+    }
+
+    if (AStdFile::exists(filename)) {
+        AString count_str;
+
         if ((cmd = config.GetVideoErrorCheckCommand()).Valid()) {
             cmd = cmd.SearchAndReplace("{filename}", filename);
 
             count_str = RunCommandAndGetResult(cmd);
         }
 
-        if (duration_str.Valid() && count_str.Valid()) {
-            double hours, minutes, seconds;
-            if ((sscanf(duration_str.str(), "%lf %lf %lf", &hours, &minutes, &seconds) >= 3) &&
-                (sscanf(count_str.str(), "%u", &count) > 0)) {
-                // duration is in minutes
-                duration = hours * 60.0 + minutes + seconds / 60.0;
+        if (count_str.Valid()) {
+            if (sscanf(count_str.str(), "%u", &count) > 0) {
                 success  = true;
             }
         }
+        else config.logit("'%s': error whilst finding video errors", GetTitleAndSubtitle().str());
     }
-    else config.logit("'%s': archive file '%s' doesn't exist", GetTitleAndSubtitle().str(), filename.str());
+    else config.logit("'%s': video file '%s' doesn't exist", GetTitleAndSubtitle().str(), filename.str());
 
     return success;
 }

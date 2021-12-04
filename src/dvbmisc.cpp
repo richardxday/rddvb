@@ -333,7 +333,9 @@ AString RunCommandAndGetResult(const AString& cmd)
 
     if (system(cmd + " >" + tempfile) == 0) {
         res.ReadFromFile(tempfile);
+        config.printf("Command '%s' returned '%s'", cmd.str(), res.str());
     }
+    else config.printf("Command '%s' failed!", cmd.str());
 
     remove(tempfile);
 

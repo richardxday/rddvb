@@ -558,7 +558,8 @@ public:
     void GetEncodedFiles(AList& files) const;
     bool DeleteEncodedFiles() const;
 
-    bool GetVideoErrorCount(double& duration, uint_t& count) const;
+    bool GetVideoDuration(double& duration) const;
+    bool GetVideoErrorCount(uint_t& count) const;
 
     bool FixData();
 
@@ -692,7 +693,7 @@ protected:
     AString ReplaceFilenameTerms(const AString& str, bool converted) const;
 
     AString GetLogFile() const;
-    bool    RunCommand(const AString& cmd, bool logoutput = false) const;
+    bool    RunCommand(const AString& cmd, bool logoutput = false, const AString& postcmd = "", AString *result = NULL) const;
 
     static uint64_t CalcTime(const char *str);
     static AString GenTime(uint64_t t, const char *format = "%02u:%02u:%02u.%03u");
@@ -712,7 +713,7 @@ protected:
     static bool CompareFilenames(const AString& file1, const AString& file2) {return (CompareCase(file1, file2) > 0);}
 
     void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect);
-    bool EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose) const;
+    bool EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose);
 
     static const DVBPROG *nullprog;
 

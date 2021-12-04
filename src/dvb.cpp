@@ -2163,7 +2163,8 @@ int main(int argc, const char *argv[])
                     double duration;
                     uint_t nerrors;
 
-                    if (prog.GetVideoErrorCount(duration, nerrors)) {
+                    if (prog.GetVideoDuration(duration) &&
+                        prog.GetVideoErrorCount(nerrors)) {
                         printf("%s: %0.2f min, %u errors (%0.1f errors/min)\n", prog.GetQuickDescription().str(), duration, nerrors, (double)nerrors / duration);
                     }
                 }

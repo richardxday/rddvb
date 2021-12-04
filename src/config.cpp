@@ -1296,7 +1296,7 @@ AString ADVBConfig::GetEncodeAudioOnlyArgs(const AString& user, const AString& c
 
 AString ADVBConfig::GetEncodeLogLevel(const AString& user, bool verbose) const
 {
-    return verbose ? GetUserConfigItem(user, "processloglevel:verbose", "warning") : GetUserConfigItem(user, "processloglevel:normal", "error");
+    return "repeat+" + (verbose ? GetUserConfigItem(user, "processloglevel:verbose", "warning") : GetUserConfigItem(user, "processloglevel:normal", "error"));
 }
 
 bool ADVBConfig::LogRemoteCommands() const
