@@ -1381,7 +1381,7 @@ AString ADVBConfig::GetServerRescheduleCommand() const
 
 AString ADVBConfig::GetVideoDurationCommand() const
 {
-    return GetConfigItem("videoprobecmd", GetVideoProber() + " \"{filename}\" 2>&1 | grep \"^  Duration:\" | sed -E \"s/^.+([0-9]+):([0-9]+):([0-9\\.]+).+/\\1 \\2 \\3\"");
+    return GetConfigItem("videoprobecmd", GetVideoProber() + " \"{filename}\" 2>&1 | grep \"^  Duration:\" | sed -E \"s/^.+([0-9]+):([0-9]+):([0-9\\.]+).+/\\1 \\2 \\3/\"");
 }
 
 AString ADVBConfig::GetVideoErrorCheckCommand() const
