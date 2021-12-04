@@ -3876,9 +3876,12 @@ bool ADVBProg::GetVideoErrorCount(double& duration, uint_t& count) const
         }
 
         if (duration_str.Valid() && count_str.Valid()) {
-            if ((sscanf(duration_str.str(), "%lf", &duration) > 0) &&
+            double hours, minutes, seconds;
+            if ((sscanf(duration_str.str(), "%lf %lf %lf", &hours, &minutes, &seconds) >= 3) &&
                 (sscanf(count_str.str(), "%u", &count) > 0)) {
-                success = true;
+                // duration is in minutes
+                duration = hours * 60.0 + minutes + seconds / 60.0;
+                success  = true;
             }
         }
     }
