@@ -3233,38 +3233,47 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
     AString proccmd = config.GetEncodeCommand(GetUser(), GetModifiedCategory());
     AString args    = config.GetEncodeArgs(GetUser(), GetModifiedCategory());
     AString tempdst = config.GetRecordingsStorageDir().CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
-    int     i, n = args.CountLines(";");
+    int     i, j, nargs = args.CountLines(";"), nfiles = inputfiles.CountWords() / 2;
     bool    success = true;
 
-    for (i = 0; i < n; i++) {
-        const AString filename = args.Line(i, ";").Words(0);
+    for (i = 0; i < nargs; i++) {
         AString cmd;
         AString result;
+        AString filenames;
         double  duration = 0.0;
         bool    duration_valid = false;
 
-        if ((cmd = config.GetVideoDurationCommand()).Valid()) {
-            cmd = cmd.SearchAndReplace("{filename}", filename);
+        for (j = 0; j < nfiles; j++) {
+            const AString filename = inputfiles.Word(1 + j * 2).DeQuotify();
 
-            AString duration_str = RunCommandAndGetResult(cmd);
-            if (duration_str.Valid()) {
-                double hours, minutes, seconds;
-                if (sscanf(duration_str.str(), "%lf %lf %lf", &hours, &minutes, &seconds) >= 3) {
-                    // duration is in minutes
-                    duration = hours * 60.0 + minutes + seconds / 60.0;
-                    duration_valid = true;
-                }
-                else config.logit("'%s': invalid duration '%s'", filename.str(), duration_str.str());
+            if (filenames.Valid()) {
+                filenames += ", " + filename;
             }
-            else config.logit("'%s': error whilst finding video duration", filename.str());
+            else filenames = filename;
+
+            if ((cmd = config.GetVideoDurationCommand()).Valid()) {
+                cmd = cmd.SearchAndReplace("{filename}", filename);
+
+                AString duration_str = RunCommandAndGetResult(cmd);
+                if (duration_str.Valid()) {
+                    double hours, minutes, seconds;
+                    if (sscanf(duration_str.str(), "%lf %lf %lf", &hours, &minutes, &seconds) >= 3) {
+                        // duration is in minutes
+                        duration += hours * 60.0 + minutes + seconds / 60.0;
+                        duration_valid = true;
+                    }
+                    else config.logit("'%s': invalid duration '%s'", filename.str(), duration_str.str());
+                }
+                else config.logit("'%s': error whilst finding video duration", filename.str());
+            }
         }
 
         cmd.Delete();
-        cmd.printf("nice %s %s -v repeat+error -t 10 -aspect %s %s -y \"%s\"",
+        cmd.printf("nice %s %s -v repeat+error -aspect %s %s -y \"%s\"",
                    proccmd.str(),
                    inputfiles.str(),
                    aspect.str(),
-                   filename.str(),
+                   args.Line(i).Words(0).str(),
                    tempdst.str());
 
         if (RunCommand(cmd, !verbose, "grep \"mpeg2video\" | wc -l", &result)) {
@@ -3277,7 +3286,7 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 
             if (duration_valid && result.Valid()) {
                 uint_t errors = (uint_t)result;
-                config.printf("File '%s' is %0.1f min long and has %u errors (%0.1f errors/min)", filename.str(), duration, errors, (double)errors / duration);
+                config.printf("Video (from files '%s') is %0.1f min long and has %u errors (%0.1f errors/min)", filenames.str(), duration, errors, (double)errors / duration);
             }
 
             config.printf("Moving file '%s' to final destination '%s'", tempdst.str(), finaldst.str());
