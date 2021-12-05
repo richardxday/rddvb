@@ -3948,11 +3948,14 @@ bool ADVBProg::GetVideoErrorCount(uint_t& count) const
         if ((cmd = config.GetVideoErrorCheckCommand()).Valid()) {
             cmd = cmd.SearchAndReplace("{filename}", filename);
 
+            config.printf("Finding video errors in '%s'", filename.str());
+
             count_str = RunCommandAndGetResult(cmd);
         }
 
         if (count_str.Valid()) {
             if (sscanf(count_str.str(), "%u", &count) > 0) {
+                config.printf("'%s' has %u video errors", filename.str(), count);
                 success  = true;
             }
         }
