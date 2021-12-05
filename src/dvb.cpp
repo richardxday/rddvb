@@ -2163,44 +2163,61 @@ int main(int argc, const char *argv[])
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
                     ADVBProg& prog = proglist.GetProgWritable(j);
-                    uint64_t  duration;
-                    uint_t    nerrors;
+                    uint64_t  duration = 0;
+                    uint_t    nerrors  = 0;
+                    bool      updated  = false;
 
-                    if (AStdFile::exists(prog.GetArchiveRecordingFilename())) {
-                        printf("Finding duration and video errors in '%s' ('%s')...\n", prog.GetTitleAndSubtitle().str(), prog.GetArchiveRecordingFilename().str());
+                    if (AStdFile::exists(prog.GetArchiveRecordingFilename()) ||
+                        AStdFile::exists(prog.GetFilename())) {
+                        if (!update || (prog.GetDuration() == 0)) {
+                            printf("Finding duration and video errors in '%s' ('%s')...\n", prog.GetTitleAndSubtitle().str(), prog.GetArchiveRecordingFilename().str());
 
-                        // duration is in ms
-                        if (prog.GetVideoDuration(duration) &&
-                            prog.GetVideoErrorCount(nerrors)) {
-                            // set duration and video errors in current programme list
-                            prog.SetDuration(duration);
-                            prog.SetVideoErrors(nerrors);
+                            // duration is in ms
+                            if (prog.GetVideoDuration(duration) &&
+                                prog.GetVideoErrorCount(nerrors)) {
+                                printf("%s: %0.2f min, %u errors (%0.1f errors/min)\n",
+                                       prog.GetQuickDescription().str(),
+                                       (double)duration / 60000.0,
+                                       nerrors,
+                                       (60000.0 * (double)nerrors) / (double)duration);
 
-                            printf("%s: %0.2f min, %u errors (%0.1f errors/min)\n",
-                                   prog.GetQuickDescription().str(),
-                                   (double)duration / 60000.0,
-                                   nerrors,
-                                   (60000.0 * (double)nerrors) / (double)duration);
-
-                            if (!HasQuit() && update) {
-                                // update recorded list: load it here, update it and save it
-                                // as quickly as possible
-                                ADVBLock     lock("dvbfiles");
-                                ADVBProgList recorded;
-                                ADVBProg     *otherprog;
-
-                                recorded.ReadFromFile(config.GetRecordedFile());
-
-                                // find programme in recorded list
-                                if ((otherprog = recorded.FindUUIDWritable(prog)) != NULL) {
-                                    // update programme
-                                    otherprog->SetDuration(duration);
-                                    otherprog->SetVideoErrors(nerrors);
-
-                                    // save recorded list again
-                                    recorded.WriteToFile(config.GetRecordedFile());
-                                }
+                                updated = update;
                             }
+                            else if (duration == 0) {
+                                // direct duration not available, use length of programme instead
+                                duration = prog.GetActualLengthFallback();
+                            }
+
+                            // if a valid duration has been found
+                            if (duration > 0) {
+                                // set duration and video errors in current programme list
+                                prog.SetDuration(duration);
+                                prog.SetVideoErrors(nerrors);
+
+                                // allow updating of recorded proglist
+                                updated = update;
+                            }
+                        }
+                    }
+
+                    // if recorded proglist should be updated
+                    if (!HasQuit() && updated) {
+                        // update recorded list: load it here, update it and save it
+                        // as quickly as possible
+                        ADVBLock     lock("dvbfiles");
+                        ADVBProgList recorded;
+                        ADVBProg     *otherprog;
+
+                        recorded.ReadFromFile(config.GetRecordedFile());
+
+                        // find programme in recorded list
+                        if ((otherprog = recorded.FindUUIDWritable(prog)) != NULL) {
+                            // update programme
+                            otherprog->SetDuration(duration);
+                            otherprog->SetVideoErrors(nerrors);
+
+                            // save recorded list again
+                            recorded.WriteToFile(config.GetRecordedFile());
                         }
                     }
                 }
