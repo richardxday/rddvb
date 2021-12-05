@@ -3895,7 +3895,7 @@ bool ADVBProg::DeleteEncodedFiles() const
     return success;
 }
 
-bool ADVBProg::GetVideoDuration(double& duration) const
+bool ADVBProg::GetVideoDuration(uint64_t& duration) const
 {
     const ADVBConfig& config = ADVBConfig::Get();
     AString filename = GenerateFilename();
@@ -3916,10 +3916,13 @@ bool ADVBProg::GetVideoDuration(double& duration) const
         }
 
         if (duration_str.Valid()) {
-            double hours, minutes, seconds;
-            if (sscanf(duration_str.str(), "%lf %lf %lf", &hours, &minutes, &seconds) >= 3){
-                // duration is in seconds
-                duration = hours * 3600.0 + minutes * 60.0 + seconds;
+            uint_t hours, minutes;
+            double seconds;
+            if (sscanf(duration_str.str(), "%u %u %lf", &hours, &minutes, &seconds) >= 3){
+                // duration is in ms
+                duration = ((uint64_t)hours   * (uint64_t)3600 * (uint64_t)1000 +
+                            (uint64_t)minutes * (uint64_t)60   * (uint64_t)1000 +
+                            (uint64_t)(seconds * 1000.0));
                 success  = true;
             }
             else config.logit("'%s': invalid duration '%s'", GetTitleAndSubtitle().str(), duration_str.str());
@@ -3928,15 +3931,6 @@ bool ADVBProg::GetVideoDuration(double& duration) const
     }
     else config.logit("'%s': video file '%s' doesn't exist", GetTitleAndSubtitle().str(), filename.str());
 
-    return success;
-}
-
-bool ADVBProg::GetVideoDuration(uint64_t& duration) const
-{
-    double _duration;
-    bool success = GetVideoDuration(_duration);
-    // convert seconds to integer millisecond
-    duration = (uint64_t)(_duration * 1000.0 + .5);
     return success;
 }
 
