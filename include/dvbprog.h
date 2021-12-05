@@ -661,8 +661,8 @@ protected:
         char     strdata[0];
     } DVBPROG;
 
-    static DVBPROG *ReadData(AStdData& fp, bool readheader = true);
-    bool WriteData(AStdData& fp, bool writeheader = true) const;
+    static DVBPROG *ReadData(AStdData& fp);
+    bool WriteData(AStdData& fp) const;
 
     uint8_t *GetDataPtr(uint16_t offset) const {return (uint8_t *)((uptr_t)data + offset);}
 

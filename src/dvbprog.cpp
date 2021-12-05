@@ -276,27 +276,24 @@ void ADVBProg::Init()
     overlaps       = 0;
 }
 
-ADVBProg::DVBPROG *ADVBProg::ReadData(AStdData& fp, bool readheader)
+ADVBProg::DVBPROG *ADVBProg::ReadData(AStdData& fp)
 {
     static const uint8_t bigendian = (uint8_t)MachineIsBigEndian();
     DVBPROG _data, *pdata = NULL;
-    uint8_t swap = AStdData::SWAP_NEVER;
+    uint8_t swap    = AStdData::SWAP_NEVER;
     uint8_t version = DVBDATVERSION;
+    uint8_t header;
 
     memset(&_data, 0, sizeof(_data));
 
-    if (readheader) {
-        uint8_t header;
+    if (fp.readitem(header)) {
+        bool _bigendian = ((header & 0x80) != 0);
 
-        if (fp.readitem(header)) {
-            bool _bigendian = ((header & 0x80) != 0);
+        swap = (_bigendian != bigendian) ? AStdData::SWAP_ALWAYS : AStdData::SWAP_NEVER;
 
-            swap = (_bigendian != bigendian) ? AStdData::SWAP_ALWAYS : AStdData::SWAP_NEVER;
-
-            version = (header & 0x7f);
-        }
-        else return NULL;
+        version = (header & 0x7f);
     }
+    else return NULL;
 
     if (fp.readitem(_data.start, swap) &&
         fp.readitem(_data.stop, swap) &&
@@ -343,12 +340,12 @@ ADVBProg::DVBPROG *ADVBProg::ReadData(AStdData& fp, bool readheader)
     return pdata;
 }
 
-bool ADVBProg::WriteData(AStdData& fp, bool writeheader) const
+bool ADVBProg::WriteData(AStdData& fp) const
 {
     static const uint8_t header = ((uint8_t)MachineIsBigEndian() << 7) | DVBDATVERSION;
     bool success = false;
 
-    if ((!writeheader || fp.writeitem(header)) &&
+    if (fp.writeitem(header) &&
         fp.writeitem(data->start) &&
         fp.writeitem(data->stop) &&
         fp.writeitem(data->recstart) &&
@@ -472,7 +469,7 @@ AString ADVBProg::Base64Encode() const
     AString str;
 
     if (mem.open("w")) {
-        if (WriteData(mem, false)) {
+        if (WriteData(mem)) {
             str = ::Base64Encode(mem.GetData(), mem.GetLength());
         }
         mem.close();
@@ -498,7 +495,7 @@ bool ADVBProg::Base64Decode(const AString& str)
             Delete();
 
             mem.rewind();
-            if ((data = ReadData(mem, false)) == NULL) {
+            if ((data = ReadData(mem)) == NULL) {
                 Delete();
             }
         }
