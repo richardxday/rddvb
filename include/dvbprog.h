@@ -336,11 +336,19 @@ public:
 
     enum {
         Compare_brate = 0,
-        Compare_kbrate
+        Compare_kbrate,
+        Compare_videoerrorrate,
     };
-    uint32_t GetExternal(uint_t id) const;
-    int CompareExternal(uint_t id, uint32_t value) const;
-    int CompareExternal(uint_t id, sint32_t value) const;
+    void GetExternal(uint_t id, uint32_t& val) const;
+    void GetExternal(uint_t id, sint32_t& val) const;
+    void GetExternal(uint_t id, double& val) const;
+
+    template<typename T>
+    int CompareExternal(uint_t id, T value1) const {
+        T value2;
+        GetExternal(id, value2);
+        return COMPARE_ITEMS(value2, value1);
+    }
 
     typedef struct {
         uint8_t  valid;

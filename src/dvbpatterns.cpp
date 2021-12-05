@@ -229,6 +229,7 @@ void ADVBPatterns::GetFieldValue(const FIELD& field, VALUE& value, AString& val)
 
         case FieldType_date:
         case FieldType_span:
+        case FieldType_span_single:
         case FieldType_age:
             value.u64 = (uint64_t)ADateTime(val, ADateTime::Time_Absolute);
             break;
@@ -257,6 +258,10 @@ void ADVBPatterns::GetFieldValue(const FIELD& field, VALUE& value, AString& val)
 
         case FieldType_sint8_t:
             value.s8 = (sint8_t)(sint16_t)val;
+            break;
+
+        case FieldType_double:
+            value.f64 = (double)val;
             break;
 
         case FieldType_flag...FieldType_lastflag:
@@ -295,6 +300,7 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const FIELD& field, const VALUE& 
 
         case FieldType_date:
         case FieldType_span:
+        case FieldType_span_single:
         case FieldType_age:
             memcpy(ptr, &value.u64, sizeof(value.u64));
             break;
@@ -345,8 +351,48 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const FIELD& field, const VALUE& 
             break;
         }
 
+        case FieldType_double: {
+            double val1 = TermTypeToDouble(ptr, field.type);
+            double val2 = TermTypeToDouble(&value.f64, field.type);
+            double val;
+
+            switch (termtype) {
+                case Operator_Add:
+                    val = val1 + val2;
+                    break;
+
+                case Operator_Subtract:
+                    val = val1 - val2;
+                    break;
+
+                case Operator_Multiply:
+                    val = val1 * val2;
+                    break;
+
+                case Operator_Divide:
+                    if (val2 != 0.0) val = val1 / val2;
+                    else             val = val1;
+                    break;
+
+                case Operator_Maximum:
+                    val = MAX(val1, val2);
+                    break;
+
+                case Operator_Minimum:
+                    val = MIN(val1, val2);
+                    break;
+
+                default:
+                    val = val2;
+                    break;
+            }
+
+            DoubleToTermType(ptr, val, field.type);
+            break;
+        }
+
         case FieldType_flag...FieldType_lastflag: {
-            uint32_t flags, mask = 1UL << (field.type - FieldType_flag);
+            uint32_t flags, mask = (uint32_t)1U << (field.type - FieldType_flag);
 
             memcpy(&flags, ptr, sizeof(flags));
             if (value.u8) flags |=  mask;
@@ -949,6 +995,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
                         }
 
                         case FieldType_span:
+                        case FieldType_span_single:
                         case FieldType_age: {
                             ADateTime dt;
                             //ADateTime::EnableDebugStrToDate(true);
@@ -983,6 +1030,11 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
                             term->value.s8 = (sint8_t)(sint16_t)value;
                             break;
 
+                        case FieldType_double:
+                        case FieldType_external_double:
+                            term->value.f64 = (double)value;
+                            break;
+
                         case FieldType_flag...FieldType_lastflag:
                             term->value.u8 = ((uint32_t)value != 0);
                             //debug("Setting test of flag to %u\n", (uint_t)term->value.u8);
@@ -1007,7 +1059,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
                         }
 
                         default:
-                            errors.printf("Unknown field '%s' type (%u) (term %u)", field.str(), (uint_t)term->field->type, list.Count() + 1);
+                            errors.printf("Unknown field type (%u) (term %u for '%s')", (uint_t)term->field->type, list.Count() + 1, field.str());
                             break;
                     }
 
@@ -1212,6 +1264,24 @@ void ADVBPatterns::Int64sToTermType(void *p, sint64_t val, uint_t termtype)
             // little endian -> copy from FIRST x bytes
             memcpy(p, (uint8_t *)&val, bytes);
         }
+    }
+}
+
+double ADVBPatterns::TermTypeToDouble(const void *p, uint_t termtype)
+{
+    double val = 0.0;
+
+    if (termtype == FieldType_double) {
+        memcpy(&val, p, sizeof(val));
+    }
+
+    return val;
+}
+
+void ADVBPatterns::DoubleToTermType(void *p, double val, uint_t termtype)
+{
+    if (termtype == FieldType_double) {
+        memcpy(p, &val, sizeof(val));
     }
 }
 
@@ -1439,6 +1509,15 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
                         break;
                     }
 
+                    case FieldType_span_single: {
+                        uint64_t val;
+
+                        memcpy(&val, ptr, sizeof(val));
+
+                        res = COMPARE_ITEMS(val, term.value.u64);
+                        break;
+                    }
+
                     case FieldType_age: {
                         uint64_t val1, val2, val;
 
@@ -1499,12 +1578,24 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
                         break;
                     }
 
+                    case FieldType_double: {
+                        double val;
+
+                        memcpy(&val, ptr, sizeof(val));
+                        res = COMPARE_ITEMS(val, term.value.f64);
+                        break;
+                    }
+
                     case FieldType_external_uint32_t:
                         res = prog.CompareExternal(field.offset, term.value.u32);
                         break;
 
                     case FieldType_external_sint32_t:
                         res = prog.CompareExternal(field.offset, term.value.s32);
+                        break;
+
+                    case FieldType_external_double:
+                        res = prog.CompareExternal(field.offset, term.value.f64);
                         break;
 
                     case FieldType_flag...FieldType_lastflag: {
@@ -1668,6 +1759,10 @@ AString ADVBPatterns::ToString(const VALUE& val, uint8_t fieldtype, uint8_t date
             break;
         case FieldType_sint8_t:
             str.printf("%d", (sint_t)val.s8);
+            break;
+        case FieldType_double:
+        case FieldType_external_double:
+            str.printf("%0.14e", val.f64);
             break;
         case FieldType_prog:
             str.printf("%s", val.prog->GetQuickDescription().str());

@@ -81,16 +81,21 @@ protected:
         FieldType_string = 0,
         FieldType_date,
         FieldType_span,
+        FieldType_span_single,
         FieldType_age,
+        FieldType_uint64_t,
+        FieldType_sint64_t,
         FieldType_uint32_t,
         FieldType_sint32_t,
         FieldType_uint16_t,
         FieldType_sint16_t,
         FieldType_uint8_t,
         FieldType_sint8_t,
+        FieldType_double,
         FieldType_prog,
         FieldType_external_uint32_t,
         FieldType_external_sint32_t,
+        FieldType_external_double,
         FieldType_flag,
         FieldType_lastflag = FieldType_flag + 63,
     };
@@ -160,7 +165,8 @@ protected:
                               (1U << FieldType_uint16_t) |
                               (1U << FieldType_sint16_t) |
                               (1U << FieldType_uint8_t)  |
-                              (1U << FieldType_sint8_t)),
+                              (1U << FieldType_sint8_t)  |
+                              (1U << FieldType_double)),
         FieldTypes_Prog    = 1U << FieldType_prog,
         FieldTypes_Default = ~(FieldTypes_String | FieldTypes_Prog),
     };
@@ -182,6 +188,7 @@ protected:
         sint16_t   s16;
         uint8_t    u8;
         sint8_t    s8;
+        double     f64;
         char       *str;
         ADVBProg   *prog;
     } VALUE;
@@ -209,6 +216,9 @@ protected:
 
     static sint64_t TermTypeToInt64s(const void *p, uint_t termtype);
     static void     Int64sToTermType(void *p, sint64_t val, uint_t termtype);
+
+    static double   TermTypeToDouble(const void *p, uint_t termtype);
+    static void     DoubleToTermType(void *p, double val, uint_t termtype);
 
     static void __DeleteTerm(uptr_t item, void *context);
 
