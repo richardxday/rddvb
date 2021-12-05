@@ -15,7 +15,7 @@
 
 #include "dvbpatterns.h"
 
-#define DVBDATVERSION 2
+#define DVBDATVERSION 3
 
 class ADVBProgList;
 class ADVBProg {
@@ -245,8 +245,8 @@ public:
     void        SetRecordStart(uint64_t dt)    {data->recstart = dt;}
     void        SetRecordStop(uint64_t dt)     {data->recstop  = dt;}
 
-    sint64_t    GetPreRecordHandle()     const {return data->start - data->recstart;}
-    sint64_t    GetPostRecordHandle()    const {return data->recstop - data->stop;}
+    sint64_t    GetPreRecordHandle()     const {return (sint64_t)(data->start - data->recstart);}
+    sint64_t    GetPostRecordHandle()    const {return (sint64_t)(data->recstop - data->stop);}
 
     uint64_t    GetActualStart()         const {return data->actstart;}
     uint64_t    GetActualStop()          const {return data->actstop;}
@@ -256,7 +256,7 @@ public:
     void        SetActualStart(uint64_t dt)    {data->actstart = dt;}
     void        SetActualStop(uint64_t dt)     {data->actstop  = dt;}
 
-    uint64_t    GetActualLengthFallback() const {return GetActualLength() ? GetActualLength() : (GetRecordLength() ? GetRecordLength() : GetLength());}
+    uint64_t    GetActualLengthFallback() const;
 
     enum {
         TimeIndex_Start = 0,
@@ -270,6 +270,12 @@ public:
 
     void        SetFileSize(uint64_t filesize) {data->filesize = filesize;}
     uint64_t    GetFileSize()            const {return data->filesize;}
+
+    void        SetVideoErrors(uint32_t nerrors) {data->videoerrors = nerrors;}
+    uint32_t    GetVideoErrors()           const {return data->videoerrors;}
+
+    void        SetDuration(uint64_t duration) {data->duration = duration;}
+    uint64_t    GetDuration()            const {return data->duration;}
 
     static AString GetHex(uint64_t t)          {return AString("$%016x").Arg(t);}
     static AString GetHex(const ADateTime& dt) {return GetHex((uint64_t)dt);}
@@ -542,6 +548,8 @@ public:
     AString Base64Encode() const;
 
     AString GetLinkToFile() const;
+
+    bool    UpdateDuration() {return GetVideoDuration(data->duration);}
     bool    UpdateFileSize();
 
     void Record();
@@ -559,6 +567,7 @@ public:
     bool DeleteEncodedFiles() const;
 
     bool GetVideoDuration(double& duration) const;
+    bool GetVideoDuration(uint64_t& duration) const;
     bool GetVideoErrorCount(uint_t& count) const;
 
     bool FixData();
@@ -599,6 +608,9 @@ protected:
 
         uint64_t filesize;
         uint32_t flags;
+
+        uint32_t videoerrors;
+        uint64_t duration;
 
         EPISODE  episode;
 
@@ -713,7 +725,7 @@ protected:
     static bool CompareFilenames(const AString& file1, const AString& file2) {return (CompareCase(file1, file2) > 0);}
 
     void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect);
-    bool EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose);
+    bool EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose, uint32_t *videoerrors = NULL);
 
     static const DVBPROG *nullprog;
 

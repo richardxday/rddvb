@@ -275,6 +275,9 @@ ADVBProg::DVBPROG *ADVBProg::ReadData(AStdData& fp, bool readheader)
     static const uint8_t bigendian = (uint8_t)MachineIsBigEndian();
     DVBPROG _data, *pdata = NULL;
     uint8_t swap = AStdData::SWAP_NEVER;
+    uint8_t version = DVBDATVERSION;
+
+    memset(&_data, 0, sizeof(_data));
 
     if (readheader) {
         uint8_t header;
@@ -283,6 +286,8 @@ ADVBProg::DVBPROG *ADVBProg::ReadData(AStdData& fp, bool readheader)
             bool _bigendian = ((header & 0x80) != 0);
 
             swap = (_bigendian != bigendian) ? AStdData::SWAP_ALWAYS : AStdData::SWAP_NEVER;
+
+            version = (header & 0x7f);
         }
         else return NULL;
     }
@@ -295,6 +300,8 @@ ADVBProg::DVBPROG *ADVBProg::ReadData(AStdData& fp, bool readheader)
         fp.readitem(_data.actstop, swap) &&
         fp.readitem(_data.filesize, swap) &&
         fp.readitem(_data.flags, swap) &&
+        ((version < 3) || fp.readitem(_data.videoerrors, swap)) &&      // version 3 was when videoerrors was added
+        ((version < 3) || fp.readitem(_data.duration, swap)) &&         // version 3 was when duration was added
         fp.readitem(_data.episode.valid, swap) &&
         fp.readitem(_data.episode.series, swap) &&
         fp.readitem(_data.episode.episode, swap) &&
@@ -344,6 +351,8 @@ bool ADVBProg::WriteData(AStdData& fp, bool writeheader) const
         fp.writeitem(data->actstop) &&
         fp.writeitem(data->filesize) &&
         fp.writeitem(data->flags) &&
+        fp.writeitem(data->videoerrors) &&
+        fp.writeitem(data->duration) &&
         fp.writeitem(data->episode.valid) &&
         fp.writeitem(data->episode.series) &&
         fp.writeitem(data->episode.episode) &&
@@ -377,6 +386,14 @@ const ADVBProg::FIELD *ADVBProg::GetFields(uint_t& nfields)
 {
     nfields = NUMBEROF(fields);
     return fields;
+}
+
+uint64_t ADVBProg::GetActualLengthFallback() const
+{
+    if (GetDuration()     > 0) return GetDuration();
+    if (GetActualLength() > 0) return GetActualLength();
+    if (GetRecordLength() > 0) return GetRecordLength();
+    return GetLength();
 }
 
 uint16_t ADVBProg::GetDirDataOffset()
@@ -654,6 +671,9 @@ ADVBProg& ADVBProg::operator = (const AString& str)
     data->filesize = (uint64_t)GetField(str, "filesize");
     data->flags    = (uint32_t)GetField(str, "flags");
 
+    data->videoerrors = (uint32_t)GetField(str, "videoerrors");
+    data->duration    = (uint64_t)GetField(str, "duration");
+
     if (FieldExists(str, "episodenum:xmltv_ns")) SetString(&data->strings.episodenum, GetField(str, "episodenum:xmltv_ns"));
     else                                         SetString(&data->strings.episodenum, GetField(str, "episodenum"));
 
@@ -665,9 +685,9 @@ ADVBProg& ADVBProg::operator = (const AString& str)
         data->episode = GetEpisode(pstr);
     }
     else {
-        data->episode.series   = (uint_t)GetField(str, "series");
-        data->episode.episode  = (uint_t)GetField(str, "episode");
-        data->episode.episodes = (uint_t)GetField(str, "episodes");
+        data->episode.series   = (uint8_t)(uint_t)GetField(str, "series");
+        data->episode.episode  = (uint8_t)(uint_t)GetField(str, "episode");
+        data->episode.episodes = (uint8_t)(uint_t)GetField(str, "episodes");
         data->episode.valid    = (data->episode.series || data->episode.episode || data->episode.episodes);
     }
 
@@ -921,6 +941,9 @@ AString ADVBProg::ExportToText() const
     if (data->episode.episodes) str.printf("episodes=%u\n", (uint_t)data->episode.episodes);
 
     if (data->filesize) str.printf("filesize=%s\n", AValue(data->filesize).ToString().str());
+    str.printf("videoerrors=%u\n", data->videoerrors);
+    if (data->duration > 0) str.printf("duration=%s\n", AValue(data->duration).ToString().str());
+
     str.printf("flags=$%08x\n", data->flags);
 
     if ((p = GetString(data->strings.episodeid))[0]) str.printf("episodeid=%s\n", p);
@@ -1113,8 +1136,11 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
         if (rate) obj.AddMember("rate", rapidjson::Value(rate), allocator);
     }
 
-    if (data->assignedepisode) obj.AddMember("assignedepisode", rapidjson::Value(data->assignedepisode), allocator);
-    if (data->year) obj.AddMember("year", rapidjson::Value(data->year), allocator);
+    obj.AddMember("videoerrors", rapidjson::Value(data->videoerrors), allocator);
+    if (data->duration > 0) obj.AddMember("duration", rapidjson::Value(data->duration), allocator);
+
+    if (data->assignedepisode > 0) obj.AddMember("assignedepisode", rapidjson::Value(data->assignedepisode), allocator);
+    if (data->year > 0) obj.AddMember("year", rapidjson::Value(data->year), allocator);
 
     if (GetString(data->strings.pattern)[0]) {
         obj.AddMember("score", rapidjson::Value(data->score), allocator);
@@ -1572,8 +1598,8 @@ ADVBProg::EPISODE ADVBProg::GetEpisode(const AString& str)
             episode.episodes = _episodes;
         }
         else if (sscanf(str, "%u./%u.",
-                   &_series,
-                   &_episodes) == 2) {
+                        &_series,
+                        &_episodes) == 2) {
             episode.series   = _series  + 1;
             episode.episode  = 0;
             episode.episodes = _episodes;
@@ -1631,9 +1657,9 @@ AString ADVBProg::GetEpisodeString(const EPISODE& ep)
 
         efmt.printf("E%%0%uu", n);
         tfmt.printf("T%%0%uu", n);
-        if (ep.series)   res.printf("S%02u", ep.series);
-        if (ep.episode)  res.printf(efmt.str(), ep.episode);
-        if (ep.episodes) res.printf(tfmt.str(), ep.episodes);
+        if (ep.series   > 0) res.printf("S%02u", ep.series);
+        if (ep.episode  > 0) res.printf(efmt.str(), ep.episode);
+        if (ep.episodes > 0) res.printf(tfmt.str(), ep.episodes);
     }
 
     return res;
@@ -1820,6 +1846,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
             if (str1.Valid()) str1.printf("\n\n");
             str1.printf("%s as '%s'", data->actstart ? "Recorded" : (data->recstart ? "To be recorded" : "Would be recorded"), GetFilename());
             if (!IsConverted()) str1.printf(" (will be converted to '%s')", GenerateFilename(true).str());
+            if (GetDuration() > 0) str1.printf(" (%0.2f video errors/min)", 60.0 * (double)GetVideoErrors() / (double)GetDuration());
             str1.printf(".");
 
             if (HasFailed()) {
@@ -2778,6 +2805,8 @@ void ADVBProg::Record()
                 if (rename(GetTempFilename(), GetFilename()) == 0) {
                     SetRecordingComplete();
 
+                    UpdateDuration();
+
                     if (dt < (st - 15000)) {
                         config.printf("Warning: '%s' stopped %ss before programme end!",
                                       GetTitleAndSubtitle().str(),
@@ -3065,6 +3094,7 @@ bool ADVBProg::PostProcess()
         success = postprocessed = RunCommand(postcmd);
 
         SetPostProcessed();
+        UpdateDuration();
         UpdateFileSize();
 
         ADVBProgList::RemoveFromList(config.GetProcessingFile(), *this);
@@ -3227,48 +3257,20 @@ bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
     return success;
 }
 
-bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose)
+bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose, uint32_t *videoerrors)
 {
     const ADVBConfig& config = ADVBConfig::Get();
     AString proccmd = config.GetEncodeCommand(GetUser(), GetModifiedCategory());
     AString args    = config.GetEncodeArgs(GetUser(), GetModifiedCategory());
     AString tempdst = config.GetRecordingsStorageDir().CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
-    int     i, j, nargs = args.CountLines(";"), nfiles = inputfiles.CountWords() / 2;
+    int     i, nargs = args.CountLines(";");
     bool    success = true;
 
     for (i = 0; i < nargs; i++) {
         AString cmd;
         AString result;
         AString filenames;
-        double  duration = 0.0;
-        bool    duration_valid = false;
 
-        for (j = 0; j < nfiles; j++) {
-            const AString filename = inputfiles.Word(1 + j * 2).DeQuotify();
-
-            if (filenames.Valid()) {
-                filenames += ", " + filename;
-            }
-            else filenames = filename;
-
-            if ((cmd = config.GetVideoDurationCommand()).Valid()) {
-                cmd = cmd.SearchAndReplace("{filename}", filename);
-
-                AString duration_str = RunCommandAndGetResult(cmd);
-                if (duration_str.Valid()) {
-                    double hours, minutes, seconds;
-                    if (sscanf(duration_str.str(), "%lf %lf %lf", &hours, &minutes, &seconds) >= 3) {
-                        // duration is in minutes
-                        duration += hours * 60.0 + minutes + seconds / 60.0;
-                        duration_valid = true;
-                    }
-                    else config.logit("'%s': invalid duration '%s'", filename.str(), duration_str.str());
-                }
-                else config.logit("'%s': error whilst finding video duration", filename.str());
-            }
-        }
-
-        cmd.Delete();
         cmd.printf("nice %s %s -v repeat+error -aspect %s %s -y \"%s\"",
                    proccmd.str(),
                    inputfiles.str(),
@@ -3276,7 +3278,7 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
                    args.Line(i).Words(0).str(),
                    tempdst.str());
 
-        if (RunCommand(cmd, !verbose, "grep \"mpeg2video\" | wc -l", &result)) {
+        if (RunCommand(cmd, !verbose, config.GetVideoErrorCheckArgs(), &result)) {
             AString finaldst;
             AString append;
 
@@ -3284,9 +3286,8 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
 
             finaldst = outputfile.Prefix() + append + "." + outputfile.Suffix();
 
-            if (duration_valid && result.Valid()) {
-                uint_t errors = (uint_t)result;
-                config.printf("Video (from files '%s') is %0.1f min long and has %u errors (%0.1f errors/min)", filenames.str(), duration, errors, (double)errors / duration);
+            if (result.Valid() && (videoerrors != NULL)) {
+                *videoerrors = (uint32_t)result;
             }
 
             config.printf("Moving file '%s' to final destination '%s'", tempdst.str(), finaldst.str());
@@ -3329,16 +3330,6 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         return false;
     }
 
-#if 0
-    {
-        double duration;
-        uint_t nerrors;
-        if (!config.IsRecordingSlave() && GetVideoDuration(duration) && GetVideoErrorCount(nerrors)) {
-            config.printf("'%s': %0.2f min, %u video errors (%0.1f errors/min)", GetQuickDescription().str(), duration, nerrors, (double)nerrors / duration);
-        }
-    }
-#endif
-
     if (!force && AStdFile::exists(dst)) {
         config.printf("Warning: destination '%s' exists, assuming conversion is complete", dst.str());
         SetFilename(dst);
@@ -3375,7 +3366,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
         inputfiles.printf("-i \"%s\"", src.str());
 
-        success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
+        success &= EncodeFile(inputfiles, bestaspect, dst, verbose, &data->videoerrors);
     }
     else {
         // use advanced encoding, requires ProjectX and can split a file into the most common aspect ratio
@@ -3586,7 +3577,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                     inputfiles.printf(" -scodec copy -metadata:s:s:0 language=eng");
                 }
 
-                success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
+                success &= EncodeFile(inputfiles, bestaspect, dst, verbose, &data->videoerrors);
             }
             else {
                 AString remuxsrc = basename + "_Remuxed." + recordedfilesuffix;
@@ -3676,7 +3667,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                         inputfiles.printf(" -scodec copy -metadata:s:s:0 language=eng");
                     }
 
-                    success &= EncodeFile(inputfiles, bestaspect, dst, verbose);
+                    success &= EncodeFile(inputfiles, bestaspect, dst, verbose, &data->videoerrors);
                 }
 
                 if (success && cleanup) {
@@ -3694,6 +3685,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
     if (success) {
         SetFilename(dst);
 
+        UpdateDuration();
         UpdateFileSize();
 
         {
@@ -3926,8 +3918,8 @@ bool ADVBProg::GetVideoDuration(double& duration) const
         if (duration_str.Valid()) {
             double hours, minutes, seconds;
             if (sscanf(duration_str.str(), "%lf %lf %lf", &hours, &minutes, &seconds) >= 3){
-                // duration is in minutes
-                duration = hours * 60.0 + minutes + seconds / 60.0;
+                // duration is in seconds
+                duration = hours * 3600.0 + minutes * 60.0 + seconds;
                 success  = true;
             }
             else config.logit("'%s': invalid duration '%s'", GetTitleAndSubtitle().str(), duration_str.str());
@@ -3939,16 +3931,22 @@ bool ADVBProg::GetVideoDuration(double& duration) const
     return success;
 }
 
+bool ADVBProg::GetVideoDuration(uint64_t& duration) const
+{
+    double _duration;
+    bool success = GetVideoDuration(_duration);
+    // convert seconds to integer millisecond
+    duration = (uint64_t)(_duration * 1000.0 + .5);
+    return success;
+}
+
 bool ADVBProg::GetVideoErrorCount(uint_t& count) const
 {
     const ADVBConfig& config = ADVBConfig::Get();
-    AString filename = GenerateFilename();
+    // errors can only be found correctly in the original mpeg file
+    const AString filename = GetArchiveRecordingFilename();
     AString cmd;
     bool success = false;
-
-    if (!AStdFile::exists(filename)) {
-        filename = GetArchiveRecordingFilename();
-    }
 
     if (AStdFile::exists(filename)) {
         AString count_str;

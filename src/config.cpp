@@ -1384,9 +1384,14 @@ AString ADVBConfig::GetVideoDurationCommand() const
     return GetConfigItem("videoprobecmd", GetVideoProber() + " \"{filename}\" 2>&1 | grep \"^  Duration:\" | sed -E \"s/^.+([0-9]+):([0-9]+):([0-9\\.]+).+/\\1 \\2 \\3/\"");
 }
 
+AString ADVBConfig::GetVideoErrorCheckArgs() const
+{
+    return GetConfigItem("videoerrorsargs", "grep \"mpeg2video\" | wc -l");
+}
+
 AString ADVBConfig::GetVideoErrorCheckCommand() const
 {
-    return GetConfigItem("videoerrorscmd", GetVideoEncoder() + " -v repeat+error -i \"{filename}\" -f null - 2>&1 | grep \"mpeg2video\" | wc -l");
+    return GetConfigItem("videoerrorscmd", GetVideoEncoder() + " -v repeat+error -i \"{filename}\" -f null - 2>&1 | " + GetVideoErrorCheckArgs());
 }
 
 AString ADVBConfig::GetGraphSuffix() const

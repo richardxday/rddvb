@@ -201,7 +201,8 @@ int main(int argc, const char *argv[])
         {"--count-hours",                           "",                                 "Count total hours of programmes in current list"},
         {"--find-gaps",                             "",                                 "Find gap from now until the next working for each card"},
         {"--find-new-programmes",                   "",                                 "Find programmes that have been scheduled that are either new or from a new series"},
-        {"--check-video-files",                     "",                                 "Check archived video files for errors"},
+        {"--check-video-files",                     "",                                 "Check archived video files for errors and update programmes in current list"},
+        {"--update-duration-and-video-errors",      "",                                 "Update duration and video errors in recorded list"},
         {"---stream",                               "<base64>",                         "Process stream described by <base64>"},
         {"--stream",                                "<text>",                           "Stream DVB channel or programme being recorded <text> to mplayer (or other player)"},
         {"--rawstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
@@ -594,7 +595,7 @@ int main(int argc, const char *argv[])
                 const ADVBChannelList& channellist = ADVBChannelList::Get();
                 TABLE table;
                 size_t j;
-                uint_t i;
+                uint_t k;
 
                 table.headerscentred = true;
 
@@ -622,10 +623,10 @@ int main(int argc, const char *argv[])
 #endif
                 }
 
-                for (i = 0; i < channellist.GetLCNCount(); i++) {
+                for (k = 0; k < channellist.GetLCNCount(); k++) {
                     const ADVBChannelList::CHANNEL *chan;
 
-                    if ((chan = channellist.GetChannelByLCN(i)) != NULL) {
+                    if ((chan = channellist.GetChannelByLCN(k)) != NULL) {
                         TABLEROW row;
 
                         table.justify[row.size()] = 2;
@@ -2155,17 +2156,48 @@ int main(int argc, const char *argv[])
                 }
                 else fprintf(stderr, "Failed to read recorded programmes list\n");
             }
-            else if (stricmp(argv[i], "--check-video-files") == 0) {
+            else if ((stricmp(argv[i], "--check-video-files") == 0) ||
+                     (stricmp(argv[i], "--update-duration-and-video-errors") == 0)) {
+                const bool update = (stricmp(argv[i], "--update-duration-and-video-errors") == 0);
                 uint_t j;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    const ADVBProg& prog = proglist.GetProg(j);
-                    double duration;
-                    uint_t nerrors;
+                    ADVBProg& prog = proglist.GetProgWritable(j);
+                    uint64_t  duration;
+                    uint_t    nerrors;
 
+                    // duration is in ms
                     if (prog.GetVideoDuration(duration) &&
                         prog.GetVideoErrorCount(nerrors)) {
-                        printf("%s: %0.2f min, %u errors (%0.1f errors/min)\n", prog.GetQuickDescription().str(), duration, nerrors, (double)nerrors / duration);
+                        // set duration and video errors in current programme list
+                        prog.SetDuration(duration);
+                        prog.SetVideoErrors(nerrors);
+
+                        printf("%s: %0.2f min, %u errors (%0.1f errors/min)\n",
+                               prog.GetQuickDescription().str(),
+                               (double)duration / 60000.0,
+                               nerrors,
+                               (60000.0 * (double)nerrors) / (double)duration);
+
+                        if (!HasQuit() && update) {
+                            // update recorded list: load it here, update it and save it
+                            // as quickly as possible
+                            ADVBLock     lock("dvbfiles");
+                            ADVBProgList recorded;
+                            ADVBProg     *otherprog;
+
+                            recorded.ReadFromFile(config.GetRecordedFile());
+
+                            // find programme in recorded list
+                            if ((otherprog = recorded.FindUUIDWritable(prog)) != NULL) {
+                                // update programme
+                                otherprog->SetDuration(duration);
+                                otherprog->SetVideoErrors(nerrors);
+
+                                // save recorded list again
+                                recorded.WriteToFile(config.GetRecordedFile());
+                            }
+                        }
                     }
                 }
             }

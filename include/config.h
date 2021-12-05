@@ -427,6 +427,7 @@ public:
     AString GetServerRescheduleCommand()     const; // extractconfig()
 
     AString GetVideoDurationCommand()        const; // extractconfig()
+    AString GetVideoErrorCheckArgs()         const; // extractconfig()
     AString GetVideoErrorCheckCommand()      const; // extractconfig()
 
     AString GetGraphSuffix()                 const; // extractconfig()
