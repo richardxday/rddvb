@@ -314,7 +314,9 @@ function addtimesdata(prog)
 
         str += ')';
         str += addcarddetails(prog);
-
+        if (typeof prog.videoerrorrate != 'undefined') {
+            str += ' (video error rate ' + prog.videoerrorrate.toFixed(2) + ' errors/min)';
+        }
         if (typeof prog.convertedfilename != 'undefined') str += '.<br>' + "\n" + 'Will be converted to \'' + prog.convertedfilename + '\'.';
 
         if (typeof prog.exists != 'undefined') {
@@ -553,6 +555,7 @@ function populateprogs(id)
                     else if (prog.flags.running)                  classname = ' class="recording"';
                     else if (prog.flags.failed)                   classname = ' class="failed"';
                     else if (prog.flags.scheduled)                classname = ' class="scheduled"';
+                    else if (prog1.flags.highvideoerrorrate)      classname = ' class="highvideoerrorrate"';
                     else if (prog1.flags.recorded)                classname = ' class="recorded"';
                     else if (prog1.flags.rejected)                classname = ' class="rejected"';
                     else if (prog1.flags.scheduled)               classname = ' class="scheduled"';
@@ -669,7 +672,7 @@ function populateprogs(id)
                         if (prog.flags.postprocessing) {
                             detailsstr += '<span style="font-size:150%;">-- Post Processing Now --</span><br><br>';
                         }
-                        else if (prog.flags.running) {
+                        if (prog.flags.running) {
                             detailsstr += '<span style="font-size:150%;">-- Recording Now --';
 
                             var now = new Date().getTime();
@@ -677,19 +680,22 @@ function populateprogs(id)
 
                             detailsstr += '</span><br><br>';
                         }
-                        else if (prog.flags.recordfailed) {
+                        if (prog.flags.highvideoerrorrate) {
+                            detailsstr += '<span style="font-size:150%;">-- High Video Error Rate --</span><br><br>';
+                        }
+                        if (prog.flags.recordfailed) {
                             detailsstr += '<span style="font-size:150%;">-- Recording Failed --</span><br><br>';
                         }
-                        else if (prog.flags.postprocessfailed) {
+                        if (prog.flags.postprocessfailed) {
                             detailsstr += '<span style="font-size:150%;">-- Post-Processing Failed --</span><br><br>';
                         }
-                        else if (prog.flags.conversionfailed) {
+                        if (prog.flags.conversionfailed) {
                             detailsstr += '<span style="font-size:150%;">-- Conversion Failed --</span><br><br>';
                         }
-                        else if (prog.flags.failed) {
+                        if (prog.flags.failed) {
                             detailsstr += '<span style="font-size:150%;">-- Failed --</span><br><br>';
                         }
-                        else if (prog.flags.rejected) {
+                        if (prog.flags.rejected) {
                             detailsstr += '<span style="font-size:150%;">-- Rejected --</span><br><br>';
                         }
 

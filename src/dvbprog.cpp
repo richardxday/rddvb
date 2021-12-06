@@ -113,7 +113,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
     DEFINE_FLAG(failed,                 Flag_failed,                   "Programme record, post-process or conversion failed"),
     DEFINE_FLAG(radioprogramme,         Flag_radioprogramme,           "Programme is a radio programme (audio but no video)"),
     DEFINE_FLAG(tvprogramme,            Flag_tvprogramme,              "Programme is a TV programme (audio and video)"),
-    DEFINE_FLAG(videoerrorrateokay,     Flag_videoerrorrateokay,       "Programme has acceptable video error rate"),
+    DEFINE_FLAG(highvideoerrorrate,     Flag_highvideoerrorrate,       "Programme has unacceptable video error rate"),
 
     DEFINE_FIELD(epvalid,               episode.valid,    uint8_t,     "Series/episode valid"),
     DEFINE_FIELD(series,                episode.series,   uint8_t,     "Series"),
@@ -580,8 +580,8 @@ bool ADVBProg::GetFlag(uint8_t flag) const
             break;
         }
 
-        case Flag_videoerrorrateokay:
-            set = IsVideoErrorRateOk();
+        case Flag_highvideoerrorrate:
+            set = IsHighVideoErrorRate();
             break;
     }
 
@@ -848,6 +848,8 @@ ADVBProg& ADVBProg::operator = (const ADVBProg& obj)
  *   ActualStop
  *   Flags
  *   FileSize
+ *   Duration
+ *   Video Errors
  *   User
  *   Dir
  *   Filename
@@ -870,6 +872,8 @@ ADVBProg& ADVBProg::Modify(const ADVBProg& obj)
         SetFlags(obj.GetFlags());
 
         SetFileSize(obj.GetFileSize());
+        SetVideoErrors(obj.GetVideoErrors());
+        SetDuration(obj.GetDuration());
 
         SetUser(obj.GetUser());
         SetDir(obj.GetDir());
@@ -1142,7 +1146,10 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
     }
 
     obj.AddMember("videoerrors", rapidjson::Value(data->videoerrors), allocator);
-    if (data->duration > 0) obj.AddMember("duration", rapidjson::Value(data->duration), allocator);
+    if (data->duration > 0) {
+        obj.AddMember("duration", rapidjson::Value(data->duration), allocator);
+        obj.AddMember("videoerrorrate", rapidjson::Value(GetVideoErrorRate()), allocator);
+    }
 
     if (data->assignedepisode > 0) obj.AddMember("assignedepisode", rapidjson::Value(data->assignedepisode), allocator);
     if (data->year > 0) obj.AddMember("year", rapidjson::Value(data->year), allocator);
@@ -2933,7 +2940,7 @@ void ADVBProg::Record()
                         if (success) OnRecordSuccess();
                         else         failed  = true;
 
-                        if (!IsVideoErrorRateOk()) {
+                        if (IsHighVideoErrorRate()) {
                             config.printf("Warning: '%s' has a high video error rate (%0.1f errors/min, threshold is %0.1f), rescheduling",
                                           GetTitleAndSubtitle().str(),
                                           GetVideoErrorRate(),
@@ -3363,6 +3370,8 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
             if (i > 0) append.printf("-%u", i);
 
             finaldst = outputfile.Prefix() + append + "." + outputfile.Suffix();
+
+            config.logit("Video errors found during encoding of '%s': %s", inputfiles.str(), result.str());
 
             if (result.Valid() && (videoerrors != NULL)) {
                 *videoerrors = (uint32_t)result;
@@ -3836,10 +3845,10 @@ bool ADVBProg::IsConverted() const
     return (suf.Valid() && (suf != recordedfilesuffix));
 }
 
-bool ADVBProg::IsVideoErrorRateOk() const
+bool ADVBProg::IsHighVideoErrorRate() const
 {
     const ADVBConfig& config = ADVBConfig::Get();
-    return (GetVideoErrorRate() < config.GetVideoErrorRateThreshold(GetUser(), GetCategory()));
+    return (GetVideoErrorRate() >= config.GetVideoErrorRateThreshold(GetUser(), GetCategory()));
 }
 
 void ADVBProg::GetFlagList(std::vector<AString>& list, bool includegetonly)

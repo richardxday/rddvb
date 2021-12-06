@@ -204,6 +204,7 @@ int main(int argc, const char *argv[])
         {"--find-new-programmes",                   "",                                 "Find programmes that have been scheduled that are either new or from a new series"},
         {"--check-video-files",                     "",                                 "Check archived video files for errors and update programmes in current list"},
         {"--update-duration-and-video-errors",      "",                                 "Update duration and video errors in recorded list"},
+        {"--force-update-duration-and-video-errors", "",                                "Update duration and video errors in recorded list"},
         {"---stream",                               "<base64>",                         "Process stream described by <base64>"},
         {"--stream",                                "<text>",                           "Stream DVB channel or programme being recorded <text> to mplayer (or other player)"},
         {"--rawstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
@@ -2175,8 +2176,10 @@ int main(int argc, const char *argv[])
                 else fprintf(stderr, "Failed to read recorded programmes list\n");
             }
             else if ((stricmp(argv[i], "--check-video-files") == 0) ||
-                     (stricmp(argv[i], "--update-duration-and-video-errors") == 0)) {
-                const bool update = (stricmp(argv[i], "--update-duration-and-video-errors") == 0);
+                     (stricmp(argv[i], "--update-duration-and-video-errors") == 0) ||
+                     (stricmp(argv[i], "--force-update-duration-and-video-errors") == 0)) {
+                const bool force  = (stricmp(argv[i], "--force-update-duration-and-video-errors") == 0);
+                const bool update = (force || (stricmp(argv[i], "--update-duration-and-video-errors") == 0));
                 AString lastuuid;
                 uint_t j;
 
@@ -2186,7 +2189,7 @@ int main(int argc, const char *argv[])
                     uint_t    nerrors  = 0;
                     bool      updated  = false;
 
-                    if (!update || (prog.GetDuration() == 0)) {
+                    if (force || !update || (prog.GetDuration() == 0)) {
                         printf("Finding duration and video errors in '%s' ('%s' - %u/%u)...\n", prog.GetTitleAndSubtitle().str(), prog.GetArchiveRecordingFilename().str(), j + 1, proglist.Count());
 
                         if (AStdFile::exists(prog.GetArchiveRecordingFilename()) ||
@@ -2199,8 +2202,6 @@ int main(int argc, const char *argv[])
                                        (double)duration / 60000.0,
                                        nerrors,
                                        (60000.0 * (double)nerrors) / (double)duration);
-
-                                updated = update;
                             }
                         }
 

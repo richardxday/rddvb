@@ -172,6 +172,14 @@ table.proglist tr.failed:hover
 {
 	background-color:#e55;
 }
+table.proglist tr.highvideoerrorrate
+{
+	background-color:#b9f;
+}
+table.proglist tr.highvideoerrorrate:hover
+{
+	background-color:#a8e;
+}
 table.proglist tr.processing
 {
 	background-color:#f4f;

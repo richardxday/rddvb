@@ -94,6 +94,8 @@ public:
      *   ActualStop
      *   Flags
      *   FileSize
+     *   Duration
+     *   Video Errors
      *   User
      *   Dir
      *   Filename
@@ -415,7 +417,7 @@ public:
         Flag_failed,
         Flag_radioprogramme,
         Flag_tvprogramme,
-        Flag_videoerrorrateokay,
+        Flag_highvideoerrorrate,
 
         Flag_total,
     };
@@ -488,7 +490,8 @@ public:
     void   SetRecordIfMissing()         {SetFlag(Flag_recordifmissing);}
     void   ClearRecordIfMissing()       {ClrFlag(Flag_recordifmissing);}
     bool   RecordIfMissing()      const {return GetFlag(Flag_recordifmissing);}
-    bool   IsVideoErrorRateOk()   const;
+    bool   IsHighVideoErrorRate() const;
+    bool   IsVideoErrorRateOk()   const {return !IsHighVideoErrorRate();}
 
     static void GetFlagList(std::vector<AString>& list, bool includegetonly = true);
     static bool IsFlagNameValid(const AString& name) {return (GetFlagNumber(name) >= 0);}
