@@ -145,6 +145,7 @@ int main(int argc, const char *argv[])
         {"--delete-recorded",                       "",                                 "Delete programmes that have been recorded"},
         {"--delete-using-file",                     "<file>",                           "Delete programmes that are similar to those in file <file>"},
         {"--delete-similar",                        "",                                 "Delete programmes that are similar to others in the list"},
+        {"--delete-dups",                           "",                                 "Delete duplicate programmes (by UUID)"},
         {"--schedule",                              "",                                 "Schedule and create jobs for default set of patterns on the main listings file"},
         {"--write-scheduled-jobs",                  "",                                 "Create jobs for current scheduled list"},
         {"--start-time",                            "<time>",                           "Set start time for scheduling"},
@@ -934,6 +935,23 @@ int main(int argc, const char *argv[])
                     while ((sprog = proglist.FindSimilar(prog, &prog)) != NULL) {
                         proglist.DeleteProg(*sprog);
                         ndeleted++;
+                    }
+                }
+
+                printf("Deleted %u programmes\n", ndeleted);
+            }
+            else if (stricmp(argv[i], "--delete-dups") == 0) {
+                uint_t j, k, ndeleted = 0;
+
+                for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
+                    const ADVBProg& prog = proglist.GetProg(j);
+
+                    for (k = j + 1; (k < proglist.Count()) && !HasQuit(); ) {
+                        if (prog == proglist[k]) {
+                            proglist.DeleteProg(k);
+                            ndeleted++;
+                        }
+                        else k++;
                     }
                 }
 
@@ -2159,10 +2177,11 @@ int main(int argc, const char *argv[])
             else if ((stricmp(argv[i], "--check-video-files") == 0) ||
                      (stricmp(argv[i], "--update-duration-and-video-errors") == 0)) {
                 const bool update = (stricmp(argv[i], "--update-duration-and-video-errors") == 0);
+                AString lastuuid;
                 uint_t j;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    ADVBProg& prog = proglist.GetProgWritable(j);
+                    const ADVBProg& prog = proglist[j];
                     uint64_t  duration = 0;
                     uint_t    nerrors  = 0;
                     bool      updated  = false;
@@ -2192,9 +2211,13 @@ int main(int argc, const char *argv[])
 
                         // if a valid duration has been found
                         if (duration > 0) {
-                            // set duration and video errors in current programme list
-                            prog.SetDuration(duration);
-                            prog.SetVideoErrors(nerrors);
+                            // set duration and video errors of all contiguous programmes with the
+                            // same UUID
+                            for (uint_t k = j; (k < proglist.Count()) && (proglist[k] == prog) && !HasQuit(); k++) {
+                                ADVBProg& prog2 = proglist.GetProgWritable(k);
+                                prog2.SetDuration(duration);
+                                prog2.SetVideoErrors(nerrors);
+                            }
 
                             // allow updating of recorded proglist
                             updated = update;
@@ -2207,18 +2230,25 @@ int main(int argc, const char *argv[])
                         // as quickly as possible
                         ADVBLock     lock("dvbfiles");
                         ADVBProgList recorded;
-                        ADVBProg     *otherprog;
+                        int          progindex;
 
                         recorded.ReadFromFile(config.GetRecordedFile());
 
                         // find programme in recorded list
-                        if ((otherprog = recorded.FindUUIDWritable(prog)) != NULL) {
-                            // update programme
-                            otherprog->SetDuration(duration);
-                            otherprog->SetVideoErrors(nerrors);
+                        if ((progindex = recorded.FindUUIDIndex(prog)) >= 0) {
+                            // update all contiguous programmes that have the same UUID
+                            for (uint_t k = (uint_t)progindex; (k < recorded.Count()) && (recorded[k] == prog) && !HasQuit(); k++) {
+                                // update programme
+                                ADVBProg& prog2 = recorded.GetProgWritable(k);
+                                prog2.SetDuration(duration);
+                                prog2.SetVideoErrors(nerrors);
+                            }
 
-                            // save recorded list again
-                            recorded.WriteToFile(config.GetRecordedFile());
+                            if (!HasQuit())
+                            {
+                                // save recorded list again
+                                recorded.WriteToFile(config.GetRecordedFile());
+                            }
                         }
                     }
                 }

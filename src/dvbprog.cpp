@@ -1753,7 +1753,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
         str.printf(" / %s", p);
     }
 
-    if (verbosity) {
+    if (verbosity > 0) {
         ep = GetEpisode();
         if (ep.valid) {
             str.printf(" (%s)", GetEpisodeString(ep).str());
@@ -1767,6 +1767,10 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 
         if (IsRepeat()) str.printf(" (R)");
         if (IsPlus1())  str.printf(" (+1)");
+    }
+
+    if (verbosity > 5) {
+        str.printf(" (UUID: '%s')", GetUUID());
     }
 
     if (verbosity > 2) {
