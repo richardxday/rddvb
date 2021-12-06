@@ -2170,7 +2170,7 @@ int main(int argc, const char *argv[])
                     if (AStdFile::exists(prog.GetArchiveRecordingFilename()) ||
                         AStdFile::exists(prog.GetFilename())) {
                         if (!update || (prog.GetDuration() == 0)) {
-                            printf("Finding duration and video errors in '%s' ('%s')...\n", prog.GetTitleAndSubtitle().str(), prog.GetArchiveRecordingFilename().str());
+                            printf("Finding duration and video errors in '%s' ('%s' - %u/%u)...\n", prog.GetTitleAndSubtitle().str(), prog.GetArchiveRecordingFilename().str(), j + 1, proglist.Count());
 
                             // duration is in ms
                             if (prog.GetVideoDuration(duration) &&
