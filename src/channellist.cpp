@@ -112,7 +112,7 @@ bool ADVBChannelList::Read()
         json.ReadFromFile(config.GetDVBChannelsJSONFile())) {
         rapidjson::Document doc;
 
-        config.printf("Reading channels from '%s'...", config.GetDVBChannelsJSONFile().str());
+        //config.printf("Reading channels from '%s'...", config.GetDVBChannelsJSONFile().str());
 
         if (!doc.Parse(json).HasParseError()) {
             if (doc.IsArray()) {
@@ -233,7 +233,7 @@ bool ADVBChannelList::Read()
         fp.open(config.GetDVBChannelsFile())) {
         AString line;
 
-        config.printf("Reading channels from '%s'...", config.GetDVBChannelsFile().str());
+        //config.printf("Reading channels from '%s'...", config.GetDVBChannelsFile().str());
 
         while (line.ReadLn(fp) >= 0) {
             CHANNEL *chan = NULL;
