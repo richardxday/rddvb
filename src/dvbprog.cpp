@@ -223,7 +223,7 @@ ADVBProg::ADVBProg(const ADVBProg& obj)
 /*--------------------------------------------------------------------------------*/
 ADVBProg::~ADVBProg()
 {
-    if (data) free(data);
+    if (data != NULL) free(data);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -450,8 +450,7 @@ void ADVBProg::ModifySearchValue(const ADVBPatterns::FIELD *field, AString& valu
 /*--------------------------------------------------------------------------------*/
 ADVBProg& ADVBProg::operator = (AStdData& fp)
 {
-    Delete();
-
+    if (data != NULL) free(data);
     if ((data = ReadData(fp)) == NULL) {
         Delete();
     }
@@ -492,9 +491,8 @@ bool ADVBProg::Base64Decode(const AString& str)
 
     if (mem.open("w")) {
         if (mem.Base64Decode(str)) {
-            Delete();
-
             mem.rewind();
+            if (data != NULL) free(data);
             if ((data = ReadData(mem)) == NULL) {
                 Delete();
             }
@@ -812,14 +810,13 @@ ADVBProg& ADVBProg::operator = (const ADVBProg& obj)
     Delete();
 
     if (obj.Valid()) {
-        if (!data || ((sizeof(*obj.data) + obj.data->strings.end) > maxsize)) {
-            if (data) free(data);
-
+        if ((data == NULL) || ((sizeof(*obj.data) + obj.data->strings.end) > maxsize)) {
             maxsize = sizeof(*obj.data) + obj.data->strings.end;
+            if (data != NULL) free(data);
             data = (DVBPROG *)calloc(1, maxsize);
         }
 
-        if (data && ((sizeof(*obj.data) + obj.data->strings.end) <= maxsize)) {
+        if ((data != NULL) && ((sizeof(*obj.data) + obj.data->strings.end) <= maxsize)) {
             memcpy(data, obj.data, sizeof(*obj.data) + obj.data->strings.end);
 
             success = true;
@@ -1199,13 +1196,13 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
 /*--------------------------------------------------------------------------------*/
 void ADVBProg::Delete()
 {
-    if (!data) {
+    if (data == NULL) {
         maxsize = sizeof(*data) + StringCount;
-        data = (DVBPROG *)calloc(1, maxsize);
+        data    = (DVBPROG *)calloc(1, maxsize);
     }
     else memset(data, 0, maxsize);
 
-    if (data) {
+    if (data != NULL) {
         uint16_t *strings = &data->strings.channel;
         uint_t i;
 
