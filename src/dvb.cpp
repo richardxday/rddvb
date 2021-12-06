@@ -2167,11 +2167,11 @@ int main(int argc, const char *argv[])
                     uint_t    nerrors  = 0;
                     bool      updated  = false;
 
-                    if (AStdFile::exists(prog.GetArchiveRecordingFilename()) ||
-                        AStdFile::exists(prog.GetFilename())) {
-                        if (!update || (prog.GetDuration() == 0)) {
-                            printf("Finding duration and video errors in '%s' ('%s' - %u/%u)...\n", prog.GetTitleAndSubtitle().str(), prog.GetArchiveRecordingFilename().str(), j + 1, proglist.Count());
+                    if (!update || (prog.GetDuration() == 0)) {
+                        printf("Finding duration and video errors in '%s' ('%s' - %u/%u)...\n", prog.GetTitleAndSubtitle().str(), prog.GetArchiveRecordingFilename().str(), j + 1, proglist.Count());
 
+                        if (AStdFile::exists(prog.GetArchiveRecordingFilename()) ||
+                            AStdFile::exists(prog.GetFilename())) {
                             // duration is in ms
                             if (prog.GetVideoDuration(duration) &&
                                 prog.GetVideoErrorCount(nerrors)) {
@@ -2183,20 +2183,21 @@ int main(int argc, const char *argv[])
 
                                 updated = update;
                             }
-                            else if (duration == 0) {
-                                // direct duration not available, use length of programme instead
-                                duration = prog.GetActualLengthFallback();
-                            }
+                        }
 
-                            // if a valid duration has been found
-                            if (duration > 0) {
-                                // set duration and video errors in current programme list
-                                prog.SetDuration(duration);
-                                prog.SetVideoErrors(nerrors);
+                        if (duration == 0) {
+                            // direct duration not available, use length of programme instead
+                            duration = prog.GetActualLengthFallback();
+                        }
 
-                                // allow updating of recorded proglist
-                                updated = update;
-                            }
+                        // if a valid duration has been found
+                        if (duration > 0) {
+                            // set duration and video errors in current programme list
+                            prog.SetDuration(duration);
+                            prog.SetVideoErrors(nerrors);
+
+                            // allow updating of recorded proglist
+                            updated = update;
                         }
                     }
 
