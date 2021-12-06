@@ -277,6 +277,9 @@ public:
     void        SetDuration(uint64_t duration) {data->duration = duration;}
     uint64_t    GetDuration()            const {return data->duration;}
 
+    // result is in errors/min
+    double      GetVideoErrorRate() const {return (GetDuration() > 0) ? (60000.0 * (double)GetVideoErrors()) / (double)GetDuration() : 0.0;}
+
     static AString GetHex(uint64_t t)          {return AString("$%016x").Arg(t);}
     static AString GetHex(const ADateTime& dt) {return GetHex((uint64_t)dt);}
 
@@ -412,6 +415,7 @@ public:
         Flag_failed,
         Flag_radioprogramme,
         Flag_tvprogramme,
+        Flag_videoerrorrateokay,
 
         Flag_total,
     };
@@ -484,6 +488,7 @@ public:
     void   SetRecordIfMissing()         {SetFlag(Flag_recordifmissing);}
     void   ClearRecordIfMissing()       {ClrFlag(Flag_recordifmissing);}
     bool   RecordIfMissing()      const {return GetFlag(Flag_recordifmissing);}
+    bool   IsVideoErrorRateOk()   const;
 
     static void GetFlagList(std::vector<AString>& list, bool includegetonly = true);
     static bool IsFlagNameValid(const AString& name) {return (GetFlagNumber(name) >= 0);}

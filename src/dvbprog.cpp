@@ -113,6 +113,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
     DEFINE_FLAG(failed,                 Flag_failed,                   "Programme record, post-process or conversion failed"),
     DEFINE_FLAG(radioprogramme,         Flag_radioprogramme,           "Programme is a radio programme (audio but no video)"),
     DEFINE_FLAG(tvprogramme,            Flag_tvprogramme,              "Programme is a TV programme (audio and video)"),
+    DEFINE_FLAG(videoerrorrateokay,     Flag_videoerrorrateokay,       "Programme has acceptable video error rate"),
 
     DEFINE_FIELD(epvalid,               episode.valid,    uint8_t,     "Series/episode valid"),
     DEFINE_FIELD(series,                episode.series,   uint8_t,     "Series"),
@@ -578,6 +579,10 @@ bool ADVBProg::GetFlag(uint8_t flag) const
             set = (channel && channel->dvb.hasaudio && channel->dvb.hasvideo);
             break;
         }
+
+        case Flag_videoerrorrateokay:
+            set = IsVideoErrorRateOk();
+            break;
     }
 
     return set;
@@ -1894,7 +1899,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
             if (str1.Valid()) str1.printf("\n\n");
             str1.printf("%s as '%s'", data->actstart ? "Recorded" : (data->recstart ? "To be recorded" : "Would be recorded"), GetFilename());
             if (!IsConverted()) str1.printf(" (will be converted to '%s')", GenerateFilename(true).str());
-            if (GetDuration() > 0) str1.printf(" (%0.2f video errors/min)", 60.0 * (double)GetVideoErrors() / (double)GetDuration());
+            if (GetDuration() > 0) str1.printf(" (%0.2f video errors/min)", GetVideoErrorRate());
             str1.printf(".");
 
             if (HasFailed()) {
@@ -1990,7 +1995,7 @@ void ADVBProg::GetExternal(uint_t id, uint32_t& val) const
             break;
 
         case Compare_videoerrorrate:
-            val = (uint32_t)(((uint64_t)data->videoerrors * (uint64_t)1000 + (data->duration / 2)) / data->duration);
+            val = (uint32_t)GetVideoErrorRate();
             break;
     }
 }
@@ -2008,7 +2013,7 @@ void ADVBProg::GetExternal(uint_t id, sint32_t& val) const
             break;
 
         case Compare_videoerrorrate:
-            val = (sint32_t)(((uint64_t)data->videoerrors * (uint64_t)1000 + (data->duration / 2)) / data->duration);
+            val = (sint32_t)GetVideoErrorRate();
             break;
     }
 }
@@ -2026,9 +2031,7 @@ void ADVBProg::GetExternal(uint_t id, double& val) const
             break;
 
         case Compare_videoerrorrate:
-            if (data->duration > 0) {
-                val = ((double)data->videoerrors * 1000.0) / (double)data->duration;
-            }
+            val = GetVideoErrorRate();
             break;
     }
 }
@@ -3821,6 +3824,12 @@ bool ADVBProg::IsConverted() const
 {
     AString suf = AString(GetFilename()).Suffix();
     return (suf.Valid() && (suf != recordedfilesuffix));
+}
+
+bool ADVBProg::IsVideoErrorRateOk() const
+{
+    const ADVBConfig& config = ADVBConfig::Get();
+    return (GetVideoErrorRate() < config.GetVideoErrorRateThreshold(GetUser(), GetCategory()));
 }
 
 void ADVBProg::GetFlagList(std::vector<AString>& list, bool includegetonly)

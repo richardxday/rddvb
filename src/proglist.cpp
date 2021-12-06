@@ -1341,7 +1341,10 @@ const ADVBProg *ADVBProgList::FindCompleteRecording(const ADVBProg& prog, const 
 {
     const ADVBProg *res = startprog;
 
-    while (((res = FindSimilar(prog, res)) != NULL) && (res->IgnoreRecording() || !res->IsRecordingComplete())) ;
+    // find programme that is similar, has not been ignored, is complete and has a low enough video error rate
+    while (((res = FindSimilar(prog, res)) != NULL) && (res->IgnoreRecording() ||
+                                                        !res->IsRecordingComplete() ||
+                                                        !res->IsVideoErrorRateOk())) ;
 
     return res;
 }
@@ -1350,7 +1353,11 @@ const ADVBProg *ADVBProgList::FindCompleteRecordingThatExists(const ADVBProg& pr
 {
     const ADVBProg *res = startprog;
 
-    while (((res = FindSimilar(prog, res)) != NULL) && (res->IgnoreRecording() || !res->IsRecordingComplete() || !res->IsAvailable())) ;
+    // find programme that is similar, has not been ignored, is complete, has a low enough video error rate and exists
+    while (((res = FindSimilar(prog, res)) != NULL) && (res->IgnoreRecording() ||
+                                                        !res->IsRecordingComplete() ||
+                                                        !res->IsVideoErrorRateOk() ||
+                                                        !res->IsAvailable())) ;
 
     return res;
 }

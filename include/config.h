@@ -408,6 +408,8 @@ public:
 
     AString GetRelativePath(const AString& filename) const;
 
+    double  GetVideoErrorRateThreshold(const AString& user, const AString& category) const; // extractconfig("<user>", "<category>")
+
     bool    LogRemoteCommands()              const; // extractconfig()
     AString GetRecordingSlave()              const; // extractconfig()
     uint_t  GetRecordingSlavePort()          const; // extractconfig()

@@ -1299,6 +1299,11 @@ AString ADVBConfig::GetEncodeLogLevel(const AString& user, bool verbose) const
     return "repeat+" + (verbose ? GetUserConfigItem(user, "processloglevel:verbose", "warning") : GetUserConfigItem(user, "processloglevel:normal", "error"));
 }
 
+double ADVBConfig::GetVideoErrorRateThreshold(const AString& user, const AString& category) const
+{
+    return (double)GetUserSubItemConfigItem(user, category.ToLower(), "videoerrorthreshold", "60");
+}
+
 bool ADVBConfig::LogRemoteCommands() const
 {
     return ((uint_t)GetConfigItem("logremotecommands", "0") != 0);
