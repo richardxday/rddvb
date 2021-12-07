@@ -2903,7 +2903,7 @@ void ADVBProg::Record()
                         SetRecorded();
 
                         if (!IsRecordingComplete()) {
-                            config.printf("Warning: '%s' is incomplete! (%ss missing from the start, %ss missing from the end), rescheduling",
+                            config.printf("Warning: '%s' is incomplete! (%ss missing from the start, %ss missing from the end), rescheduling...",
                                           GetTitleAndSubtitle().str(),
                                           AValue(MAX((sint64_t)(data->actstart - MIN(data->start, data->recstart)), 0) / 1000).ToString().str(),
                                           AValue(MAX((sint64_t)(data->recstop  - data->actstop), 0) / 1000).ToString().str());
@@ -2941,13 +2941,19 @@ void ADVBProg::Record()
                         else         failed  = true;
 
                         if (IsHighVideoErrorRate()) {
-                            config.printf("Warning: '%s' has a high video error rate (%0.1f errors/min, threshold is %0.1f), rescheduling",
+                            config.printf("Warning: '%s' has a high video error rate (%0.1f errors/min, threshold is %0.1f), rescheduling...",
                                           GetTitleAndSubtitle().str(),
                                           GetVideoErrorRate(),
                                           config.GetVideoErrorRateThreshold(GetUser(), GetCategory()));
 
                             // force reschedule
                             reschedule = true;
+                        }
+                        else {
+                            config.printf("Warning: '%s' has acceptable video error rate (%0.1f errors/min, threshold is %0.1f), no need to reschedule",
+                                          GetTitleAndSubtitle().str(),
+                                          GetVideoErrorRate(),
+                                          config.GetVideoErrorRateThreshold(GetUser(), GetCategory()));
                         }
                     }
                 }
