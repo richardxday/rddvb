@@ -3171,8 +3171,6 @@ bool ADVBProgList::GetAndConvertRecordings()
         }
     }
 
-    if (reschedule) ADVBProgList::SchedulePatterns();
-
     for (i = 0; i < convertlist.Count(); i++) {
         ADVBProg& prog = convertlist.GetProgWritable(i);
 
@@ -3180,9 +3178,27 @@ bool ADVBProgList::GetAndConvertRecordings()
 
         if (prog.ConvertVideo(true)) {
             converted++;
+
+            if (prog.IsHighVideoErrorRate()) {
+                config.printf("Warning: '%s' has a high video error rate (%0.1f errors/min, threshold is %0.1f), rescheduling...",
+                              prog.GetTitleAndSubtitle().str(),
+                              prog.GetVideoErrorRate(),
+                              config.GetVideoErrorRateThreshold(prog.GetUser(), prog.GetCategory()));
+
+                // force reschedule
+                reschedule = true;
+            }
+            else {
+                config.printf("'%s' has acceptable video error rate (%0.1f errors/min, threshold is %0.1f), no need to reschedule",
+                              prog.GetTitleAndSubtitle().str(),
+                              prog.GetVideoErrorRate(),
+                              config.GetVideoErrorRateThreshold(prog.GetUser(), prog.GetCategory()));
+            }
         }
         else success = false;
     }
+
+    if (reschedule) ADVBProgList::SchedulePatterns();
 
     // don't need lock for the next bit
     lock.ReleaseLock();

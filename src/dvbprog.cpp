@@ -2950,7 +2950,7 @@ void ADVBProg::Record()
                             reschedule = true;
                         }
                         else {
-                            config.printf("Warning: '%s' has acceptable video error rate (%0.1f errors/min, threshold is %0.1f), no need to reschedule",
+                            config.printf("'%s' has acceptable video error rate (%0.1f errors/min, threshold is %0.1f), no need to reschedule",
                                           GetTitleAndSubtitle().str(),
                                           GetVideoErrorRate(),
                                           config.GetVideoErrorRateThreshold(GetUser(), GetCategory()));
