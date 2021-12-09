@@ -1337,27 +1337,21 @@ ADVBProg *ADVBProgList::FindLastSimilarWritable(const ADVBProg& prog, ADVBProg *
     return res;
 }
 
-const ADVBProg *ADVBProgList::FindCompleteRecording(const ADVBProg& prog, const ADVBProg *startprog) const
+const ADVBProg *ADVBProgList::FindCompleteRecording(const ADVBProg& prog, bool mustbeavailable, const ADVBProg *startprog) const
 {
     const ADVBProg *res = startprog;
 
-    // find programme that is similar, has not been ignored, is complete and has a low enough video error rate
-    while (((res = FindSimilar(prog, res)) != NULL) && (res->IgnoreRecording() ||
-                                                        !res->IsRecordingComplete() ||
-                                                        !res->IsVideoErrorRateOk())) ;
-
-    return res;
-}
-
-const ADVBProg *ADVBProgList::FindCompleteRecordingThatExists(const ADVBProg& prog, const ADVBProg *startprog) const
-{
-    const ADVBProg *res = startprog;
-
-    // find programme that is similar, has not been ignored, is complete, has a low enough video error rate and exists
-    while (((res = FindSimilar(prog, res)) != NULL) && (res->IgnoreRecording() ||
-                                                        !res->IsRecordingComplete() ||
-                                                        !res->IsVideoErrorRateOk() ||
-                                                        !res->IsAvailable())) ;
+    // find programme that is similar, should not be ignored, is complete, has a low enough video error rate and,
+    // if 'mustbeavailable' is set, be available
+    while ((res = FindSimilar(prog, res)) != NULL) {
+        // the search is complete when:
+        if (!res->IgnoreRecording()    &&               ///< recording is not to be ignored; and
+            res->IsRecordingComplete() &&               ///< recording is complete; and
+            res->IsVideoErrorRateOk()  &&               ///< recording video error rate is okay; and
+            (!mustbeavailable || res->IsAvailable())) { ///< either it need not be available or it is available
+            break;
+        }
+    }
 
     return res;
 }
@@ -2064,11 +2058,9 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
         ADVBProg& prog = GetProgWritable(i);
         bool deleteprog = true;
 
-        if (!prog.AllowRepeats() &&                                                                     // for a programme to be deleted: 'allowrepeats' must be disabled; and
-            ((prog.RecordIfMissing() &&
-              ((otherprog = recordedlist.FindCompleteRecordingThatExists(prog)) != NULL)) ||            // 'recordifmissing' enabled and a completed recording that exists is found; or
-             (!prog.RecordIfMissing() &&
-              ((otherprog = recordedlist.FindCompleteRecording(prog))           != NULL)))) {           // 'recordifmissing' disabled and a completed recording is found
+        // for a programme to be deleted: 'allowrepeats' must be disabled; and
+        // completed recording is found with a lower enough video error rate (and must exist if 'recordifmissing' is enabled)
+        if (!prog.AllowRepeats() && ((otherprog = recordedlist.FindCompleteRecording(prog, prog.RecordIfMissing(), NULL)) != NULL)) {
             config.logit("'%s' has already been recorded ('%s': %s)", prog.GetQuickDescription().str(), otherprog->GetQuickDescription().str(), otherprog->IsAvailable() ? "available" : "NOT available");
         }
         else if (prog.IsMarkOnly()) {
