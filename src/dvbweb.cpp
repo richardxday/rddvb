@@ -81,19 +81,28 @@ rapidjson::Value getpattern(rapidjson::Document& doc, const ADVBPatterns::PATTER
 {
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
     rapidjson::Value obj, subobj;
-    uint_t i;
 
     obj.SetObject();
 
     obj.AddMember("user", rapidjson::Value(pattern.user, allocator), allocator);
-    obj.AddMember("enabled", rapidjson::Value(pattern.enabled), allocator);
+
+    // this following line causes an assertion failure for some reason:
+    // obj.AddMember("enabled", rapidjson::Value(pattern.enabled), allocator);
+
+    // assertion failure:
+    //   dvbweb: /usr/include/rapidjson/document.h:1505: rapidjson::GenericValue<Encoding, Allocator>* rapidjson::GenericValue<Encoding, Allocator>::Begin() [with Encoding = rapidjson::UTF8<>; Allocator = rapidjson::MemoryPoolAllocator<>; rapidjson::GenericValue<Encoding, Allocator>::ValueIterator = rapidjson::GenericValue<rapidjson::UTF8<> >*]: Assertion `IsArray()' failed.
+    //   Aborted (core dumped)
+
+    // instead, this works okay:
+    obj.AddMember("enabled", pattern.enabled ? rapidjson::Value(true) : rapidjson::Value(false), allocator);
+
     obj.AddMember("pri", rapidjson::Value(pattern.pri), allocator);
     obj.AddMember("pattern", rapidjson::Value(pattern.pattern, allocator), allocator);
     obj.AddMember("errors", rapidjson::Value(pattern.errors, allocator), allocator);
 
     subobj.SetArray();
 
-    for (i = 0; i < pattern.list.Count(); i++) {
+    for (uint_t i = 0; i < pattern.list.Count(); i++) {
         const ADVBPatterns::TERMDATA *data = ADVBPatterns::GetTermData(pattern, i);
         rapidjson::Value subobj2;
 
