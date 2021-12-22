@@ -66,6 +66,18 @@ ADVBPatterns::OPERATOR ADVBPatterns::operators[] = {
     //{"+=",    false, FieldTypes_String,                    Operator_Concat},
 };
 
+const ADVBPatterns::PATTERN ADVBPatterns::DefaultPattern = {
+    .exclude    = false,
+    .enabled    = false,
+    .scorebased = false,
+    .pos        = 0,
+    .pri        = 0,
+    .user       = "",
+    .pattern    = "",
+    .errors     = "",
+    .list       = ADataList(),
+};
+
 ADVBPatterns::ADVBPatterns()
 {
     if (!operators[0].len) {

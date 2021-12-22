@@ -33,6 +33,8 @@ public:
         ADataList list;
     } PATTERN;
 
+    static const PATTERN DefaultPattern;
+
     static void __DeletePattern(uptr_t item, void *context) {
         UNUSED(context);
         delete (PATTERN *)item;

@@ -85,16 +85,7 @@ rapidjson::Value getpattern(rapidjson::Document& doc, const ADVBPatterns::PATTER
     obj.SetObject();
 
     obj.AddMember("user", rapidjson::Value(pattern.user, allocator), allocator);
-
-    // this following line causes an assertion failure for some reason:
-    // obj.AddMember("enabled", rapidjson::Value(pattern.enabled), allocator);
-
-    // assertion failure:
-    //   dvbweb: /usr/include/rapidjson/document.h:1505: rapidjson::GenericValue<Encoding, Allocator>* rapidjson::GenericValue<Encoding, Allocator>::Begin() [with Encoding = rapidjson::UTF8<>; Allocator = rapidjson::MemoryPoolAllocator<>; rapidjson::GenericValue<Encoding, Allocator>::ValueIterator = rapidjson::GenericValue<rapidjson::UTF8<> >*]: Assertion `IsArray()' failed.
-    //   Aborted (core dumped)
-
-    // instead, this works okay:
-    obj.AddMember("enabled", pattern.enabled ? rapidjson::Value(true) : rapidjson::Value(false), allocator);
+    obj.AddMember("enabled", rapidjson::Value(pattern.enabled), allocator);
 
     obj.AddMember("pri", rapidjson::Value(pattern.pri), allocator);
     obj.AddMember("pattern", rapidjson::Value(pattern.pattern, allocator), allocator);
@@ -454,7 +445,7 @@ int main(int argc, char *argv[])
         AHash                    titleshash;
         ADataList                titleslist;
         ADataList                patternlist;
-        ADVBPatterns::PATTERN    filterpattern;
+        ADVBPatterns::PATTERN    filterpattern = ADVBPatterns::DefaultPattern;
         AHash                    patterns(&ADVBPatterns::__DeletePattern);
         ADVBProgList::SERIESLIST fullseries;
         AString                  from;
