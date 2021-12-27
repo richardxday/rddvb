@@ -415,22 +415,34 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const FIELD& field, const VALUE& 
     }
 }
 
-void ADVBPatterns::__DeleteTerm(uptr_t item, void *context)
+void ADVBPatterns::__DeletePattern(PATTERN *pattern)
 {
-    TERM *term = (TERM *)item;
+    delete pattern;
+}
 
-    UNUSED(context);
-
-    if (term->field) {
+void ADVBPatterns::__DeleteTerm(TERM *term)
+{
+    if (term->field == NULL) {
+        if (term->value.str != NULL) {
+            delete[] term->value.str;
+        }
+    }
+    else {
         if (term->field->type == FieldType_string) {
-            if (term->value.str) delete[] term->value.str;
+            if (term->value.str != NULL) {
+                delete[] term->value.str;
+            }
         }
         else if (term->field->type == FieldType_prog) {
-            if (term->value.prog) delete term->value.prog;
+            if (term->value.prog != NULL) {
+                delete term->value.prog;
+            }
         }
     }
 
-    if (term->pattern) delete term->pattern;
+    if (term->pattern != NULL) {
+        __DeletePattern(term->pattern);
+    }
 
     delete term;
 }

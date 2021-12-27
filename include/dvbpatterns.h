@@ -33,12 +33,13 @@ public:
         ADataList list;
     } PATTERN;
 
-    static const PATTERN DefaultPattern;
-
+    static void __DeletePattern(PATTERN *pattern);
     static void __DeletePattern(uptr_t item, void *context) {
         UNUSED(context);
-        delete (PATTERN *)item;
+        __DeletePattern((PATTERN *)item);
     }
+
+    static const PATTERN DefaultPattern;
 
     static AString ParsePattern(const AString& _line, PATTERN& pattern, const AString& user = "");
     static void    AppendTerms(PATTERN& dstpattern, const PATTERN& srcpattern, bool excludeduplicatefields = true);
@@ -203,6 +204,12 @@ protected:
         PATTERN     *pattern;
     } TERM;
 
+    static void __DeleteTerm(TERM *term);
+    static void __DeleteTerm(uptr_t item, void *context) {
+        UNUSED(context);
+        __DeleteTerm((TERM *)item);
+    }
+
     static bool UpdatePatternInFile(const AString& filename, const AString& pattern, const AString& newpattern);
     static bool AddPatternToFile(const AString& filename, const AString& pattern);
 
@@ -221,8 +228,6 @@ protected:
 
     static double   TermTypeToDouble(const void *p, uint_t termtype);
     static void     DoubleToTermType(void *p, double val, uint_t termtype);
-
-    static void __DeleteTerm(uptr_t item, void *context);
 
     static AString ToString(const VALUE&    val, uint8_t fieldtype, uint8_t datetype);
     static AString ToString(const FIELD&    val);

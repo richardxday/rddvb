@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <iostream>
+
 #include <sys/statvfs.h>
 
 #include <rapidjson/document.h>
@@ -169,9 +171,11 @@ rapidjson::Value gettrend(rapidjson::Document& doc, const ADVBProgList::TREND& t
 
     obj.SetObject();
 
-    obj.AddMember("offset", rapidjson::Value(trend.offset), allocator);
-    obj.AddMember("rate", rapidjson::Value(trend.rate), allocator);
-    obj.AddMember("timeoffset", rapidjson::Value(trend.timeoffset), allocator);
+    if (trend.valid) {
+        obj.AddMember("offset", rapidjson::Value(trend.offset), allocator);
+        obj.AddMember("rate", rapidjson::Value(trend.rate), allocator);
+        obj.AddMember("timeoffset", rapidjson::Value(trend.timeoffset), allocator);
+    }
 
     return obj;
 }

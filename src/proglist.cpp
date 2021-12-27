@@ -3586,11 +3586,14 @@ ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate, con
             //   = sum(y)/n - m * sum(x)/n
             //   = (sum(y) - m * sum(x)) / n
 
-            const double n = (double)(i - n1);
-            trend.rate       = (sumxy * n - sumx * sumy) / (sumxx * n - sumx * sumx);
-            trend.offset     = (double)n1 + (sumy - trend.rate * sumx) / n;
-            trend.timeoffset = t0;
-            trend.valid      = true;
+            const double n   = (double)(i - n1);
+            const double div = sumxx * n - sumx * sumx;
+            if ((n != 0.0) && (div != 0.0)) {
+                trend.rate       = (sumxy * n - sumx * sumy) / div;
+                trend.offset     = (double)n1 + (sumy - trend.rate * sumx) / n;
+                trend.timeoffset = t0;
+                trend.valid      = true;
+            }
         }
     }
 
