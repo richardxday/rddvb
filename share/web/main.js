@@ -321,9 +321,9 @@ function addtimesdata(prog)
 
         if (typeof prog.exists != 'undefined') {
             str += '<br>' + "\n";
-            if (typeof prog.file != 'undefined') str += '<a href="/videos' + prog.file + '" download>';
+            if (typeof prog.videopath!= 'undefined') str += '<a href="/videos' + prog.videopath + '" download>';
             str += 'Programme <b>' + (prog.exists ? 'Available' : 'Unavailable') + '</b>.';
-            if (typeof prog.file != 'undefined') str += '</a>';
+            if (typeof prog.videopath!= 'undefined') str += '</a>';
         }
 
         if ((typeof prog.flags.ignorerecording != 'undefined') && prog.flags.ignorerecording) {
@@ -470,7 +470,7 @@ function adddownloadlink(prog)
 {
     var str = '';
 
-    str += '<a href="' + prog.file + '" download title="Download ' + prog.title + ' to computer">Download</a>';
+    str += '<a href="' + prog.videopath + '" download title="Download ' + prog.title + ' to computer">Download</a>';
     str += '&nbsp;&nbsp;&nbsp;<a href="' + '/dvb/video.php?prog=' + encodeURIComponent(prog.base64) + '" title="Watch ' + prog.title + ' in browser" target=_blank>Watch</a>';
     if ((typeof prog.subfiles != 'undefined') && (prog.subfiles.length > 0)) {
         var i;
@@ -504,6 +504,15 @@ function adddownloadlink(prog)
             str += ' title="Watch ' + progname + ' in ' + intent.name + '">Watch in ' + videointents[i].name + '</a>';
         }
     }
+
+    return str;
+}
+
+function addarchivedownloadlink(prog)
+{
+    var str = '';
+
+    str += '<a href="' + prog.videoarchivepath + '" download title="Download ' + prog.title + ' (archive) to computer">Download Archive</a>';
 
     return str;
 }
@@ -644,8 +653,19 @@ function populateprogs(id)
                     var downloadlink = '';
                     if (prog.flags.postprocessing || prog.flags.running) ;
                     else if ((typeof prog.recorded != 'undefined') &&
-                             (typeof prog.recorded.file != 'undefined')) downloadlink = adddownloadlink(prog.recorded);
-                    else if (typeof prog.file != 'undefined') downloadlink = adddownloadlink(prog);
+                             (typeof prog.recorded.videopath!= 'undefined')) {
+                        downloadlink += adddownloadlink(prog.recorded);
+                    }
+                    else if (typeof prog.videopath != 'undefined') {
+                        downloadlink += adddownloadlink(prog);
+                    }
+                    if ((typeof prog.recorded != 'undefined') &&
+                        (typeof prog.recorded.videoarchivepath!= 'undefined')) {
+                        downloadlink += addarchivedownloadlink(prog.recorded);
+                    }
+                    else if (typeof prog.videoarchivepath != 'undefined') {
+                        downloadlink += addarchivedownloadlink(prog);
+                    }
 
                     headerstr += '</td><td class="title"';
                     if (downloadlink == '') headerstr += ' colspan=2';

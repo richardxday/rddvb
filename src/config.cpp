@@ -456,7 +456,9 @@ AString ADVBConfig::GetRelativePath(const AString& filename) const
 {
     AString res;
 
-    if (filename.StartsWith(GetRecordingsDir())) res = AString("/videos").CatPath(filename.Mid(GetRecordingsDir().len()));
+    if (filename.StartsWith(GetRecordingsDir())) {
+        res = AString("/videos").CatPath(filename.Mid(GetRecordingsDir().len()));
+    }
 
     return res;
 }

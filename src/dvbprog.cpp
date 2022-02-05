@@ -1172,17 +1172,23 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
 
             obj.AddMember("exists", rapidjson::Value(exists), allocator);
             if (exists) {
+                obj.AddMember("path", rapidjson::Value(filename, allocator), allocator);
+                obj.AddMember("videopath", rapidjson::Value(relpath, allocator), allocator);
+
+                AString archivefilename = GetArchiveRecordingFilename();
+                if (AStdFile::exists(archivefilename)) {
+                    AString archiverelfilename = config.GetRelativePath(archivefilename);
+                    obj.AddMember("archivepath", rapidjson::Value(archivefilename, allocator), allocator);
+                    obj.AddMember("videoarchivepath", rapidjson::Value(archiverelfilename, allocator), allocator);
+                }
+
                 rapidjson::Value subobj;
                 AList subfiles;
-
                 CollectFiles(filename.PathPart(), filename.FilePart().Prefix() + ".*", RECURSE_ALL_SUBDIRS, subfiles);
-
-                obj.AddMember("file", rapidjson::Value(relpath, allocator), allocator);
-
                 subobj.SetArray();
 
                 const AString *subfile = AString::Cast(subfiles.First());
-                while (subfile) {
+                while (subfile != NULL) {
                     if ((*subfile != filename) && (relpath = config.GetRelativePath(*subfile)).Valid()) {
                         subobj.PushBack(rapidjson::Value(relpath.str(), allocator), allocator);
                     }
