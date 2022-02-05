@@ -492,7 +492,7 @@ function adddownloadlink(prog)
         for (i = 0; i < videointents.length; i++) {
             var intent = videointents[i];
 
-            str += '<br><a href="intent:' + window.location.origin + prog.file;
+            str += '<br><a href="intent:' + window.location.origin + prog.videopath;
             str += '#Intent;package=' + intent.package + ';';
             if (typeof intent.action != 'undefined') {
                 str += 'action=' + intent.action + ';';
@@ -661,9 +661,11 @@ function populateprogs(id)
                     }
                     if ((typeof prog.recorded != 'undefined') &&
                         (typeof prog.recorded.videoarchivepath!= 'undefined')) {
+                        if (downloadlink != '') downloadlink += '&nbsp;&nbsp;&nbsp;';
                         downloadlink += addarchivedownloadlink(prog.recorded);
                     }
                     else if (typeof prog.videoarchivepath != 'undefined') {
+                        if (downloadlink != '') downloadlink += '&nbsp;&nbsp;&nbsp;';
                         downloadlink += addarchivedownloadlink(prog);
                     }
 
