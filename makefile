@@ -61,8 +61,15 @@ EXTRA_CXXFLAGS += -std=c++11
 
 include $(MAKEFILEDIR)/makefile.lib
 
-LOCAL_SHARE_FILES := $(shell find share/* | sed -E "s/\.in$$//" | uniq)
+LOCAL_SHARE_FILES := $(shell find share/* | grep -v -E "^share/apache" | sed -E "s/\.in$$//" | uniq)
 INSTALLEDSHAREFILES += $(LOCAL_SHARE_FILES:share/%=$(INSTALLSHAREDST)/%)
+
+$(INSTALLSHAREDST)/%: share/%.in
+	@cat $< \
+	| sed -E "s#@root@#$(ROOTDIR)#g" \
+	| sed -E "s#@prefix@#$(PREFIX)#g" \
+	| sed -E "s#@share@#$(INSTALLSHAREDST)#g" \
+	| $(SUDO) tee $@ >/dev/null
 
 DEBUG_LIBS	 += $(DEBUG_LIBDIR)/$(DEBUG_SHARED_LIBRARY)
 RELEASE_LIBS += $(RELEASE_LIBDIR)/$(RELEASE_SHARED_LIBRARY)
@@ -160,12 +167,12 @@ INSTALLEDSHAREFILES += $(GLOBAL_APACHE_FILES)
 UNINSTALLFILES += $(GLOBAL_APACHE_FILES)
 
 $(APACHEDST)/%: $(APACHESRC)/%.in
-	cat $< \
+	@cat $< \
 	| sed -E "s#@root@#$(ROOTDIR)#g" \
 	| sed -E "s#@prefix@#$(PREFIX)#g" \
 	| sed -E "s#@share@#$(INSTALLSHAREDST)#g" \
 	| $(SUDO) tee $@ >/dev/null
-	@$(SUDO) chmod a+x $@
+
 
 all: $(DEFAULTCONFIG)
 
