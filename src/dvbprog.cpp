@@ -2821,6 +2821,7 @@ void ADVBProg::Record()
             }
         }
 
+#if 0   // repeated recording could be because of problms with the previous one, may want to make this more intelligent in future
         if (record) {
             if (!AllowRepeats() && !RecordIfMissing()) {
                 const ADVBProg *recordedprog = NULL;
@@ -2834,6 +2835,7 @@ void ADVBProg::Record()
                 }
             }
         }
+#endif
 
         if (record) {
             AString filename = GetFilename();
