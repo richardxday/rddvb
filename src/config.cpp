@@ -68,6 +68,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"filmfilenametemplate",         "{title}{sep}{year}{sep}{date}{sep}{times}"},
         {"dir",                          "{capitaluser}/{titledir}"},
         {"dir:film",                     "Films"},
+        {"minlengthpercent",             "90"},
         {"mindatarate:mpg",              "12"},
         {"mindatarate:mp4",              "100"},
         {"mindatarate:mp3",              "12"},
@@ -1433,9 +1434,14 @@ AString ADVBConfig::GetStreamListingKillingCommand(uint32_t pid) const
     return cmd;
 }
 
-uint_t ADVBConfig::GetMinimalDataRate(const AString& filesuffix) const
+double ADVBConfig::GetMinimalLengthPercent(const AString& filesuffix) const
 {
-    return (uint_t)GetHierarchicalConfigItem("", "mindatarate", filesuffix);
+    return (double)GetHierarchicalConfigItem("", "minlengthpercent", filesuffix);
+}
+
+double ADVBConfig::GetMinimalDataRate(const AString& filesuffix) const
+{
+    return (double)GetHierarchicalConfigItem("", "mindatarate", filesuffix);
 }
 
 uint_t ADVBConfig::GetScheduleReportVerbosity(const AString& type) const

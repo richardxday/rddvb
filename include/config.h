@@ -437,7 +437,8 @@ public:
     AString GetStreamListingCommand(const AString& tempfile) const; // extractconfig("<tempfile>")
     AString GetStreamListingKillingCommand(uint32_t pid) const; // extractconfig(0)
 
-    uint_t  GetMinimalDataRate(const AString& filesuffix) const; // extractconfig("<filesuffix>")
+    double  GetMinimalLengthPercent(const AString& filesuffix) const; // extractconfig("<filesuffix>")
+    double  GetMinimalDataRate(const AString& filesuffix) const; // extractconfig("<filesuffix>")
 
     uint_t  GetScheduleReportVerbosity(const AString& type = "") const; // extractconfig("<type>")
 

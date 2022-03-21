@@ -271,16 +271,16 @@ public:
     uint64_t    GetTimeIndex(uint_t index) const {return data ? ((const uint64_t *)&data->start)[index] : 0;}
 
     void        SetFileSize(uint64_t filesize) {data->filesize = filesize;}
-    uint64_t    GetFileSize()            const {return data->filesize;}
+    uint64_t    GetFileSize()              const {return data->filesize;}
 
     void        SetVideoErrors(uint32_t nerrors) {data->videoerrors = nerrors;}
     uint32_t    GetVideoErrors()           const {return data->videoerrors;}
 
     void        SetDuration(uint64_t duration) {data->duration = duration;}
-    uint64_t    GetDuration()            const {return data->duration;}
+    uint64_t    GetDuration()              const {return data->duration;}
 
     // result is in errors/min
-    double      GetVideoErrorRate() const {return (GetDuration() > 0) ? (60000.0 * (double)GetVideoErrors()) / (double)GetDuration() : 0.0;}
+    double      GetVideoErrorRate()      const {return (GetDuration() > 0) ? (60000.0 * (double)GetVideoErrors()) / (double)GetDuration() : 0.0;}
 
     static AString GetHex(uint64_t t)          {return AString("$%016x").Arg(t);}
     static AString GetHex(const ADateTime& dt) {return GetHex((uint64_t)dt);}

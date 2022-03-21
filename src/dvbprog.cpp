@@ -2656,25 +2656,30 @@ bool ADVBProg::UpdateFileSize()
     bool      valid    = true;
 
     if (::GetFileInfo(filename, &info)) {
-        uint64_t oldfilesize = GetFileSize();
-        uint32_t rate        = 0;
+        uint64_t oldfilesize      = GetFileSize();
+        double   rate             = 0.0;
+        double   explengthseconds = (double)GetLength() / 1000.0;
+        double   actlengthseconds = (double)GetActualLengthFallback() / 1000.0;
+        double   lengthpercent    = (actlengthseconds > 0.0) ? (100.0 * actlengthseconds) / explengthseconds : 0.0;
+        double   mb               = (double)info.FileSize / (1024.0 * 1024.0);
 
-        if (GetActualLengthFallback() > 0) {
-            uint64_t divisor = (uint64_t)1024U * GetActualLengthFallback();
-
-            rate = (uint32_t)(((uint64_t)1000U * info.FileSize + divisor / 2U) / divisor);
+        if (actlengthseconds > 0.0) {
+            rate = ((double)info.FileSize / 1024.0) / actlengthseconds;
         }
 
-        config.printf("File '%s' exists and is %sMB, %s seconds = %skB/s%s",
+        config.printf("File '%s' exists and is %sMB, %s/%s seconds = %skB/s (%s)%s",
                       GetFilename(),
-                      AValue(info.FileSize / ((uint64_t)1024U * (uint64_t)1024U)).ToString().str(),
-                      AValue((GetActualLengthFallback() + 999U) / 1000U).ToString().str(),
-                      rate ? AValue(rate).ToString().str() : "<unknown>",
-                      oldfilesize ? AString(", file size ratio = %0.3;").Arg((double)info.FileSize / (double)oldfilesize).str() : "");
+                      AValue(mb).ToString("%0.1").str(),
+                      AValue(actlengthseconds).ToString("%0.1").str(),
+                      AValue(explengthseconds).ToString("%0.1").str(),
+                      (rate          > 0.0) ? AValue(rate).ToString("%0.1").str() : "<unknown>",
+                      (lengthpercent > 0.0) ? AValue(lengthpercent).ToString("%0.1").str() : "<unknown>",
+                      (oldfilesize   > 0)   ? AString(", file size ratio = %0.3;").Arg((double)info.FileSize / (double)oldfilesize).str() : "");
 
         SetFileSize(info.FileSize);
 
-        valid = (rate >= config.GetMinimalDataRate(filename.Suffix()));
+        valid = (valid && (lengthpercent >= config.GetMinimalLengthPercent(filename.Suffix())));
+        valid = (valid && (rate          >= config.GetMinimalDataRate(filename.Suffix())));
 
         if (!valid) config.printf("File considered to be invalid as rate it too small!");
     }
