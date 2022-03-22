@@ -2669,19 +2669,28 @@ bool ADVBProg::UpdateFileSize()
 
         config.printf("File '%s' exists and is %sMB, %s/%s seconds = %skB/s (%s)%s",
                       GetFilename(),
-                      AValue(mb).ToString("%0.1").str(),
-                      AValue(actlengthseconds).ToString("%0.1").str(),
-                      AValue(explengthseconds).ToString("%0.1").str(),
-                      (rate          > 0.0) ? AValue(rate).ToString("%0.1").str() : "<unknown>",
-                      (lengthpercent > 0.0) ? AValue(lengthpercent).ToString("%0.1").str() : "<unknown>",
+                      AValue(mb).ToString("0.1").str(),
+                      AValue(actlengthseconds).ToString("0.1").str(),
+                      AValue(explengthseconds).ToString("0.1").str(),
+                      (rate          > 0.0) ? AValue(rate).ToString("0.1").str() : "<unknown>",
+                      (lengthpercent > 0.0) ? AValue(lengthpercent).ToString("0.1").str() : "<unknown>",
                       (oldfilesize   > 0)   ? AString(", file size ratio = %0.3;").Arg((double)info.FileSize / (double)oldfilesize).str() : "");
 
         SetFileSize(info.FileSize);
 
-        valid = (valid && (lengthpercent >= config.GetMinimalLengthPercent(filename.Suffix())));
-        valid = (valid && (rate          >= config.GetMinimalDataRate(filename.Suffix())));
+        const double minlengthpercent = config.GetMinimalLengthPercent(filename.Suffix());
+        if (lengthpercent < minlengthpercent) {
+            config.printf("File considered to be invalid as length percent (%0.1f%%) is less than the minimum (%0.1f%%)",
+                          lengthpercent, minlengthpercent);
+            valid = false;
+        }
 
-        if (!valid) config.printf("File considered to be invalid as rate it too small!");
+        const double minrate = config.GetMinimalDataRate(filename.Suffix());
+        if (rate < minrate) {
+            config.printf("File considered to be invalid as rate (%0.1fkB/s) is less than the minimum (%0.1fkB/s)",
+                          rate, minrate);
+            valid = false;
+        }
     }
     else {
         config.printf("File '%s' doesn't exist!", filename.str());
