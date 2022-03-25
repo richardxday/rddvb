@@ -258,6 +258,7 @@ public:
     void        SetActualStart(uint64_t dt)    {data->actstart = dt;}
     void        SetActualStop(uint64_t dt)     {data->actstop  = dt;}
 
+    uint64_t    GetRecordLengthFallback() const;
     uint64_t    GetActualLengthFallback() const;
 
     enum {

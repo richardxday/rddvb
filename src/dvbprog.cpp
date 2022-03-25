@@ -392,12 +392,17 @@ const ADVBProg::FIELD *ADVBProg::GetFields(uint_t& nfields)
     return fields;
 }
 
+uint64_t ADVBProg::GetRecordLengthFallback() const
+{
+    if (GetRecordLength() > 0) return GetRecordLength();
+    return GetLength();
+}
+
 uint64_t ADVBProg::GetActualLengthFallback() const
 {
     if (GetDuration()     > 0) return GetDuration();
     if (GetActualLength() > 0) return GetActualLength();
-    if (GetRecordLength() > 0) return GetRecordLength();
-    return GetLength();
+    return GetRecordLengthFallback();
 }
 
 uint16_t ADVBProg::GetDirDataOffset()
@@ -2658,7 +2663,7 @@ bool ADVBProg::UpdateFileSize()
     if (::GetFileInfo(filename, &info)) {
         uint64_t oldfilesize      = GetFileSize();
         double   rate             = 0.0;
-        double   explengthseconds = (double)GetLength() / 1000.0;
+        double   explengthseconds = (double)GetRecordLengthFallback() / 1000.0;
         double   actlengthseconds = (double)GetActualLengthFallback() / 1000.0;
         double   lengthpercent    = (actlengthseconds > 0.0) ? (100.0 * actlengthseconds) / explengthseconds : 0.0;
         double   mb               = (double)info.FileSize / (1024.0 * 1024.0);
@@ -2667,13 +2672,13 @@ bool ADVBProg::UpdateFileSize()
             rate = ((double)info.FileSize / 1024.0) / actlengthseconds;
         }
 
-        config.printf("File '%s' exists and is %sMB, %s/%s seconds = %skB/s (%s)%s",
+        config.printf("File '%s' exists and is %sMB, %s/%ss (%s%%) = %skB/s%s",
                       GetFilename(),
                       AValue(mb).ToString("0.1").str(),
                       AValue(actlengthseconds).ToString("0.1").str(),
                       AValue(explengthseconds).ToString("0.1").str(),
-                      (rate          > 0.0) ? AValue(rate).ToString("0.1").str() : "<unknown>",
                       (lengthpercent > 0.0) ? AValue(lengthpercent).ToString("0.1").str() : "<unknown>",
+                      (rate          > 0.0) ? AValue(rate).ToString("0.1").str() : "<unknown>",
                       (oldfilesize   > 0)   ? AString(", file size ratio = %0.3;").Arg((double)info.FileSize / (double)oldfilesize).str() : "");
 
         SetFileSize(info.FileSize);
