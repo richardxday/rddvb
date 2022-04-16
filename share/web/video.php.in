@@ -53,7 +53,7 @@ else {
     //print_r($prog);
 
     echo '<center><div id="container"><video id="player" autoplay playsinline crossorigin controls>' . "\n";
-    echo '<source src="' . $prog['file'] . '" type="video/mp4">' . "\n";
+    echo '<source src="' . $prog['videopath'] . '" type="video/mp4">' . "\n";
     echo '</video></div></center>' . "\n";
     echo "<br><br>\n";
 
