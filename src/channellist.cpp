@@ -5,13 +5,13 @@
 
 #include <algorithm>
 
-#include <rdlib/Recurse.h>
-
 #define PREFER_JSON 1
 
 #if PREFER_JSON
 #include <rapidjson/prettywriter.h>
 #endif
+
+#include <rdlib/Recurse.h>
 
 #include "channellist.h"
 #include "dvblock.h"

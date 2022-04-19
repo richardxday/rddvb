@@ -6,15 +6,16 @@
 
 #include <regex>
 
+#include <rdlib/Recurse.h>
+#include <rdlib/Regex.h>
+#include <rdlib/misc.h>
+#include <rdlib/strsup.h>
+
 #include "dvbmisc.h"
 #include "dvbstreams.h"
 #include "channellist.h"
 #include "proglist.h"
 #include "dvbprog.h"
-#include "rdlib/Recurse.h"
-#include "rdlib/Regex.h"
-#include "rdlib/misc.h"
-#include "rdlib/strsup.h"
 
 AString ConvertStream(const dvbstream_t& stream)
 {

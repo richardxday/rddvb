@@ -9,10 +9,11 @@
 #include <map>
 #include <algorithm>
 
+#include <rapidjson/prettywriter.h>
+
 #include <rdlib/StdMemFile.h>
 #include <rdlib/Regex.h>
 #include <rdlib/Recurse.h>
-#include <rapidjson/prettywriter.h>
 
 #include "config.h"
 #include "dvbprog.h"
