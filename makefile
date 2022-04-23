@@ -41,6 +41,7 @@ HEADERS :=										\
 	iconcache.h									\
 	proglist.h
 
+
 GLOBAL_CFLAGS		+= $(call pkgcflags,rdlib-0.1)
 GLOBAL_CXXFLAGS		+= $(call pkgcxxflags,rdlib-0.1)
 GLOBAL_LIBS			+= $(call pkglibs,rdlib-0.1)
@@ -127,14 +128,14 @@ OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
 ifdef DEBUG
-$(DEBUG_OBJDIR)/$(APPLICATION)/$(APPLICATION).o: $(HEADERSSRC)/config.extract.h
+$(DEBUG_OBJDIR)/$(APPLICATION)/$(APPLICATION).o: $(HEADERSSRC)/config.extract.h $(HEADERSSRC)/configlivevalues.def
 
 EXTRACTCONFIG := $(DEBUG_BINDIR)/$(DEBUG_APPLICATION)$(APPLICATION_SUFFIX)
 $(DEFAULTCONFIG): $(EXTRACTCONFIG)
 	@echo "Generating $@"
 	@LD_LIBRARY_PATH=$(DEBUG_LIBDIR) $(EXTRACTCONFIG) >$@
 else
-$(RELEASE_OBJDIR)/$(APPLICATION)/$(APPLICATION).o: $(HEADERSSRC)/config.extract.h
+$(RELEASE_OBJDIR)/$(APPLICATION)/$(APPLICATION).o: $(HEADERSSRC)/config.extract.h $(HEADERSSRC)/configlivevalues.def
 
 EXTRACTCONFIG := $(RELEASE_BINDIR)/$(RELEASE_APPLICATION)$(APPLICATION_SUFFIX)
 $(DEFAULTCONFIG): $(EXTRACTCONFIG)
