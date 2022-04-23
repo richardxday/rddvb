@@ -64,6 +64,14 @@ include $(MAKEFILEDIR)/makefile.lib
 LOCAL_SHARE_FILES := $(shell find share/* | grep -v -E "^share/apache" | sed -E "s/\.in$$//" | uniq)
 INSTALLEDSHAREFILES += $(LOCAL_SHARE_FILES:share/%=$(INSTALLSHAREDST)/%)
 
+$(INSTALLSHAREDST)/%.sh: share/%.sh.in
+	@cat $< \
+	| sed -E "s#@root@#$(ROOTDIR)#g" \
+	| sed -E "s#@prefix@#$(PREFIX)#g" \
+	| sed -E "s#@share@#$(INSTALLSHAREDST)#g" \
+	| $(SUDO) tee $@ >/dev/null
+	@$(SUDO) chmod a+x $@
+
 $(INSTALLSHAREDST)/%: share/%.in
 	@cat $< \
 	| sed -E "s#@root@#$(ROOTDIR)#g" \
@@ -169,8 +177,8 @@ $(APACHEDST)/%: $(APACHESRC)/%.in
 	| sed -E "s#@share@#$(INSTALLSHAREDST)#g" \
 	| $(SUDO) tee $@ >/dev/null
 
-
 all: $(DEFAULTCONFIG)
+	@echo "$(INSTALLEDBINARIES)"
 
 ifdef DEBUG
 RUNDVB=$(DEBUG_BINDIR)/dvb --no-report-errors
