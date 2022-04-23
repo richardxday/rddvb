@@ -179,7 +179,6 @@ $(APACHEDST)/%: $(APACHESRC)/%.in
 	| $(SUDO) tee $@ >/dev/null
 
 all: $(DEFAULTCONFIG)
-	@echo "$(INSTALLEDBINARIES)"
 
 ifdef DEBUG
 RUNDVB=$(DEBUG_BINDIR)/dvb --no-report-errors
