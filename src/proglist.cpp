@@ -252,6 +252,7 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
             }
             else if (programme.Valid()) {
                 programme += line;
+
                 if (programme.PosNoCase("</programme>") >= 0) {
                     const AStructuredNode *pNode;
                     AStructuredNode _node;
