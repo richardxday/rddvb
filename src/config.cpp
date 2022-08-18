@@ -55,7 +55,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"videodeinterlace",             "-filter:v yadif"},
         {"burnsubtitles",                "-filter_complex \"[0:v][0:s]overlay[v]\" -map \"[v]\" -map 0:a"},
         {"audiosync",                    "-filter:a aresample=async=1"},
-        {"videofilters",                 "{conf:videodeinterlace}"},
+        {"videofilters",                 ""},
         {"audiofilters",                 "{conf:audiosync}"},
         {"encodeflags",                  "-movflags +faststart"},
         {"h264video",                    "-vcodec libx264 -preset {conf:h264preset} -crf {conf:h264crf} -maxrate {conf:maxvideorate} -bufsize {conf:h264bufsize} {conf:encodeflags} {conf:videofilters}"},
@@ -63,6 +63,12 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"encodecopy",                   "{conf:copyvideo} {conf:mp3audio}"},
         {"encodeh264",                   "{conf:h264video} {conf:aacaudio}"},
         {"encodeargs",                   "{conf:encodeh264}"},
+        {"encodeerrorhandling",          "-v repeat+error"},
+        {"encodecmdlinebase",            "{cmd} {inputfiles} {conf:encodeerrorhandling} -aspect {aspect} {args}"},
+        {"encodecmdlineoutput",          "-y \"{outputfile}\""},
+        {"encodenormal",                 "{conf:encodecmdlinebase} {conf:videodeinterlace} {conf:encodecmdlineoutput}"},
+        {"encodewithsubtitles",          "({conf:encodecmdlinebase} {conf:burnsubtitles} {conf:encodecmdlineoutput} || {conf:encodenormal})"},
+        {"encodecmdline",                "{conf:encodenormal}"},
         {"encodeaudioonlyargs",          "{conf:mp3audio}"},
         {"episodefirstfilenametemplate", "{title}{sep}{episode}{episodeid}{sep}{date}{sep}{times}{sep}{subtitle}"},
         {"episodelastfilenametemplate",  "{title}{sep}{episode}{sep}{date}{sep}{times}{sep}{episodeid}{sep}{subtitle}"},
@@ -1286,6 +1292,11 @@ bool ADVBConfig::ForceSubs(const AString& user) const
 AString ADVBConfig::GetEncodeCommand(const AString& user, const AString& category) const
 {
     return GetUserSubItemConfigItem(user, category.ToLower(), "encodecmd", GetVideoEncoder());
+}
+
+AString ADVBConfig::GetEncodeCommandLine(const AString& user, const AString& category) const
+{
+    return GetUserSubItemConfigItem(user, category.ToLower(), "encodecmdline");
 }
 
 AString ADVBConfig::GetEncodeArgs(const AString& user, const AString& category) const

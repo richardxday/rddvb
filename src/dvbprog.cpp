@@ -3379,23 +3379,24 @@ bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
 bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose, uint32_t *videoerrors)
 {
     const ADVBConfig& config = ADVBConfig::Get();
-    AString proccmd = config.GetEncodeCommand(GetUser(), GetModifiedCategory());
-    AString args    = config.GetEncodeArgs(GetUser(), GetModifiedCategory());
-    AString tempdst = config.GetRecordingsStorageDir().CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
-    int     i, nargs = args.CountLines(";");
-    bool    success = true;
+    const AString proccmd = config.GetEncodeCommand(GetUser(), GetModifiedCategory());
+    const AString args    = config.GetEncodeArgs(GetUser(), GetModifiedCategory());
+    const AString tempdst = config.GetRecordingsStorageDir().CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
+    const AString cmdline = config.GetEncodeCommandLine(GetUser(), GetModifiedCategory());
+    int   i, nargs = args.CountLines(";");
+    bool  success = true;
 
     for (i = 0; i < nargs; i++) {
         AString cmd;
         AString result;
         AString filenames;
 
-        cmd.printf("nice %s %s -v repeat+error -aspect %s %s -y \"%s\"",
-                   proccmd.str(),
-                   inputfiles.str(),
-                   aspect.str(),
-                   args.Line(i).Words(0).str(),
-                   tempdst.str());
+        cmd = (cmdline
+               .SearchAndReplace("{cmd}", proccmd.str())
+               .SearchAndReplace("{inputfiles}", inputfiles.str())
+               .SearchAndReplace("{aspect}", aspect.str())
+               .SearchAndReplace("{args}", args.Line(i).Words(0).str())
+               .SearchAndReplace("{outputfile}", tempdst.str()));
 
         if (RunCommand(cmd, !verbose, config.GetVideoErrorCheckArgs(), &result)) {
             AString finaldst;

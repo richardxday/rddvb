@@ -401,6 +401,7 @@ public:
     bool    ForceSubs(const AString& user)   const; // extractconfig("<user>")
 
     AString GetEncodeCommand(const AString& user, const AString& category)       const; // extractconfig("<user>", "<category>")
+    AString GetEncodeCommandLine(const AString& user, const AString& category)   const; // extractconfig("<user>", "<category>")
     AString GetEncodeArgs(const AString& user, const AString& category)          const; // extractconfig("<user>", "<category>")
     AString GetEncodeAudioOnlyArgs(const AString& user, const AString& category) const; // extractconfig("<user>", "<category>")
 
