@@ -64,7 +64,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"encodeh264",                   "{conf:h264video} {conf:aacaudio}"},
         {"encodeargs",                   "{conf:encodeh264}"},
         {"encodeerrorhandling",          "-v repeat+error"},
-        {"encodecmdlinebase",            "{cmd} {inputfiles} {conf:encodeerrorhandling} -aspect {aspect} {args}"},
+        {"encodecmdlinebase",            "{cmd} {inputfiles} {conf:encodeerrorhandling} -aspect {aspect} {conf:encodeargs} {userargs}"},
         {"encodecmdlineoutput",          "-y \"{outputfile}\""},
         {"encodenormal",                 "{conf:encodecmdlinebase} {conf:videodeinterlace} {conf:encodecmdlineoutput}"},
         {"encodewithsubtitles",          "({conf:encodecmdlinebase} {conf:burnsubtitles} {conf:encodecmdlineoutput} || {conf:encodenormal})"},
@@ -1302,6 +1302,11 @@ AString ADVBConfig::GetEncodeCommandLine(const AString& user, const AString& cat
 AString ADVBConfig::GetEncodeArgs(const AString& user, const AString& category) const
 {
     return GetUserSubItemConfigItem(user, category.ToLower(), "encodeargs");
+}
+
+AString ADVBConfig::GetUserEncodeArgs(const AString& user, const AString& category) const
+{
+    return GetUserSubItemConfigItem(user, category.ToLower(), "encodeuserargs");
 }
 
 AString ADVBConfig::GetEncodeAudioOnlyArgs(const AString& user, const AString& category) const

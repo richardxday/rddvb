@@ -3379,11 +3379,13 @@ bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
 bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose, uint32_t *videoerrors)
 {
     const ADVBConfig& config = ADVBConfig::Get();
-    const AString proccmd = config.GetEncodeCommand(GetUser(), GetModifiedCategory());
-    const AString args    = config.GetEncodeArgs(GetUser(), GetModifiedCategory());
-    const AString tempdst = config.GetRecordingsStorageDir().CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
-    const AString cmdline = config.GetEncodeCommandLine(GetUser(), GetModifiedCategory());
-    int   i, nargs = args.CountLines(";");
+    const AString user     = GetUser();
+    const AString category = AString(GetModifiedCategory()).ToLower();
+    const AString proccmd  = config.GetEncodeCommand(user, category);
+    const AString userargs = config.GetUserEncodeArgs(user, category);
+    const AString tempdst  = config.GetRecordingsStorageDir().CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
+    const AString cmdline  = config.GetEncodeCommandLine(user, category);
+    int   i, nargs = userargs.CountLines(";");
     bool  success = true;
 
     for (i = 0; i < nargs; i++) {
@@ -3395,7 +3397,7 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
                .SearchAndReplace("{cmd}", proccmd.str())
                .SearchAndReplace("{inputfiles}", inputfiles.str())
                .SearchAndReplace("{aspect}", aspect.str())
-               .SearchAndReplace("{args}", args.Line(i).Words(0).str())
+               .SearchAndReplace("{userargs}", userargs.Line(i).Words(0).str())
                .SearchAndReplace("{outputfile}", tempdst.str()));
 
         if (RunCommand(cmd, !verbose, config.GetVideoErrorCheckArgs(), &result)) {

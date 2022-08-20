@@ -403,6 +403,7 @@ public:
     AString GetEncodeCommand(const AString& user, const AString& category)       const; // extractconfig("<user>", "<category>")
     AString GetEncodeCommandLine(const AString& user, const AString& category)   const; // extractconfig("<user>", "<category>")
     AString GetEncodeArgs(const AString& user, const AString& category)          const; // extractconfig("<user>", "<category>")
+    AString GetUserEncodeArgs(const AString& user, const AString& category)      const; // extractconfig("<user>", "<category>")
     AString GetEncodeAudioOnlyArgs(const AString& user, const AString& category) const; // extractconfig("<user>", "<category>")
 
     AString GetEncodeLogLevel(const AString& user, bool verbose) const;
