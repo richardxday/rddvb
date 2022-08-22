@@ -3385,39 +3385,29 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
     const AString userargs = config.GetUserEncodeArgs(user, category);
     const AString tempdst  = config.GetRecordingsStorageDir().CatPath(outputfile.FilePart().Prefix() + "_temp." + outputfile.Suffix());
     const AString cmdline  = config.GetEncodeCommandLine(user, category);
-    int   i, nargs = userargs.CountLines(";");
-    bool  success = true;
+    AString result;
+    bool success = false;
 
-    for (i = 0; i < nargs; i++) {
-        AString cmd;
-        AString result;
-        AString filenames;
+    AString cmd = (cmdline
+                   .SearchAndReplace("{cmd}", proccmd.str())
+                   .SearchAndReplace("{inputfiles}", inputfiles.str())
+                   .SearchAndReplace("{aspect}", aspect.str())
+                   .SearchAndReplace("{userargs}", userargs.str())
+                   .SearchAndReplace("{outputfile}", tempdst.str()));
 
-        cmd = (cmdline
-               .SearchAndReplace("{cmd}", proccmd.str())
-               .SearchAndReplace("{inputfiles}", inputfiles.str())
-               .SearchAndReplace("{aspect}", aspect.str())
-               .SearchAndReplace("{userargs}", userargs.Line(i).Words(0).str())
-               .SearchAndReplace("{outputfile}", tempdst.str()));
+    if (RunCommand(cmd, !verbose, config.GetVideoErrorCheckArgs(), &result)) {
+        AString finaldst;
 
-        if (RunCommand(cmd, !verbose, config.GetVideoErrorCheckArgs(), &result)) {
-            AString finaldst;
-            AString append;
+        finaldst = outputfile.Prefix() + "." + outputfile.Suffix();
 
-            if (i > 0) append.printf("-%u", i);
+        config.logit("Video errors found during encoding of '%s': %s", inputfiles.str(), result.str());
 
-            finaldst = outputfile.Prefix() + append + "." + outputfile.Suffix();
-
-            config.logit("Video errors found during encoding of '%s': %s", inputfiles.str(), result.str());
-
-            if (result.Valid() && (videoerrors != NULL)) {
-                *videoerrors = (uint32_t)result;
-            }
-
-            config.printf("Moving file '%s' to final destination '%s'", tempdst.str(), finaldst.str());
-            success &= MoveFile(tempdst, finaldst, true);
+        if (result.Valid() && (videoerrors != NULL)) {
+            *videoerrors = (uint32_t)result;
         }
-        else success = false;
+
+        config.printf("Moving file '%s' to final destination '%s'", tempdst.str(), finaldst.str());
+        success = MoveFile(tempdst, finaldst, true);
     }
 
     return success;
