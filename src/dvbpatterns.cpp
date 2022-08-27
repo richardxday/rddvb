@@ -1458,6 +1458,40 @@ bool ADVBPatterns::MatchString(const TERM& term, const char *str, bool ignoreinv
     return ((term.data.opcode & Operator_Inverted) && !ignoreinvert) ? !match : match;
 }
 
+int ADVBPatterns::CompareDates(uint64_t val, const TERM& term)
+{
+    ADateTime dt = ADateTime(val).UTCToLocal();
+
+    val = (uint64_t)dt;
+
+    switch (term.datetype) {
+        case DateType_time:
+            val %= 24UL * 3600UL * 1000UL;
+            break;
+
+        case DateType_date:
+            val /= 24UL * 3600UL * 1000UL;
+            break;
+
+        case DateType_weekday:
+            val = dt.GetWeekDay();
+            break;
+
+        default:
+            break;
+    }
+
+#if 0
+    debug("Date: comparing %s with %s (%s with %s)\n",
+          AValue(val).ToString().str(),
+          AValue(term.value.u64).ToString().str(),
+          ADateTime(val).DateToStr().str(),
+          ADateTime(term.value.u64).DateToStr().str());
+#endif
+
+    return COMPARE_ITEMS(val, term.value.u64);
+}
+
 bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
 {
     const ADataList& list = pattern.list;
@@ -1521,39 +1555,10 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
             else {
                 switch (field.type) {
                     case FieldType_date: {
-                        ADateTime dt;
-                        uint64_t  val;
+                        uint64_t val;
 
                         memcpy(&val, ptr, sizeof(val));
-                        dt  = ADateTime(val).UTCToLocal();
-                        val = (uint64_t)dt;
-
-                        switch (term.datetype) {
-                            case DateType_time:
-                                val %= 24UL * 3600UL * 1000UL;
-                                break;
-
-                            case DateType_date:
-                                val /= 24UL * 3600UL * 1000UL;
-                                break;
-
-                            case DateType_weekday:
-                                val = dt.GetWeekDay();
-                                break;
-
-                            default:
-                                break;
-                        }
-
-#if 0
-                        debug("Date: comparing %s with %s (%s with %s)\n",
-                              AValue(val).ToString().str(),
-                              AValue(term.value.u64).ToString().str(),
-                              ADateTime(val).DateToStr().str(),
-                              ADateTime(term.value.u64).DateToStr().str());
-#endif
-
-                        res = COMPARE_ITEMS(val, term.value.u64);
+                        res = CompareDates(val, term);
                         break;
                     }
 
@@ -1667,27 +1672,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
                         uint64_t  val;
 
                         prog.GetExternal(field.offset, val);
-                        dt  = ADateTime(val).UTCToLocal();
-                        val = (uint64_t)dt;
-
-                        switch (term.datetype) {
-                            case DateType_time:
-                                val %= 24UL * 3600UL * 1000UL;
-                                break;
-
-                            case DateType_date:
-                                val /= 24UL * 3600UL * 1000UL;
-                                break;
-
-                            case DateType_weekday:
-                                val = dt.GetWeekDay();
-                                break;
-
-                            default:
-                                break;
-                        }
-
-                        res = COMPARE_ITEMS(val, term.value.u64);
+                        res = CompareDates(val, term);
                         break;
                     }
 

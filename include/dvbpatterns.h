@@ -241,6 +241,8 @@ protected:
     static uint_t Skip(const AString& line, uint_t i, char terminator = ')');
     static uint_t CheckOrStatement(const AString& line, uint_t i, bool& orflag);
 
+    static int CompareDates(uint64_t val, const TERM& term);
+
 protected:
     static OPERATOR operators[];
 };
