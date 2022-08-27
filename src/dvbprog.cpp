@@ -115,6 +115,7 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
     DEFINE_FLAG(radioprogramme,         Flag_radioprogramme,           "Programme is a radio programme (audio but no video)"),
     DEFINE_FLAG(tvprogramme,            Flag_tvprogramme,              "Programme is a TV programme (audio and video)"),
     DEFINE_FLAG(highvideoerrorrate,     Flag_highvideoerrorrate,       "Programme has unacceptable video error rate"),
+    DEFINE_FLAG(archivedhassubtitles,   Flag_archivedhassubtitles,     "Archive video files has DVB subtitles"),
 
     DEFINE_FIELD(epvalid,               episode.valid,    uint8_t,     "Series/episode valid"),
     DEFINE_FIELD(series,                episode.series,   uint8_t,     "Series"),
@@ -134,19 +135,21 @@ const ADVBProg::FIELD ADVBProg::fields[] = {
     DEFINE_FLAG_ASSIGN(ignorelatestart, Flag_ignorelatestart,          "Allow programme to be recorded even if is late starting"),
     DEFINE_FLAG_ASSIGN(recordifmissing, Flag_recordifmissing,          "Allow programme to be recorded if it has been recorded already but the file doesn't exist"),
 
-    DEFINE_ASSIGN(pri,                  pri,                    sint8_t,  "Scheduling priority"),
-    DEFINE_ASSIGN(score,                score,                  sint16_t, "Record score"),
-    DEFINE_ASSIGN(prehandle,            prehandle,              uint16_t, "Record pre-handle (minutes)"),
-    DEFINE_ASSIGN(posthandle,           posthandle,             uint16_t, "Record post-handle (minutes)"),
-    DEFINE_ASSIGN(user,                 strings.user,           string,   "User"),
-    DEFINE_ASSIGN(dir,                  strings.dir,            string,   "Directory to store file in"),
-    DEFINE_ASSIGN(prefs,                strings.prefs,          string,   "Misc prefs"),
-    DEFINE_ASSIGN(dvbcard,              dvbcard,                uint8_t,  "DVB card to record from"),
-    DEFINE_ASSIGN(tags,                 strings.tags,           string,   "Programme tags"),
+    DEFINE_ASSIGN(pri,                  pri,                           sint8_t,  "Scheduling priority"),
+    DEFINE_ASSIGN(score,                score,                         sint16_t, "Record score"),
+    DEFINE_ASSIGN(prehandle,            prehandle,                     uint16_t, "Record pre-handle (minutes)"),
+    DEFINE_ASSIGN(posthandle,           posthandle,                    uint16_t, "Record post-handle (minutes)"),
+    DEFINE_ASSIGN(user,                 strings.user,                  string,   "User"),
+    DEFINE_ASSIGN(dir,                  strings.dir,                   string,   "Directory to store file in"),
+    DEFINE_ASSIGN(prefs,                strings.prefs,                 string,   "Misc prefs"),
+    DEFINE_ASSIGN(dvbcard,              dvbcard,                       uint8_t,  "DVB card to record from"),
+    DEFINE_ASSIGN(tags,                 strings.tags,                  string,   "Programme tags"),
 
-    DEFINE_EXTERNAL(brate,              Compare_brate,          double,   "Encoded file bit rate (bits/s)"),
-    DEFINE_EXTERNAL(kbrate,             Compare_kbrate,         double,   "Encoded file bit rate (kbits/s)"),
-    DEFINE_EXTERNAL(videoerrorrate,     Compare_videoerrorrate, double,   "Video error rate (errors/min)"),
+    DEFINE_EXTERNAL(brate,              Compare_brate,                 double,   "Encoded file bit rate (bits/s)"),
+    DEFINE_EXTERNAL(kbrate,             Compare_kbrate,                double,   "Encoded file bit rate (kbits/s)"),
+    DEFINE_EXTERNAL(videoerrorrate,     Compare_videoerrorrate,        double,   "Video error rate (errors/min)"),
+    DEFINE_EXTERNAL(filedate,           Compare_filedate,              date,     "Timestamp of file"),
+    DEFINE_EXTERNAL(archivefiledate,    Compare_archivefiledate,       date,     "Timestamp of archive file"),
 };
 
 AString ADVBProg::dayformat;
@@ -1585,7 +1588,17 @@ int ADVBProg::Compare(const ADVBProg *prog1, const ADVBProg *prog2, const FIELDL
                     }
 
                     case ADVBPatterns::FieldType_external_double: {
-                        double_t val1, val2;
+                        double val1, val2;
+
+                        prog1->GetExternal(field.offset, val1);
+                        prog2->GetExternal(field.offset, val2);
+
+                        res = COMPARE_ITEMS(val1, val2);
+                        break;
+                    }
+
+                    case ADVBPatterns::FieldType_external_date: {
+                        uint64_t val1, val2;
 
                         prog1->GetExternal(field.offset, val1);
                         prog2->GetExternal(field.offset, val2);
@@ -2016,6 +2029,40 @@ void ADVBProg::GetExternal(uint_t id, uint32_t& val) const
         case Compare_videoerrorrate:
             val = (uint32_t)GetVideoErrorRate();
             break;
+    }
+}
+
+void ADVBProg::GetExternal(uint_t id, uint64_t& val) const
+{
+    val = 0;
+    switch (id) {
+        case Compare_brate:
+            val = GetRate();
+            break;
+
+        case Compare_kbrate:
+            val = (GetRate() + 512U) / 1024U;
+            break;
+
+        case Compare_videoerrorrate:
+            val = (uint32_t)GetVideoErrorRate();
+            break;
+
+        case Compare_filedate:{
+            FILE_INFO info;
+            if (GetFileInfo(GetFilename(), &info)) {
+                val = info.WriteTime;
+            }
+            break;
+        }
+
+        case Compare_archivefiledate:{
+            FILE_INFO info;
+            if (GetFileInfo(GetFilename(), &info)) {
+                val = info.WriteTime;
+            }
+            break;
+        }
     }
 }
 
@@ -2965,6 +3012,7 @@ void ADVBProg::Record()
                             SetConversionFailed();
                             success = false;
                         }
+                        UpdateArchiveHasSubtitlesFlag();
                         if (success) OnRecordSuccess();
                         else         failed  = true;
 
@@ -3876,6 +3924,36 @@ bool ADVBProg::IsHighVideoErrorRate() const
 {
     const ADVBConfig& config = ADVBConfig::Get();
     return (GetVideoErrorRate() >= config.GetVideoErrorRateThreshold(GetUser(), GetCategory()));
+}
+
+bool ADVBProg::UpdateArchiveHasSubtitlesFlag()
+{
+    const ADVBConfig& config = ADVBConfig::Get();
+    const AString archivedfilename = GetArchiveRecordingFilename();
+    bool changed = false;
+
+    if (AStdFile::exists(archivedfilename)) {
+        AString cmd = config.GetConfigItem("checksubtitlescmd");
+        bool oldhassubtitles = GetFlag(Flag_archivedhassubtitles);
+        bool newhassubtitles = false;
+
+        cmd = cmd.SearchAndReplace("{file}", archivedfilename);
+        if (system(cmd) == 0)
+        {
+            config.logit("File '%s' has subtitles", archivedfilename.str());
+            newhassubtitles = true;
+        }
+        else config.logit("File '%s' does *not* have subtitles", archivedfilename.str());
+
+        if (newhassubtitles != oldhassubtitles) {
+            if (newhassubtitles) SetFlag(Flag_archivedhassubtitles);
+            else                 ClrFlag(Flag_archivedhassubtitles);
+
+            changed = true;
+        }
+    }
+
+    return changed;
 }
 
 void ADVBProg::GetFlagList(std::vector<AString>& list, bool includegetonly)

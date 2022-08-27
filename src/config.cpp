@@ -141,6 +141,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"hlsstreamhtmlsourcefile",      "{conf:sharedir}/stream/hlsstream.html"},
         {"hlsstreamhtmldestfile",        "{conf:hlsoutputbase}/{hlssanitizedname}.html"},
         {"hlsstreamurl",                 "/streams/{hlssanitizedname}.html"},
+        {"checksubtitlescmd",            "ffprobe \"{file}\" | grep \"dvb_subtitle\""},
     };
     uint_t i;
 

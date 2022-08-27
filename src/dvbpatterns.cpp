@@ -971,6 +971,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
                             term->value.str = value.Steal();
                             break;
 
+                        case FieldType_external_date:
                         case FieldType_date: {
                             ADateTime dt;
                             uint_t specified;

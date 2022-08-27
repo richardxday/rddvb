@@ -99,6 +99,7 @@ protected:
         FieldType_external_uint32_t,
         FieldType_external_sint32_t,
         FieldType_external_double,
+        FieldType_external_date,
         FieldType_flag,
         FieldType_lastflag = FieldType_flag + 63,
     };

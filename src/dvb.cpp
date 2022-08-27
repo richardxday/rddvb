@@ -205,6 +205,7 @@ int main(int argc, const char *argv[])
         {"--check-video-files",                     "",                                 "Check archived video files for errors and update programmes in current list"},
         {"--update-duration-and-video-errors",      "",                                 "Update duration and video errors in recorded list"},
         {"--force-update-duration-and-video-errors", "",                                "Update duration and video errors in recorded list"},
+        {"--update-video-has-subtitles",            "",                                 "Update the 'archivedhassubtitles' flag for all programmes in record list"},
         {"---stream",                               "<base64>",                         "Process stream described by <base64>"},
         {"--stream",                                "<text>",                           "Stream DVB channel or programme being recorded <text> to mplayer (or other player)"},
         {"--rawstream",                             "<text>",                           "Stream DVB channel or programme being recorded <text> to console (for piping to arbitrary programs)"},
@@ -2253,6 +2254,17 @@ int main(int argc, const char *argv[])
                         }
                     }
                 }
+            }
+            else if (stricmp(argv[i], "--update-video-has-subtitles") == 0) {
+                uint_t j, nchanged = 0;
+
+                for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
+                    if (proglist.GetProgWritable(j).UpdateArchiveHasSubtitlesFlag()) {
+                        nchanged++;
+                    }
+                }
+
+                printf("%u programmes changed\n, nchanged", nchanged);
             }
             else if (stricmp(argv[i], "---stream") == 0) {
                 dvbstream_t stream;

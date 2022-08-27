@@ -344,9 +344,12 @@ public:
         Compare_brate = 0,
         Compare_kbrate,
         Compare_videoerrorrate,
+        Compare_filedate,
+        Compare_archivefiledate,
     };
     void GetExternal(uint_t id, uint32_t& val) const;
     void GetExternal(uint_t id, sint32_t& val) const;
+    void GetExternal(uint_t id, uint64_t& val) const;
     void GetExternal(uint_t id, double& val) const;
 
     template<typename T>
@@ -404,6 +407,7 @@ public:
         Flag_recordifmissing,
         Flag_postprocessfailed,
         Flag_conversionfailed,
+        Flag_archivedhassubtitles,
 
         Flag_count,
 
@@ -493,6 +497,9 @@ public:
     bool   RecordIfMissing()      const {return GetFlag(Flag_recordifmissing);}
     bool   IsHighVideoErrorRate() const;
     bool   IsVideoErrorRateOk()   const {return !IsHighVideoErrorRate();}
+    bool   DoesArchiveHaveSubtitles() const {return GetFlag(Flag_archivedhassubtitles);}
+
+    bool   UpdateArchiveHasSubtitlesFlag();
 
     static void GetFlagList(std::vector<AString>& list, bool includegetonly = true);
     static bool IsFlagNameValid(const AString& name) {return (GetFlagNumber(name) >= 0);}
