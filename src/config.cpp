@@ -53,7 +53,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         {"h264preset",                   "veryfast"},
         {"h264bufsize",                  "3000k"},
         {"videodeinterlace",             "-filter:v yadif"},
-        {"burnsubtitles",                "-filter_complex \"[0:v][0:s]overlay[v]\" -map \"[v]\" -map 0:a"},
+        {"burnsubtitles",                "-filter_complex \"0:v]yadif[0v]; [0:v][0:s]overlay[v]\" -map \"[v]\" -map 0:a"},
         {"audiosync",                    "-filter:a aresample=async=1"},
         {"videofilters",                 ""},
         {"audiofilters",                 "{conf:audiosync}"},
