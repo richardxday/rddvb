@@ -2264,7 +2264,7 @@ int main(int argc, const char *argv[])
                     }
                 }
 
-                printf("%u programmes changed\n, nchanged", nchanged);
+                printf("%u programmes changed\n", nchanged);
             }
             else if (stricmp(argv[i], "---stream") == 0) {
                 dvbstream_t stream;
