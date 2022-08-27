@@ -1597,6 +1597,7 @@ int ADVBProg::Compare(const ADVBProg *prog1, const ADVBProg *prog2, const FIELDL
                         break;
                     }
 
+                    case ADVBPatterns::FieldType_external_uint64_t:
                     case ADVBPatterns::FieldType_external_date: {
                         uint64_t val1, val2;
 
@@ -2048,18 +2049,18 @@ void ADVBProg::GetExternal(uint_t id, uint64_t& val) const
             val = (uint32_t)GetVideoErrorRate();
             break;
 
-        case Compare_filedate:{
+        case Compare_filedate: {
             FILE_INFO info;
             if (GetFileInfo(GetFilename(), &info)) {
-                val = info.WriteTime;
+                val = (uint64_t)info.WriteTime;
             }
             break;
         }
 
-        case Compare_archivefiledate:{
+        case Compare_archivefiledate: {
             FILE_INFO info;
-            if (GetFileInfo(GetFilename(), &info)) {
-                val = info.WriteTime;
+            if (GetFileInfo(GetArchiveRecordingFilename(), &info)) {
+                val = (uint64_t)info.WriteTime;
             }
             break;
         }
@@ -2081,6 +2082,40 @@ void ADVBProg::GetExternal(uint_t id, sint32_t& val) const
         case Compare_videoerrorrate:
             val = (sint32_t)GetVideoErrorRate();
             break;
+    }
+}
+
+void ADVBProg::GetExternal(uint_t id, sint64_t& val) const
+{
+    val = 0;
+    switch (id) {
+        case Compare_brate:
+            val = (sint64_t)GetRate();
+            break;
+
+        case Compare_kbrate:
+            val = (sint64_t)((GetRate() + 512U) / 1024U);
+            break;
+
+        case Compare_videoerrorrate:
+            val = (sint64_t)GetVideoErrorRate();
+            break;
+
+        case Compare_filedate: {
+            FILE_INFO info;
+            if (GetFileInfo(GetFilename(), &info)) {
+                val = (sint64_t)(uint64_t)info.WriteTime;
+            }
+            break;
+        }
+
+        case Compare_archivefiledate: {
+            FILE_INFO info;
+            if (GetFileInfo(GetArchiveRecordingFilename(), &info)) {
+                val = (sint64_t)(uint64_t)info.WriteTime;
+            }
+            break;
+        }
     }
 }
 

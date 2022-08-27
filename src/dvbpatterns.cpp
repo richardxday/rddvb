@@ -1,4 +1,6 @@
 
+#include <inttypes.h>
+
 #include <rdlib/Regex.h>
 
 #include "config.h"
@@ -6,6 +8,8 @@
 
 #include "dvbpatterns.h"
 #include "dvbprog.h"
+
+//#define DEBUG_DATE_PARSING
 
 ADVBPatterns _patterns;
 
@@ -240,6 +244,7 @@ void ADVBPatterns::GetFieldValue(const FIELD& field, VALUE& value, AString& val)
             break;
 
         case FieldType_date:
+        case FieldType_external_date:
         case FieldType_span:
         case FieldType_span_single:
         case FieldType_age:
@@ -254,6 +259,16 @@ void ADVBPatterns::GetFieldValue(const FIELD& field, VALUE& value, AString& val)
         case FieldType_sint32_t:
         case FieldType_external_sint32_t:
             value.s32 = (sint32_t)val;
+            break;
+
+        case FieldType_uint64_t:
+        case FieldType_external_uint64_t:
+            value.u64 = (uint64_t)val;
+            break;
+
+        case FieldType_sint64_t:
+        case FieldType_external_sint64_t:
+            value.s64 = (sint64_t)val;
             break;
 
         case FieldType_uint16_t:
@@ -978,7 +993,9 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
 
                             dt.StrToDate(value, ADateTime::Time_Relative_Local, &specified);
 
-                            //debug("Value '%s', specified %u\n", value.str(), specified);
+#ifdef DEBUG_DATE_PARSING
+                            debug("Value '%s', specified %u\n", value.str(), specified);
+#endif
 
                             if (!specified) {
                                 errors.printf("Failed to parse date '%s' (term %u)", value.str(), list.Count() + 1);
@@ -986,7 +1003,9 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
                             }
                             else if (((specified == ADateTime::Specified_Day) && (stricmp(term->field->name, "on") == 0)) ||
                                      (stricmp(term->field->name, "day") == 0)) {
-                                //debug("Date from '%s' is '%s' (week day only)\n", value.str(), dt.DateToStr().str());
+#ifdef DEBUG_DATE_PARSING
+                                debug("Date from '%s' is '%s' (week day only)\n", value.str(), dt.DateToStr().str());
+#endif
                                 term->value.u64 = dt.GetWeekDay();
                                 term->datetype  = DateType_weekday;
                             }
@@ -998,19 +1017,25 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
                                 specified &= ADateTime::Specified_Date | ADateTime::Specified_Time;
 
                                 if (specified == (ADateTime::Specified_Date | ADateTime::Specified_Time)) {
-                                    //debug("Date from '%s' is '%s' (full date and time)\n", value.str(), dt.DateToStr().str());
                                     term->value.u64 = (uint64_t)dt;
                                     term->datetype  = DateType_fulldate;
+#ifdef DEBUG_DATE_PARSING
+                                    debug("Date from '%s' is '%s' (full date and time), value %" PRIu64 "\n", value.str(), dt.DateToStr().str(), term->value.u64);
+#endif
                                 }
                                 else if (specified == ADateTime::Specified_Date) {
-                                    //debug("Date from '%s' is '%s' (date only)\n", value.str(), dt.DateToStr().str());
                                     term->value.u64 = dt.GetDays();
                                     term->datetype  = DateType_date;
+#ifdef DEBUG_DATE_PARSING
+                                    debug("Date from '%s' is '%s' (date only), value %" PRIu64 "\n", value.str(), dt.DateToStr().str(), term->value.u64);
+#endif
                                 }
                                 else if (specified == ADateTime::Specified_Time) {
-                                    //debug("Date from '%s' is '%s' (time only)\n", value.str(), dt.DateToStr().str());
                                     term->value.u64 = dt.GetMS();
                                     term->datetype  = DateType_time;
+#ifdef DEBUG_DATE_PARSING
+                                    debug("Date from '%s' is '%s' (time only), value %" PRIu64 "\n", value.str(), dt.DateToStr().str(), term->value.u64);
+#endif
                                 }
                                 else {
                                     errors.printf("Unknown date specifier '%s' (term %u)", value.str(), list.Count() + 1);
@@ -1037,6 +1062,16 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
                         case FieldType_sint32_t:
                         case FieldType_external_sint32_t:
                             term->value.s32 = (sint32_t)value;
+                            break;
+
+                        case FieldType_uint64_t:
+                        case FieldType_external_uint64_t:
+                            term->value.u64 = (uint64_t)value;
+                            break;
+
+                        case FieldType_sint64_t:
+                        case FieldType_external_sint64_t:
+                            term->value.s64 = (sint64_t)value;
                             break;
 
                         case FieldType_uint16_t:
@@ -1618,6 +1653,43 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const PATTERN& pattern)
                     case FieldType_external_sint32_t:
                         res = prog.CompareExternal(field.offset, term.value.s32);
                         break;
+
+                    case FieldType_external_uint64_t:
+                        res = prog.CompareExternal(field.offset, term.value.u64);
+                        break;
+
+                    case FieldType_external_sint64_t:
+                        res = prog.CompareExternal(field.offset, term.value.s64);
+                        break;
+
+                    case FieldType_external_date: {
+                        ADateTime dt;
+                        uint64_t  val;
+
+                        prog.GetExternal(field.offset, val);
+                        dt  = ADateTime(val).UTCToLocal();
+                        val = (uint64_t)dt;
+
+                        switch (term.datetype) {
+                            case DateType_time:
+                                val %= 24UL * 3600UL * 1000UL;
+                                break;
+
+                            case DateType_date:
+                                val /= 24UL * 3600UL * 1000UL;
+                                break;
+
+                            case DateType_weekday:
+                                val = dt.GetWeekDay();
+                                break;
+
+                            default:
+                                break;
+                        }
+
+                        res = COMPARE_ITEMS(val, term.value.u64);
+                        break;
+                    }
 
                     case FieldType_external_double:
                         res = prog.CompareExternal(field.offset, term.value.f64);

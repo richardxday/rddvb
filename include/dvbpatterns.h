@@ -97,7 +97,9 @@ protected:
         FieldType_double,
         FieldType_prog,
         FieldType_external_uint32_t,
+        FieldType_external_uint64_t,
         FieldType_external_sint32_t,
+        FieldType_external_sint64_t,
         FieldType_external_double,
         FieldType_external_date,
         FieldType_flag,
@@ -186,6 +188,7 @@ protected:
 
     typedef union {
         uint64_t   u64;
+        sint64_t   s64;
         uint32_t   u32;
         sint32_t   s32;
         uint16_t   u16;
