@@ -130,6 +130,8 @@ int main(int argc, const char *argv[])
         {"--head",                                  "<n>",                              "Keep <n> programmes at the start of the list"},
         {"--tail",                                  "<n>",                              "Keep <n> programmes at the end of the list"},
         {"--limit",                                 "<n>",                              "Limit list to <n> programmes, deleting programmes from the end of the list"},
+        {"--diff-keep-same",                        "<file>",                           "Find differences of current list with supplied list and keep programmes that the same"},
+        {"--diff-keep-different",                   "<file>",                           "Find differences of current list with supplied list and keep programmes that are different"},
         {"-f, --find",                              "<patterns>",                       "Find programmes matching <patterns>"},
         {"-F, --find-with-file",                    "<pattern-file>",                   "Find programmes matching patterns in patterns file <pattern-file>"},
         {"-R, --find-repeats",                      "",                                 "For each programme in current list, list repeats"},
@@ -1039,6 +1041,39 @@ int main(int argc, const char *argv[])
 
                 while (proglist.Count() > n) {
                     proglist.DeleteProg(proglist.Count() - 1);
+                }
+            }
+            else if ((strcmp(argv[i], "--diff-keep-same")      == 0) ||
+                     (strcmp(argv[i], "--diff-keep-different") == 0)) {
+                const bool    keepsame = (strcmp(argv[i], "--diff-keep-same") == 0);
+                const AString filename = config.GetNamedFile(argv[++i]);
+                ADVBProgList  proglist1;
+
+                if (proglist1.ReadFromFile(filename)) {
+                    uint_t ndeleted = 0;
+
+                    proglist.CreateHash();
+                    proglist1.CreateHash();
+
+                    for (uint_t j = 0; j < proglist.Count(); ) {
+                        const ADVBProg& prog1 = proglist[j];
+                        const ADVBProg *prog2;
+                        const bool same = (((prog2 = proglist1.FindUUID(prog1)) != NULL) &&
+                                           (prog1.Base64Encode() == prog2->Base64Encode()));
+
+                        if (same == keepsame) {
+                            j++;
+                        }
+                        else {
+                            proglist.DeleteProg(j);
+                            ndeleted++;
+                        }
+                    }
+
+                    printf("%u programmes kept (%u deleted)\n", proglist.Count(), ndeleted);
+                }
+                else {
+                    printf("Failed to read programme list from '%s'\n", filename.str());
                 }
             }
             else if ((strcmp(argv[i], "--write") == 0) || (strcmp(argv[i], "-w") == 0)) {
