@@ -1,5 +1,6 @@
 
 #include <cstdint>
+#include <regex>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1486,49 +1487,51 @@ int main(int argc, const char *argv[])
             }
             else if ((strcmp(argv[i], "--change-filename-regex")      == 0) ||
                      (strcmp(argv[i], "--change-filename-regex-test") == 0)) {
-                ADVBLock     lock("dvbfiles");
-                ADVBProgList reclist;
-                AString      errors;
-                AString      pattern       = argv[++i];
-                AString      parsedpattern = ParseGlob(pattern, errors);
-                AString      replacement   = argv[++i];
-                bool         commit        = (strcmp(argv[i - 2], "--change-filename-regex") == 0);
+                ADVBLock      lock("dvbfiles");
+                ADVBProgList  reclist;
+                const AString pattern       = argv[++i];
+                const AString replacement   = argv[++i];
+                const bool    commit        = (strcmp(argv[i - 2], "--change-filename-regex") == 0);
 
-                if (errors.Valid()) {
-                    config.printf("Errors in regex:");
+                try {
+                    const regex_replace_t replace = {
+                        .regex   = ParseRegex(pattern),
+                        .replace = replacement,
+                    };
 
-                    uint_t j, n = errors.CountLines();
-                    for (j = 0; j < n; j++) config.printf("%s", errors.Line(j).str());
-                }
-                else if (reclist.ReadFromFile(config.GetRecordedFile())) {
-                    uint_t j;
-                    bool changed = false;
+                    if (reclist.ReadFromFile(config.GetRecordedFile())) {
+                        uint_t j;
+                        bool changed = false;
 
-                    for (j = 0; j < reclist.Count(); j++) {
-                        ADataList regionlist;
-                        ADVBProg& prog = reclist.GetProgWritable(j);
-                        const AString& filename1 = prog.GetFilename();
+                        for (j = 0; j < reclist.Count(); j++) {
+                            ADataList regionlist;
+                            ADVBProg& prog = reclist.GetProgWritable(j);
+                            const AString& filename1 = prog.GetFilename();
 
-                        if (MatchGlob(filename1, parsedpattern, regionlist)) {
-                            AString filename2 = ExpandGlobRegions(filename1, replacement, regionlist);
+                            if (MatchRegex(filename1, replace.regex)) {
+                                AString filename2 = RegexReplace(filename1, replace);
 
-                            config.printf("Changing filename of '%s' from '%s' to '%s'", prog.GetDescription().str(), filename1.str(), filename2.str());
-                            prog.SetFilename(filename2);
-                            changed = true;
-                        }
-                    }
-
-                    if (changed) {
-                        if (commit) {
-                            if (HasQuit() || !reclist.WriteToFile(config.GetRecordedFile())) {
-                                config.printf("Failed to write recorded programme list back!");
+                                config.printf("Changing filename of '%s' from '%s' to '%s'", prog.GetDescription().str(), filename1.str(), filename2.str());
+                                prog.SetFilename(filename2);
+                                changed = true;
                             }
                         }
-                        else config.printf("NOT writing changes back to files");
+
+                        if (changed) {
+                            if (commit) {
+                                if (HasQuit() || !reclist.WriteToFile(config.GetRecordedFile())) {
+                                    config.printf("Failed to write recorded programme list back!");
+                                }
+                            }
+                            else config.printf("NOT writing changes back to files");
+                        }
+                        else config.printf("Failed to find programmes with filename matching '%s'", pattern.str());
                     }
-                    else config.printf("Failed to find programmes with filename matching '%s'", pattern.str());
+                    else config.printf("Failed to read recorded programme list");
                 }
-                else config.printf("Failed to read recorded programme list");
+                catch (const std::regex_error& ex) {
+                    config.printf("Invalid regex '%s'", pattern.str());
+                }
             }
             else if (stricmp(argv[i], "--find-series") == 0) {
                 ADVBProgList::SERIESLIST series;

@@ -3421,7 +3421,7 @@ void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const st
 
 bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
 {
-    static const AString pattern = ParseGlob("Format# : {#?}");
+    static const auto pattern = ParseGlob("Format# : {#?}");
     AString cmd;
     AString logfile = filename.Prefix() + "_format.txt";
     bool    success = false;

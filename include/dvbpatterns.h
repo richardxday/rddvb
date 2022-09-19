@@ -3,6 +3,8 @@
 
 #include <rapidjson/document.h>
 
+#include <regex>
+
 #include "config.h"
 
 class ADVBProg;
@@ -187,17 +189,18 @@ protected:
     } OPERATOR;
 
     typedef union {
-        uint64_t   u64;
-        sint64_t   s64;
-        uint32_t   u32;
-        sint32_t   s32;
-        uint16_t   u16;
-        sint16_t   s16;
-        uint8_t    u8;
-        sint8_t    s8;
-        double     f64;
-        char       *str;
-        ADVBProg   *prog;
+        uint64_t         u64;
+        sint64_t         s64;
+        uint32_t         u32;
+        sint32_t         s32;
+        uint16_t         u16;
+        sint16_t         s16;
+        uint8_t          u8;
+        sint8_t          s8;
+        double           f64;
+        const char       *str;
+        const ADVBProg   *prog;
+        const std::regex *regex;
     } VALUE;
 
     typedef struct {
@@ -206,6 +209,7 @@ protected:
         uint8_t     datetype;
         VALUE       value;
         PATTERN     *pattern;
+        std::regex  regex;
     } TERM;
 
     static void __DeleteTerm(TERM *term);

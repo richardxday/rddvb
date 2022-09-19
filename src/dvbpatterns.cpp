@@ -2,6 +2,7 @@
 #include <inttypes.h>
 
 #include <rdlib/Regex.h>
+#include <regex>
 
 #include "config.h"
 #include "dvblock.h"
@@ -444,7 +445,8 @@ void ADVBPatterns::__DeleteTerm(TERM *term)
     }
     else {
         if (term->field->type == FieldType_string) {
-            if (term->value.str != NULL) {
+            if (((term->data.opcode & ~Operator_Inverted) != Operator_Regex) &&
+                (term->value.str != NULL)) {
                 delete[] term->value.str;
             }
         }
@@ -973,17 +975,15 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
                     switch (term->field->type) {
                         case FieldType_string:
                             if ((opcode & ~Operator_Inverted) == Operator_Regex) {
-                                AString regexerrors;
-                                AString rvalue;
-
-                                rvalue = ParseGlob(value, regexerrors);
-                                if (regexerrors.Valid()) {
-                                    errors.printf("Regex error in value '%s' (term %u): %s", value.str(), list.Count() + 1, regexerrors.str());
+                                term->value.regex = &term->regex;
+                                try {
+                                    term->regex = ParseRegex(value);
                                 }
-
-                                value = rvalue;
+                                catch (const std::regex_error& ex) {
+                                    errors.printf("Regex errors in value '%s' (term %u)", value.str(), list.Count() + 1);
+                                }
                             }
-                            term->value.str = value.Steal();
+                            else term->value.str = value.Steal();
                             break;
 
                         case FieldType_external_date:
@@ -1392,7 +1392,7 @@ bool ADVBPatterns::MatchString(const TERM& term, const char *str, bool ignoreinv
 
     switch (opcode) {
         case Operator_Regex:
-            match = (IsGlobAnyPattern(term.value.str) || MatchGlob(str, term.value.str));
+            match = MatchRegex(str, *term.value.regex);
             break;
 
         case Operator_Contains:
