@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
         AStructuredNode root;
 
         if (DecodeXMLFromFile(root, argv[1])) {
-            const AString number = ParseRegex("#[0-9]");
+            const auto number = ParseGlob("#[0-9]");
 
             const AStructuredNode *node;
             if (((node = root.FindChild("tv")) != NULL) &&
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
                                     channel.xmltv.name = node1->Value;
                                 }
 
-                                if (MatchRegex(node1->Value, number)) {
+                                if (MatchGlob(node1->Value, number)) {
                                     channel.lcn = (uint_t)node1->Value;
                                 }
                             }

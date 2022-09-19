@@ -75,7 +75,7 @@ bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& patt
     const ADVBConfig& config = ADVBConfig::Get();
     AString tempfile = config.GetTempFile("streams", ".txt");
     AString cmd      = config.GetStreamListingCommand(tempfile);
-    AString pat      = ParseRegex(pattern);
+    AString pat      = ParseGlob(pattern);
     bool success = false;
 
     if (system(cmd) == 0) {
@@ -89,7 +89,7 @@ bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& patt
                 AString  str = line.Words(1);
                 dvbstream_t stream;
 
-                if (ConvertStream(str, stream) && MatchRegex(stream.name, pat)) {
+                if (ConvertStream(str, stream) && MatchGlob(stream.name, pat)) {
                     size_t i;
 
                     stream.pid = pid;

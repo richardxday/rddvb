@@ -976,7 +976,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, PATTERN& pattern, const
                                 AString regexerrors;
                                 AString rvalue;
 
-                                rvalue = ParseRegex(value, regexerrors);
+                                rvalue = ParseGlob(value, regexerrors);
                                 if (regexerrors.Valid()) {
                                     errors.printf("Regex error in value '%s' (term %u): %s", value.str(), list.Count() + 1, regexerrors.str());
                                 }
@@ -1392,7 +1392,7 @@ bool ADVBPatterns::MatchString(const TERM& term, const char *str, bool ignoreinv
 
     switch (opcode) {
         case Operator_Regex:
-            match = (IsRegexAnyPattern(term.value.str) || MatchRegex(str, term.value.str));
+            match = (IsGlobAnyPattern(term.value.str) || MatchGlob(str, term.value.str));
             break;
 
         case Operator_Contains:

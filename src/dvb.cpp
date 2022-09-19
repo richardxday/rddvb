@@ -1490,7 +1490,7 @@ int main(int argc, const char *argv[])
                 ADVBProgList reclist;
                 AString      errors;
                 AString      pattern       = argv[++i];
-                AString      parsedpattern = ParseRegex(pattern, errors);
+                AString      parsedpattern = ParseGlob(pattern, errors);
                 AString      replacement   = argv[++i];
                 bool         commit        = (strcmp(argv[i - 2], "--change-filename-regex") == 0);
 
@@ -1509,8 +1509,8 @@ int main(int argc, const char *argv[])
                         ADVBProg& prog = reclist.GetProgWritable(j);
                         const AString& filename1 = prog.GetFilename();
 
-                        if (MatchRegex(filename1, parsedpattern, regionlist)) {
-                            AString filename2 = ExpandRegexRegions(filename1, replacement, regionlist);
+                        if (MatchGlob(filename1, parsedpattern, regionlist)) {
+                            AString filename2 = ExpandGlobRegions(filename1, replacement, regionlist);
 
                             config.printf("Changing filename of '%s' from '%s' to '%s'", prog.GetDescription().str(), filename1.str(), filename2.str());
                             prog.SetFilename(filename2);

@@ -1563,7 +1563,7 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
     const ADVBConfig& config = ADVBConfig::Get();
     AString  patternfilename    = config.GetPatternsFile();
     AString  filepattern        = config.GetUserPatternsPattern();
-    AString  filepattern_parsed = ParseRegex(filepattern);
+    AString  filepattern_parsed = ParseGlob(filepattern);
     AList    userpatterns;
     AStdFile fp;
 
@@ -1587,8 +1587,8 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
         AString   user;
         ADataList regions;
 
-        if (MatchRegex(*file, filepattern_parsed, regions)) {
-            const REGEXREGION *region = (const REGEXREGION *)regions[0];
+        if (MatchGlob(*file, filepattern_parsed, regions)) {
+            const GLOBREGION *region = (const GLOBREGION *)regions[0];
 
             if (region) user = file->Mid(region->pos, region->len);
             else        config.logit("Failed to find user in '%s' (no region)", file->str());

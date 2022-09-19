@@ -3421,7 +3421,7 @@ void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const st
 
 bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
 {
-    static const AString pattern = ParseRegex("Format# : {#?}");
+    static const AString pattern = ParseGlob("Format# : {#?}");
     AString cmd;
     AString logfile = filename.Prefix() + "_format.txt";
     bool    success = false;
@@ -3438,8 +3438,8 @@ bool ADVBProg::GetFileFormat(const AString& filename, AString& format)
             while (line.ReadLn(fp) >= 0) {
                 ADataList regions;
 
-                if (MatchRegex(line, pattern, regions) && (regions.Count() > 0)) {
-                    const REGEXREGION& region = *(const REGEXREGION *)regions[0];
+                if (MatchGlob(line, pattern, regions) && (regions.Count() > 0)) {
+                    const GLOBREGION& region = *(const GLOBREGION *)regions[0];
 
                     //debug("Line: '%s', region {%u, %u}: %s\n", line.str(), region.pos, region.len, line.Mid(region.pos, region.len).str());
 

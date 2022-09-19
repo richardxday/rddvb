@@ -607,7 +607,7 @@ void ADVBConfig::ListUsers(AList& list) const
     AHash    users;
     AList    userpatterns;
     AString  filepattern        = GetUserPatternsPattern();
-    AString  filepattern_parsed = ParseRegex(filepattern);
+    AString  filepattern_parsed = ParseGlob(filepattern);
     AString  _users             = GetConfigItem("users");
     AStdFile fp;
     uint_t   i, n = _users.CountColumns();
@@ -649,8 +649,8 @@ void ADVBConfig::ListUsers(AList& list) const
         AString   user;
         ADataList regions;
 
-        if (MatchRegex(*file, filepattern_parsed, regions)) {
-            const REGEXREGION *region = (const REGEXREGION *)regions[0];
+        if (MatchGlob(*file, filepattern_parsed, regions)) {
+            const GLOBREGION *region = (const GLOBREGION *)regions[0];
 
             if (region) {
                 user = file->Mid(region->pos, region->len);
