@@ -29,6 +29,7 @@ ADVBIconCache::ADVBIconCache() : cache(&__DeleteEntry),
 
         fp.close();
 
+        (void)n;
         //ADVBConfig::Get().logit("Read %u lines resulting in %u items in icon cache", n, cache.GetItems());
 
         changed = false;
