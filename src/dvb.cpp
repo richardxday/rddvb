@@ -1489,9 +1489,10 @@ int main(int argc, const char *argv[])
                      (strcmp(argv[i], "--change-filename-regex-test") == 0)) {
                 ADVBLock      lock("dvbfiles");
                 ADVBProgList  reclist;
-                const AString pattern       = argv[++i];
-                const AString replacement   = argv[++i];
-                const bool    commit        = (strcmp(argv[i - 2], "--change-filename-regex") == 0);
+                const AString arg           = argv[i++];
+                const AString pattern       = argv[i++];
+                const AString replacement   = argv[i];
+                const bool    commit        = (strcmp(arg, "--change-filename-regex") == 0);
 
                 try {
                     const regex_replace_t replace = {
@@ -1530,7 +1531,7 @@ int main(int argc, const char *argv[])
                     else config.printf("Failed to read recorded programme list");
                 }
                 catch (const std::regex_error& ex) {
-                    config.printf("Invalid regex '%s'", pattern.str());
+                    config.printf("Invalid regex '%s' for '%s'", pattern.str(), arg.str());
                 }
             }
             else if (stricmp(argv[i], "--find-series") == 0) {

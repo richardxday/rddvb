@@ -72,52 +72,58 @@ bool ConvertStream(const AString& base64str, dvbstream_t& stream)
 
 bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& pattern)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    AString tempfile = config.GetTempFile("streams", ".txt");
-    AString cmd      = config.GetStreamListingCommand(tempfile);
-    AString pat      = ParseGlob(pattern);
     bool success = false;
 
-    if (system(cmd) == 0) {
-        AStdFile fp;
+    try {
+        const ADVBConfig& config  = ADVBConfig::Get();
+        const AString    tempfile = config.GetTempFile("streams", ".txt");
+        const AString    cmd      = config.GetStreamListingCommand(tempfile);
+        const std::regex pat      = ParseRegex(pattern);
 
-        if (fp.open(tempfile)) {
-            AString line;
+        if (system(cmd) == 0) {
+            AStdFile fp;
 
-            while (line.ReadLn(fp) >= 0) {
-                uint32_t pid = (uint32_t)line.Word(0);
-                AString  str = line.Words(1);
-                dvbstream_t stream;
+            if (fp.open(tempfile)) {
+                AString line;
 
-                if (ConvertStream(str, stream) && MatchGlob(stream.name, pat)) {
-                    size_t i;
+                while (line.ReadLn(fp) >= 0) {
+                    uint32_t pid = (uint32_t)line.Word(0);
+                    AString  str = line.Words(1);
+                    dvbstream_t stream;
 
-                    stream.pid = pid;
+                    if (ConvertStream(str, stream) && MatchRegex(stream.name, pat)) {
+                        size_t i;
 
-                    for (i = 0; i < activestreams.size(); i++) {
-                        dvbstream_t& stream1 = activestreams[i];
+                        stream.pid = pid;
 
-                        if ((stream.type == stream1.type) &&
-                            (stream.name == stream1.name) &&
-                            (stream.url  == stream1.url)) {
-                            activestreams[i] = stream;
-                            break;
+                        for (i = 0; i < activestreams.size(); i++) {
+                            dvbstream_t& stream1 = activestreams[i];
+
+                            if ((stream.type == stream1.type) &&
+                                (stream.name == stream1.name) &&
+                                (stream.url  == stream1.url)) {
+                                activestreams[i] = stream;
+                                break;
+                            }
+                        }
+
+                        if (i == activestreams.size()) {
+                            activestreams.push_back(stream);
                         }
                     }
-
-                    if (i == activestreams.size()) {
-                        activestreams.push_back(stream);
-                    }
                 }
+
+                fp.close();
+
+                success = true;
             }
-
-            fp.close();
-
-            success = true;
         }
-    }
 
-    remove(tempfile);
+        remove(tempfile);
+    }
+    catch (const std::regex_error& ex) {
+        debug("Invalid regex '%s' when listing DVB streams", pattern.str());
+    }
 
     return success;
 }

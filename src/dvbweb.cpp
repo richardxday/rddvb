@@ -643,8 +643,8 @@ int main(int argc, char *argv[])
         }
 
         if ((datasource == DataSource_Patterns) && Value(vars, val, "filter") && val.Valid()) {
-            AString user_pat    = ParseGlob("*");
-            AString pattern_pat = ParseGlob("*");
+            AString user_pat    = ".+";
+            AString pattern_pat = ".+";
             char    user_op     = '~';
             char    pattern_op  = '~';
             uint_t  i = 0;
@@ -695,16 +695,12 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
-                if (pat && op) {
+                if ((pat != NULL) && (op != NULL)) {
                     switch (oper) {
                         case '=':
                         case '@':
-                            *pat = value;
-                            *op  = oper;
-                            break;
-
                         case '~':
-                            *pat = ParseGlob(value);
+                            *pat = value;
                             *op  = oper;
                             break;
 
@@ -728,7 +724,7 @@ int main(int argc, char *argv[])
                         switch (user_op) {
                             case '=': keep &= (pattern->user.CompareNoCase(user_pat) == 0); break;
                             case '@': keep &= (pattern->user.PosNoCase(user_pat) >= 0); break;
-                            case '~': keep &= MatchGlob(pattern->user, user_pat); break;
+                            case '~': keep &= MatchRegex(pattern->user, user_pat); break;
                             default: break;
                         }
                     }
@@ -737,7 +733,7 @@ int main(int argc, char *argv[])
                         switch (pattern_op) {
                             case '=': keep &= (pattern->pattern.CompareNoCase(pattern_pat) == 0); break;
                             case '@': keep &= (pattern->pattern.PosNoCase(pattern_pat) >= 0); break;
-                            case '~': keep &= MatchGlob(pattern->pattern, pattern_pat); break;
+                            case '~': keep &= MatchRegex(pattern->pattern, pattern_pat); break;
                             default: break;
                         }
                     }

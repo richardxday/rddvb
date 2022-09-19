@@ -481,7 +481,7 @@ void ADVBConfig::MapDVBCards()
     dvbcards.clear();
 
     for (i = 0; i < 4; i++) {
-        AString defname = "*";
+        AString defname = ".+";
         AString cardname;
         sint_t  card = -1;
 
@@ -649,10 +649,10 @@ void ADVBConfig::ListUsers(AList& list) const
         AString   user;
         ADataList regions;
 
-        if (MatchGlob(*file, filepattern_parsed, regions)) {
+        if (MatchGlob(*file, filepattern_parsed, regions) && (regions.Count() > 0)) {
             const GLOBREGION *region = (const GLOBREGION *)regions[0];
 
-            if (region) {
+            if (region != NULL) {
                 user = file->Mid(region->pos, region->len);
                 if (!users.Exists(user)) {
                     users.Insert(user, 0);
