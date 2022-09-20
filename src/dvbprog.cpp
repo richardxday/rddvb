@@ -3531,7 +3531,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         return true;
     }
 
-    if (!config.ConvertVideos()) {
+    if (!config.ConvertVideos() && config.ArchiveRecorded()) {
         config.printf("Converting videos disabled on this host, copying '%s' to archive as '%s'", src.str(), archivedst.str());
 
         return CopyFile(src, archivedst);
@@ -3890,8 +3890,14 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             success = UpdateRecordedList();
         }
 
-        config.logit("Moving '%s' to archive directory as '%s'", src.str(), archivedst.str());
-        success &= MoveFile(src, archivedst);
+        if (config.ArchiveRecorded()) {
+            config.logit("Moving '%s' to archive directory as '%s'", src.str(), archivedst.str());
+            success &= MoveFile(src, archivedst);
+        }
+        else {
+            config.logit("Archiving disabled, deleting '%s'", src.str());
+            success &= (::remove(src.str()) == 0);
+        }
     }
 
     if (success && cleanup) {

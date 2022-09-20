@@ -1249,7 +1249,12 @@ bool ADVBConfig::IsRecordingSlave() const
 
 bool ADVBConfig::ConvertVideos() const
 {
-    return ((uint_t)GetConfigItem("convertvideos", AString("%").Arg(!IsRecordingSlave())));
+    return ((uint_t)GetConfigItem("convertvideos", AString("%").Arg(!IsRecordingSlave())) != 0);
+}
+
+bool ADVBConfig::ArchiveRecorded() const
+{
+    return ((uint_t)GetConfigItem("archiverecorded", "1") != 0);
 }
 
 bool ADVBConfig::EnableCombined() const
