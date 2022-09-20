@@ -1254,7 +1254,15 @@ bool ADVBConfig::ConvertVideos() const
 
 bool ADVBConfig::ArchiveRecorded() const
 {
-    return ((uint_t)GetConfigItem("archiverecorded", "1") != 0);
+    FILE_INFO info;
+    return (((uint_t)GetConfigItem("archiverecorded", "1") != 0) &&
+            ::GetFileInfo(GetRecordingsArchiveDir(), &info) &&
+            ((info.Attrib & FILE_FLAG_IS_DIR) != 0));
+}
+
+bool ADVBConfig::DeleteUnarchivedRecordings() const
+{
+    return ((uint_t)GetConfigItem("deleteunarchivedrecordings", "0") != 0);
 }
 
 bool ADVBConfig::EnableCombined() const

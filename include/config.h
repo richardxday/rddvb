@@ -387,6 +387,7 @@ public:
     bool    IsRecordingSlave()               const; // extractconfig()
     bool    ConvertVideos()                  const; // extractconfig()
     bool    ArchiveRecorded()                const; // extractconfig()
+    bool    DeleteUnarchivedRecordings()     const; // extractconfig()
     bool    EnableCombined()                 const; // extractconfig()
 
     bool    UseOldChannelIcon(const AString& user, const AString& category) const; // extractconfig("<user>", "<category>")

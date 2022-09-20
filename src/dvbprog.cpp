@@ -3531,10 +3531,17 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         return true;
     }
 
-    if (!config.ConvertVideos() && config.ArchiveRecorded()) {
-        config.printf("Converting videos disabled on this host, copying '%s' to archive as '%s'", src.str(), archivedst.str());
+    if (!config.ConvertVideos()) {
+        if (config.ArchiveRecorded()) {
+            config.printf("Converting videos disabled on this host, copying '%s' to archive as '%s'", src.str(), archivedst.str());
 
-        return CopyFile(src, archivedst);
+            return CopyFile(src, archivedst);
+        }
+        else {
+            config.printf("Converting videos and archiving disabled on this host, leaving '%s'", src.str());
+
+            return true;
+        }
     }
 
     config.printf("Source '%s' exists, destination '%s' does not exist", src.str(), dst.str());
@@ -3894,9 +3901,12 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             config.logit("Moving '%s' to archive directory as '%s'", src.str(), archivedst.str());
             success &= MoveFile(src, archivedst);
         }
-        else {
+        else if (config.DeleteUnarchivedRecordings()) {
             config.logit("Archiving disabled, deleting '%s'", src.str());
             success &= (::remove(src.str()) == 0);
+        }
+        else {
+            config.logit("Archiving and deletion disabled, leaving file '%s'", src.str());
         }
     }
 
