@@ -164,7 +164,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
     dirs[GetRecordingsStorageDir()] = "recording storage";
     dirs[GetRecordingsDir()]        = "recordings";
     dirs[GetTempDir()]              = "temp";
-    if (((dir = GetRecordingsArchiveDir()).Valid()) && (dir.Pos("{") < 0)) {
+    if (ArchiveRecorded() && ((dir = GetRecordingsArchiveDir()).Valid()) && (dir.Pos("{") < 0)) {
         dirs[dir] = "archive";
     }
 
