@@ -3513,11 +3513,6 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
     AString       dst                     = GenerateFilename(true);
     AString       archivedst              = ReplaceFilenameTerms(config.GetRecordingsArchiveDir(), false).CatPath(src.FilePart());
 
-    if (!CreateDirectory(archivedst.PathPart())) {
-        if (dircreationerrors.Valid()) dircreationerrors.printf("\n");
-        dircreationerrors.printf("Failed to create directory '%s' for archived file", archivedst.PathPart().str());
-    }
-
     if (IsConverted() || SameFile(src, dst)) return true;
 
     if (!AStdFile::exists(src)) {
@@ -3531,17 +3526,26 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         return true;
     }
 
+    if (config.ArchiveRecorded() && !CreateDirectory(archivedst.PathPart())) {
+        if (dircreationerrors.Valid()) dircreationerrors.printf("\n");
+        dircreationerrors.printf("Failed to create directory '%s' for archived file", archivedst.PathPart().str());
+    }
+
     if (!config.ConvertVideos()) {
+        bool success = false;
+
         if (config.ArchiveRecorded()) {
             config.printf("Converting videos disabled on this host, copying '%s' to archive as '%s'", src.str(), archivedst.str());
 
-            return CopyFile(src, archivedst);
+            success = CopyFile(src, archivedst);
         }
         else {
             config.printf("Converting videos and archiving disabled on this host, leaving '%s'", src.str());
 
-            return true;
+            success = true;
         }
+
+        return success;
     }
 
     config.printf("Source '%s' exists, destination '%s' does not exist", src.str(), dst.str());
