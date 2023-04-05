@@ -156,10 +156,6 @@ AString ADVBProg::dayformat;
 AString ADVBProg::dateformat;
 AString ADVBProg::timeformat;
 AString ADVBProg::fulltimeformat;
-AString ADVBProg::tempfilesuffix;
-AString ADVBProg::recordedfilesuffix;
-AString ADVBProg::videofilesuffix;
-AString ADVBProg::audiofilesuffix;
 
 const AString ADVBProg::videotrackname         = "videotrack";
 const AString ADVBProg::audiotrackname         = "audiotrack";
@@ -250,16 +246,6 @@ void ADVBProg::StaticInit()
         dateformat     = config.GetConfigItem("dateformat",     " %D-%N-%Y ");
         timeformat     = config.GetConfigItem("timeformat",     "%h:%m");
         fulltimeformat = config.GetConfigItem("fulltimeformat", "%h:%m:%s");
-    }
-
-    // set up default file suffices from configuration file
-    if (tempfilesuffix.Empty()) {
-        const ADVBConfig& config = ADVBConfig::Get();
-
-        tempfilesuffix     = config.GetTempFileSuffix();        ///< file as it is being recorded
-        recordedfilesuffix = config.GetRecordedFileSuffix();    ///< file after it has been recorded (before conversion)
-        videofilesuffix    = config.GetVideoFileSuffix();       ///< intermediate video file prior to conversion
-        audiofilesuffix    = config.GetAudioFileSuffix();       ///< intermediate audio file prior to conversion
     }
 }
 
@@ -2376,7 +2362,7 @@ bool ADVBProg::Match(const ADataList& patternlist) const
 AString ADVBProg::ReplaceFilenameTerms(const AString& str, bool converted) const
 {
     const ADVBConfig& config = ADVBConfig::Get();
-    AString suffix = converted ? config.GetConvertedFileSuffix(GetUser()) : recordedfilesuffix;
+    AString suffix = converted ? config.GetConvertedFileSuffix(GetUser()) : config.GetRecordedFileSuffix();
 
     return (ReplaceTerms(str, true)
             .SearchAndReplace("{suffix}", SanitizeString(suffix, true)));
@@ -3115,7 +3101,8 @@ void ADVBProg::Record()
 
 AString ADVBProg::GetTempFilename() const
 {
-    return AString(GetFilename()).Prefix() + "." + tempfilesuffix;
+    const ADVBConfig& config = ADVBConfig::Get();
+    return AString(GetFilename()).Prefix() + "." + config.GetTempFileSuffix();;
 }
 
 AString ADVBProg::GetLinkToFile() const
@@ -3503,7 +3490,6 @@ bool ADVBProg::CompareMediaFiles(const MEDIAFILE& file1, const MEDIAFILE& file2)
 bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 {
     const ADVBConfig& config              = ADVBConfig::Get();
-    const AString tempfilesuffix          = config.GetTempFileSuffix();
     const AString recordedfilesuffix      = config.GetRecordedFileSuffix();
     const AString videofilesuffix         = config.GetVideoFileSuffix();
     const AString audiofilesuffix         = config.GetAudioFileSuffix();
@@ -3969,8 +3955,9 @@ bool ADVBProg::IsRecordable() const
 
 bool ADVBProg::IsConverted() const
 {
+    const ADVBConfig& config = ADVBConfig::Get();
     AString suf = AString(GetFilename()).Suffix();
-    return (suf.Valid() && (suf != recordedfilesuffix));
+    return (suf.Valid() && (suf != config.GetRecordedFileSuffix()));
 }
 
 bool ADVBProg::IsHighVideoErrorRate() const
@@ -4221,12 +4208,12 @@ AString ADVBProg::GetArchiveRecordingFilename() const
 {
     const ADVBConfig& config = ADVBConfig::Get();
     AString filename = GetFilename();
-    return ReplaceFilenameTerms(config.GetRecordingsArchiveDir(), false).CatPath(filename.FilePart().Prefix() + "." + recordedfilesuffix);
+    return ReplaceFilenameTerms(config.GetRecordingsArchiveDir(), false).CatPath(filename.FilePart().Prefix() + "." + config.GetRecordedFileSuffix());
 }
 
 AString ADVBProg::GetTempRecordingFilename() const
 {
     const ADVBConfig& config = ADVBConfig::Get();
     AString filename = GetFilename();
-    return ReplaceFilenameTerms(config.GetRecordingsStorageDir(), false).CatPath(filename.FilePart().Prefix() + "." + recordedfilesuffix);
+    return ReplaceFilenameTerms(config.GetRecordingsStorageDir(), false).CatPath(filename.FilePart().Prefix() + "." + config.GetRecordedFileSuffix());
 }

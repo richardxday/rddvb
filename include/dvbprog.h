@@ -782,10 +782,6 @@ protected:
     static AString       dateformat;
     static AString       timeformat;
     static AString       fulltimeformat;
-    static AString       tempfilesuffix;
-    static AString       recordedfilesuffix;
-    static AString       videofilesuffix;
-    static AString       audiofilesuffix;
     static const AString videotrackname;
     static const AString audiotrackname;
     static const AString priorityscalename;
