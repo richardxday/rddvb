@@ -1053,7 +1053,7 @@ AString ADVBConfig::GetVideoProber() const
 
 AString ADVBConfig::GetMPlayerArgs() const
 {
-    return GetConfigItem("mplayerargs", "-autosync 1 -vf {conf:videodeinterlace}=1");
+    return GetConfigItem("mplayerargs", "-autosync 1 -vf yadif=1");
 }
 
 uint_t ADVBConfig::GetMPlayerCacheSize() const
