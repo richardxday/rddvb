@@ -3061,7 +3061,7 @@ bool ADVBProgList::GetAndConvertRecordings()
     uint32_t tick;
     bool     success = false;
 
-    {
+    if (config.GetRecordingSlave().Valid()) {
         //config.printf("Waiting for lock to update lists from record host '%s'", config.GetRecordingSlave().str());
 
         ADVBLock lock("dvbfiles");
@@ -3077,7 +3077,7 @@ bool ADVBProgList::GetAndConvertRecordings()
         }
     }
 
-    {
+    if (config.GetRecordingSlave().Valid()) {
         //config.printf("Waiting for lock to get and convert recordings from record host '%s'", config.GetRecordingSlave().str());
 
         ADVBLock lock("copyfiles");
