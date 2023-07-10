@@ -177,7 +177,7 @@ $(APACHEDST):
 $(APACHEDST)/%:
 	@$(SUDO) mkdir -p "$@"
 
-$(APACHEDST)/%/%: $(APACHESRC)/%/%.in | $(APACHEDST)/%
+$(APACHEDST)/subsites/%: $(APACHESRC)/subsites/%.in | $(APACHEDST)/subsites
 	@cat $< \
 	| sed -E "s#@root@#$(ROOTDIR)#g" \
 	| sed -E "s#@prefix@#$(PREFIX)#g" \
