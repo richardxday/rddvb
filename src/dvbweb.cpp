@@ -1023,7 +1023,7 @@ int main(int argc, char *argv[])
 
             {
                 FILE_INFO info1, info2;
-                uint64_t writetime;
+                uint64_t writetime = 0;
 
                 if ((::GetFileInfo(config.GetRecordedFile(), &info1) ||
                      ::GetFileInfo(config.GetCombinedFile(), &info2)) &&

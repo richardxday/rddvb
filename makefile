@@ -164,19 +164,32 @@ $(INSTALLBINDST)/%: scripts/%.in
 	@$(SUDO) chmod a+x $@
 
 APACHESRC := share/apache
-APACHEDST := $(ROOTDIR)etc/apache2
+APACHEDST := $(ROOTDIR)etc/$(shell test -d "$(ROOTDIR)etc/apache" && echo "apache" || test -d "$(ROOTDIR)etc/apache2" && echo "apache2" || test -d "$(ROOTDIR)etc/httpd" && echo "httpd")
 LOCAL_APACHE_FILES := $(shell find $(APACHESRC) -type f | sed -E "s/\.in$$//" | uniq)
 GLOBAL_APACHE_FILES := $(LOCAL_APACHE_FILES:$(APACHESRC)/%=$(APACHEDST)/%)
 
 INSTALLEDSHAREFILES += $(GLOBAL_APACHE_FILES)
 UNINSTALLFILES += $(GLOBAL_APACHE_FILES)
 
-$(APACHEDST)/%: $(APACHESRC)/%.in
+$(APACHEDST):
+	@$(SUDO) mkdir -p "$@"
+
+$(APACHEDST)/%:
+	@$(SUDO) mkdir -p "$@"
+
+$(APACHEDST)/%/%: $(APACHESRC)/%/%.in | $(APACHEDST)/%
 	@cat $< \
 	| sed -E "s#@root@#$(ROOTDIR)#g" \
 	| sed -E "s#@prefix@#$(PREFIX)#g" \
 	| sed -E "s#@share@#$(INSTALLSHAREDST)#g" \
-	| $(SUDO) tee $@ >/dev/null
+	| $(SUDO) tee "$@" >/dev/null
+
+$(APACHEDST)/%: $(APACHESRC)/%.in | $(APACHEDST)
+	@cat $< \
+	| sed -E "s#@root@#$(ROOTDIR)#g" \
+	| sed -E "s#@prefix@#$(PREFIX)#g" \
+	| sed -E "s#@share@#$(INSTALLSHAREDST)#g" \
+	| $(SUDO) tee "$@" >/dev/null
 
 all: $(DEFAULTCONFIG)
 
