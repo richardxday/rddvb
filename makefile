@@ -172,7 +172,7 @@ INSTALLEDSHAREFILES += $(GLOBAL_APACHE_FILES)
 UNINSTALLFILES += $(GLOBAL_APACHE_FILES)
 
 $(APACHEDST)/%: $(APACHESRC)/%.in
-	@$(SUDO) mkdir -p "\$(dirname "$@")"
+	@$(SUDO) mkdir -p "$$(dirname "$@")"
 	@cat $< \
 	| sed -E "s#@root@#$(ROOTDIR)#g" \
 	| sed -E "s#@prefix@#$(PREFIX)#g" \
