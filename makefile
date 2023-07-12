@@ -150,7 +150,7 @@ APPLICATION := comparechannels
 OBJECTS		:= $(APPLICATION:%=%.o)
 include $(MAKEFILEDIR)/makefile.app
 
-LOCAL_INSTALLED_SCRIPTS := $(shell find scripts -type f | sed -E "s/\.in$$//" | uniq)
+LOCAL_INSTALLED_SCRIPTS := $(shell test -d scripts && find scripts -type f | sed -E "s/\.in$$//" | uniq)
 GLOBAL_INSTALLED_SCRIPTS := $(LOCAL_INSTALLED_SCRIPTS:scripts/%=$(INSTALLBINDST)/%)
 INSTALLEDBINARIES += $(GLOBAL_INSTALLED_SCRIPTS)
 UNINSTALLFILES += $(GLOBAL_INSTALLED_SCRIPTS)
