@@ -3165,30 +3165,47 @@ bool ADVBProgList::GetAndConvertRecordings()
     }
 
     for (i = 0; i < convertlist.Count(); i++) {
+        ADVBProgList processinglist;
         ADVBProg& prog = convertlist.GetProgWritable(i);
+        const ADVBProg *pprog;
 
-        config.printf("Converting file %u/%u - '%s':", i + 1, reclist.Count(), prog.GetQuickDescription().str());
-
-        if (prog.ConvertVideo(true)) {
-            converted++;
-
-            if (prog.IsHighVideoErrorRate()) {
-                config.printf("Warning: '%s' has a high video error rate (%0.1f errors/min, threshold is %0.1f), rescheduling...",
-                              prog.GetTitleAndSubtitle().str(),
-                              prog.GetVideoErrorRate(),
-                              config.GetVideoErrorRateThreshold(prog.GetUser(), prog.GetCategory()));
-
-                // force reschedule
-                reschedule = true;
-            }
-            else {
-                config.printf("'%s' has acceptable video error rate (%0.1f errors/min, threshold is %0.1f), no need to reschedule",
-                              prog.GetTitleAndSubtitle().str(),
-                              prog.GetVideoErrorRate(),
-                              config.GetVideoErrorRateThreshold(prog.GetUser(), prog.GetCategory()));
-            }
+        {
+            ADVBLock lock2("dvbfiles");
+            processinglist.ReadFromBinaryFile(config.GetProcessingFile());
+            reclist.DeleteAll();
+            reclist.ReadFromBinaryFile(config.GetRecordedFile());
         }
-        else success = false;
+
+        if (processinglist.FindUUID(prog) != NULL) {
+            config.printf("File %u/%u - '%s' is already being processed", i + 1, convertlist.Count(), prog.GetQuickDescription().str());
+        }
+        else if (((pprog = reclist.FindUUID(prog)) != NULL) && pprog->IsConverted()) {
+            config.printf("File %u/%u - '%s' has already been converted", i + 1, convertlist.Count(), prog.GetQuickDescription().str());
+        }
+        else {
+            config.printf("Converting file %u/%u - '%s':", i + 1, convertlist.Count(), prog.GetQuickDescription().str());
+
+            if (prog.ConvertVideo(true)) {
+                converted++;
+
+                if (prog.IsHighVideoErrorRate()) {
+                    config.printf("Warning: '%s' has a high video error rate (%0.1f errors/min, threshold is %0.1f), rescheduling...",
+                                  prog.GetTitleAndSubtitle().str(),
+                                  prog.GetVideoErrorRate(),
+                                  config.GetVideoErrorRateThreshold(prog.GetUser(), prog.GetCategory()));
+
+                    // force reschedule
+                    reschedule = true;
+                }
+                else {
+                    config.printf("'%s' has acceptable video error rate (%0.1f errors/min, threshold is %0.1f), no need to reschedule",
+                                  prog.GetTitleAndSubtitle().str(),
+                                  prog.GetVideoErrorRate(),
+                                  config.GetVideoErrorRateThreshold(prog.GetUser(), prog.GetCategory()));
+                }
+            }
+            else success = false;
+        }
     }
 
     if (reschedule) ADVBProgList::SchedulePatterns();
