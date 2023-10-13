@@ -3878,13 +3878,13 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         SetFilename(dst);
 
         UpdateDuration();
-        UpdateFileSize();
+        success = UpdateFileSize();
 
         {
             FlagsSaver saver(this);
             ClearPostProcessing();
             ClearRunning();
-            success = UpdateRecordedList();
+            success &= UpdateRecordedList();
         }
 
         if (config.ArchiveRecorded()) {
@@ -3938,7 +3938,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
             success = RunCommand(cmd);
         }
-   }
+    }
     else config.logit("Process failed!");
 
     return success;
