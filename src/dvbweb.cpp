@@ -131,7 +131,7 @@ void addpattern(rapidjson::Document& doc, rapidjson::Value& obj, AHash& patterns
             ADVBPatterns::ParsePattern(str, *pattern, prog.GetUser());
         }
 
-        if (pattern) {
+        if (pattern != NULL) {
             obj.AddMember("patternparsed", getpattern(doc, *pattern), allocator);
         }
     }
@@ -570,7 +570,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        if ((datasource == DataSource_Progs) && !proglist) {
+        if ((datasource == DataSource_Progs) && (proglist == NULL)) {
             proglist = list + index;
             proglist->ReadFromFile(config.GetListingsFile());
             index = (index + 1) % NUMBEROF(list);
@@ -580,7 +580,7 @@ int main(int argc, char *argv[])
              (datasource == DataSource_Titles)) &&
             Value(vars, val, "filter") &&
             val.Valid()) {
-            if (!proglist) {
+            if (proglist == NULL) {
                 proglist = list + index;
                 proglist->ReadFromFile(config.GetListingsFile());
                 index = (index + 1) % NUMBEROF(list);
@@ -655,28 +655,28 @@ int main(int argc, char *argv[])
             do {
                 while (IsWhiteSpace(val[i])) i++;
 
-                if (!val[i]) break;
+                if (val[i] == 0) break;
 
                 uint_t fs = i;
                 while (IsAlphaChar(val[i])) i++;
-                if (!val[i]) break;
+                if (val[i] == 0) break;
 
                 AString field = AString(val.str() + fs, i - fs).ToLower();
 
                 while (IsWhiteSpace(val[i])) i++;
-                if (!val[i]) break;
+                if (val[i] == 0) break;
 
                 char oper = val[i++];
 
                 while (IsWhiteSpace(val[i])) i++;
-                if (!val[i]) break;
+                if (val[i] == 0) break;
 
                 char quote = 0;
                 if (IsQuoteChar(val[i])) quote = val[i++];
                 fs = i;
                 while (!IsWhiteSpace(val[i]) && (val[i] != quote)) i++;
                 AString value = AString(val.str() + fs, i - fs).ToLower();
-                if (quote && (val[i] == quote)) i++;
+                if ((quote != 0) && (val[i] == quote)) i++;
                 while (IsWhiteSpace(val[i])) i++;
 
                 AString *pat = NULL;
@@ -774,7 +774,7 @@ int main(int argc, char *argv[])
                             titleslist.Insert((uptr_t)title, &inserttitle);
                         }
 
-                        if (title) {
+                        if (title != NULL) {
                             if (prog.IsRecorded() || (recordedlist.FindSimilar(prog) != NULL))   title->counts.recorded++;
                             if (AStdFile::exists(prog.GetFilename()))                            title->counts.available++;
                             if (prog.IsScheduled() || (scheduledlist.FindUUID(prog) != NULL))    title->counts.scheduled++;
@@ -798,7 +798,7 @@ int main(int argc, char *argv[])
 
             page   = MIN(page, (nitems / pagesize));
             offset = page * pagesize;
-            if (page && (offset == nitems)) {
+            if ((page > 0) && (offset == nitems)) {
                 page--;
                 offset = page * pagesize;
             }

@@ -72,14 +72,14 @@ void ADVBProgList::Modify(const ADVBProgList& list, uint_t& added, uint_t& modif
 {
     uint_t i;
 
-    if (!proghash.GetItems()) CreateHash();
+    if (proghash.GetItems() == 0) CreateHash();
 
     added = modified = 0;
 
     for (i = 0; (i < list.Count()) && !HasQuit(); i++) {
         uint_t res = ModifyProg(list[i], mode, sort);
-        if (res & Prog_Add)    added++;
-        if (res & Prog_Modify) modified++;
+        if ((res & Prog_Add)    != 0) added++;
+        if ((res & Prog_Modify) != 0) modified++;
     }
 }
 
@@ -333,7 +333,7 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
             if (HasQuit()) break;
         } while (p1 < (int)len);
 
-        if (nrejected) config.printf("%u programmes rejected during read", nrejected);
+        if (nrejected > 0) config.printf("%u programmes rejected during read", nrejected);
     }
 
     return success;
@@ -504,7 +504,7 @@ bool ADVBProgList::ReadFromJobQueue(int queue, bool runningonly)
             while (line.ReadLn(fp) >= 0) {
                 uint_t jobid = (uint_t)line.Word(0);
 
-                if (jobid) {
+                if (jobid > 0) {
                     cmd.Delete();
                     cmd.printf("at -c %u >%s", jobid, scriptname.str());
                     if (system(cmd) == 0) {
@@ -565,7 +565,7 @@ void ADVBProgList::UpdateDVBChannels(std::map<uint_t, bool> *sdchannelids)
         if (dvbchannel.Valid()) {
             prog.SetDVBChannel(dvbchannel);
 
-            if (sdchannelids) {
+            if (sdchannelids != NULL) {
                 uint_t id;
 
                 // format is 'I101023.json.schedulesdirect.org'
@@ -683,13 +683,13 @@ ADVBProgList& ADVBProgList::FindDifferences(ADVBProgList& list1, ADVBProgList& l
 
     if (in1only) {
         for (i = 0; i < list1.Count(); i++) {
-            if (!list2.FindSimilar(list1[i])) AddProg(list1[i]);
+            if (list2.FindSimilar(list1[i]) == NULL) AddProg(list1[i]);
         }
     }
 
     if (in2only) {
         for (i = 0; i < list2.Count(); i++) {
-            if (!FindUUID(list2[i]) && !list1.FindSimilar(list2[i])) AddProg(list2[i]);
+            if ((FindUUID(list2[i]) == NULL) && (list1.FindSimilar(list2[i]) == NULL)) AddProg(list2[i]);
         }
     }
 
@@ -707,7 +707,7 @@ ADVBProgList& ADVBProgList::FindSimilarities(ADVBProgList& list1, ADVBProgList& 
     list2.CreateHash();
 
     for (i = 0; i < list1.Count(); i++) {
-        if (list2.FindUUID(list1[i])) AddProg(list1[i]);
+        if (list2.FindUUID(list1[i]) != NULL) AddProg(list1[i]);
     }
 
     return *this;
@@ -828,12 +828,12 @@ uint_t ADVBProgList::ModifyProg(const ADVBProg& prog, uint_t mode, bool sort)
     uint_t res = 0;
 
     if ((pprog = FindUUIDWritable(prog)) != NULL) {
-        if (mode & Prog_Modify) {
+        if ((mode & Prog_Modify) != 0) {
             pprog->Modify(prog);
             res = Prog_Modify;
         }
     }
-    else if ((mode & Prog_Add) && (AddProg(prog, sort, false) >= 0)) res = Prog_Add;
+    else if (((mode & Prog_Add) != 0) && (AddProg(prog, sort, false) >= 0)) res = Prog_Add;
 
     return res;
 }
@@ -891,14 +891,14 @@ uint_t ADVBProgList::FindIndex(const ADVBProg& prog) const
         forward = (GetProg(0) <= GetProg(n - 1));
 
         if (forward) {
-            while (inc) {
+            while (inc > 0) {
                 uint_t index2 = index + inc;
                 if ((index2 < n) && (prog >= *progs[index2])) index = index2;
                 inc >>= 1;
             }
         }
         else {
-            while (inc) {
+            while (inc > 0) {
                 uint_t index2 = index + inc;
                 if ((index2 < n) && (prog <= *progs[index2])) index = index2;
                 inc >>= 1;
@@ -997,7 +997,7 @@ bool ADVBProgList::DeleteProg(uint_t n)
     ADVBProg *prog = (ADVBProg *)proglist[n];
     bool success = false;
 
-    if (prog) {
+    if (prog != NULL) {
         proglist.RemoveIndex(n);
         proghash.Remove(prog->GetUUID());
         delete prog;
@@ -1131,10 +1131,10 @@ void ADVBProgList::FindProgrammes(ADVBProgList& dest, const ADataList& patternli
                         break;
                     }
 
-                    if (!prog1) prog1 = new ADVBProg(prog);
+                    if (prog1 == NULL) prog1 = new ADVBProg(prog);
 
-                    if (prog1) {
-                        if (!prog1->GetPattern()[0] || prog1->IsPartialPattern()) {
+                    if (prog1 != NULL) {
+                        if ((prog1->GetPattern()[0] == 0) || prog1->IsPartialPattern()) {
                             prog1->SetPattern(pattern.pattern);
 
                             if (pattern.user.Valid()) {
@@ -1158,7 +1158,7 @@ void ADVBProgList::FindProgrammes(ADVBProgList& dest, const ADataList& patternli
             }
         }
 
-        if (prog1) {
+        if (prog1 != NULL) {
             addtolist |= (prog1->GetScore() >= config.GetScoreThreshold());
 
             if (addtolist && !excluded) {
@@ -1267,7 +1267,7 @@ const ADVBProg *ADVBProgList::FindLastSimilar(const ADVBProg& prog, const ADVBPr
 {
     const ADVBProg *res = NULL;
 
-    if (Count()) {
+    if (Count() > 0) {
         uint_t i = Count() - 1;
 
         if (startprog) {
@@ -1294,7 +1294,7 @@ ADVBProg *ADVBProgList::FindSimilarWritable(const ADVBProg& prog, ADVBProg *star
     ADVBProg *res = NULL;
     uint_t i = 0;
 
-    if (startprog) {
+    if (startprog != NULL) {
         if (GetNextProgramme(startprog, &i) == NULL) {
             return res;
         }
@@ -1316,10 +1316,10 @@ ADVBProg *ADVBProgList::FindLastSimilarWritable(const ADVBProg& prog, ADVBProg *
 {
     ADVBProg *res = NULL;
 
-    if (Count()) {
+    if (Count() > 0) {
         uint_t i = Count() - 1;
 
-        if (startprog) {
+        if (startprog != NULL) {
             if (GetPrevProgramme(startprog, &i) == NULL) {
                 return res;
             }
@@ -1362,7 +1362,7 @@ ADVBProg *ADVBProgList::FindOverlap(const ADVBProg& prog1, const ADVBProg *prog2
     uint_t i = 0;
     int p;
 
-    if (prog2 && ((p = proglist.Find((uptr_t)prog2)) >= 0)) i = p + 1;
+    if ((prog2 != NULL) && ((p = proglist.Find((uptr_t)prog2)) >= 0)) i = p + 1;
 
     while ((prog2 = (const ADVBProg *)proglist[i++]) != NULL) {
         if (CompareNoCase(prog2->GetUUID(), prog1.GetUUID()) != 0) {
@@ -1382,7 +1382,7 @@ ADVBProg *ADVBProgList::FindRecordOverlap(const ADVBProg& prog1, const ADVBProg 
     uint_t i = 0;
     int p;
 
-    if (prog2 && ((p = proglist.Find((uptr_t)prog2)) >= 0)) i = p + 1;
+    if ((prog2 != NULL) && ((p = proglist.Find((uptr_t)prog2)) >= 0)) i = p + 1;
 
     while ((prog2 = (const ADVBProg *)proglist[i++]) != NULL) {
         if (prog2 != &prog1) {
@@ -1423,7 +1423,8 @@ void ADVBProgList::AdjustRecordTimes(uint64_t recstarttime)
             }
 
             // if firstprog is before secondprog and the recording of firstprog overlaps the recording of secondprog, adjust times
-            if (firstprog && secondprog &&
+            if ((firstprog != NULL) &&
+                (secondprog != NULL) &&
                 ((firstprog->GetRecordStop() + mininterrectime) >= secondprog->GetRecordStart())) {
                 config.logit("'%s' recording end overlaps '%s' recording start - shift times",
                              firstprog->GetQuickDescription().str(),
@@ -1493,7 +1494,7 @@ void ADVBProgList::UnscheduleAllProgrammes()
             while (line.ReadLn(fp) >= 0) {
                 uint_t job = (uint_t)line.Word(0);
 
-                if (job) {
+                if (job > 0) {
                     bool done = false;
 
                     cmd.Delete();
@@ -1590,8 +1591,8 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
         if (MatchGlob(*file, filepattern_parsed, regions)) {
             const GLOBREGION *region = (const GLOBREGION *)regions[0];
 
-            if (region) user = file->Mid(region->pos, region->len);
-            else        config.logit("Failed to find user in '%s' (no region)", file->str());
+            if (region != NULL) user = file->Mid(region->pos, region->len);
+            else                config.logit("Failed to find user in '%s' (no region)", file->str());
         }
         else config.logit("Failed to find user in '%s'", file->str());
 
@@ -1685,7 +1686,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) con
                 AString str;
                 double  gb = (double)fiData.f_bavail * (double)fiData.f_bsize / ((uint64_t)1024.0 * (uint64_t)1024.0 * (uint64_t)1024.0);
 
-                if (allocator) {
+                if (allocator != NULL) {
                     rapidjson::Value subobj;
 
                     subobj.SetObject();
@@ -1737,7 +1738,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) con
         remove(filename);
     }
 
-    if (allocator) {
+    if (allocator != NULL) {
         doc->AddMember("diskspace", obj, *allocator);
     }
 
@@ -1867,7 +1868,7 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
                         p = p1 + 1;
                     }
 
-                    if (n) config.printf("Added %u extra programmes to record", n);
+                    if (n > 0) config.printf("Added %u extra programmes to record", n);
                 }
             }
 
@@ -1932,7 +1933,7 @@ bool ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
 
         for (n = 0; list.DeleteProg(prog); n++) ;
 
-        if      (!n)                          config.logit("Failed to find programme '%s' in list to remove it!", prog.GetQuickDescription().str());
+        if      (n == 0)                      config.logit("Failed to find programme '%s' in list to remove it!", prog.GetQuickDescription().str());
         else if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after removing a programme", filename.str());
         else removed = true;
     }
@@ -1954,7 +1955,7 @@ bool ADVBProgList::RemoveFromList(const AString& filename, const AString& uuid)
 
         for (n = 0; ((pprog = list.FindUUID(uuid)) != NULL) && list.DeleteProg(*pprog); n++) ;
 
-        if      (!n)                          config.logit("Failed to find programme '%s' in list to remove it!", uuid.str());
+        if      (n == 0)                      config.logit("Failed to find programme '%s' in list to remove it!", uuid.str());
         else if (!list.WriteToFile(filename)) config.logit("Failed to write file '%s' after removing a programme", filename.str());
         else removed = true;
     }
@@ -2017,7 +2018,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
             prog.SetDVBChannel(dvbchannel);
         }
 
-        if (!prog.GetDVBChannel()[0]) {
+        if (prog.GetDVBChannel()[0] == 0) {
             config.logit("'%s' does not have a DVB channel", prog.GetDescription().str());
 
             DeleteProg(i);
@@ -2337,7 +2338,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
         ADVBProg& prog = GetProgWritable(i);
 
         // no point checking anything that is already part of a list!
-        if (!prog.GetList()) {
+        if (prog.GetList() == NULL) {
             ADVBProg::proglist_t *list;
 
             // this programme MUST be part of a new list since it isn't already part of an existing list
@@ -2535,7 +2536,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
     (void)config.GetPhysicalDVBCard(0, true);
     uint_t ncards = config.GetMaxDVBCards();
 
-    if (!ncards) {
+    if (ncards == 0) {
         config.printf("No DVB cards available! %u programmes left to schedule", Count());
 
         allrejectedlist = *this;
@@ -2553,7 +2554,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
     }
 
     // for running list, adjust earliest scheduling time so as not to trampling on ongoing recordings
-    if (runninglist.Count()) {
+    if (runninglist.Count() > 0) {
         for (i = 0; i < runninglist.Count(); i++) {
             const ADVBProg& prog = runninglist[i];
             uint_t vcard = prog.GetDVBCard();
@@ -2567,7 +2568,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
     // round all earliest schedule times to minute boundaries
     uint64_t minrecstarttime = 0;
     for (i = 0; i < ncards; i++) {
-        if (!i || (recstarttimes[i] < minrecstarttime)) minrecstarttime = recstarttimes[i];
+        if ((i == 0) || (recstarttimes[i] < minrecstarttime)) minrecstarttime = recstarttimes[i];
 
         config.printf("Earliest record start time for card %u (physical card %u) is %s", i, config.GetPhysicalDVBCard(i), ADateTime(recstarttimes[i]).UTCToLocal().DateToStr().str());
     }
@@ -2669,7 +2670,7 @@ bool ADVBProgList::WriteToJobList()
         for (tries = 0; (tries < 3) && !success; tries++) {
             unscheduledlist.DeleteAll();
 
-            if (tries) config.printf("Scheduling try %u/3:", tries + 1);
+            if (tries > 0) config.printf("Scheduling try %u/3:", tries + 1);
 
             success = (SendFileRunRemoteCommand(filename, "dvb --write-scheduled-jobs") &&
                        scheduledlist.ModifyFromRecordingSlave(config.GetScheduledFile(), ADVBProgList::Prog_ModifyAndAdd));
@@ -2677,13 +2678,13 @@ bool ADVBProgList::WriteToJobList()
             if (!success) config.printf("Remote scheduling failed!");
 
             for (i = 0; i < scheduledlist.Count(); i++) {
-                if (!scheduledlist[i].GetJobID()) unscheduledlist.AddProg(scheduledlist[i]);
+                if (scheduledlist[i].GetJobID() == 0) unscheduledlist.AddProg(scheduledlist[i]);
             }
 
-            if (success && !scheduledlist.Count()) break;
+            if (success && (scheduledlist.Count() == 0)) break;
         }
 
-        if (unscheduledlist.Count()) {
+        if (unscheduledlist.Count() > 0) {
             AStdFile fp;
             AString  filename = config.GetTempFile("unscheduled", ".txt");
             AString  cmd;
@@ -2787,7 +2788,7 @@ bool ADVBProgList::CreateCombinedFile()
     config.printf("Creating combined listings");
 
     if (list.ReadFromBinaryFile(config.GetRecordedFile())) {
-        if ((uint_t)config.GetConfigItem("trimcombinedfile", "1")) {
+        if ((uint_t)config.GetConfigItem("trimcombinedfile", "1") != 0) {
             ADateTime dt("utc midnight-" + config.GetConfigItem("trimcombinedfiletime", "1y"));
 
             config.printf("Deleting all programmes that started before %s", dt.DateToStr().str());
@@ -2874,7 +2875,7 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
                 }
                 else fp.printf(" -");
 
-                if (prog.IsScheduled() || scheduledlist.FindUUID(prog)) {
+                if (prog.IsScheduled() || (scheduledlist.FindUUID(prog) != NULL)) {
                     if (firstschdate == ADateTime::MinDateTime) firstschdate = prog.GetStartDT();
                     lastschdate = prog.GetStartDT();
                     fp.printf(" %u", i);
@@ -3358,17 +3359,17 @@ bool ADVBProgList::CheckRecordingNow()
                 const ADVBProg& prog = scheduledlist[i];
 
                 if ((now >= (prog.GetRecordStart() + slack)) && (now < prog.GetRecordStop())) {
-                    if (!recordinglist.FindUUID(prog)) shouldberecordinglist.AddProg(prog);
+                    if (recordinglist.FindUUID(prog) == NULL) shouldberecordinglist.AddProg(prog);
                 }
                 else if ((now < prog.GetRecordStart()) || (now > (prog.GetRecordStop() + slack))) {
-                    if (recordinglist.FindUUID(prog)) shouldntberecordinglist.AddProg(prog);
+                    if (recordinglist.FindUUID(prog) != NULL) shouldntberecordinglist.AddProg(prog);
                 }
             }
 
-            if (shouldberecordinglist.Count() || shouldntberecordinglist.Count()) {
+            if ((shouldberecordinglist.Count() > 0) || (shouldntberecordinglist.Count() > 0)) {
                 AString report;
 
-                if (shouldberecordinglist.Count()) {
+                if (shouldberecordinglist.Count() > 0) {
                     report.printf("--------------------------------------------------------------------------------\n");
                     report.printf("%u programmes should be recording:\n", shouldberecordinglist.Count());
 
@@ -3382,7 +3383,7 @@ bool ADVBProgList::CheckRecordingNow()
                     if (shouldntberecordinglist.Count()) report.printf("\n");
                 }
 
-                if (shouldntberecordinglist.Count()) {
+                if (shouldntberecordinglist.Count() > 0) {
                     report.printf("--------------------------------------------------------------------------------\n");
                     report.printf("%u programmes shouldn't be recording:\n", shouldntberecordinglist.Count());
 
@@ -3426,10 +3427,10 @@ void ADVBProgList::FindSeries(serieslist_t& serieslist) const
     uint_t i;
 
     for (i = 0; i < Count(); i++) {
-        const ADVBProg&          prog    = GetProg(i);
+        const ADVBProg&            prog    = GetProg(i);
         const ADVBProg::episode_t& episode = prog.GetEpisode();
 
-        if (episode.valid && episode.episode) {
+        if (episode.valid && (episode.episode > 0)) {
             uint_t ser = episode.series;
             uint_t epn = episode.episode;
             uint_t ept = episode.episodes;
@@ -3471,7 +3472,7 @@ void ADVBProgList::FindSeries(serieslist_t& serieslist) const
             };
             uint_t i;
             for (i = 0; i < NUMBEROF(allowablechanges); i++) {
-                if ((t == allowablechanges[i][0]) && strchr(allowablechanges[i] + 1, t1)) {
+                if ((t == allowablechanges[i][0]) && (strchr(allowablechanges[i] + 1, t1) != NULL)) {
                     t = t1;
                     break;
                 }
@@ -3539,13 +3540,13 @@ void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& p
         const AString&  title = prog.GetTitle();
         popularity_t    *pop  = (popularity_t *)hash.Read(title);
 
-        if (!pop && ((pop = new popularity_t) != NULL)) {
+        if ((pop == NULL) && ((pop = new popularity_t) != NULL)) {
             memset(pop, 0, sizeof(*pop));
 
             hash.Insert(title, (uptr_t)pop);
         }
 
-        if (pop) {
+        if (pop != NULL) {
             pop->count++;
             pop->score += (*fn)(prog, context);
         }

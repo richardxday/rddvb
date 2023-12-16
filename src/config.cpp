@@ -174,7 +174,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
         ListUsers(users);
 
         const AString *user = AString::Cast(users.First());
-        while (user) {
+        while (user != NULL) {
             if (((dir = GetRecordingsDir(*user)).Valid())   && (dir.Pos("{") < 0)) {
                 dirs[dir] = "user " + *user + " recordings";
             }
@@ -368,7 +368,7 @@ AString ADVBConfig::GetHierarchicalConfigItem(const AString& pre, const AString&
 
     res = ReplaceTerms(pre, res, post);
 
-    if (configrecorder) configrecorder->push_back(name + "=" + res);
+    if (configrecorder != NULL) configrecorder->push_back(name + "=" + res);
 
     return res;
 }

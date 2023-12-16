@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     }
 
     uint_t nframes = 0;
-    if (ifp && ofile.isopen() && wid && hgt && n) {
+    if ((ifp != NULL) && ofile.isopen() && (wid > 0) && (hgt > 0) && (n > 0)) {
         std::vector<uint8_t> inbuf;
         std::vector<uint8_t> outbuf;
 

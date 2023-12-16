@@ -85,7 +85,7 @@ const ADVBPatterns::pattern_t ADVBPatterns::DefaultPattern = {
 
 ADVBPatterns::ADVBPatterns()
 {
-    if (!operators[0].len) {
+    if (operators[0].len == 0) {
         uint_t i;
 
         for (i = 0; i < NUMBEROF(operators); i++) operators[i].len = strlen(operators[i].str);
@@ -423,8 +423,8 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const field_t& field, const value
             uint32_t flags, mask = (uint32_t)1U << (field.type - FieldType_flag);
 
             memcpy(&flags, ptr, sizeof(flags));
-            if (value.u8) flags |=  mask;
-            else          flags &= ~mask;
+            if (value.u8 != 0) flags |=  mask;
+            else               flags &= ~mask;
             memcpy(ptr, &flags, sizeof(flags));
             break;
         }
@@ -468,7 +468,7 @@ const ADVBPatterns::operator_t *ADVBPatterns::FindOperator(const pattern_t& patt
 {
     const term_t *pterm = (const term_t *)pattern.list[term];
 
-    if (pterm && pterm->field) {
+    if ((pterm != NULL) && (pterm->field != NULL)) {
         uint_t  fieldtype = 1U << pterm->field->type;
         uint8_t oper      = pterm->data.opcode;
         uint_t  i;
@@ -536,7 +536,7 @@ rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc
                 const operator_t& oper = operators[j];
 
                 if ((field.assignable == oper.assign) &&
-                    (oper.fieldtypes & (1U << field.type))) {
+                    ((oper.fieldtypes & (1U << field.type)) != 0)) {
                     subobj3.PushBack(rapidjson::Value(j), allocator);
                 }
             }
@@ -749,8 +749,8 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
 
     while (IsWhiteSpace(line[i])) i++;
 
-    if (line[i]) {
-        while (line[i] && errors.Empty()) {
+    if (line[i] != 0) {
+        while ((line[i] != 0) && errors.Empty()) {
             while (IsWhiteSpace(line[i])) i++;
 
             if (line[i] == '(') {
@@ -830,8 +830,8 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                 }
 
                 uint_t fieldstart = i++;
-                if (quote) {
-                    while (line[i] && (line[i] != quote)) {
+                if (quote != 0) {
+                    while ((line[i] != 0) && (line[i] != quote)) {
                         if (line[i] == '\\') i++;
                         if (line[i]) i++;
                     }
@@ -842,7 +842,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
 
                 AString field = line.Mid(fieldstart, i - fieldstart).ToLower();
 
-                if (quote && (line[i] == quote)) i++;
+                if ((quote != 0) && (line[i] == quote)) i++;
 
                 while (IsWhiteSpace(line[i])) i++;
 
@@ -852,7 +852,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                 }
 
                 const field_t *fieldptr = (const field_t *)ADVBProg::fieldhash.Read(field);
-                if (!fieldptr) {
+                if (fieldptr == NULL) {
                     uint_t nfields;
                     const field_t *fields = ADVBProg::GetFields(nfields);
 
@@ -860,7 +860,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                     for (i = 0; i < nfields; i++) {
                         const field_t& field = fields[i];
 
-                        if (i) errors.printf(", ");
+                        if (i > 0) errors.printf(", ");
                         errors.printf("'%s'", field.name);
                     }
                     break;
@@ -890,7 +890,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                 AString value;
                 bool    implicitvalue = false;
                 if (j == NUMBEROF(operators)) {
-                    if (!line[i] || IsSymbolStart(line[i])) {
+                    if ((line[i] == 0) || IsSymbolStart(line[i])) {
                         if (fieldptr->assignable) {
                             switch (fieldptr->type) {
                                 case FieldType_string:
@@ -943,14 +943,14 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                     if (IsQuoteChar(line[i])) quote = line[i++];
 
                     uint_t valuestart = i;
-                    while (line[i] && ((!quote && !IsWhiteSpace(line[i])) || (quote && (line[i] != quote)))) {
+                    while ((line[i] != 0) && (((quote == 0) && !IsWhiteSpace(line[i])) || ((quote != 0) && (line[i] != quote)))) {
                         if (line[i] == '\\') i++;
                         i++;
                     }
 
                     value = line.Mid(valuestart, i - valuestart).DeEscapify();
 
-                    if (quote && (line[i] == quote)) i++;
+                    if ((quote != 0) && (line[i] == quote)) i++;
 
                     while (IsWhiteSpace(line[i])) i++;
                 }
@@ -997,7 +997,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                             debug("Value '%s', specified %u\n", value.str(), specified);
 #endif
 
-                            if (!specified) {
+                            if (specified == 0) {
                                 errors.printf("Failed to parse date '%s' (term %u)", value.str(), list.Count() + 1);
                                 break;
                             }
@@ -1009,7 +1009,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                                 term->value.u64 = dt.GetWeekDay();
                                 term->datetype  = DateType_weekday;
                             }
-                            else if (specified & ADateTime::Specified_Day) {
+                            else if ((specified & ADateTime::Specified_Day) != 0) {
                                 specified |= ADateTime::Specified_Date;
                             }
 
@@ -1503,7 +1503,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const pattern_t& pattern)
         const term_t&  term  = *(const term_t *)list[i];
         const field_t& field = *term.field;
 
-        if (term.pattern) {
+        if (term.pattern != NULL) {
             bool newmatch = Match(prog, *term.pattern);
 
             if (orflag) match |= newmatch;
@@ -1530,7 +1530,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const pattern_t& pattern)
                         if (newmatch) break;
                     }
 
-                    if (term.data.opcode & Operator_Inverted) newmatch = !newmatch;
+                    if ((term.data.opcode & Operator_Inverted) != 0) newmatch = !newmatch;
                 }
 #if DVBDATVERSION > 1
                 else if (field.offset == ADVBProg::GetSubCategoryDataOffset()) {
@@ -1542,7 +1542,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const pattern_t& pattern)
                         if (newmatch) break;
                     }
 
-                    if (term.data.opcode & Operator_Inverted) newmatch = !newmatch;
+                    if ((term.data.opcode & Operator_Inverted) != 0) newmatch = !newmatch;
                 }
 #endif
                 else newmatch = MatchString(term, str);
@@ -1550,7 +1550,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const pattern_t& pattern)
             else if (field.type == FieldType_prog) {
                 newmatch = ADVBProg::SameProgramme(prog, *term.value.prog);
 
-                if (term.data.opcode & Operator_Inverted) newmatch = !newmatch;
+                if ((term.data.opcode & Operator_Inverted) != 0) newmatch = !newmatch;
             }
             else {
                 switch (field.type) {
@@ -1706,7 +1706,7 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const pattern_t& pattern)
                         break;
                 }
 
-                if (term.data.opcode & Operator_Inverted) newmatch = !newmatch;
+                if ((term.data.opcode & Operator_Inverted) != 0) newmatch = !newmatch;
             }
 
             if (orflag) match |= newmatch;
@@ -1880,8 +1880,8 @@ AString ADVBPatterns::ToString(const term_t& val, uint_t level)
 {
     AString str;
 
-    if      (val.pattern) str.printf("Sub-pattern '%s' orflag %u:\n%s", val.value.str, (uint_t)val.data.orflag, ToString(*val.pattern, level + 1).str());
-    else if (val.field)   str.printf("%s, %s, %s", ToString(val.data).str(), ToString(*val.field).str(), ToString(val.value, val.field->type, val.datetype).str());
+    if      (val.pattern != NULL) str.printf("Sub-pattern '%s' orflag %u:\n%s", val.value.str, (uint_t)val.data.orflag, ToString(*val.pattern, level + 1).str());
+    else if (val.field   != NULL) str.printf("%s, %s, %s", ToString(val.data).str(), ToString(*val.field).str(), ToString(val.value, val.field->type, val.datetype).str());
 
     return str;
 }

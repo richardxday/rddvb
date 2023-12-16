@@ -34,7 +34,7 @@ STATS readstats(ASettingsHandler& statsstorage, const AString& name)
 
 void updatestats(STATS& stats, uint_t value, bool justlocked)
 {
-    if (!stats.count || justlocked) {
+    if ((stats.count == 0) || justlocked) {
         stats.min = stats.max = value;
         stats.sum = value;
         stats.count = 1;
@@ -71,7 +71,7 @@ void logsignalstats(uint_t card, const STATS *stats, uint_t n)
                    stats1.name.str(),
                    stats1.min, stats1.max);
 
-        if (stats1.count) {
+        if (stats1.count > 0) {
             msg.printf(" %s",
                        AValue((stats1.sum + stats1.count / 2) / stats1.count).ToString().str());
         }
@@ -149,13 +149,13 @@ int main(int argc, char *argv[])
                 for (i = 0; i < NUMBEROF(stats); i++) {
                     const STATS& stats1 = stats[i];
 
-                    if (i) msg.printf(",");
+                    if (i > 0) msg.printf(",");
 
                     msg.printf(" %s {%u, %u}",
                                stats1.name.str(),
                                stats1.min, stats1.max);
 
-                    if (stats1.count) {
+                    if (stats1.count > 0) {
                         msg.printf(" avg %s",
                                    AValue((stats1.sum + stats1.count / 2) / stats1.count).ToString().str());
                     }

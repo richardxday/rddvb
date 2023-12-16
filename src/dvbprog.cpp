@@ -233,7 +233,7 @@ ADVBProg::~ADVBProg()
 /*--------------------------------------------------------------------------------*/
 void ADVBProg::StaticInit()
 {
-    if (!fieldhash.GetItems()) {
+    if (fieldhash.GetItems() == 0) {
         const ADVBConfig& config = ADVBConfig::Get();
         uint_t i;
 
@@ -513,9 +513,9 @@ bool ADVBProg::FieldExists(const AString& str, const AString& field, int p, int 
     SetMarker(marker, field);
 
     if ((p1 = str.PosNoCase(marker, p)) >= p) {
-        if (pos) *pos = p1;
+        if (pos != NULL) *pos = p1;
     }
-    else if (pos) *pos = -1;
+    else if (pos != NULL) *pos = -1;
 
     return (p1 >= p);
 }
@@ -594,14 +594,14 @@ AString ADVBProg::GetField(const AString& str, const AString& field, int p, int 
     if ((p1 = str.PosNoCase(marker, p)) >= p) {
         int p2;
 
-        if (pos) *pos = p1;
+        if (pos != NULL) *pos = p1;
 
         p1 += marker.len();
         if ((p2 = str.PosNoCase("\n", p1)) < 0) p2 = str.len();
 
         res = str.Mid(p1, p2 - p1);
     }
-    else if (pos) *pos = -1;
+    else if (pos != NULL) *pos = -1;
 
     return res;
 }
@@ -682,7 +682,7 @@ ADVBProg& ADVBProg::operator = (const AString& str)
     else if (FieldExists(str, "episodenum:brandseriesepisode")) SetString(&data->strings.episodeid, GetField(str, "episodenum:brandseriesepisode"));
     else if (FieldExists(str, "episodeid"))                     SetString(&data->strings.episodeid, GetField(str, "episodeid"));
 
-    if ((pstr = GetString(data->strings.episodenum))[0]) {
+    if ((pstr = GetString(data->strings.episodenum))[0] != 0) {
         data->episode = GetEpisode(pstr);
     }
     else {
@@ -913,44 +913,44 @@ AString ADVBProg::ExportToText() const
     str.printf("\n");
     str.printf("start=%s\n", GetHex(data->start).str());
     str.printf("stop=%s\n", GetHex(data->stop).str());
-    if (data->recstart || data->recstop) {
+    if ((data->recstart > 0) || (data->recstop > 0)) {
         str.printf("recstart=%s\n", GetHex(data->recstart).str());
         str.printf("recstop=%s\n", GetHex(data->recstop).str());
     }
-    if (data->actstart || data->actstop) {
+    if ((data->actstart > 0) || (data->actstop > 0)) {
         str.printf("actstart=%s\n", GetHex(data->actstart).str());
         str.printf("actstop=%s\n", GetHex(data->actstop).str());
     }
     str.printf("channel=%s\n", GetString(data->strings.channel));
     str.printf("basechannel=%s\n", GetString(data->strings.basechannel));
     str.printf("channelid=%s\n", GetString(data->strings.channelid));
-    if ((p = GetString(data->strings.dvbchannel))[0]) str.printf("dvbchannel=%s\n", p);
+    if ((p = GetString(data->strings.dvbchannel))[0] != 0) str.printf("dvbchannel=%s\n", p);
     str.printf("title=%s\n", GetString(data->strings.title));
-    if ((p = GetString(data->strings.subtitle))[0]) str.printf("subtitle=%s\n", p);
-    if ((p = GetString(data->strings.desc))[0]) str.printf("desc=%s\n", p);
-    if ((p = GetString(data->strings.category))[0]) str.printf("category=%s\n", p);
-    if ((p = GetString(data->strings.subcategory))[0]) str.printf("subcategory=%s\n", AString(p).Escapify().str());
-    if ((p = GetString(data->strings.director))[0]) str.printf("director=%s\n", p);
-    if ((p = GetString(data->strings.episodenum))[0]) str.printf("episodenum=%s\n", p);
-    if ((p = GetString(data->strings.user))[0]) str.printf("user=%s\n", p);
+    if ((p = GetString(data->strings.subtitle))[0] != 0) str.printf("subtitle=%s\n", p);
+    if ((p = GetString(data->strings.desc))[0] != 0) str.printf("desc=%s\n", p);
+    if ((p = GetString(data->strings.category))[0] != 0) str.printf("category=%s\n", p);
+    if ((p = GetString(data->strings.subcategory))[0] != 0) str.printf("subcategory=%s\n", AString(p).Escapify().str());
+    if ((p = GetString(data->strings.director))[0] != 0) str.printf("director=%s\n", p);
+    if ((p = GetString(data->strings.episodenum))[0] != 0) str.printf("episodenum=%s\n", p);
+    if ((p = GetString(data->strings.user))[0] != 0) str.printf("user=%s\n", p);
     str.printf("dir=%s\n", GetString(data->strings.dir));
-    if ((p = GetString(data->strings.filename))[0]) str.printf("filename=%s\n", p);
-    if ((p = GetString(data->strings.pattern))[0]) str.printf("pattern=%s\n", p);
+    if ((p = GetString(data->strings.filename))[0] != 0) str.printf("filename=%s\n", p);
+    if ((p = GetString(data->strings.pattern))[0] != 0) str.printf("pattern=%s\n", p);
     str.printf("uuid=%s\n", GetString(data->strings.uuid));
-    if ((p = GetString(data->strings.actors))[0]) str.printf("actors=%s\n", AString(p).SearchAndReplace("\n", ",").str());
-    if ((p = GetString(data->strings.prefs))[0]) str.printf("prefs=%s\n", AString(p).SearchAndReplace("\n", ",").str());
+    if ((p = GetString(data->strings.actors))[0] != 0) str.printf("actors=%s\n", AString(p).SearchAndReplace("\n", ",").str());
+    if ((p = GetString(data->strings.prefs))[0] != 0) str.printf("prefs=%s\n", AString(p).SearchAndReplace("\n", ",").str());
 
-    if (data->episode.series) str.printf("series=%u\n", (uint_t)data->episode.series);
-    if (data->episode.episode) str.printf("episode=%u\n", (uint_t)data->episode.episode);
-    if (data->episode.episodes) str.printf("episodes=%u\n", (uint_t)data->episode.episodes);
+    if (data->episode.series   != 0) str.printf("series=%u\n", (uint_t)data->episode.series);
+    if (data->episode.episode  != 0) str.printf("episode=%u\n", (uint_t)data->episode.episode);
+    if (data->episode.episodes != 0) str.printf("episodes=%u\n", (uint_t)data->episode.episodes);
 
-    if (data->filesize) str.printf("filesize=%s\n", AValue(data->filesize).ToString().str());
+    if (data->filesize != 0) str.printf("filesize=%s\n", AValue(data->filesize).ToString().str());
     str.printf("videoerrors=%u\n", data->videoerrors);
     if (data->duration > 0) str.printf("duration=%s\n", AValue(data->duration).ToString().str());
 
     str.printf("flags=$%08x\n", data->flags);
 
-    if ((p = GetString(data->strings.episodeid))[0]) str.printf("episodeid=%s\n", p);
+    if ((p = GetString(data->strings.episodeid))[0] != 0) str.printf("episodeid=%s\n", p);
 
     AString icon = GetString(data->strings.icon);
     if (icon.Empty() && config.UseOldProgrammeIcon(GetTitle(), GetModifiedCategory())) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
@@ -960,19 +960,19 @@ AString ADVBProg::ExportToText() const
     if (icon.Empty() && config.UseOldChannelIcon(GetTitle(), GetModifiedCategory())) icon = ADVBIconCache::Get().GetIcon("channel", GetDVBChannel());
     if (icon.Valid()) str.printf("channelicon=%s", icon.str());
 
-    if ((p = GetString(data->strings.rating))[0])    str.printf("rating=%s\n", p);
+    if ((p = GetString(data->strings.rating))[0] != 0) str.printf("rating=%s\n", p);
 
-    if (data->assignedepisode) str.printf("assignedepisode=%u\n", data->assignedepisode);
-    if (data->year) str.printf("year=%u\n", data->year);
+    if (data->assignedepisode != 0) str.printf("assignedepisode=%u\n", data->assignedepisode);
+    if (data->year != 0) str.printf("year=%u\n", data->year);
 
-    if (GetString(data->strings.pattern)[0]) {
+    if (GetString(data->strings.pattern)[0] != 0) {
         str.printf("score=%d\n", (sint_t)data->score);
         str.printf("prehandle=%u\n", (uint_t)data->prehandle);
         str.printf("posthandle=%u\n", (uint_t)data->posthandle);
         str.printf("pri=%d\n", (int)data->pri);
     }
 
-    if ((p = GetString(data->strings.tags))[0]) {
+    if ((p = GetString(data->strings.tags))[0] != 0) {
         str.printf("tags=%s\n", p);
     }
 
@@ -1003,23 +1003,23 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
     // NOTE: times are local to PC, NOT UTC
     obj.AddMember("start", rapidjson::Value(JSONTimeOffset(data->start)), allocator);
     obj.AddMember("stop", rapidjson::Value(JSONTimeOffset(data->stop)), allocator);
-    if (data->recstart || data->recstop) {
+    if ((data->recstart > 0) || (data->recstop > 0)) {
         obj.AddMember("recstart", rapidjson::Value(JSONTimeOffset(data->recstart)), allocator);
         obj.AddMember("recstop", rapidjson::Value(JSONTimeOffset(data->recstop)), allocator);
     }
-    if (data->actstart || data->actstop) {
+    if ((data->actstart > 0) || (data->actstop > 0)) {
         obj.AddMember("actstart", rapidjson::Value(JSONTimeOffset(data->actstart)), allocator);
         obj.AddMember("actstop", rapidjson::Value(JSONTimeOffset(data->actstop)), allocator);
     }
     obj.AddMember("channel", rapidjson::Value(GetString(data->strings.channel), allocator), allocator);
     obj.AddMember("basechannel", rapidjson::Value(GetString(data->strings.basechannel), allocator), allocator);
     obj.AddMember("channelid", rapidjson::Value(GetString(data->strings.channelid), allocator), allocator);
-    if ((p = GetString(data->strings.dvbchannel))[0]) obj.AddMember("dvbchannel", rapidjson::Value(p, allocator), allocator);
+    if ((p = GetString(data->strings.dvbchannel))[0] != 0) obj.AddMember("dvbchannel", rapidjson::Value(p, allocator), allocator);
     obj.AddMember("title", rapidjson::Value(GetString(data->strings.title), allocator), allocator);
-    if ((p = GetString(data->strings.subtitle))[0]) obj.AddMember("subtitle", rapidjson::Value(p, allocator), allocator);
-    if ((p = GetString(data->strings.desc))[0]) obj.AddMember("desc", rapidjson::Value(p, allocator), allocator);
-    if ((p = GetString(data->strings.category))[0]) obj.AddMember("category", rapidjson::Value(p, allocator), allocator);
-    if ((p = GetString(data->strings.subcategory))[0]) {
+    if ((p = GetString(data->strings.subtitle))[0] != 0) obj.AddMember("subtitle", rapidjson::Value(p, allocator), allocator);
+    if ((p = GetString(data->strings.desc))[0] != 0) obj.AddMember("desc", rapidjson::Value(p, allocator), allocator);
+    if ((p = GetString(data->strings.category))[0] != 0) obj.AddMember("category", rapidjson::Value(p, allocator), allocator);
+    if ((p = GetString(data->strings.subcategory))[0] != 0) {
         rapidjson::Value subobj;
 
         subobj.SetArray();
@@ -1032,15 +1032,15 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
 
         obj.AddMember("subcategory", subobj, allocator);
     }
-    if ((p = GetString(data->strings.director))[0]) obj.AddMember("director", rapidjson::Value(p, allocator), allocator);
-    if ((p = GetString(data->strings.episodenum))[0]) obj.AddMember("episodenum", rapidjson::Value(p, allocator), allocator);
-    if ((p = GetString(data->strings.user))[0]) obj.AddMember("user", rapidjson::Value(p, allocator), allocator);
+    if ((p = GetString(data->strings.director))[0] != 0) obj.AddMember("director", rapidjson::Value(p, allocator), allocator);
+    if ((p = GetString(data->strings.episodenum))[0] != 0) obj.AddMember("episodenum", rapidjson::Value(p, allocator), allocator);
+    if ((p = GetString(data->strings.user))[0] != 0) obj.AddMember("user", rapidjson::Value(p, allocator), allocator);
     obj.AddMember("dir", rapidjson::Value(GetString(data->strings.dir), allocator), allocator);
-    if ((p = GetString(data->strings.filename))[0]) obj.AddMember("filename", rapidjson::Value(p, allocator), allocator);
+    if ((p = GetString(data->strings.filename))[0] != 0) obj.AddMember("filename", rapidjson::Value(p, allocator), allocator);
     if (!IsConverted()) obj.AddMember("convertedfilename", rapidjson::Value(GenerateFilename(true), allocator), allocator);
-    if ((p = GetString(data->strings.pattern))[0]) obj.AddMember("pattern", rapidjson::Value(p, allocator), allocator);
+    if ((p = GetString(data->strings.pattern))[0] != 0) obj.AddMember("pattern", rapidjson::Value(p, allocator), allocator);
     obj.AddMember("uuid", rapidjson::Value(GetString(data->strings.uuid), allocator), allocator);
-    if ((p = GetString(data->strings.actors))[0]) {
+    if ((p = GetString(data->strings.actors))[0] != 0) {
         rapidjson::Value subobj;
         AString _actors = AString(p);
         uint_t i, n = _actors.CountLines("\n", 0);
@@ -1053,7 +1053,7 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
 
         obj.AddMember("actors", subobj, allocator);
     }
-    if ((p = GetString(data->strings.prefs))[0]) {
+    if ((p = GetString(data->strings.prefs))[0] != 0) {
         rapidjson::Value subobj;
         AString _prefs = AString(p);
         uint_t i, n = _prefs.CountLines("\n", 0);
@@ -1067,7 +1067,7 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
         obj.AddMember("prefs", subobj, allocator);
     }
 
-    if ((p = GetString(data->strings.tags))[0]) {
+    if ((p = GetString(data->strings.tags))[0] != 0) {
         rapidjson::Value subobj;
         AString _tags = AString(p);
         uint_t i, n = _tags.CountLines("||", 0);
@@ -1089,20 +1089,20 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
 
         subobj.SetObject();
 
-        if (data->episode.series) {
+        if (data->episode.series > 0) {
             subobj.AddMember("series", rapidjson::Value(data->episode.series), allocator);
         }
-        if (data->episode.episode) {
+        if (data->episode.episode > 0) {
             subobj.AddMember("episode", rapidjson::Value(data->episode.episode), allocator);
         }
-        if (data->episode.episodes) {
+        if (data->episode.episodes > 0) {
             subobj.AddMember("episodes", rapidjson::Value(data->episode.episodes), allocator);
         }
 
         obj.AddMember("episode", subobj, allocator);
     }
 
-    if (GetString(data->strings.episodeid)[0]) obj.AddMember("episodeid", rapidjson::Value(GetString(data->strings.episodeid), allocator), allocator);
+    if (GetString(data->strings.episodeid)[0] != 0) obj.AddMember("episodeid", rapidjson::Value(GetString(data->strings.episodeid), allocator), allocator);
 
     AString icon = GetString(data->strings.icon);
     if (icon.Empty() && config.UseOldProgrammeIcon(GetTitle(), GetModifiedCategory())) icon = ADVBIconCache::Get().GetIcon("programme", GetProgrammeKey());
@@ -1112,7 +1112,7 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
     if (icon.Empty() && config.UseOldChannelIcon(GetTitle(), GetModifiedCategory())) icon = ADVBIconCache::Get().GetIcon("channel", GetDVBChannel());
     if (icon.Valid()) obj.AddMember("channelicon", rapidjson::Value(icon, allocator), allocator);
 
-    if ((p = GetString(data->strings.rating))[0]) obj.AddMember("rating", rapidjson::Value(p, allocator), allocator);
+    if ((p = GetString(data->strings.rating))[0] != 0) obj.AddMember("rating", rapidjson::Value(p, allocator), allocator);
 
     {
         rapidjson::Value subobj;
@@ -1133,11 +1133,11 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
         obj.AddMember("flags", subobj, allocator);
     }
 
-    if (data->filesize) {
+    if (data->filesize > 0) {
         obj.AddMember("filesize", rapidjson::Value(data->filesize), allocator);
 
         uint_t rate = GetRate() / 1024;
-        if (rate) obj.AddMember("rate", rapidjson::Value(rate), allocator);
+        if (rate > 0) obj.AddMember("rate", rapidjson::Value(rate), allocator);
     }
 
     obj.AddMember("videoerrors", rapidjson::Value(data->videoerrors), allocator);
@@ -1149,7 +1149,7 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
     if (data->assignedepisode > 0) obj.AddMember("assignedepisode", rapidjson::Value(data->assignedepisode), allocator);
     if (data->year > 0) obj.AddMember("year", rapidjson::Value(data->year), allocator);
 
-    if (GetString(data->strings.pattern)[0]) {
+    if (GetString(data->strings.pattern)[0] != 0) {
         obj.AddMember("score", rapidjson::Value(data->score), allocator);
         obj.AddMember("prehandle", rapidjson::Value(data->prehandle), allocator);
         obj.AddMember("posthandle", rapidjson::Value(data->posthandle), allocator);
@@ -1162,7 +1162,11 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
 
         const AString filename = GetString(data->strings.filename);
         AString relpath;
-        if (data->actstart && data->actstop && filename[0] && IsConverted() && (relpath = config.GetRelativePath(filename)).Valid()) {
+        if ((data->actstart > 0) &&
+            (data->actstop > 0) &&
+            (filename[0] != 0) &&
+            IsConverted() &&
+            (relpath = config.GetRelativePath(filename)).Valid()) {
             bool exists = AStdFile::exists(filename);
 
             obj.AddMember("exists", rapidjson::Value(exists), allocator);
@@ -1191,7 +1195,7 @@ void ADVBProg::ExportToJSON(rapidjson::Document& doc, rapidjson::Value& obj, boo
                     subfile = subfile->Next();
                 }
 
-                if (subobj.Size()) {
+                if (subobj.Size() > 0) {
                     obj.AddMember("subfiles", subobj, allocator);
                 }
             }
@@ -1298,11 +1302,11 @@ bool ADVBProg::SetString(const uint16_t *offset, const char *str)
             if ((sizeof(*data) + data->strings.end + diff) > maxsize) {
                 maxsize = (sizeof(*data) + data->strings.end + diff + 256) & ~255;
                 data    = (dvbprog_t *)realloc(data, maxsize);
-                if (data && ((sizeof(*data) + data->strings.end) < maxsize)) memset(data->strdata + data->strings.end, 0, maxsize - (sizeof(*data) + data->strings.end));
+                if ((data != NULL) && ((sizeof(*data) + data->strings.end) < maxsize)) memset(data->strdata + data->strings.end, 0, maxsize - (sizeof(*data) + data->strings.end));
                 strings = &data->strings.channel;
             }
 
-            if (data) {
+            if (data != NULL) {
                 if ((diff != 0) && (data->strings.end > strings[field + 1])) {
                     //debug("Moving strings for fields %u to %u by %d bytes\n", field + 1, StringCount, diff);
                     memmove(data->strdata + strings[field + 1] + diff, data->strdata + strings[field + 1], data->strings.end - strings[field + 1]);
@@ -1608,7 +1612,7 @@ int ADVBProg::Compare(const ADVBProg *prog1, const ADVBProg *prog2, const fieldl
         }
 
         // if entire comparison is to be reversed, negate result
-        if (reverse && *reverse) res = -res;
+        if ((reverse != NULL) && reverse[0]) res = -res;
     }
 
     return res;
@@ -1642,7 +1646,7 @@ int ADVBProg::Compare(const ADVBProg *prog1, const ADVBProg *prog2, const bool *
             res = CompareNoCase(prog1->GetSubtitle(), prog2->GetSubtitle());
         }
 
-        if (reverse && *reverse) res = -res;
+        if ((reverse != NULL) && reverse[0]) res = -res;
     }
 
     return res;
@@ -1747,11 +1751,11 @@ AString ADVBProg::GetShortEpisodeID() const
 int ADVBProg::CompareEpisode(const episode_t& ep1, const episode_t& ep2)
 {
     if (ep1.valid && ep2.valid) {
-        if (ep1.series && ep2.series) {
+        if ((ep1.series > 0) && (ep2.series > 0)) {
             if (ep1.series < ep2.series) return -1;
             if (ep1.series > ep2.series) return  1;
         }
-        if (ep1.episode && ep2.episode) {
+        if ((ep1.episode > 0) && (ep2.episode > 0)) {
             if (ep1.episode < ep2.episode) return -1;
             if (ep1.episode > ep2.episode) return  1;
         }
@@ -1773,7 +1777,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
                GetChannel(),
                GetTitle());
 
-    if ((p = GetSubtitle())[0]) {
+    if ((p = GetSubtitle())[0] != 0) {
         str.printf(" / %s", p);
     }
 
@@ -1782,10 +1786,10 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
         if (ep.valid) {
             str.printf(" (%s)", GetEpisodeString(ep).str());
         }
-        if ((p = GetString(data->strings.episodeid))[0]) {
+        if ((p = GetString(data->strings.episodeid))[0] != 0) {
             str.printf(" (%s)", p);
         }
-        if (data->assignedepisode) {
+        if (data->assignedepisode != 0) {
             str.printf(" (F%u)", data->assignedepisode);
         }
 
@@ -1819,7 +1823,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
             if (str1.Valid()) str1.printf(" ");
             str1.printf("%s", p);
 
-            if ((p = GetSubCategory())[0]) {
+            if ((p = GetSubCategory())[0] != 0) {
                 AString subcategory = p;
                 uint_t i, n = subcategory.CountLines();
 
@@ -1837,14 +1841,14 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
         if ((verbosity > 2) && ep.valid) {
             AString epstr;
 
-            if (ep.series) epstr.printf("Series %u", ep.series);
-            if (ep.episode) {
-                if (epstr.Valid()) epstr.printf(", episode %u", ep.episode);
-                else               epstr.printf("Episode %u", ep.episode);
-                if (ep.episodes)   epstr.printf(" of %u", ep.episodes);
+            if (ep.series > 0) epstr.printf("Series %u", ep.series);
+            if (ep.episode > 0) {
+                if (epstr.Valid())   epstr.printf(", episode %u", ep.episode);
+                else                 epstr.printf("Episode %u", ep.episode);
+                if (ep.episodes > 0) epstr.printf(" of %u", ep.episodes);
             }
 
-            if ((p = GetEpisodeID())[0]) {
+            if ((p = GetEpisodeID())[0] != 0) {
                 if (epstr.Valid()) epstr.printf(" ");
                 epstr.printf("(%s)", p);
             }
@@ -1854,7 +1858,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
                 str1.printf("%s.", epstr.str());
             }
         }
-        else if ((verbosity > 3) && data->assignedepisode) {
+        else if ((verbosity > 3) && (data->assignedepisode > 0)) {
             if (str1.Valid()) str1.printf(" ");
             str1.printf("Assigned episode %u.", data->assignedepisode);
         }
@@ -1874,7 +1878,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
             if (str1.Valid()) str1.printf("\n\n");
             str1.printf("Found with pattern '%s', pri %d (score %d)", GetPattern(), (int)data->pri, (int)data->score);
 
-            if ((verbosity > 4) && GetString(data->strings.tags)[0]) {
+            if ((verbosity > 4) && (GetString(data->strings.tags)[0] != 0)) {
                 AString _tags = GetString(data->strings.tags);
                 uint_t i, n = _tags.CountLines("||", 0);
 
@@ -1884,26 +1888,26 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
                     AString tag = _tags.Line(i, "||");
                     if (tag.FirstChar() == '|') tag = tag.Mid(1);
                     if (tag.LastChar()  == '|') tag = tag.Left(tag.len() - 1);
-                    if (i) str1.printf(",");
+                    if (i > 0) str1.printf(",");
                     str1.printf("%s", tag.str());
                 }
             }
 
-            if (GetUser()[0]) str1.printf(", user '%s'", GetUser());
-            if (data->jobid) str1.printf(" (job %u, card %u)", data->jobid, (uint_t)data->dvbcard);
+            if (GetUser()[0] != 0) str1.printf(", user '%s'", GetUser());
+            if (data->jobid > 0) str1.printf(" (job %u, card %u)", data->jobid, (uint_t)data->dvbcard);
             if (IsRejected()) str1.printf(" ** REJECTED **");
         }
 
-        if ((verbosity > 3) && data->recstart) {
+        if ((verbosity > 3) && (data->recstart > 0)) {
             if (str1.Valid()) str1.printf("\n\n");
             str1.printf("Set to record %s - %s (%um %us)",
                         GetRecordStartDT().UTCToLocal().DateFormat(dayformat + dateformat + fulltimeformat).str(),
                         GetRecordStopDT().UTCToLocal().DateFormat(fulltimeformat).str(),
                         (uint_t)(GetRecordLength() / 60000), (uint_t)((GetRecordLength() % 60000) / 1000));
 
-            if (GetUser()[0]) str1.printf(" by user '%s'", GetUser());
+            if (GetUser()[0] != 0) str1.printf(" by user '%s'", GetUser());
 
-            if (data->actstart) {
+            if (data->actstart > 0) {
                 str1.printf(", actual record time %s - %s (%um %us)%s",
                             GetActualStartDT().UTCToLocal().DateFormat(dayformat + dateformat + fulltimeformat).str(),
                             GetActualStopDT().UTCToLocal().DateFormat(fulltimeformat).str(),
@@ -1914,7 +1918,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
             if (IgnoreRecording()) str1.printf(" (ignored when scheduling)");
         }
 
-        if ((verbosity > 4) && GetFilename()[0]) {
+        if ((verbosity > 4) && (GetFilename()[0] != 0)) {
             if (str1.Valid()) str1.printf("\n\n");
             str1.printf("%s as '%s'", data->actstart ? "Recorded" : (data->recstart ? "To be recorded" : "Would be recorded"), GetFilename());
             if (!IsConverted()) str1.printf(" (will be converted to '%s')", GenerateFilename(true).str());
@@ -1933,10 +1937,10 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 
             bool exists = AStdFile::exists(GetFilename());
             str1.printf(" File %sexists",  exists ? "" : "does *not* ");
-            if (GetFileSize()) str1.printf(" and %s %sMB in size", exists ? "is" : "was", AValue(GetFileSize() / ((uint64_t)1024 * (uint64_t)1024)).ToString().str());
+            if (GetFileSize() > 0) str1.printf(" and %s %sMB in size", exists ? "is" : "was", AValue(GetFileSize() / ((uint64_t)1024 * (uint64_t)1024)).ToString().str());
 
             uint_t rate = GetRate() / 1024;
-            if (rate) str1.printf(" (rate %ukbits/s)", rate);
+            if (rate > 0) str1.printf(" (rate %ukbits/s)", rate);
 
             if (!IsRecordingComplete()) str.printf(" **INCOMPLETE**");
 
@@ -1956,7 +1960,7 @@ AString ADVBProg::GetTitleAndSubtitle() const
     AString str = GetTitle();
     const char *p;
 
-    if ((p = GetSubtitle())[0]) {
+    if ((p = GetSubtitle())[0] != 0) {
         str.printf(" / %s", p);
     }
 
@@ -1982,10 +1986,10 @@ AString ADVBProg::GetQuickDescription() const
     if (ep.valid) {
         str.printf(" (%s)", GetEpisodeString(ep).str());
     }
-    if ((p = GetString(data->strings.episodeid))[0]) {
+    if ((p = GetString(data->strings.episodeid))[0] != 0) {
         str.printf(" (%s)", p);
     }
-    if (data->assignedepisode) {
+    if (data->assignedepisode > 0) {
         str.printf(" (F%u)", data->assignedepisode);
     }
 
@@ -2160,7 +2164,7 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
                                           same ? "same" : "different");
 #endif
         }
-        else if (prog1.GetEpisodeID()[0] && prog2.GetEpisodeID()[0]) {
+        else if ((prog1.GetEpisodeID()[0] != 0) && (prog2.GetEpisodeID()[0] != 0)) {
             // episodeid is in both -> sameness can be determined
             same = (CompareNoCase(prog1.GetEpisodeID(), prog2.GetEpisodeID()) == 0);
 #if DEBUG_SAMEPROGRAMME
@@ -2173,28 +2177,28 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
             if (debugsameprogramme) debug("'%s' / '%s': episode S%uE%02u / S%uE%02u: %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), (uint_t)ep1.series, (uint_t)ep1.episode, (uint_t)ep2.series, (uint_t)ep2.episode, same ? "same" : "different");
 #endif
         }
-        else if (prog1.GetEpisodeID()[0] || prog2.GetEpisodeID()[0]) {
+        else if ((prog1.GetEpisodeID()[0] != 0) || (prog2.GetEpisodeID()[0] != 0)) {
             // episodeid is in one or both -> sameness can be determined (assume when episode ID is missing from a programme, it is different from one which has an episode ID)
             same = (CompareNoCase(prog1.GetEpisodeID(), prog2.GetEpisodeID()) == 0);
 #if DEBUG_SAMEPROGRAMME
             if (debugsameprogramme) debug("'%s' / '%s': episodeid '%s' / '%s': %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), prog1.GetEpisodeID(), prog2.GetEpisodeID(), same ? "same" : "different");
 #endif
         }
-        else if (subtitle1[0] && subtitle2[0]) {
+        else if ((subtitle1[0] != 0) && (subtitle2[0] != 0)) {
             // sub-title supplied for both -> sameness can be determined
             same = (CompareNoCase(subtitle1, subtitle2) == 0);
 #if DEBUG_SAMEPROGRAMME
             if (debugsameprogramme) debug("'%s' / '%s': both subtitles valid: %s\n", prog1.GetDescription().str(), prog2.GetDescription().str(), same ? "same" : "different");
 #endif
         }
-        else if (subtitle1[0] || subtitle2[0]) {
+        else if ((subtitle1[0] != 0) || (subtitle2[0] != 0)) {
             // one programme has subtitle -> must be different (since not been caught by the above)
             same = false;
 #if DEBUG_SAMEPROGRAMME
             if (debugsameprogramme) debug("'%s' / '%s': only one subtitle valid: different\n", prog1.GetDescription().str(), prog2.GetDescription().str());
 #endif
         }
-        else if (prog1.GetAssignedEpisode() && prog2.GetAssignedEpisode()) {
+        else if ((prog1.GetAssignedEpisode() > 0) && (prog2.GetAssignedEpisode() > 0)) {
             // assigned episode information valid in both
             // -> use episode to determine whether it's the same programme
             same = ((prog1.GetAssignedEpisode() == prog2.GetAssignedEpisode()) &&
@@ -2249,7 +2253,7 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
             if (debugsameprogramme) debug("'%s' / '%s': prog2 episode valid, prog1 episode invalid\n", prog1.GetDescription().str(), prog2.GetDescription().str());
 #endif
         }
-        else if (prog1.GetAssignedEpisode() && !prog2.GetAssignedEpisode()) {
+        else if ((prog1.GetAssignedEpisode() > 0) && (prog2.GetAssignedEpisode() == 0)) {
             // prog1 assigned episode valid but prog2 assigned episode not valid
             // -> different programmes
             same = false;
@@ -2257,7 +2261,7 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
             if (debugsameprogramme) debug("'%s' / '%s': prog1 assigned episode valid, prog2 assigned episode invalid\n", prog1.GetDescription().str(), prog2.GetDescription().str());
 #endif
         }
-        else if (prog2.GetAssignedEpisode() && !prog1.GetAssignedEpisode()) {
+        else if ((prog2.GetAssignedEpisode() > 0) && (prog1.GetAssignedEpisode() == 0)) {
             // prog2 assigned episode valid but prog1 assigned episode not valid
             // -> different programmes
             same = false;
@@ -2418,12 +2422,12 @@ void ADVBProg::GenerateRecordData(uint64_t recstarttime)
     const ADVBConfig& config = ADVBConfig::Get();
     AString filename;
 
-    if (!data->recstart) {
+    if (data->recstart == 0) {
         data->recstart = GetStart() - (uint64_t)data->prehandle  * 60000;
         data->recstart = MAX(data->recstart, recstarttime);
     }
-    if (!data->recstop) data->recstop = GetStop() + (uint64_t)data->posthandle * 60000;
-    if (!GetDVBChannel()[0]) {
+    if (data->recstop == 0) data->recstop = GetStop() + (uint64_t)data->posthandle * 60000;
+    if (GetDVBChannel()[0] == 0) {
         config.logit("Warning: '%s' has no DVB channel, using main channel!\n", GetQuickDescription().str());
     }
 
@@ -2569,7 +2573,7 @@ void ADVBProg::AddToList(proglist_t *list)
 void ADVBProg::RemoveFromList()
 {
     proglist_t::iterator it;
-    if (list && ((it = std::find(list->begin(), list->end(), this)) != list->end())) list->erase(it);
+    if ((list != NULL) && ((it = std::find(list->begin(), list->end(), this)) != list->end())) list->erase(it);
 }
 
 int ADVBProg::CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context)
@@ -2587,7 +2591,7 @@ void ADVBProg::SetPriorityScore(const ADateTime& starttime)
 
     if (IsUrgent()) priority_score += (double)GetAttributedConfigItem(urgentscalename, "3.0");
 
-    if (list) priority_score += (double)GetAttributedConfigItem(repeatsscalename, "-1.0") * (double)(list->size() - 1);
+    if (list != NULL) priority_score += (double)GetAttributedConfigItem(repeatsscalename, "-1.0") * (double)(list->size() - 1);
 
     priority_score += (double)GetAttributedConfigItem(delayscalename, "-.5") * (double)(GetStartDT().GetDays() - starttime.GetDays());
 
@@ -2627,7 +2631,7 @@ bool ADVBProg::CountOverlaps(const ADVBProgList& proglist)
     // detect when number of overlaps changes
     if (newoverlaps != overlaps) {
 #if 0
-        if (overlaps) {
+        if (overlaps > 0) {
             const ADVBConfig& config = ADVBConfig::Get();
             config.logit("'%s' changed from %u overlaps to %u", GetQuickDescription().str(), overlaps, newoverlaps);
         }
@@ -2833,7 +2837,7 @@ void ADVBProg::Record()
             }
         }
 
-        if (!GetJobID()) {
+        if (GetJobID() == 0) {
             ADVBLock     lock("dvbfiles");
             ADVBProgList list;
             const ADVBProg *prog;
@@ -3203,9 +3207,9 @@ bool ADVBProg::RunCommand(const AString& cmd, bool logoutput, const AString& pos
     if (cmd.Pos(logfile) >= 0) {
         ADateTime starttime, stoptime;
 
-        if      (GetActualStart()) starttime = GetActualStartDT().UTCToLocal();
-        else if (GetRecordStart()) starttime = GetRecordStartDT().UTCToLocal();
-        else if (GetStart())       starttime = GetStartDT().UTCToLocal();
+        if      (GetActualStart() > 0) starttime = GetActualStartDT().UTCToLocal();
+        else if (GetRecordStart() > 0) starttime = GetRecordStartDT().UTCToLocal();
+        else if (GetStart()       > 0) starttime = GetStartDT().UTCToLocal();
 
         config.ExtractLogData(starttime, stoptime, logfile);
     }
@@ -3375,7 +3379,7 @@ void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const st
                             const split_t& split = splits[i];
 
                             if (split.aspect == aspect) {
-                                if ((t >= split.start) && (!split.length || (t < (split.start + split.length)))) {
+                                if ((t >= split.start) && ((split.length == 0) || (t < (split.start + split.length)))) {
                                     t -= sub;
 
                                     fp2.printf("timestamp: %s, filepos: %s\n",

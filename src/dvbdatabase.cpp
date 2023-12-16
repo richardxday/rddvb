@@ -18,12 +18,12 @@ ADVBDatabase::~ADVBDatabase()
 {
     Close();
 
-    if (database) delete database;
+    if (database != NULL) delete database;
 }
 
 bool ADVBDatabase::Open()
 {
-    if (database) {
+    if (database != NULL) {
         const ADVBConfig& config = ADVBConfig::Get();
         AString host     = config.GetConfigItem("dbhost", "localhost");
         AString username = config.GetConfigItem("dbuser", "richard");
@@ -92,18 +92,18 @@ bool ADVBDatabase::Open()
 
 void ADVBDatabase::Close()
 {
-    if (database) database->Close();
+    if (database != NULL) database->Close();
 }
 
 bool ADVBDatabase::AddProg(const ADVBProg& prog)
 {
     bool success = false;
 
-    if (database && prog.Valid()) {
+    if ((database != NULL) && prog.Valid()) {
         //const ADVBChannelList& channellist = ADVBChannelList::Get();
         const ADVBChannelList::channel_t *channel = NULL;
 
-        if (channel) {
+        if (channel != NULL) {
 
         }
 

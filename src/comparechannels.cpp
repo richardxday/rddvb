@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
             const AStructuredNode *node;
             if (((node = root.FindChild("tv")) != NULL) &&
                 ((node = node->GetChildren()) != NULL)) {
-                while (node) {
+                while (node != NULL) {
                     if (node->Key == "channel") {
                         const AKeyValuePair *_id;
                         channel_t channel;
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 
                         std::vector<AString>& displaynames = channel.xmltv.displaynames;
                         const AStructuredNode *node1 = node->GetChildren();
-                        while (node1) {
+                        while (node1 != NULL) {
                             if (node1->Key == "display-name") {
                                 displaynames.push_back(node1->Value);
 

@@ -71,7 +71,7 @@ void ADVBEpisodeHandler::AssignEpisode(ADVBProg& prog, bool ignorerepeats)
     //const ADVBConfig& config = ADVBConfig::Get();
 
     if (!prog.IsFilm() && (CompareNoCase(prog.GetTitle(), "Close") != 0)) {
-        if (!prog.GetAssignedEpisode()) {
+        if (prog.GetAssignedEpisode() == 0) {
             AString  key = prog.GetTitle();
             uint32_t epn;
             bool     valid = false;

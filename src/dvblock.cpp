@@ -30,7 +30,7 @@ void ADVBLock::__DeleteLock(uptr_t item, void *context)
 
     UNUSED(context);
 
-    if (lock->refcount) {
+    if (lock->refcount > 0) {
         close(lock->fd);
         lock->fd = -1;
 
@@ -53,7 +53,7 @@ bool ADVBLock::GetLock(uint_t n)
 
     (void)config;
 
-    if (!lock) {
+    if (lock == NULL) {
         if ((lock = new lock_t) != NULL) {
             lock->filename.printf("lockfile_%s.lock", name.str());
             lock->fd = -1;
@@ -63,8 +63,8 @@ bool ADVBLock::GetLock(uint_t n)
         }
     }
 
-    if (lock) {
-        if (!lock->refcount) {
+    if (lock != NULL) {
+        if (lock->refcount == 0) {
             AString lockfile = GetFilename(lock);
 
             if ((lock->fd = open(lockfile, O_CREAT | O_RDWR, (S_IRUSR | S_IWUSR))) >= 0) {
@@ -92,10 +92,10 @@ void ADVBLock::ReleaseLock(uint_t n)
 
     (void)config;
 
-    if (lock) {
+    if (lock != NULL) {
         lock->refcount = SUBZ(lock->refcount, n);
 
-        if (!lock->refcount) {
+        if (lock->refcount == 0) {
             AString lockfile = GetFilename(lock);
 
             close(lock->fd);

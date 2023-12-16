@@ -919,7 +919,7 @@ int main(int argc, const char *argv[])
                     uint_t j, ndeleted = 0;
 
                     for (j = 0; (j < proglist.Count()) && !HasQuit(); ) {
-                        if (proglist2.FindSimilar(proglist.GetProg(j))) {
+                        if (proglist2.FindSimilar(proglist.GetProg(j)) != NULL) {
                             proglist.DeleteProg(j);
                             ndeleted++;
                         }
@@ -1312,7 +1312,7 @@ int main(int argc, const char *argv[])
                         str = str->Next();
                     }
 
-                    if (nchanges) {
+                    if (nchanges > 0) {
                         printf("%u programmes added to recorded list\n", nchanges);
                         if (!reclist.WriteToFile(reclistfilename)) {
                             fprintf(stderr, "Failed to write recorded list\n");
@@ -1327,7 +1327,7 @@ int main(int argc, const char *argv[])
                 const uint_t newcard = (uint_t)AString(argv[++i]);
 
                 config.GetPhysicalDVBCard(0);
-                if (config.GetMaxDVBCards()) {
+                if (config.GetMaxDVBCards() > 0) {
                     if (newcard < config.GetMaxDVBCards()) {
                         dvbcard = config.GetPhysicalDVBCard(newcard);
                         dvbcardspecified = true;
@@ -1560,7 +1560,7 @@ int main(int argc, const char *argv[])
 
                     config.printf("%u programmes changed", n);
 
-                    if (n && (HasQuit() || !reclist.WriteToFile(config.GetRecordedFile()))) {
+                    if ((n > 0) && (HasQuit() || !reclist.WriteToFile(config.GetRecordedFile()))) {
                         config.printf("Failed to write recorded programme list back!");
                     }
                 }
@@ -2113,7 +2113,7 @@ int main(int argc, const char *argv[])
 
                 std::map<AString, const std::vector<AString> *>::iterator it;
                 for (it = bestlist.begin(); it != bestlist.end(); ++it) {
-                    if (it->second) {
+                    if (it->second != NULL) {
                         const std::vector<AString>& list = *it->second;
 
                         printf("Episode list for '%s':\n", it->first.str());
@@ -2153,9 +2153,9 @@ int main(int argc, const char *argv[])
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
                     const ADVBProg& prog = proglist.GetProg(j);
 
-                    if      (prog.GetActualLength()) ms += prog.GetActualLength();
-                    else if (prog.GetRecordLength()) ms += prog.GetRecordLength();
-                    else                             ms += prog.GetLength();
+                    if      (prog.GetActualLength() > 0) ms += prog.GetActualLength();
+                    else if (prog.GetRecordLength() > 0) ms += prog.GetRecordLength();
+                    else                                 ms += prog.GetLength();
                 }
 
                 double hours = (double)ms / (1000.0 * 3600.0);

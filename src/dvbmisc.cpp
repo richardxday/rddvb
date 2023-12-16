@@ -423,7 +423,7 @@ bool APIDTree::Kill() const
     bool success = false;
 
     if (Valid()) {
-        if (children.size() > 0) {
+        if (!children.empty()) {
             for (size_t i = 0; i < children.size(); i++) {
                 success = (success || children[children.size() - 1 - i]->Kill());
             }

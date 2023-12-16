@@ -68,7 +68,7 @@ protected:
                 buffer[p] = val;
                 sum += buffer[p];
 
-                if (!((uint_t)i % 5) && RANGE(j, 0, nframes2 - 1)) {
+                if ((((uint_t)i % 5) == 0) && RANGE(j, 0, nframes2 - 1)) {
                     double v = (double)sum / (double)(framesize * buffer.size()) + threshold;
                     if (v >= 0.0) {
                         ThreadLock lock(globallock);
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 
     arg++;
 
-    if (fdata1.size()) {
+    if (!fdata1.empty()) {
         if (f.open(argv[arg], "rb")) {
             f.seek(0, SEEK_END);
             fdata2.resize(f.tell());
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 
     arg++;
 
-    if (fdata1.size() && fdata2.size()) {
+    if (!fdata1.empty() && !fdata2.empty()) {
         Process processors[5];
         uint_t i;
 

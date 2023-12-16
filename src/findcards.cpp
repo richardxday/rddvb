@@ -152,7 +152,7 @@ sint_t findcard(const AString& pattern, const std::vector<uint_t> *cardlist)
             while (line.ReadLn(fp) >= 0) {
                 uint_t testcard = (uint_t)line.Word(0);
 
-                if ((!cardlist || (std::find(cardlist->begin(), cardlist->end(), testcard) == cardlist->end())) && MatchRegex(line.Words(1), pat)) {
+                if (((cardlist == NULL) || (std::find(cardlist->begin(), cardlist->end(), testcard) == cardlist->end())) && MatchRegex(line.Words(1), pat)) {
                     card = testcard;
                     break;
                 }

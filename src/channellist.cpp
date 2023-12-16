@@ -262,13 +262,13 @@ bool ADVBChannelList::Read()
                         chan->dvb.freq = (uint32_t)_freq;
                         chan->dvb.pidlist.clear();
 
-                        if ((uint_t)_pid1) {
+                        if ((uint_t)_pid1 > 0) {
                             chan->dvb.pidlist.push_back((uint_t)_pid1);
                             chan->dvb.hasvideo = true;
                         }
                         else chan->dvb.hasvideo = false;
 
-                        if ((uint_t)_pid2) {
+                        if ((uint_t)_pid2 > 0) {
                             chan->dvb.pidlist.push_back((uint_t)_pid2);
                             chan->dvb.hasaudio = true;
                         }
@@ -388,7 +388,7 @@ bool ADVBChannelList::Write()
                 AString str;
                 uint_t  j;
 
-                if (chan.lcn) {
+                if (chan.lcn > 0) {
                     str.printf("[%03u]", chan.dvb.lcn);
                 }
 
@@ -472,11 +472,11 @@ void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, rapidjson::Va
             dvbobj.AddMember("convertedname", rapidjson::Value(chan.dvb.convertedchannelname.str(), allocator), allocator);
         }
 
-        if (chan.dvb.lcn) {
+        if (chan.dvb.lcn > 0) {
             dvbobj.AddMember("lcn", rapidjson::Value(chan.dvb.lcn), allocator);
         }
 
-        if (chan.dvb.freq) {
+        if (chan.dvb.freq > 0) {
             dvbobj.AddMember("frequency", rapidjson::Value(chan.dvb.freq), allocator);
         }
 
@@ -496,7 +496,7 @@ void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, rapidjson::Va
             dvbobj.AddMember("pidlist", pidlist, allocator);
         }
 
-        if (chan.xmltv.sdchannelid) {
+        if (chan.xmltv.sdchannelid > 0) {
             xmltvobj.AddMember("sdchannelid", rapidjson::Value(chan.xmltv.sdchannelid), allocator);
         }
         if (chan.xmltv.channelid.Valid()) {
@@ -527,7 +527,7 @@ AString ADVBChannelList::ConvertDVBChannel(const AString& str)
     static std::vector<replacement_t> replacements;
     const ADVBConfig& config = ADVBConfig::Get();
 
-    if (!replacements.size()) config.ReadReplacementsFile(replacements, config.GetDVBReplacementsFile());
+    if (replacements.empty()) config.ReadReplacementsFile(replacements, config.GetDVBReplacementsFile());
 
     return ReplaceStrings(str, &replacements[0], (uint_t)replacements.size());
 }
@@ -626,7 +626,7 @@ ADVBChannelList::channel_t *ADVBChannelList::GetChannelByDVBChannelName(const AS
         dvbchannelmap[chan->dvb.channelname.ToLower()] = chan;
         dvbchannelmap[chan->dvb.convertedchannelname.ToLower()] = chan;
 
-        if (chan->dvb.lcn) {
+        if (chan->dvb.lcn > 0) {
             if (chan->dvb.lcn >= lcnlist.size()) {
                 lcnlist.resize(chan->dvb.lcn + 1);
             }
@@ -704,7 +704,7 @@ const ADVBChannelList::channel_t *ADVBChannelList::AssignOrAddXMLTVChannel(uint_
         changed1 = true;
     }
 
-    if (chan) {
+    if (chan != NULL) {
         uint_t sdchannelid = 0;
 
         // update logical channel number if possible
@@ -828,7 +828,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
                     if (line == "</service>") {
                         channel_t *chan = GetChannelByName(servname, true);
 
-                        if (chan) {
+                        if (chan != NULL) {
                             typedef enum {
                                 Type_none = 0,
                                 Type_video,
@@ -903,7 +903,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
                                 }
                             }
 
-                            if (pidlist.size() > 0) {
+                            if (!pidlist.empty()) {
                                 AString str;
 
                                 std::sort(pidlist.begin(), pidlist.end(), std::less<uint_t>());
@@ -977,7 +977,7 @@ void ADVBChannelList::UpdateAll(uint_t card, bool verbose)
 
     // create list of frequencies
     for (i = 0; i < list.size(); i++) {
-        if (list[i]->dvb.freq) {
+        if (list[i]->dvb.freq > 0) {
             freqs[list[i]->dvb.freq] = true;
         }
     }

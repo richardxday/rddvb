@@ -32,14 +32,14 @@ static bool ReadPacket(AStdData& fp, uint8_t* p_dst, uint_t len)
 
         if (i > 0) {
             pos -= i;
-            if (pos) memmove(p_dst, p_dst + i, pos);
+            if (pos > 0) memmove(p_dst, p_dst + i, pos);
         }
 
         if (pos >= len) {
             memcpy(p_dst, p_dst, len);
 
             pos -= len;
-            if (pos) memmove(p_dst, p_dst + len, pos);
+            if (pos > 0) memmove(p_dst, p_dst + len, pos);
             break;
         }
     }
@@ -104,7 +104,6 @@ static void newsubtable(dvbpsi_t *p_dvbpsi, uint8_t table_id, uint16_t extension
 {
     (void)p_zero;
 
-
     if ((table_id >= 0x4e) && (table_id <= 0x5f))
     {
         if (!dvbpsi_eit_attach(p_dvbpsi, table_id, extension, dumpeit, NULL))
@@ -134,7 +133,7 @@ int main(int argc, char *argv[])
     }
 
     p_dvbpsi = dvbpsi_new(&message, DVBPSI_MSG_WARN);
-    if (p_dvbpsi) {
+    if (p_dvbpsi != NULL) {
         if (dvbpsi_AttachDemux(p_dvbpsi, newsubtable, NULL)) {
             b_ok = ReadPacket(*fp, data, sizeof(data));
 
