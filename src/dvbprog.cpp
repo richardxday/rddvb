@@ -3685,7 +3685,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             }
         }
 
-        if (videofiles.size() > 0) {
+        if (!videofiles.empty()) {
             std::sort(videofiles.begin(), videofiles.end(), CompareMediaFiles);
 
             config.printf("Video files:");
@@ -3693,7 +3693,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                 config.printf("%2u: PID %5u %s", (uint_t)i, videofiles[i].pid, videofiles[i].filename.str());
             }
         }
-        if (audiofiles.size() > 0) {
+        if (!audiofiles.empty()) {
             std::sort(audiofiles.begin(), audiofiles.end(), CompareMediaFiles);
 
             config.printf("Audio files:");
@@ -3701,7 +3701,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                 config.printf("%2u: PID %5u %s", (uint_t)i, audiofiles[i].pid, audiofiles[i].filename.str());
             }
         }
-        if (subtitlefiles.size() > 0) {
+        if (!subtitlefiles.empty()) {
             config.printf("Subtitle files:");
             for (i = 0; i < subtitlefiles.size(); i++) {
                 config.printf("%2u: %s", (uint_t)i, subtitlefiles[i].str());
@@ -3716,7 +3716,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             m2vfile = videofiles[videotrack].filename;
             config.printf("Using video track %u of '%s', file '%s'", videotrack, GetQuickDescription().str(), m2vfile.str());
         }
-        else if (videofiles.size() > 0) {
+        else if (!videofiles.empty()) {
             m2vfile = videofiles[0].filename;
             config.printf("Video track %u of '%s' doesn't exists, using file '%s' instead", videotrack, GetQuickDescription().str(), m2vfile.str());
         }
@@ -3728,7 +3728,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             mp2file = audiofiles[audiotrack].filename;
             config.printf("Using audio track %u of '%s', file '%s'", audiotrack, GetQuickDescription().str(), mp2file.str());
         }
-        else if (audiofiles.size() > 0) {
+        else if (!audiofiles.empty()) {
             mp2file = audiofiles[0].filename;
             config.printf("Audio track %u of '%s' doesn't exists, using file '%s' instead", audiotrack, GetQuickDescription().str(), mp2file.str());
         }
@@ -3769,7 +3769,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                 for (i = 0; i < subtitlefiles.size(); i++) {
                     inputfiles.printf(" -i \"%s\"", subtitlefiles[i].str());
                 }
-                if (subtitlefiles.size() > 0) {
+                if (!subtitlefiles.empty()) {
                     inputfiles.printf(" -scodec copy -metadata:s:s:0 language=eng");
                 }
 
@@ -3790,7 +3790,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                     for (i = 0; i < subtitlefiles.size(); i++) {
                         cmd.printf(" -i \"%s\"", subtitlefiles[i].str());
                     }
-                    if (subtitlefiles.size() > 0) {
+                    if (!subtitlefiles.empty()) {
                         cmd.printf(" -scodec copy -metadata:s:s:0 language=eng");
                     }
                     cmd.printf(" -acodec copy -vcodec copy -v warning -f mpegts \"%s\"",
@@ -3859,7 +3859,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                     for (i = 0; i < subtitlefiles.size(); i++) {
                         inputfiles.printf(" -i \"%s\"", subtitlefiles[i].str());
                     }
-                    if (subtitlefiles.size() > 0) {
+                    if (!subtitlefiles.empty()) {
                         inputfiles.printf(" -scodec copy -metadata:s:s:0 language=eng");
                     }
 

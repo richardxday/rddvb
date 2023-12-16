@@ -156,7 +156,7 @@ void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
         displaynames.push_back(node->Value);
     }
 
-    if (channelid.Valid() && (displaynames.size() > 0) && ((xmltvchannelname = displaynames[0]).Valid())) {
+    if (channelid.Valid() && !displaynames.empty() && ((xmltvchannelname = displaynames[0]).Valid())) {
         ADVBChannelList& channellist = ADVBChannelList::Get();
         const AStructuredNode *iconnode;
         AString icon;
@@ -1894,7 +1894,7 @@ void ADVBProgList::Sort(bool reverse)
 
 void ADVBProgList::Sort(const ADVBProg::fieldlist_t& fieldlist)
 {
-    if (fieldlist.size() > 0) {
+    if (!fieldlist.empty()) {
         Sort(&SortProgsAdvanced, (void *)&fieldlist);
     }
 }
@@ -3653,7 +3653,7 @@ ADVBProgList::timegap_t ADVBProgList::FindGaps(const ADateTime& start, std::vect
         gap.end   = ADateTime::MaxDateTime;
         gap.card  = i;  // NOTE: virtual card
 
-        if (list.size() > 0) {
+        if (!list.empty()) {
             if (list[0]->GetRecordStartDT() < start) {
                 gap.start = list[0]->GetRecordStopDT();
                 if (list.size() > 1) {

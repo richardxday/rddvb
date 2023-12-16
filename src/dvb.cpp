@@ -2414,7 +2414,7 @@ int main(int argc, const char *argv[])
                     map[prog.GetChannel()].push_back(&prog);
                 }
 
-                if (map.size() > 0) {
+                if (!map.empty()) {
                     uint64_t dt0   = UINT64_MAX;
                     uint64_t dtmax = 0U;
 

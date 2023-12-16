@@ -484,7 +484,7 @@ void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, rapidjson::Va
         dvbobj.AddMember("hasaudio",    rapidjson::Value(chan.dvb.hasaudio), allocator);
         dvbobj.AddMember("hassubtitle", rapidjson::Value(chan.dvb.hassubtitle), allocator);
 
-        if (chan.dvb.pidlist.size() > 0) {
+        if (!chan.dvb.pidlist.empty()) {
             rapidjson::Value pidlist;
             size_t j;
 
