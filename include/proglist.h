@@ -97,23 +97,23 @@ public:
     uint_t FindSimilarProgrammes(ADVBProgList& dest, const ADVBProg& prog, uint_t index = 0) const;
 
     void Sort(bool reverse = false);
-    void Sort(const ADVBProg::FIELDLIST& fieldlist);
+    void Sort(const ADVBProg::fieldlist_t& fieldlist);
     void Sort(int (*fn)(uptr_t item1, uptr_t item2, void *pContext), void *pContext = NULL);
 
     static int CompareEpisode(uptr_t item1, uptr_t item2, void *pContext);
 
-    void CountOverlaps(const ADVBProg::PROGLISTLIST& repeatlists, const ADateTime& starttime);
+    void CountOverlaps(const ADVBProg::proglistlist_t& repeatlists, const ADateTime& starttime);
     void PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *recstarttimes, uint_t nlists, ADVBProgList& rejectedlist, const ADateTime& starttime);
     uint_t Schedule(const ADateTime& starttime = ADateTime().TimeStamp(true));
 
     typedef struct {
         AString              title;
         std::vector<AString> list;
-    } SERIES;
-    typedef std::map<AString,SERIES> SERIESLIST;
-    void FindSeries(SERIESLIST& serieslist) const;
+    } series_t;
+    typedef std::map<AString,series_t> serieslist_t;
+    void FindSeries(serieslist_t& serieslist) const;
 
-    void StripFilmsAndSeries(const SERIESLIST& serieslist);
+    void StripFilmsAndSeries(const serieslist_t& serieslist);
 
     typedef struct {
         double recordedfactor;
@@ -121,9 +121,9 @@ public:
         double rejectedfactor;
         double priorityfactor;
         AHash  userfactors;
-    } POPULARITY_FACTORS;
+    } popularityfactors_t;
     static double ScoreProgrammeByPopularityFactors(const ADVBProg& prog, void *context);
-    void FindPopularTitles(AList& list, const POPULARITY_FACTORS& factors) const {FindPopularTitles(list, &ScoreProgrammeByPopularityFactors, (void *)&factors);}
+    void FindPopularTitles(AList& list, const popularityfactors_t& factors) const {FindPopularTitles(list, &ScoreProgrammeByPopularityFactors, (void *)&factors);}
     void FindPopularTitles(AList& list, double (*fn)(const ADVBProg& prog, void *context), void *context = NULL) const;
 
     void EnhanceListings();
@@ -133,15 +133,15 @@ public:
         double offset;
         double rate;
         double timeoffset;
-    } TREND;
-    TREND CalculateTrend(const ADateTime& startdate = ADateTime::MinDateTime, const ADateTime& enddate = ADateTime::MaxDateTime) const;
+    } trend_t;
+    trend_t CalculateTrend(const ADateTime& startdate = ADateTime::MinDateTime, const ADateTime& enddate = ADateTime::MaxDateTime) const;
 
     typedef struct {
         ADateTime start;
         ADateTime end;
         uint_t card;
-    } TIMEGAP;
-    TIMEGAP FindGaps(const ADateTime& start, std::vector<TIMEGAP>& gaps, const std::map<uint_t,bool> *cardstoavoid = NULL) const;
+    } timegap_t;
+    timegap_t FindGaps(const ADateTime& start, std::vector<timegap_t>& gaps, const std::map<uint_t,bool> *cardstoavoid = NULL) const;
 
     bool RecordImmediately(const ADateTime& dt, const AString& title, const AString& user = "", uint64_t maxminutes = 3600) const;
 
@@ -199,7 +199,7 @@ protected:
 
     static void DeleteSeries(uptr_t item, void *context) {
         UNUSED(context);
-        delete (SERIES *)item;
+        delete (series_t *)item;
     }
 
     static int CompareRepeatLists(uptr_t item1, uptr_t item2, void *context);
@@ -210,16 +210,16 @@ protected:
     static int SortProgsByUserThenDir(uptr_t item1, uptr_t item2, void *pContext);
     //static int sortprogsbyscore(uptr_t item1, uptr_t item2, void *pContext);
 
-    typedef ADVBPatterns::PATTERN PATTERN;
+    typedef ADVBPatterns::pattern_t pattern_t;
     static int SortPatterns(uptr_t item1, uptr_t item2, void *context);
 
     typedef struct {
         uint_t count;
         double score;
-    } POPULARITY;
+    } popularity_t;
     static void __DeletePopularity(uptr_t item, void *context) {
         UNUSED(context);
-        delete (POPULARITY *)item;
+        delete (popularity_t *)item;
     }
     static bool __CollectPopularity(const AString& key, uptr_t item, void *context);
     static int  __ComparePopularity(const AListNode *pNode1, const AListNode *pNode2, void *pContext);

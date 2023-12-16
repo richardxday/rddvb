@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
         if (prog.Base64Decode(argv[1])) {
             prog.ExportToJSON(doc, doc);
 
-            const ADVBProg::EPISODE& episode = prog.GetEpisode();
+            const ADVBProg::episode_t& episode = prog.GetEpisode();
             if (episode.valid) {
                 ADVBProgList reclist, list;
                 AString      pattern, errors;

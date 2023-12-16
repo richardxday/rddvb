@@ -58,7 +58,7 @@ ADVBIconCache& ADVBIconCache::Get()
 
 bool ADVBIconCache::__WriteEntry(const AString& key, uptr_t item, void *context)
 {
-    const ENTRY *entry = (const ENTRY *)item;
+    const entry_t *entry = (const entry_t *)item;
     AStdFile& fp = *(AStdFile *)context;
 
     (void)key;
@@ -75,7 +75,7 @@ bool ADVBIconCache::EntryValid(const AString& type, const AString& name) const
 
 AString ADVBIconCache::GetIcon(const AString& type, const AString& name) const
 {
-    const ENTRY *entry;
+    const entry_t *entry;
     AString icon;
 
     if ((entry = GetEntry(type, name)) != NULL) {
@@ -87,7 +87,7 @@ AString ADVBIconCache::GetIcon(const AString& type, const AString& name) const
 
 void ADVBIconCache::SetIcon(const AString& type, const AString& name, const AString& icon)
 {
-    ENTRY *entry;
+    entry_t *entry;
 
     if ((entry = GetWritableEntry(type, name)) != NULL) {
         changed |= (icon != entry->icon);
@@ -95,16 +95,16 @@ void ADVBIconCache::SetIcon(const AString& type, const AString& name, const AStr
     }
 }
 
-const ADVBIconCache::ENTRY *ADVBIconCache::GetEntry(const AString& type, const AString& name) const
+const ADVBIconCache::entry_t *ADVBIconCache::GetEntry(const AString& type, const AString& name) const
 {
-    return (const ENTRY *)cache.Read(GetKey(type, name));
+    return (const entry_t *)cache.Read(GetKey(type, name));
 }
 
-ADVBIconCache::ENTRY *ADVBIconCache::GetWritableEntry(const AString& type, const AString& name, bool create)
+ADVBIconCache::entry_t *ADVBIconCache::GetWritableEntry(const AString& type, const AString& name, bool create)
 {
-    ENTRY *entry;
+    entry_t *entry;
 
-    if (((entry = (ENTRY *)cache.Read(GetKey(type, name))) == NULL) && create && ((entry = new ENTRY) != NULL)) {
+    if (((entry = (entry_t *)cache.Read(GetKey(type, name))) == NULL) && create && ((entry = new entry_t) != NULL)) {
         entry->type = type;
         entry->name = name;
 

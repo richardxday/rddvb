@@ -79,7 +79,7 @@ rapidjson::Value getuserdetails(rapidjson::Document& doc, const AString& user)
     return obj;
 }
 
-rapidjson::Value getpattern(rapidjson::Document& doc, const ADVBPatterns::PATTERN& pattern)
+rapidjson::Value getpattern(rapidjson::Document& doc, const ADVBPatterns::pattern_t& pattern)
 {
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
     rapidjson::Value obj, subobj;
@@ -96,7 +96,7 @@ rapidjson::Value getpattern(rapidjson::Document& doc, const ADVBPatterns::PATTER
     subobj.SetArray();
 
     for (uint_t i = 0; i < pattern.list.Count(); i++) {
-        const ADVBPatterns::TERMDATA *data = ADVBPatterns::GetTermData(pattern, i);
+        const auto *data = ADVBPatterns::GetTermData(pattern, i);
         rapidjson::Value subobj2;
 
         subobj2.SetObject();
@@ -125,9 +125,9 @@ void addpattern(rapidjson::Document& doc, rapidjson::Value& obj, AHash& patterns
     AString str;
 
     if ((str = prog.GetPattern()).Valid()) {
-        ADVBPatterns::PATTERN *pattern;
+        ADVBPatterns::pattern_t *pattern;
 
-        if (((pattern = (ADVBPatterns::PATTERN *)patterns.Read(str)) == NULL) && ((pattern = new ADVBPatterns::PATTERN) != NULL)) {
+        if (((pattern = (ADVBPatterns::pattern_t *)patterns.Read(str)) == NULL) && ((pattern = new ADVBPatterns::pattern_t) != NULL)) {
             ADVBPatterns::ParsePattern(str, *pattern, prog.GetUser());
         }
 
@@ -137,7 +137,7 @@ void addpattern(rapidjson::Document& doc, rapidjson::Value& obj, AHash& patterns
     }
 }
 
-void addseries(rapidjson::Document& doc, rapidjson::Value& obj, const ADVBProgList::SERIES& serieslist)
+void addseries(rapidjson::Document& doc, rapidjson::Value& obj, const ADVBProgList::series_t& serieslist)
 {
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
     rapidjson::Value subobj;
@@ -164,7 +164,7 @@ void addseries(rapidjson::Document& doc, rapidjson::Value& obj, const ADVBProgLi
     obj.AddMember("series", subobj, allocator);
 }
 
-rapidjson::Value gettrend(rapidjson::Document& doc, const ADVBProgList::TREND& trend)
+rapidjson::Value gettrend(rapidjson::Document& doc, const ADVBProgList::trend_t& trend)
 {
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
     rapidjson::Value obj;
@@ -422,7 +422,7 @@ int main(int argc, char *argv[])
     }
 
     if (Value(vars, val, "parse")) {
-        ADVBPatterns::PATTERN pattern;
+        ADVBPatterns::pattern_t pattern;
         AString user;
 
         Value(vars, user, "user");
@@ -449,9 +449,9 @@ int main(int argc, char *argv[])
         AHash                    titleshash;
         ADataList                titleslist;
         ADataList                patternlist;
-        ADVBPatterns::PATTERN    filterpattern = ADVBPatterns::DefaultPattern;
+        ADVBPatterns::pattern_t  filterpattern = ADVBPatterns::DefaultPattern;
         AHash                    patterns(&ADVBPatterns::__DeletePattern);
-        ADVBProgList::SERIESLIST fullseries;
+        ADVBProgList::serieslist_t fullseries;
         AString                  from;
         uint_t                   pagesize = (uint_t)config.GetConfigItem("pagesize", "20"), page = 0;
         uint_t                   datasource = DataSource_Progs;
@@ -597,7 +597,7 @@ int main(int argc, char *argv[])
             if (Value(vars, val, "sortfields") &&
                 val.Valid() &&
                 (val != "none")) {
-                ADVBProg::FIELDLIST fieldlist;
+                ADVBProg::fieldlist_t fieldlist;
                 ADVBProg::ParseFieldList(fieldlist, val);
                 proglist->Sort(fieldlist);
             }
@@ -717,7 +717,7 @@ int main(int argc, char *argv[])
 
             if (success) {
                 for (i = 0; i < patternlist.Count();) {
-                    ADVBPatterns::PATTERN *pattern = (ADVBPatterns::PATTERN *)patternlist[i];
+                    ADVBPatterns::pattern_t *pattern = (ADVBPatterns::pattern_t *)patternlist[i];
                     bool keep = (!enabled_check || (enabled_value == pattern->enabled));
 
                     if (keep) {
@@ -911,7 +911,7 @@ int main(int argc, char *argv[])
                             subobj.AddMember("scheduled", subobj2, allocator);
                         }
 
-                        ADVBProgList::SERIESLIST::const_iterator it;
+                        ADVBProgList::serieslist_t::const_iterator it;
                         if ((it = fullseries.find(prog.GetTitle())) != fullseries.end()) {
                             addseries(doc, subobj, it->second);
                         }
@@ -944,7 +944,7 @@ int main(int argc, char *argv[])
                         subobj.AddMember("notfilm", rapidjson::Value(title.counts.notfilm), allocator);
                         subobj.AddMember("total", rapidjson::Value(title.counts.total), allocator);
 
-                        ADVBProgList::SERIESLIST::const_iterator it;
+                        ADVBProgList::serieslist_t::const_iterator it;
                         if ((it = fullseries.find(prog.GetTitle())) != fullseries.end()) {
                             addseries(doc, subobj, it->second);
                         }
@@ -962,7 +962,7 @@ int main(int argc, char *argv[])
                     obj.SetArray();
 
                     for (i = 0; (i < count) && !HasQuit(); i++) {
-                        const ADVBPatterns::PATTERN& pattern = *(const ADVBPatterns::PATTERN *)patternlist[offset + i];
+                        const ADVBPatterns::pattern_t& pattern = *(const ADVBPatterns::pattern_t *)patternlist[offset + i];
 
                         obj.PushBack(getpattern(doc, pattern), allocator);
                     }
@@ -1030,7 +1030,7 @@ int main(int argc, char *argv[])
                     ((writetime = std::max((uint64_t)info1.WriteTime, (uint64_t)info2.WriteTime)) > (uint64_t)ADateTime::MinDateTime) &&
                     (!Value(vars, val, "statsref") || (writetime > (uint64_t)val))) {
                     rapidjson::Value obj;
-                    ADVBProgList::TREND trend;
+                    ADVBProgList::trend_t trend;
 
                     obj.SetObject();
 

@@ -468,7 +468,7 @@ public:
     AString ListConfigValues() const;
     AString ListLiveConfigValues() const;
 
-    bool ReadReplacementsFile(std::vector<REPLACEMENT>& replacements, const AString& filename) const;
+    bool ReadReplacementsFile(std::vector<replacement_t>& replacements, const AString& filename) const;
 
     bool ExtractLogData(const ADateTime& start, const ADateTime& end, const AString& filename) const;
 

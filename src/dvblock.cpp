@@ -26,7 +26,7 @@ ADVBLock::~ADVBLock()
 
 void ADVBLock::__DeleteLock(uptr_t item, void *context)
 {
-    LOCK *lock = (LOCK *)item;
+    lock_t *lock = (lock_t *)item;
 
     UNUSED(context);
 
@@ -40,7 +40,7 @@ void ADVBLock::__DeleteLock(uptr_t item, void *context)
     delete lock;
 }
 
-AString ADVBLock::GetFilename(const LOCK *lock)
+AString ADVBLock::GetFilename(const lock_t *lock)
 {
     return ADVBConfig::Get().GetTempDir().CatPath(lock->filename);
 }
@@ -48,13 +48,13 @@ AString ADVBLock::GetFilename(const LOCK *lock)
 bool ADVBLock::GetLock(uint_t n)
 {
     const ADVBConfig& config = ADVBConfig::Get();
-    LOCK *lock = (LOCK *)lockhash.Read(name);
+    lock_t *lock = (lock_t *)lockhash.Read(name);
     bool success = false;
 
     (void)config;
 
     if (!lock) {
-        if ((lock = new LOCK) != NULL) {
+        if ((lock = new lock_t) != NULL) {
             lock->filename.printf("lockfile_%s.lock", name.str());
             lock->fd = -1;
             lock->refcount = 0;
@@ -88,7 +88,7 @@ bool ADVBLock::GetLock(uint_t n)
 void ADVBLock::ReleaseLock(uint_t n)
 {
     const ADVBConfig& config = ADVBConfig::Get();
-    LOCK *lock = (LOCK *)lockhash.Read(name);
+    lock_t *lock = (lock_t *)lockhash.Read(name);
 
     (void)config;
 

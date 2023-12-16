@@ -14,8 +14,8 @@ extern uint64_t JSONTimeOffset(uint64_t dt);
 typedef struct {
     AString search;
     AString replace;
-} REPLACEMENT;
-extern AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint_t n);
+} replacement_t;
+extern AString ReplaceStrings(const AString& str, const replacement_t *replacements, uint_t n);
 
 extern bool RunAndLogCommand(const AString& cmd);
 extern uint_t GetRemotePort(bool streamslave = false);

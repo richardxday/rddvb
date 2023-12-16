@@ -179,7 +179,7 @@ public:
     /** typedef for list of comparison fields
      */
     /*--------------------------------------------------------------------------------*/
-    typedef std::vector<sint_t> FIELDLIST;
+    typedef std::vector<sint_t> fieldlist_t;
 
     /*--------------------------------------------------------------------------------*/
     /** Parse a textual list of fields to populate a comparison priority list
@@ -192,7 +192,7 @@ public:
      * @return true if all field names parsed successfully
      */
     /*--------------------------------------------------------------------------------*/
-    static bool ParseFieldList(FIELDLIST& fieldlist, const AString& str, const AString& sep = ",", bool reverse = false);
+    static bool ParseFieldList(fieldlist_t& fieldlist, const AString& str, const AString& sep = ",", bool reverse = false);
 
     /*--------------------------------------------------------------------------------*/
     /** Compare two programmes using the provided list of fields
@@ -205,8 +205,8 @@ public:
      * @return -1, 0 or 1 depending on whether prog1 is <, = or > prog2
      */
     /*--------------------------------------------------------------------------------*/
-    static int  Compare(const ADVBProg *prog1, const ADVBProg *prog2, const FIELDLIST& fieldlist, const bool *reverse = NULL);
-    static int  Compare(const ADVBProg& prog1, const ADVBProg& prog2, const FIELDLIST& fieldlist, const bool *reverse = NULL) {
+    static int  Compare(const ADVBProg *prog1, const ADVBProg *prog2, const fieldlist_t& fieldlist, const bool *reverse = NULL);
+    static int  Compare(const ADVBProg& prog1, const ADVBProg& prog2, const fieldlist_t& fieldlist, const bool *reverse = NULL) {
         return Compare(&prog1, &prog2, fieldlist, reverse);
     }
 
@@ -365,14 +365,14 @@ public:
         uint8_t  series;
         uint16_t episode;
         uint16_t episodes;
-    } EPISODE;
+    } episode_t;
 
-    static EPISODE GetEpisode(const AString& str);
-    static AString GetEpisodeString(const EPISODE& ep);
+    static episode_t GetEpisode(const AString& str);
+    static AString GetEpisodeString(const episode_t& ep);
 
-    static int CompareEpisode(const EPISODE& ep1, const EPISODE& ep2);
+    static int CompareEpisode(const episode_t& ep1, const episode_t& ep2);
 
-    const EPISODE& GetEpisode()          const {return data->episode;}
+    const episode_t& GetEpisode()          const {return data->episode;}
     AString GetEpisodeString()           const;
     AString GetShortEpisodeID()          const;
 
@@ -539,12 +539,12 @@ public:
     bool WriteToJobQueue();
     bool ReadFromJob(const AString& filename);
 
-    typedef std::vector<ADVBProg *> PROGLIST;
-    typedef std::vector<PROGLIST *> PROGLISTLIST;
+    typedef std::vector<ADVBProg *> proglist_t;
+    typedef std::vector<proglist_t *> proglistlist_t;
 
     void ClearList() {list = NULL;}
-    void AddToList(PROGLIST *list);
-    PROGLIST *GetList() const {return list;}
+    void AddToList(proglist_t *list);
+    proglist_t *GetList() const {return list;}
     void RemoveFromList();
 
     static int CompareProgrammesByTime(uptr_t item1, uptr_t item2, void *context);
@@ -556,11 +556,11 @@ public:
     bool   CountOverlaps(const ADVBProgList& proglist);
     uint_t GetOverlaps() const {return overlaps;}
 
-    typedef ADVBPatterns::PATTERN PATTERN;
-    bool Match(const PATTERN& pattern) const {return ADVBPatterns::Match(*this, pattern);}
+    typedef ADVBPatterns::pattern_t pattern_t;
+    bool Match(const pattern_t& pattern) const {return ADVBPatterns::Match(*this, pattern);}
     bool Match(const ADataList& patternlist) const;
-    void AssignValues(const PATTERN& pattern) {ADVBPatterns::AssignValues(*this, pattern);}
-    void UpdateValues(const PATTERN& pattern) {ADVBPatterns::UpdateValues(*this, pattern);}
+    void AssignValues(const pattern_t& pattern) {ADVBPatterns::AssignValues(*this, pattern);}
+    void UpdateValues(const pattern_t& pattern) {ADVBPatterns::UpdateValues(*this, pattern);}
 
     static int SortListByOverlaps(uptr_t item1, uptr_t item2, void *context);
     static int CompareScore(const ADVBProg& prog1, const ADVBProg& prog2);
@@ -604,15 +604,15 @@ public:
 
     static bool GetFileFormat(const AString& filename, AString& format);
 
-    static void ModifySearchValue(const ADVBPatterns::FIELD *field, AString& value);
+    static void ModifySearchValue(const ADVBPatterns::field_t *field, AString& value);
 
     static bool debugsameprogramme;
 
 protected:
     friend class ADVBPatterns;
-    typedef ADVBPatterns::FIELD   FIELD;
-    typedef ADVBPatterns::VALUE   VALUE;
-    typedef ADVBPatterns::TERM    TERM;
+    typedef ADVBPatterns::field_t field_t;
+    typedef ADVBPatterns::value_t value_t;
+    typedef ADVBPatterns::term_t  term_t;
 
     static void     SetMarker(AString& marker, const AString& field);
     static bool     FieldExists(const AString& str, const AString& field, int p = 0, int *pos = NULL);
@@ -636,7 +636,7 @@ protected:
         uint32_t videoerrors;
         uint64_t duration;
 
-        EPISODE  episode;
+        episode_t episode;
 
         uint16_t assignedepisode;
         uint16_t year;
@@ -676,9 +676,9 @@ protected:
         } strings;
 
         char     strdata[0];
-    } DVBPROG;
+    } dvbprog_t;
 
-    static DVBPROG *ReadData(AStdData& fp);
+    static dvbprog_t *ReadData(AStdData& fp);
     bool WriteData(AStdData& fp) const;
 
     uint8_t *GetDataPtr(uint16_t offset) const {return (uint8_t *)((uptr_t)data + offset);}
@@ -702,9 +702,9 @@ protected:
     void     SetFlag(uint8_t flag, bool set = true);
     void     ClrFlag(uint8_t flag) {SetFlag(flag, false);}
 
-    bool MatchString(const TERM& term, const char *str) const;
+    bool MatchString(const term_t& term, const char *str) const;
 
-    static const FIELD *GetFields(uint_t& nfields);
+    static const field_t *GetFields(uint_t& nfields);
 
     /*--------------------------------------------------------------------------------*/
     /** Initialise static (local shared) data - only done once
@@ -738,20 +738,20 @@ protected:
     typedef struct {
         AString  aspect;
         uint64_t start, length;
-    } SPLIT;
+    } split_t;
 
     typedef struct {
         uint_t  pid;
         AString filename;
-    } MEDIAFILE;
+    } mediafile_t;
 
-    static bool CompareMediaFiles(const MEDIAFILE& file1, const MEDIAFILE& file2);
+    static bool CompareMediaFiles(const mediafile_t& file1, const mediafile_t& file2);
     static bool CompareFilenames(const AString& file1, const AString& file2) {return (CompareCase(file1, file2) > 0);}
 
-    void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect);
+    void ConvertSubtitles(const AString& src, const AString& dst, const std::vector<split_t>& splits, const AString& aspect);
     bool EncodeFile(const AString& inputfiles, const AString& aspect, const AString& outputfile, bool verbose, uint32_t *videoerrors = NULL);
 
-    static const DVBPROG *nullprog;
+    static const dvbprog_t *nullprog;
 
     enum {
         StringCount = sizeof(nullprog->strings) / sizeof(nullprog->strings.channel),
@@ -769,15 +769,15 @@ protected:
     };
 
 protected:
-    DVBPROG            *data;
+    dvbprog_t          *data;
     uint16_t           maxsize;
-    PROGLIST           *list;
+    proglist_t         *list;
     double             priority_score;
     uint_t             overlaps;
     AString            dircreationerrors;
 
     static AHash         fieldhash;
-    static const FIELD   fields[];
+    static const field_t fields[];
     static AString       dayformat;
     static AString       dateformat;
     static AString       timeformat;

@@ -101,7 +101,7 @@ bool ADVBDatabase::AddProg(const ADVBProg& prog)
 
     if (database && prog.Valid()) {
         //const ADVBChannelList& channellist = ADVBChannelList::Get();
-        const ADVBChannelList::CHANNEL *channel = NULL;
+        const ADVBChannelList::channel_t *channel = NULL;
 
         if (channel) {
 

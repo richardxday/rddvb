@@ -20,17 +20,17 @@ protected:
         AString type;
         AString name;
         AString icon;
-    } ENTRY;
+    } entry_t;
 
     static void __DeleteEntry(uptr_t item, void *context) {
         (void)context;
-        delete (ENTRY *)item;
+        delete (entry_t *)item;
     }
 
     AString GetKey(const AString& type, const AString& name) const {return type + ":" + name;}
 
-    const ENTRY *GetEntry(const AString& type, const AString& name) const;
-    ENTRY *GetWritableEntry(const AString& type, const AString& name, bool create = true);
+    const entry_t *GetEntry(const AString& type, const AString& name) const;
+    entry_t *GetWritableEntry(const AString& type, const AString& name, bool create = true);
 
     static bool __WriteEntry(const AString& key, uptr_t item, void *context);
 

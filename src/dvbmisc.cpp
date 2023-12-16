@@ -25,7 +25,7 @@ AString CatPath(const AString& dir1, const AString& dir2)
     return dir2;
 }
 
-AString ReplaceStrings(const AString& str, const REPLACEMENT *replacements, uint_t n)
+AString ReplaceStrings(const AString& str, const replacement_t *replacements, uint_t n)
 {
     AString res = str;
     uint_t i;

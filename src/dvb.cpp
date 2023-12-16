@@ -41,7 +41,7 @@ typedef struct {
 
 static AQuitHandler QuitHandler;
 
-static void DisplaySeries(const ADVBProgList::SERIES& series)
+static void DisplaySeries(const ADVBProgList::series_t& series)
 {
     uint_t j;
 
@@ -630,7 +630,7 @@ int main(int argc, const char *argv[])
                 }
 
                 for (k = 0; k < channellist.GetLCNCount(); k++) {
-                    const ADVBChannelList::CHANNEL *chan;
+                    const ADVBChannelList::channel_t *chan;
 
                     if ((chan = channellist.GetChannelByLCN(k)) != NULL) {
                         TABLEROW row;
@@ -824,7 +824,7 @@ int main(int argc, const char *argv[])
                 ADVBPatterns::ParsePatterns(patternlist, patterns, errors, ';');
 
                 for (i = 0; i < patternlist.Count(); i++) {
-                    const ADVBPatterns::PATTERN& pattern = *(const ADVBPatterns::PATTERN *)patternlist[i];
+                    const ADVBPatterns::pattern_t& pattern = *(const ADVBPatterns::pattern_t *)patternlist[i];
                     printf("%s", ADVBPatterns::ToString(pattern).str());
                 }
             }
@@ -999,7 +999,7 @@ int main(int argc, const char *argv[])
                 uint_t j, nnodvb = 0;
 
                 for (j = 0; j < list.GetChannelCount(); j++) {
-                    const ADVBChannelList::CHANNEL *channel = list.GetChannel(j);
+                    const ADVBChannelList::channel_t *channel = list.GetChannel(j);
 
                     printf("Channel %u/%u (LCN %u): '%s' (DVB '%s', XMLTV channel-id '%s')\n", j + 1, list.GetChannelCount(), channel->dvb.lcn, channel->xmltv.channelname.str(), channel->dvb.channelname.str(), channel->xmltv.channelid.str());
 
@@ -1122,7 +1122,7 @@ int main(int argc, const char *argv[])
                 printf("%sorted list chronologically\n", reverse ? "Reverse s" : "S");
             }
             else if (strcmp(argv[i], "--sort-by-fields") == 0) {
-                ADVBProg::FIELDLIST fieldlist;
+                ADVBProg::fieldlist_t fieldlist;
 
                 if (ADVBProg::ParseFieldList(fieldlist, argv[++i])) {
                     proglist.Sort(fieldlist);
@@ -1535,8 +1535,8 @@ int main(int argc, const char *argv[])
                 }
             }
             else if (stricmp(argv[i], "--find-series") == 0) {
-                ADVBProgList::SERIESLIST series;
-                ADVBProgList::SERIESLIST::iterator it;
+                ADVBProgList::serieslist_t series;
+                ADVBProgList::serieslist_t::iterator it;
 
                 proglist.FindSeries(series);
 
@@ -2059,7 +2059,7 @@ int main(int argc, const char *argv[])
             }
             else if (stricmp(argv[i], "--calc-trend") == 0) {
                 ADateTime startdate(argv[++i]);
-                ADVBProgList::TREND trend;
+                ADVBProgList::trend_t trend;
 
                 printf("Calculating trend from %s\n", startdate.DateToStr().str());
 
@@ -2165,8 +2165,8 @@ int main(int argc, const char *argv[])
                 ADVBProgList list;
 
                 if (list.ReadFromFile(config.GetScheduledFile())) {
-                    std::vector<ADVBProgList::TIMEGAP> gaps;
-                    ADVBProgList::TIMEGAP best;
+                    std::vector<ADVBProgList::timegap_t> gaps;
+                    ADVBProgList::timegap_t best;
                     uint_t i;
 
                     list.ReadFromFile(config.GetRecordingFile());
@@ -2175,7 +2175,7 @@ int main(int argc, const char *argv[])
                     best = list.FindGaps(ADateTime().TimeStamp(true), gaps);
 
                     for (i = 0; i < (uint_t)gaps.size(); i++) {
-                        const ADVBProgList::TIMEGAP& gap = gaps[i];
+                        const ADVBProgList::timegap_t& gap = gaps[i];
                         uint_t card = i;
 
                         if (gap.end < ADateTime::MaxDateTime) {
@@ -2198,7 +2198,7 @@ int main(int argc, const char *argv[])
 
                 if (reclist.ReadFromFile(config.GetRecordedFile())) {
                     if (schlist.ReadFromFile(config.GetScheduledFile())) {
-                        ADVBProgList::SERIESLIST serieslist;
+                        ADVBProgList::serieslist_t serieslist;
                         uint_t j;
 
                         lock.ReleaseLock();

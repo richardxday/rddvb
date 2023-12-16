@@ -208,10 +208,10 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
             ADVBProgList list;
 
             if (list.ReadFromFile(config.GetScheduledFile())) {
-                std::vector<ADVBProgList::TIMEGAP> gaps;
+                std::vector<ADVBProgList::timegap_t> gaps;
                 std::vector<dvbstreamprocs_t> procs;
                 std::map<uint_t,bool> virtualcardsinuse;
-                ADVBProgList::TIMEGAP best;
+                ADVBProgList::timegap_t best;
                 ADateTime maxtime;
 
                 list.ReadFromFile(config.GetRecordingFile());

@@ -29,7 +29,7 @@ bool ADVBProg::debugsameprogramme = true;
 
 AHash ADVBProg::fieldhash;
 
-const ADVBProg::DVBPROG *ADVBProg::nullprog = (const ADVBProg::DVBPROG *)NULL;
+const ADVBProg::dvbprog_t *ADVBProg::nullprog = (const ADVBProg::dvbprog_t *)NULL;
 
 #define DVBPROG_OFFSET(x) ((uint16_t)(uptr_t)&nullprog->x)
 #define DEFINE_FIELD(name,var,type,desc)    {#name, ADVBPatterns::FieldType_##type, false, DVBPROG_OFFSET(var), desc}
@@ -40,7 +40,7 @@ const ADVBProg::DVBPROG *ADVBProg::nullprog = (const ADVBProg::DVBPROG *)NULL;
 #define DEFINE_ASSIGN(name,var,type,desc)   {#name, ADVBPatterns::FieldType_##type, true, DVBPROG_OFFSET(var), desc}
 #define DEFINE_EXTERNAL(name,id,type,desc)  {#name, ADVBPatterns::FieldType_external_##type, false, id, desc}
 
-const ADVBProg::FIELD ADVBProg::fields[] = {
+const ADVBProg::field_t ADVBProg::fields[] = {
     {"prog", ADVBPatterns::FieldType_prog, false, 0, "Encoded Programme"},
 
     DEFINE_STRING(channel,     "TV channel"),
@@ -267,10 +267,10 @@ void ADVBProg::Init()
     overlaps       = 0;
 }
 
-ADVBProg::DVBPROG *ADVBProg::ReadData(AStdData& fp)
+ADVBProg::dvbprog_t *ADVBProg::ReadData(AStdData& fp)
 {
     static const uint8_t bigendian = (uint8_t)MachineIsBigEndian();
-    DVBPROG _data, *pdata = NULL;
+    dvbprog_t _data, *pdata = NULL;
     uint8_t swap    = AStdData::SWAP_NEVER;
     uint8_t version = DVBDATVERSION;
     uint8_t header;
@@ -318,7 +318,7 @@ ADVBProg::DVBPROG *ADVBProg::ReadData(AStdData& fp)
         }
 
         if ((i == StringCount) &&
-            ((pdata = (DVBPROG *)calloc(1, sizeof(_data) + _data.strings.end)) != NULL)) {
+            ((pdata = (dvbprog_t *)calloc(1, sizeof(_data) + _data.strings.end)) != NULL)) {
             memcpy(pdata, &_data, sizeof(*pdata));
 
             if (fp.readbytes(pdata->strdata, pdata->strings.end) != pdata->strings.end) {
@@ -376,7 +376,7 @@ bool ADVBProg::WriteData(AStdData& fp) const
     return success;
 }
 
-const ADVBProg::FIELD *ADVBProg::GetFields(uint_t& nfields)
+const ADVBProg::field_t *ADVBProg::GetFields(uint_t& nfields)
 {
     nfields = NUMBEROF(fields);
     return fields;
@@ -425,7 +425,7 @@ uint16_t ADVBProg::GetScoreDataOffset()
     return DVBPROG_OFFSET(score);
 }
 
-void ADVBProg::ModifySearchValue(const ADVBPatterns::FIELD *field, AString& value)
+void ADVBProg::ModifySearchValue(const ADVBPatterns::field_t *field, AString& value)
 {
     if ((stricmp(field->name, "channel")    == 0) ||
         (stricmp(field->name, "dvbchannel") == 0)) {
@@ -561,7 +561,7 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 
         case Flag_radioprogramme: {
             const ADVBChannelList& channelist = ADVBChannelList::Get();
-            const ADVBChannelList::CHANNEL *channel = channelist.GetChannelByName(GetDVBChannel());
+            const ADVBChannelList::channel_t *channel = channelist.GetChannelByName(GetDVBChannel());
 
             set = (channel && channel->dvb.hasaudio && !channel->dvb.hasvideo);
             break;
@@ -569,7 +569,7 @@ bool ADVBProg::GetFlag(uint8_t flag) const
 
         case Flag_tvprogramme: {
             const ADVBChannelList& channelist = ADVBChannelList::Get();
-            const ADVBChannelList::CHANNEL *channel = channelist.GetChannelByName(GetDVBChannel());
+            const ADVBChannelList::channel_t *channel = channelist.GetChannelByName(GetDVBChannel());
 
             set = (channel && channel->dvb.hasaudio && channel->dvb.hasvideo);
             break;
@@ -813,7 +813,7 @@ ADVBProg& ADVBProg::operator = (const ADVBProg& obj)
         if ((data == NULL) || ((sizeof(*obj.data) + obj.data->strings.end) > maxsize)) {
             maxsize = sizeof(*obj.data) + obj.data->strings.end;
             if (data != NULL) free(data);
-            data = (DVBPROG *)calloc(1, maxsize);
+            data = (dvbprog_t *)calloc(1, maxsize);
         }
 
         if ((data != NULL) && ((sizeof(*obj.data) + obj.data->strings.end) <= maxsize)) {
@@ -1211,7 +1211,7 @@ void ADVBProg::Delete()
 {
     if (data == NULL) {
         maxsize = sizeof(*data) + StringCount;
-        data    = (DVBPROG *)calloc(1, maxsize);
+        data    = (dvbprog_t *)calloc(1, maxsize);
     }
     else memset(data, 0, maxsize);
 
@@ -1231,7 +1231,7 @@ bool ADVBProg::FixData()
     bool changed = false;
 
     if (CompareCase(GetTitle(), "Futurama") == 0) {
-        EPISODE ep = GetEpisode(GetEpisodeNum());
+        episode_t ep = GetEpisode(GetEpisodeNum());
 
         if (ep.valid) {
             if      (ep.series == 1) ep.episodes = 20;
@@ -1297,7 +1297,7 @@ bool ADVBProg::SetString(const uint16_t *offset, const char *str)
         if ((diff != 0) || (strcmp(str, data->strdata + strings[field]) != 0)) {
             if ((sizeof(*data) + data->strings.end + diff) > maxsize) {
                 maxsize = (sizeof(*data) + data->strings.end + diff + 256) & ~255;
-                data    = (DVBPROG *)realloc(data, maxsize);
+                data    = (dvbprog_t *)realloc(data, maxsize);
                 if (data && ((sizeof(*data) + data->strings.end) < maxsize)) memset(data->strdata + data->strings.end, 0, maxsize - (sizeof(*data) + data->strings.end));
                 strings = &data->strings.channel;
             }
@@ -1348,7 +1348,7 @@ void ADVBProg::SetFlag(uint8_t flag, bool set)
  * @return true if all field names parsed successfully
  */
 /*--------------------------------------------------------------------------------*/
-bool ADVBProg::ParseFieldList(FIELDLIST& fieldlist, const AString& str, const AString& sep, bool reverse)
+bool ADVBProg::ParseFieldList(fieldlist_t& fieldlist, const AString& str, const AString& sep, bool reverse)
 {
     const sint_t mul = reverse ? -1 : 1;                        // multiplier for optional comparison reversal
     uint_t i, n = str.CountLines(sep, 0);
@@ -1356,14 +1356,14 @@ bool ADVBProg::ParseFieldList(FIELDLIST& fieldlist, const AString& str, const AS
 
     for (i = 0; i < n; i++) {
         AString name = str.Line(i, sep);
-        const FIELD *fieldptr;
+        const field_t *fieldptr;
         bool reversefield = (name.Left(1) == "-");              // a minus sign means reverse conmparison for this field
 
         if (reversefield) {
             name = name.Mid(1);                                 // remove minus sign
         }
 
-        if ((fieldptr = (const FIELD *)fieldhash.Read(name)) != NULL) {
+        if ((fieldptr = (const field_t *)fieldhash.Read(name)) != NULL) {
             const sint_t mul2 = mul * (reversefield ? -1 : 1);  // new multiplier is product of global reversal multiplier and field reversal flag
             const sint_t n = fieldptr - fields;
             fieldlist.push_back(mul2 * n);                      // multiply field number of reversal multiplier
@@ -1385,7 +1385,7 @@ bool ADVBProg::ParseFieldList(FIELDLIST& fieldlist, const AString& str, const AS
  * @return -1, 0 or 1 depending on whether prog1 is <, = or > prog2
  */
 /*--------------------------------------------------------------------------------*/
-int ADVBProg::Compare(const ADVBProg *prog1, const ADVBProg *prog2, const FIELDLIST& fieldlist, const bool *reverse)
+int ADVBProg::Compare(const ADVBProg *prog1, const ADVBProg *prog2, const fieldlist_t& fieldlist, const bool *reverse)
 {
     int res = 0;
 
@@ -1397,7 +1397,7 @@ int ADVBProg::Compare(const ADVBProg *prog1, const ADVBProg *prog2, const FIELDL
             bool  reversefield = (fieldlist[i] < 0);        // whether the comparison should be reversed
 
             if (n < NUMBEROF(fields)) {
-                const FIELD&  field = fields[n];
+                const field_t&  field = fields[n];
                 const uint8_t *ptr1 = prog1->GetDataPtr(field.offset);
                 const uint8_t *ptr2 = prog2->GetDataPtr(field.offset);
 
@@ -1648,9 +1648,9 @@ int ADVBProg::Compare(const ADVBProg *prog1, const ADVBProg *prog2, const bool *
     return res;
 }
 
-ADVBProg::EPISODE ADVBProg::GetEpisode(const AString& str)
+ADVBProg::episode_t ADVBProg::GetEpisode(const AString& str)
 {
-    EPISODE episode = {false, 0, 0, 0};
+    episode_t episode = {false, 0, 0, 0};
 
     if (str.Valid()) {
         uint_t _series, _episode, _episodes;
@@ -1712,7 +1712,7 @@ ADVBProg::EPISODE ADVBProg::GetEpisode(const AString& str)
     return episode;
 }
 
-AString ADVBProg::GetEpisodeString(const EPISODE& ep)
+AString ADVBProg::GetEpisodeString(const episode_t& ep)
 {
     AString res;
 
@@ -1744,7 +1744,7 @@ AString ADVBProg::GetShortEpisodeID() const
     return ((_epid.Left(2) == "EP") && !GetEpisode().valid) ? _epid.Left(2) + _epid.Right(4) : "";
 }
 
-int ADVBProg::CompareEpisode(const EPISODE& ep1, const EPISODE& ep2)
+int ADVBProg::CompareEpisode(const episode_t& ep1, const episode_t& ep2)
 {
     if (ep1.valid && ep2.valid) {
         if (ep1.series && ep2.series) {
@@ -1763,7 +1763,7 @@ AString ADVBProg::GetDescription(uint_t verbosity) const
 {
     ADateTime start = GetStartDT().UTCToLocal();
     ADateTime stop  = GetStopDT().UTCToLocal();
-    EPISODE ep;
+    episode_t ep;
     AString str;
     const char *p;
 
@@ -1976,7 +1976,7 @@ AString ADVBProg::GetQuickDescription() const
 {
     AString str = GetTitleAndSubtitle();
     const char *p;
-    EPISODE ep;
+    episode_t ep;
 
     ep = GetEpisode();
     if (ep.valid) {
@@ -2133,8 +2133,8 @@ bool ADVBProg::SameProgramme(const ADVBProg& prog1, const ADVBProg& prog2)
         const char     *desc2     = prog2.GetDesc();
         const char     *subtitle1 = prog1.GetSubtitle();
         const char     *subtitle2 = prog2.GetSubtitle();
-        const EPISODE& ep1        = prog1.GetEpisode();
-        const EPISODE& ep2        = prog2.GetEpisode();
+        const episode_t& ep1      = prog1.GetEpisode();
+        const episode_t& ep2      = prog2.GetEpisode();
 
         if ((prog1.IsPlus1() && (CompareNoCase(prog1.GetBaseChannel(), prog2.GetChannel()) == 0) && (prog1.GetStart() == (prog2.GetStart() + hour))) ||
             (prog2.IsPlus1() && (CompareNoCase(prog2.GetBaseChannel(), prog1.GetChannel()) == 0) && (prog2.GetStart() == (prog1.GetStart() + hour)))) {
@@ -2349,7 +2349,7 @@ bool ADVBProg::Match(const ADataList& patternlist) const
     bool match = false;
 
     for (i = 0; (i < patternlist.Count()) && !HasQuit() && !match; i++) {
-        const PATTERN& pattern = *(const PATTERN *)patternlist[i];
+        const pattern_t& pattern = *(const pattern_t *)patternlist[i];
 
         if (pattern.enabled) {
             match |= Match(pattern);
@@ -2560,7 +2560,7 @@ bool ADVBProg::ReadFromJob(const AString& filename)
     return success;
 }
 
-void ADVBProg::AddToList(PROGLIST *list)
+void ADVBProg::AddToList(proglist_t *list)
 {
     this->list = list;
     list->push_back(this);
@@ -2568,7 +2568,7 @@ void ADVBProg::AddToList(PROGLIST *list)
 
 void ADVBProg::RemoveFromList()
 {
-    PROGLIST::iterator it;
+    proglist_t::iterator it;
     if (list && ((it = std::find(list->begin(), list->end(), this)) != list->end())) list->erase(it);
 }
 
@@ -3336,7 +3336,7 @@ AString ADVBProg::GetParentheses(const AString& line, int p)
     return "";
 }
 
-void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const std::vector<SPLIT>& splits, const AString& aspect)
+void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const std::vector<split_t>& splits, const AString& aspect)
 {
     const ADVBConfig& config = ADVBConfig::Get();
     FILE_INFO info;
@@ -3372,7 +3372,7 @@ void ADVBProg::ConvertSubtitles(const AString& src, const AString& dst, const st
                         uint_t i;
 
                         for (i = 0; i < splits.size(); i++) {
-                            const SPLIT& split = splits[i];
+                            const split_t& split = splits[i];
 
                             if (split.aspect == aspect) {
                                 if ((t >= split.start) && (!split.length || (t < (split.start + split.length)))) {
@@ -3481,7 +3481,7 @@ bool ADVBProg::EncodeFile(const AString& inputfiles, const AString& aspect, cons
     return success;
 }
 
-bool ADVBProg::CompareMediaFiles(const MEDIAFILE& file1, const MEDIAFILE& file2)
+bool ADVBProg::CompareMediaFiles(const mediafile_t& file1, const mediafile_t& file2)
 {
     return ((file1.pid < file2.pid) ||
             ((file1.pid == file2.pid) && (file1.filename < file2.filename)));
@@ -3562,11 +3562,11 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
     }
     else {
         // use advanced encoding, requires ProjectX and can split a file into the most common aspect ratio
-        std::vector<SPLIT> splits;
+        std::vector<split_t> splits;
         std::map<AString,uint64_t> lengths;
         AString bestaspect;
-        std::vector<MEDIAFILE> videofiles;
-        std::vector<MEDIAFILE> audiofiles;
+        std::vector<mediafile_t> videofiles;
+        std::vector<mediafile_t> audiofiles;
         std::vector<AString>   subtitlefiles;
         size_t i;
 
@@ -3610,7 +3610,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                         t2 = CalcTime(GetParentheses(line, p));
 
                         if (t2 > t1) {
-                            SPLIT split = {aspect, t1, t2 - t1};
+                            split_t split = {aspect, t1, t2 - t1};
 
                             config.printf("%-6s @ %s for %s", split.aspect.str(), GenTime(split.start).str(), GenTime(split.length).str());
 
@@ -3643,7 +3643,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                         config.printf("Created file: %s%s (PID %u)", filename.str(), AStdFile::exists(filename) ? "" : " (DOES NOT EXIST!)", pid);
 
                         if (AStdFile::exists(filename)) {
-                            MEDIAFILE file = {pid, filename};
+                            mediafile_t file = {pid, filename};
 
                             if (filename.Suffix() == videofilesuffix) {
                                 videofiles.push_back(file);
@@ -3662,7 +3662,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
                 }
 
                 {
-                    SPLIT split = {aspect, t1, 0};
+                    split_t split = {aspect, t1, 0};
                     splits.push_back(split);
 
                     config.printf("%-6s @ %s for %s", split.aspect.str(), GenTime(split.start).str(), GenTime(totallen - split.start).str());

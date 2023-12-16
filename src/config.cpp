@@ -742,7 +742,7 @@ bool ADVBConfig::UnDeleteUser(const AString& user) const
     return success;
 }
 
-bool ADVBConfig::ReadReplacementsFile(std::vector<REPLACEMENT>& replacements, const AString& filename) const
+bool ADVBConfig::ReadReplacementsFile(std::vector<replacement_t>& replacements, const AString& filename) const
 {
     AStdFile fp;
     bool success = false;
@@ -756,7 +756,7 @@ bool ADVBConfig::ReadReplacementsFile(std::vector<REPLACEMENT>& replacements, co
             int p = 0;
 
             if ((line.Word(0)[0] != ';') && ((p = line.Pos("=")) >= 0)) {
-                REPLACEMENT repl = {
+                replacement_t repl = {
                     line.Left(p).Word(0).DeQuotify(),
                     line.Mid(p + 1).Word(0).DeQuotify(),
                 };

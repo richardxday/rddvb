@@ -140,7 +140,7 @@ int ADVBProgList::SortProgs(uptr_t item1, uptr_t item2, void *pContext)
 
 int ADVBProgList::SortProgsAdvanced(uptr_t item1, uptr_t item2, void *pContext)
 {
-    return ADVBProg::Compare((const ADVBProg *)item1, (const ADVBProg *)item2, *(const ADVBProg::FIELDLIST *)pContext);
+    return ADVBProg::Compare((const ADVBProg *)item1, (const ADVBProg *)item2, *(const ADVBProg::fieldlist_t *)pContext);
 }
 
 void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
@@ -261,7 +261,7 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
                         const ADVBChannelList& channellist = ADVBChannelList::Get();
                         AString channelid = pNode->GetAttribute("channel");
                         AString channel   = channellist.LookupXMLTVChannel(channelid);
-                        const ADVBChannelList::CHANNEL *chandata;
+                        const ADVBChannelList::channel_t *chandata;
 
                         channelidvalidhash[channelid] = true;
 
@@ -1120,7 +1120,7 @@ void ADVBProgList::FindProgrammes(ADVBProgList& dest, const ADataList& patternli
         bool     excluded  = false;
 
         for (j = 0; (j < n) && !HasQuit(); j++) {
-            const PATTERN& pattern = *(const PATTERN *)patternlist[j];
+            const pattern_t& pattern = *(const pattern_t *)patternlist[j];
 
             if (pattern.enabled) {
                 bool match = prog1 ? prog1->Match(pattern) : prog.Match(pattern);
@@ -1537,8 +1537,8 @@ void ADVBProgList::UnscheduleAllProgrammes()
 
 int ADVBProgList::SortPatterns(uptr_t item1, uptr_t item2, void *context)
 {
-    const PATTERN& pat1 = *(const PATTERN *)item1;
-    const PATTERN& pat2 = *(const PATTERN *)item2;
+    const pattern_t& pat1 = *(const pattern_t *)item1;
+    const pattern_t& pat2 = *(const pattern_t *)item2;
     uint_t pat1dis = (pat1.pattern[0] == '#');
     uint_t pat2dis = (pat2.pattern[0] == '#');
     int res;
@@ -1787,7 +1787,7 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
             AString   errors;
             ReadPatterns(patternlist, errors, false);
 
-            std::map<AString, ADVBPatterns::PATTERN> extraterms;
+            std::map<AString, ADVBPatterns::pattern_t> extraterms;
             AString str;
             if ((str = config.GetConfigItem("extraterms")).Valid()) {
                 AString errs = ADVBPatterns::ParsePattern(str, extraterms[""]);
@@ -1797,7 +1797,7 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
             }
 
             for (i = 0; i < patternlist.Count(); i++) {
-                PATTERN& pattern = *(PATTERN *)patternlist[i];
+                pattern_t& pattern = *(pattern_t *)patternlist[i];
                 const AString& user = pattern.user;
 
                 if (user.Valid()) {
@@ -1818,16 +1818,16 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
                 config.printf("Errors found during parsing:");
 
                 for (i = 0; i < patternlist.Count(); i++) {
-                    const PATTERN& pattern = *(const PATTERN *)patternlist[i];
+                    const pattern_t& pattern = *(const pattern_t *)patternlist[i];
 
                     if (pattern.errors.Valid()) {
                         config.printf("Parsing '%s': %s", pattern.pattern.str(), pattern.errors.str());
                     }
                 }
 
-                std::map<AString, ADVBPatterns::PATTERN>::iterator it;
+                std::map<AString, ADVBPatterns::pattern_t>::iterator it;
                 for (it = extraterms.begin(); it != extraterms.end(); ++it) {
-                    const PATTERN& pattern = it->second;
+                    const pattern_t& pattern = it->second;
 
                     if (pattern.errors.Valid()) {
                         config.printf("Parsing '%s': %s", pattern.pattern.str(), pattern.errors.str());
@@ -1891,7 +1891,7 @@ void ADVBProgList::Sort(bool reverse)
     Sort(&SortProgs, &reverse);
 }
 
-void ADVBProgList::Sort(const ADVBProg::FIELDLIST& fieldlist)
+void ADVBProgList::Sort(const ADVBProg::fieldlist_t& fieldlist)
 {
     if (fieldlist.size() > 0) {
         Sort(&SortProgsAdvanced, (void *)&fieldlist);
@@ -2143,7 +2143,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
     {
         ADVBProgList programmeslostlist;
         ADVBProgList newprogrammeslist;
-        SERIESLIST serieslist;
+        serieslist_t serieslist;
 
         // find programmes in old schedule list but not in new one
         programmeslostlist.FindDifferences(oldscheduledlist, scheduledlist, true, false);
@@ -2308,13 +2308,13 @@ int ADVBProgList::CompareRepeatLists(uptr_t item1, uptr_t item2, void *context)
     return ADVBProg::CompareScore(prog1, prog2);
 }
 
-void ADVBProgList::CountOverlaps(const ADVBProg::PROGLISTLIST& repeatlists, const ADateTime& starttime)
+void ADVBProgList::CountOverlaps(const ADVBProg::proglistlist_t& repeatlists, const ADateTime& starttime)
 {
     uint_t i;
 
     // set scores for the first programme of each list (for sorting below)
     for (i = 0; i < repeatlists.size(); i++) {
-        const ADVBProg::PROGLIST& list = *repeatlists[i];
+        const ADVBProg::proglist_t& list = *repeatlists[i];
         uint_t j;
 
         for (j = 0; j < list.size(); j++) {
@@ -2330,7 +2330,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 {
     const ADVBConfig& config = ADVBConfig::Get();
     // for each programme, attach it to a list of repeats
-    ADVBProg::PROGLISTLIST repeatlists;
+    ADVBProg::proglistlist_t repeatlists;
     uint_t i, nscheduledmissed = 0, nearliestscheduled = 0, nscheduled = 0;
 
     for (i = 0; i < Count(); i++) {
@@ -2338,10 +2338,10 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 
         // no point checking anything that is already part of a list!
         if (!prog.GetList()) {
-            ADVBProg::PROGLIST *list;
+            ADVBProg::proglist_t *list;
 
             // this programme MUST be part of a new list since it isn't already part of an existing list
-            if ((list = new ADVBProg::PROGLIST) != NULL) {
+            if ((list = new ADVBProg::proglist_t) != NULL) {
                 // dvbadd list to list of repeat lists
                 repeatlists.push_back(list);
 
@@ -2374,7 +2374,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
     config.logit("--------------------------------------------------------------------------------");
     for (i = 0; i < Count(); i++) {
         const ADVBProg&           prog = GetProg(i);
-        const ADVBProg::PROGLIST& list = *prog.GetList();
+        const ADVBProg::proglist_t& list = *prog.GetList();
         uint_t entry = std::find(list.begin(), list.end(), &prog) - list.begin();
 
         config.logit("%s (entry %u/%u, %d overlaps, %u repeats, score %0.1lf)",
@@ -2391,7 +2391,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
     // second round allows programmes to butt up against each other
     const uint_t nchecks = nlists * 2;  // two complete rounds
     for (i = 0; (Count() > 0); i++) {
-        ADVBProg::PROGLIST deletelist;
+        ADVBProg::proglist_t deletelist;
         ADVBProg& prog = GetProgWritable(0);
         uint_t    j, k;
         bool      scheduled = false;
@@ -2420,7 +2420,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
                   (prog.GetStart() >= recstarttimes[vcard]) &&                              // record start (excluding pre-handle) is after earliest record time; and
                   !schedulelist.FindOverlap(prog)))) {                                      // this programme (excluding pre- and post- handles) does not overlap anything scheduled for this card
                 // this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
-                const ADVBProg::PROGLIST& list = *prog.GetList();
+                const ADVBProg::proglist_t& list = *prog.GetList();
                 uint_t entry = std::find(list.begin(), list.end(), &prog) - list.begin();
 
                 if (entry == 0) nearliestscheduled++;
@@ -2481,7 +2481,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 
         // this repeat of the programme cannot be scheduled
         if (!scheduled) {
-            const ADVBProg::PROGLIST *repeatlist = prog.GetList();
+            const ADVBProg::proglist_t *repeatlist = prog.GetList();
 
             // check to see if this repeat is the last one
             if (repeatlist->size() == 1) {
@@ -2895,9 +2895,9 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
             const ADateTime startdate("utc now-6M");
             const ADateTime enddate("utc now+2w+3d");
             const double    pretime = 2.0 * 24.0 * 3600.0;
-            TREND allrectrend = recordedlist.CalculateTrend(firstrecdate, lastrecdate);
-            TREND rectrend = recordedlist.CalculateTrend(startdate, lastrecdate);
-            TREND schtrend = recordedlist.CalculateTrend(firstschdate, lastschdate);
+            trend_t allrectrend = recordedlist.CalculateTrend(firstrecdate, lastrecdate);
+            trend_t rectrend = recordedlist.CalculateTrend(startdate, lastrecdate);
+            trend_t schtrend = recordedlist.CalculateTrend(firstschdate, lastschdate);
 
             if (graphsuffix == "png") {
                 fp.printf("set terminal pngcairo size 1280,800\n");
@@ -3421,13 +3421,13 @@ bool ADVBProgList::CheckRecordingNow()
     return success;
 }
 
-void ADVBProgList::FindSeries(SERIESLIST& serieslist) const
+void ADVBProgList::FindSeries(serieslist_t& serieslist) const
 {
     uint_t i;
 
     for (i = 0; i < Count(); i++) {
         const ADVBProg&          prog    = GetProg(i);
-        const ADVBProg::EPISODE& episode = prog.GetEpisode();
+        const ADVBProg::episode_t& episode = prog.GetEpisode();
 
         if (episode.valid && episode.episode) {
             uint_t ser = episode.series;
@@ -3442,7 +3442,7 @@ void ADVBProgList::FindSeries(SERIESLIST& serieslist) const
             }
 #endif
 
-            SERIES& series = serieslist[prog.GetTitle()];
+            series_t& series = serieslist[prog.GetTitle()];
             if (series.title.Empty()) series.title = prog.GetTitle();
 
             if (ser >= series.list.size()) series.list.resize(ser + 1);
@@ -3486,7 +3486,7 @@ void ADVBProgList::FindSeries(SERIESLIST& serieslist) const
 
 double ADVBProgList::ScoreProgrammeByPopularityFactors(const ADVBProg& prog, void *context)
 {
-    const POPULARITY_FACTORS& factors = *(const POPULARITY_FACTORS *)context;
+    const popularityfactors_t& factors = *(const popularityfactors_t *)context;
     double score = 0.0;
 
     if (prog.IsRecorded())  score += factors.recordedfactor;
@@ -3514,11 +3514,11 @@ bool ADVBProgList::__CollectPopularity(const AString& key, uptr_t item, void *co
 
 int  ADVBProgList::__ComparePopularity(const AListNode *pNode1, const AListNode *pNode2, void *pContext)
 {
-    const AHash&      hash   = *(const AHash *)pContext;
-    const AString&    title1 = *AString::Cast(pNode1);
-    const AString&    title2 = *AString::Cast(pNode2);
-    const POPULARITY& pop1   = *(const POPULARITY *)hash.Read(title1);
-    const POPULARITY& pop2   = *(const POPULARITY *)hash.Read(title2);
+    const AHash&        hash   = *(const AHash *)pContext;
+    const AString&      title1 = *AString::Cast(pNode1);
+    const AString&      title2 = *AString::Cast(pNode2);
+    const popularity_t& pop1   = *(const popularity_t *)hash.Read(title1);
+    const popularity_t& pop2   = *(const popularity_t *)hash.Read(title2);
     int res = 0;
 
     if (pop2.score > pop1.score) res =  1;
@@ -3537,9 +3537,9 @@ void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& p
     for (i = 0; i < Count(); i++) {
         const ADVBProg& prog  = GetProg(i);
         const AString&  title = prog.GetTitle();
-        POPULARITY      *pop  = (POPULARITY *)hash.Read(title);
+        popularity_t    *pop  = (popularity_t *)hash.Read(title);
 
-        if (!pop && ((pop = new POPULARITY) != NULL)) {
+        if (!pop && ((pop = new popularity_t) != NULL)) {
             memset(pop, 0, sizeof(*pop));
 
             hash.Insert(title, (uptr_t)pop);
@@ -3557,7 +3557,7 @@ void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& p
 #if 0
     const AString *str = AString::Cast(list.First());
     while (str) {
-        const POPULARITY& pop = *(const POPULARITY *)hash.Read(*str);
+        const popularity_t& pop = *(const popularity_t *)hash.Read(*str);
 
         debug("Title '%s' count %u score %u\n", str->str(), pop.count, pop.score);
 
@@ -3566,9 +3566,9 @@ void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& p
 #endif
 }
 
-ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate, const ADateTime& enddate) const
+ADVBProgList::trend_t ADVBProgList::CalculateTrend(const ADateTime& startdate, const ADateTime& enddate) const
 {
-    TREND    trend;
+    trend_t  trend;
     uint64_t start = (uint64_t)startdate;
     uint64_t end   = (uint64_t)enddate;
     uint_t   i;
@@ -3618,11 +3618,11 @@ ADVBProgList::TREND ADVBProgList::CalculateTrend(const ADateTime& startdate, con
     return trend;
 }
 
-ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector<TIMEGAP>& gaps, const std::map<uint_t,bool> *cardstoavoid) const
+ADVBProgList::timegap_t ADVBProgList::FindGaps(const ADateTime& start, std::vector<timegap_t>& gaps, const std::map<uint_t,bool> *cardstoavoid) const
 {
     const ADVBConfig& config = ADVBConfig::Get();
     std::vector<std::vector<const ADVBProg *> > lists;
-    TIMEGAP res = {start, start, ~0U};
+    timegap_t res = {start, start, ~0U};
     uint_t i;
 
     config.GetPhysicalDVBCard(0);
@@ -3646,7 +3646,7 @@ ADVBProgList::TIMEGAP ADVBProgList::FindGaps(const ADateTime& start, std::vector
 
     for (i = 0; i < (uint_t)lists.size(); i++) {
         const std::vector<const ADVBProg *>& list = lists[i];
-        TIMEGAP& gap = gaps[i];
+        timegap_t& gap = gaps[i];
 
         gap.start = start;
         gap.end   = ADateTime::MaxDateTime;
@@ -3693,7 +3693,7 @@ bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, 
     if (i < Count()) {
         const ADateTime buffer(10000);
         ADVBProg prog(GetProg(i));
-        std::vector<TIMEGAP> gaps;
+        std::vector<timegap_t> gaps;
         int best = -1;
 
         if (user.Valid()) prog.SetUser(user);
@@ -3703,7 +3703,7 @@ bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, 
         FindGaps(dt, gaps);
 
         for (i = 0; i < (uint_t)gaps.size(); i++) {
-            const TIMEGAP& gap = gaps[i];
+            const timegap_t& gap = gaps[i];
 
             if ((prog.GetRecordStartDT() >= (gap.start + buffer)) && ((prog.GetRecordStopDT() + buffer)  <= gap.end)) {
                 if ((best < 0) || (gap.end < gaps[best].end)) best = i;
@@ -3757,7 +3757,7 @@ bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, 
     return success;
 }
 
-void ADVBProgList::StripFilmsAndSeries(const SERIESLIST& serieslist)
+void ADVBProgList::StripFilmsAndSeries(const serieslist_t& serieslist)
 {
     uint_t i;
 
@@ -3766,8 +3766,8 @@ void ADVBProgList::StripFilmsAndSeries(const SERIESLIST& serieslist)
         bool delprog = prog.IsFilm();
 
         if (!delprog) {
-            SERIESLIST::const_iterator it = serieslist.find(prog.GetTitle());
-            const ADVBProg::EPISODE& ep = prog.GetEpisode();
+            serieslist_t::const_iterator it = serieslist.find(prog.GetTitle());
+            const ADVBProg::episode_t& ep = prog.GetEpisode();
 
             delprog = ((it != serieslist.end()) &&
                        (!ep.valid ||

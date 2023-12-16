@@ -17,9 +17,9 @@ protected:
         AString filename;
         int     fd;
         uint_t  refcount;
-    } LOCK;
+    } lock_t;
 
-    static AString GetFilename(const LOCK *lock);
+    static AString GetFilename(const lock_t *lock);
 
     static void __DeleteLock(uptr_t item, void *context);
 

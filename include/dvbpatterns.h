@@ -33,31 +33,31 @@ public:
         AString   pattern;
         AString   errors;
         ADataList list;
-    } PATTERN;
+    } pattern_t;
 
-    static void __DeletePattern(PATTERN *pattern);
+    static void __DeletePattern(pattern_t *pattern);
     static void __DeletePattern(uptr_t item, void *context) {
         UNUSED(context);
-        __DeletePattern((PATTERN *)item);
+        __DeletePattern((pattern_t *)item);
     }
 
-    static const PATTERN DefaultPattern;
+    static const pattern_t DefaultPattern;
 
-    static AString ParsePattern(const AString& _line, PATTERN& pattern, const AString& user = "");
-    static void    AppendTerms(PATTERN& dstpattern, const PATTERN& srcpattern, bool excludeduplicatefields = true);
-    static AString RemoveDuplicateTerms(PATTERN& pattern);
+    static AString ParsePattern(const AString& _line, pattern_t& pattern, const AString& user = "");
+    static void    AppendTerms(pattern_t& dstpattern, const pattern_t& srcpattern, bool excludeduplicatefields = true);
+    static AString RemoveDuplicateTerms(pattern_t& pattern);
 
-    static bool Match(const ADVBProg& prog, const PATTERN& pattern);
-    static void AssignValues(ADVBProg& prog, const PATTERN& pattern);
-    static void UpdateValues(ADVBProg& prog, const PATTERN& pattern);
+    static bool Match(const ADVBProg& prog, const pattern_t& pattern);
+    static void AssignValues(ADVBProg& prog, const pattern_t& pattern);
+    static void UpdateValues(ADVBProg& prog, const pattern_t& pattern);
 
     static rapidjson::Value GetPatternDefinitionJSON(rapidjson::Document& doc);
 
-    static const char *GetOperatorText(const PATTERN& pattern, uint_t term);
-    static const char *GetOperatorDescription(const PATTERN& pattern, uint_t term);
-    static bool       OperatorIsAssign(const PATTERN& pattern, uint_t term);
+    static const char *GetOperatorText(const pattern_t& pattern, uint_t term);
+    static const char *GetOperatorDescription(const pattern_t& pattern, uint_t term);
+    static bool       OperatorIsAssign(const pattern_t& pattern, uint_t term);
 
-    static AString    ToString(const PATTERN& pattern, uint_t level = 0);
+    static AString    ToString(const pattern_t& pattern, uint_t level = 0);
 
     typedef struct {
         uint_t    start;
@@ -67,7 +67,7 @@ public:
         uint8_t   opindex;
         AString   value;
         bool      orflag;
-    } TERMDATA;
+    } termdata_t;
 
     typedef struct {
         const char *name;
@@ -75,9 +75,9 @@ public:
         bool       assignable;
         uint16_t   offset;
         const char *desc;
-    } FIELD;
+    } field_t;
 
-    static const TERMDATA *GetTermData(const PATTERN& pattern, uint_t term) {return &(((const TERM *)pattern.list[term])->data);}
+    static const termdata_t *GetTermData(const pattern_t& pattern, uint_t term) {return &(((const term_t *)pattern.list[term])->data);}
 
 protected:
     friend class ADVBProg;
@@ -186,7 +186,7 @@ protected:
         uint8_t    opcode;
         const char *desc;
         uint_t     len;
-    } OPERATOR;
+    } operator_t;
 
     typedef union {
         uint64_t         u64;
@@ -201,35 +201,35 @@ protected:
         const char       *str;
         const ADVBProg   *prog;
         const std::regex *regex;
-    } VALUE;
+    } value_t;
 
     typedef struct {
-        TERMDATA    data;
-        const FIELD *field;
+        termdata_t    data;
+        const field_t *field;
         uint8_t     datetype;
-        VALUE       value;
-        PATTERN     *pattern;
+        value_t       value;
+        pattern_t   *pattern;
         std::regex  regex;
-    } TERM;
+    } term_t;
 
-    static void __DeleteTerm(TERM *term);
+    static void __DeleteTerm(term_t *term);
     static void __DeleteTerm(uptr_t item, void *context) {
         UNUSED(context);
-        __DeleteTerm((TERM *)item);
+        __DeleteTerm((term_t *)item);
     }
 
     static bool UpdatePatternInFile(const AString& filename, const AString& pattern, const AString& newpattern);
     static bool AddPatternToFile(const AString& filename, const AString& pattern);
 
-    static void GetFieldValue(const FIELD& field, VALUE& value, AString& val);
-    static void AssignValue(ADVBProg& prog, const FIELD& field, const VALUE& value, uint8_t termtype = Operator_EQ);
+    static void GetFieldValue(const field_t& field, value_t& value, AString& val);
+    static void AssignValue(ADVBProg& prog, const field_t& field, const value_t& value, uint8_t termtype = Operator_EQ);
 
-    static const OPERATOR *FindOperator(const PATTERN& pattern, uint_t term);
+    static const operator_t *FindOperator(const pattern_t& pattern, uint_t term);
 
     static int SortTermsByAssign(uptr_t item1, uptr_t item2, void *context);
-    static TERM *DuplicateTerm(const TERM *term);
+    static term_t *DuplicateTerm(const term_t *term);
 
-    static bool MatchString(const TERM& term, const char *str, bool ignoreinvert = false);
+    static bool MatchString(const term_t& term, const char *str, bool ignoreinvert = false);
 
     static sint64_t TermTypeToInt64s(const void *p, uint_t termtype);
     static void     Int64sToTermType(void *p, sint64_t val, uint_t termtype);
@@ -237,18 +237,18 @@ protected:
     static double   TermTypeToDouble(const void *p, uint_t termtype);
     static void     DoubleToTermType(void *p, double val, uint_t termtype);
 
-    static AString ToString(const VALUE&    val, uint8_t fieldtype, uint8_t datetype);
-    static AString ToString(const FIELD&    val);
-    static AString ToString(const TERMDATA& val);
-    static AString ToString(const TERM&     val, uint_t level);
+    static AString ToString(const value_t&    val, uint8_t fieldtype, uint8_t datetype);
+    static AString ToString(const field_t&    val);
+    static AString ToString(const termdata_t& val);
+    static AString ToString(const term_t&     val, uint_t level);
 
     static uint_t Skip(const AString& line, uint_t i, char terminator = ')');
     static uint_t CheckOrStatement(const AString& line, uint_t i, bool& orflag);
 
-    static int CompareDates(uint64_t val, const TERM& term);
+    static int CompareDates(uint64_t val, const term_t& term);
 
 protected:
-    static OPERATOR operators[];
+    static operator_t operators[];
 };
 
 #endif

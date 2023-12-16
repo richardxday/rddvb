@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
         size_t j;
 
         for (i = 0; i < 1000; i++) {
-            const ADVBChannelList::CHANNEL *chan;
+            const ADVBChannelList::channel_t *chan;
 
             if ((chan = channellist.GetChannelByLCN(i)) != NULL) {
                 for (j = 0; j < channels.size(); j++) {
