@@ -238,6 +238,8 @@ public:
     uint64_t    GetLength()              const {return GetStop() - GetStart();}
     ADateTime   GetStartDT()             const {return ADateTime(GetStart());}
     ADateTime   GetStopDT()              const {return ADateTime(GetStop());}
+    void        SetStart(uint64_t dt)          {data->start = dt;}
+    void        SetStop(uint64_t dt)           {data->stop  = dt;}
 
     uint64_t    GetRecordStart()         const {return data->recstart;}
     uint64_t    GetRecordStop()          const {return data->recstop;}
@@ -312,6 +314,7 @@ public:
 
     bool SetUUID();
 
+    bool SetDesc(const char *str)              {return SetString(&data->strings.desc,       str);}
     bool SetDVBChannel(const char *str)        {return SetString(&data->strings.dvbchannel, str);}
     bool SetUser(const char       *str)        {return SetString(&data->strings.user,       str);}
     bool SetDir(const char        *str)        {return SetString(&data->strings.dir,        str);}
