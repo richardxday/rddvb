@@ -1105,55 +1105,64 @@ ADVBProg *ADVBProgList::FindUUIDWritable(const AString& uuid) const
 
 uint_t ADVBProgList::CombineSplitFilms()
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     std::map<AString, std::vector<ADVBProg *> > progsperchannel;
     std::vector<splitprogramme_t> splitprogrammes;
     std::map<ADVBProg *, bool> deletelist;
-    const uint64_t maxsplitlength = (uint64_t)10 * (uint64_t)60 * (uint64_t)1000;
-
-    (void)config;
+    const auto maxsplitlength = (uint64_t)10 * (uint64_t)60 * (uint64_t)1000;
 
     for (uint_t i = 0; i < Count(); i++) {
-        ADVBProg *prog = &GetProgWritable(i);
-        auto& list = progsperchannel[prog->GetChannel()];
+        auto  *prog = &GetProgWritable(i);
+        auto& list  = progsperchannel[prog->GetChannel()];
 
         list.push_back(prog);
 
         if (list.size() >= 3) {
+            // check the last three programmes of the list for this channel
             splitprogramme_t splitprogramme = {
-                .keepprog = list[list.size() - 3],
-                .splitprog = list[list.size() - 2],
-                .deleteprog = list[list.size() - 1],
+                .part1prog = list[list.size() - 3],    ///< the first part of the film which will be kept
+                .splitprog = list[list.size() - 2],    ///< the programme that splits the film
+                .part2prog = list[list.size() - 1],    ///< the second part of the film which will be deleted
             };
 
-            if (splitprogramme.keepprog->IsFilm() &&
-                splitprogramme.deleteprog->IsFilm() &&
-                (strcmp(splitprogramme.keepprog->GetTitleAndSubtitle(), splitprogramme.deleteprog->GetTitleAndSubtitle()) == 0) &&
-                (strcmp(splitprogramme.keepprog->GetEpisodeID(), splitprogramme.deleteprog->GetEpisodeID()) == 0) &&
-                (splitprogramme.splitprog->GetLength() <= maxsplitlength) &&
-                (deletelist.find(splitprogramme.keepprog) == deletelist.end()) &&
-                (deletelist.find(splitprogramme.splitprog) == deletelist.end()) &&
-                (deletelist.find(splitprogramme.deleteprog) == deletelist.end())) {
+            if (splitprogramme.part1prog->IsFilm() &&                                                                               ///< the first part must be a film
+                !splitprogramme.splitprog->IsFilm() &&                                                                              ///< the splitting programme must not be a film
+                splitprogramme.part2prog->IsFilm() &&                                                                               ///< the second part must be a film
+                (strcmp(splitprogramme.part1prog->GetTitleAndSubtitle(), splitprogramme.part2prog->GetTitleAndSubtitle()) == 0) &&  ///< the titles of the first and second parts must match
+                (strcmp(splitprogramme.part1prog->GetEpisodeID(), splitprogramme.part2prog->GetEpisodeID()) == 0) &&                ///< the episode ID's of the first and second parts must match
+                (splitprogramme.part1prog->GetYear() == splitprogramme.part2prog->GetYear()) &&                                     ///< the year's of the first and second parts must match
+                (splitprogramme.splitprog->GetLength() <= maxsplitlength) &&                                                        ///< the maximum length of the split programme is 10 minutes
+                (deletelist.find(splitprogramme.part1prog) == deletelist.end()) &&                                                  ///< programme not scheduledfor deletion
+                (deletelist.find(splitprogramme.splitprog) == deletelist.end()) &&                                                  ///< programme not scheduledfor deletion
+                (deletelist.find(splitprogramme.part2prog) == deletelist.end())) {                                                  ///< programme not scheduledfor deletion
+                // this is a valid split -> keep structure
                 splitprogrammes.push_back(splitprogramme);
+                // mark programmes tha will be deleted for deletion
                 deletelist[splitprogramme.splitprog] = true;
-                deletelist[splitprogramme.deleteprog] = true;
-                //config.printf("Split programme %u: '%s' split by '%s'", (uint_t)splitprogrammes.size(), splitprogramme.keepprog->GetDescription().str(), splitprogramme.splitprog->GetDescription().str());
+                deletelist[splitprogramme.part2prog] = true;
+                //config.printf("Split programme %u: '%s' split by '%s'", (uint_t)splitprogrammes.size(), splitprogramme.part1prog->GetDescription().str(), splitprogramme.splitprog->GetDescription().str());
             }
         }
     }
 
+    // iterate through list, modifying and deleting programmes
     for (auto it = splitprogrammes.begin(); it != splitprogrammes.end(); ++it) {
-        const auto& prog = (*it);
+        const auto& splitprog = (*it);
 
-        prog.keepprog->SetDesc(AString::Formatify("%s\n\nContaining %s at %s - %s",
-                                                  prog.keepprog->GetDesc(),
-                                                  prog.splitprog->GetTitleAndSubtitle().str(),
-                                                  prog.splitprog->GetStartDT().DateFormat("%h:%m").str(),
-                                                  prog.splitprog->GetStopDT().DateFormat("%h:%m").str()));
-        prog.keepprog->SetStop(prog.deleteprog->GetStop());
+        // update description of first part to be kept to include
+        // description of split programme
+        splitprog.part1prog->SetDesc(AString::Formatify("%s\n\nContaining %s at %s - %s",
+                                                        splitprog.part1prog->GetDesc(),
+                                                        splitprog.splitprog->GetTitleAndSubtitle().str(),
+                                                        splitprog.splitprog->GetStartDT().DateFormat("%h:%m").str(),
+                                                        splitprog.splitprog->GetStopDT().DateFormat("%h:%m").str()));
 
-        DeleteProg(*prog.splitprog);
-        DeleteProg(*prog.deleteprog);
+        // update stop time of first part to be the stop time of the second part
+        splitprog.part1prog->SetStop(splitprog.part2prog->GetStop());
+
+        // delete the unneeded programmes
+        DeleteProg(*splitprog.splitprog);
+        DeleteProg(*splitprog.part2prog);
     }
 
     config.printf("Combined %u films", (uint_t)splitprogrammes.size());

@@ -228,9 +228,9 @@ protected:
 
     typedef struct
     {
-        ADVBProg *keepprog;
+        ADVBProg *part1prog;
         ADVBProg *splitprog;
-        ADVBProg *deleteprog;
+        ADVBProg *part2prog;
     } splitprogramme_t;
 
 protected:
