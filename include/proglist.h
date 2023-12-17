@@ -79,6 +79,8 @@ public:
     ADVBProg       *FindUUIDWritable(const ADVBProg& prog) const {return FindUUIDWritable(prog.GetUUID());}
     ADVBProg       *FindUUIDWritable(const AString& uuid) const;
 
+    uint_t CombineSplitFilms();
+
     static void ReadPatterns(ADataList& patternlist, AString& errors, bool sort = true);
 
     static bool CheckDiskSpace(bool runcmd = false, rapidjson::Document *doc = NULL);
@@ -223,6 +225,13 @@ protected:
     }
     static bool __CollectPopularity(const AString& key, uptr_t item, void *context);
     static int  __ComparePopularity(const AListNode *pNode1, const AListNode *pNode2, void *pContext);
+
+    typedef struct
+    {
+        ADVBProg *keepprog;
+        ADVBProg *splitprog;
+        ADVBProg *deleteprog;
+    } splitprogramme_t;
 
 protected:
     AHash     proghash;

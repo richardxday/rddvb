@@ -1103,6 +1103,64 @@ ADVBProg *ADVBProgList::FindUUIDWritable(const AString& uuid) const
     return prog;
 }
 
+uint_t ADVBProgList::CombineSplitFilms()
+{
+    const ADVBConfig& config = ADVBConfig::Get();
+    std::map<AString, std::vector<ADVBProg *> > progsperchannel;
+    std::vector<splitprogramme_t> splitprogrammes;
+    std::map<ADVBProg *, bool> deletelist;
+    const uint64_t maxsplitlength = (uint64_t)10 * (uint64_t)60 * (uint64_t)1000;
+
+    (void)config;
+
+    for (uint_t i = 0; i < Count(); i++) {
+        ADVBProg *prog = &GetProgWritable(i);
+        auto& list = progsperchannel[prog->GetChannel()];
+
+        list.push_back(prog);
+
+        if (list.size() >= 3) {
+            splitprogramme_t splitprogramme = {
+                .keepprog = list[list.size() - 3],
+                .splitprog = list[list.size() - 2],
+                .deleteprog = list[list.size() - 1],
+            };
+
+            if (splitprogramme.keepprog->IsFilm() &&
+                splitprogramme.deleteprog->IsFilm() &&
+                (strcmp(splitprogramme.keepprog->GetTitleAndSubtitle(), splitprogramme.deleteprog->GetTitleAndSubtitle()) == 0) &&
+                (strcmp(splitprogramme.keepprog->GetEpisodeID(), splitprogramme.deleteprog->GetEpisodeID()) == 0) &&
+                (splitprogramme.splitprog->GetLength() <= maxsplitlength) &&
+                (deletelist.find(splitprogramme.keepprog) == deletelist.end()) &&
+                (deletelist.find(splitprogramme.splitprog) == deletelist.end()) &&
+                (deletelist.find(splitprogramme.deleteprog) == deletelist.end())) {
+                splitprogrammes.push_back(splitprogramme);
+                deletelist[splitprogramme.splitprog] = true;
+                deletelist[splitprogramme.deleteprog] = true;
+                //config.printf("Split programme %u: '%s' split by '%s'", (uint_t)splitprogrammes.size(), splitprogramme.keepprog->GetDescription().str(), splitprogramme.splitprog->GetDescription().str());
+            }
+        }
+    }
+
+    for (auto it = splitprogrammes.begin(); it != splitprogrammes.end(); ++it) {
+        const auto& prog = (*it);
+
+        prog.keepprog->SetDesc(AString::Formatify("%s\n\nContaining %s at %s - %s",
+                                                  prog.keepprog->GetDesc(),
+                                                  prog.splitprog->GetTitleAndSubtitle().str(),
+                                                  prog.splitprog->GetStartDT().DateFormat("%h:%m").str(),
+                                                  prog.splitprog->GetStopDT().DateFormat("%h:%m").str()));
+        prog.keepprog->SetStop(prog.deleteprog->GetStop());
+
+        DeleteProg(*prog.splitprog);
+        DeleteProg(*prog.deleteprog);
+    }
+
+    config.printf("Combined %u films", (uint_t)splitprogrammes.size());
+
+    return (uint_t)splitprogrammes.size();
+}
+
 void ADVBProgList::FindProgrammes(ADVBProgList& dest, const ADataList& patternlist, uint_t maxmatches) const
 {
     const ADVBConfig& config = ADVBConfig::Get();

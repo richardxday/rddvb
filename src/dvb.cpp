@@ -230,6 +230,7 @@ int main(int argc, const char *argv[])
         {"--test-cards-seconds",                    "<seconds>",                        "Amount of time in seconds to collect data for for --test-cards"},
         {"--test-cards",                            "",                                 "Test each DVB card to ensure card is working correctly"},
         {"--return-count",                          "",                                 "Return programme list count in error code"},
+        {"--combine-split-films",                   "",                                 "Combine films split by news programme"},
     };
     const ADVBConfig& config = ADVBConfig::Get();
     ADVBProgList proglist;
@@ -456,6 +457,9 @@ int main(int argc, const char *argv[])
 
                         config.printf("%u programmes deleted", deleted);
                     }
+
+                    config.printf("Combining split programmes...");
+                    proglist.CombineSplitFilms();
 
                     config.printf("Writing main listings file...");
                     if (!HasQuit() && proglist.WriteToFile(filename)) {
@@ -2574,6 +2578,10 @@ int main(int argc, const char *argv[])
                         fprintf(stderr, "Unknown channel '%s'\n", testcardchannel.str());
                     }
                 }
+            }
+            else if (stricmp(argv[i], "--combine-split-films") == 0)
+            {
+                proglist.CombineSplitFilms();
             }
         }
     }
