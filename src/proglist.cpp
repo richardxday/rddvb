@@ -60,7 +60,7 @@ ADVBProgList& ADVBProgList::operator = (const ADVBProgList& list)
     DeleteAll();
 
     for (i = 0; (i < list.Count()) && !HasQuit(); i++) {
-        const ADVBProg& prog = list[i];
+        const auto& prog = list[i];
 
         AddProg(prog, false, false);
     }
@@ -77,7 +77,7 @@ void ADVBProgList::Modify(const ADVBProgList& list, uint_t& added, uint_t& modif
     added = modified = 0;
 
     for (i = 0; (i < list.Count()) && !HasQuit(); i++) {
-        uint_t res = ModifyProg(list[i], mode, sort);
+        auto res = ModifyProg(list[i], mode, sort);
         if ((res & Prog_Add)    != 0) added++;
         if ((res & Prog_Modify) != 0) modified++;
     }
@@ -85,14 +85,14 @@ void ADVBProgList::Modify(const ADVBProgList& list, uint_t& added, uint_t& modif
 
 bool ADVBProgList::ModifyFromRecordingSlave(const AString& filename, uint_t mode, bool sort)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AString host;
     bool    success = false;
 
     DeleteAll();
 
     if ((host = config.GetRecordingSlave()).Valid()) {
-        AString dstfilename = config.GetTempFile("proglist", ".dat");
+        auto dstfilename = config.GetTempFile("proglist", ".dat");
 
         if (GetFileFromRecordingSlave(filename, dstfilename)) {
             ADVBLock     lock("dvbfiles");
@@ -145,8 +145,8 @@ int ADVBProgList::SortProgsAdvanced(uptr_t item1, uptr_t item2, void *pContext)
 
 void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    AString channelid = channel.GetAttribute("id");
+    const auto& config = ADVBConfig::Get();
+    auto channelid = channel.GetAttribute("id");
     std::vector<AString> displaynames;
     const AStructuredNode *node = NULL;
     AString xmltvchannelname;
@@ -157,7 +157,7 @@ void ADVBProgList::AddXMLTVChannel(const AStructuredNode& channel)
     }
 
     if (channelid.Valid() && !displaynames.empty() && ((xmltvchannelname = displaynames[0]).Valid())) {
-        ADVBChannelList& channellist = ADVBChannelList::Get();
+        auto& channellist = ADVBChannelList::Get();
         const AStructuredNode *iconnode;
         AString icon;
         uint_t lcn = 0;
@@ -183,7 +183,7 @@ void ADVBProgList::AssignEpisodes(bool ignorerepeats)
     uint_t i;
 
     for (i = 0; i < Count(); i++) {
-        ADVBProg& prog = GetProgWritable(i);
+        auto& prog = GetProgWritable(i);
 
         handler.AssignEpisode(prog, ignorerepeats);
     }
@@ -194,8 +194,8 @@ void ADVBProgList::GetProgrammeValues(AString& str, const AStructuredNode *pNode
     const AKeyValuePair *pAttr;
 
     while (pNode) {
-        AString key   = prefix + pNode->Key.SearchAndReplace("-", "");
-        AString value = pNode->Value;
+        auto key   = prefix + pNode->Key.SearchAndReplace("-", "");
+        auto value = pNode->Value;
 
         if ((key == "episodenum") && ((pAttr = pNode->FindAttribute("system")) != NULL)) key += ":" + pAttr->Value;
         if ((key == "icon")       && ((pAttr = pNode->FindAttribute("src"))    != NULL)) value = pAttr->Value;
@@ -214,7 +214,7 @@ void ADVBProgList::GetProgrammeValues(AString& str, const AStructuredNode *pNode
 
 bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     std::map<AString, bool> channelidvalidhash;
     AString   data;
     FILE_INFO info;
@@ -258,9 +258,9 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
                     AStructuredNode _node;
 
                     if (DecodeXML(_node, programme) && ((pNode = _node.GetChildren()) != NULL)) {
-                        const ADVBChannelList& channellist = ADVBChannelList::Get();
-                        AString channelid = pNode->GetAttribute("channel");
-                        AString channel   = channellist.LookupXMLTVChannel(channelid);
+                        const auto& channellist = ADVBChannelList::Get();
+                        auto  channelid = pNode->GetAttribute("channel");
+                        auto  channel   = channellist.LookupXMLTVChannel(channelid);
                         const ADVBChannelList::channel_t *chandata;
 
                         channelidvalidhash[channelid] = true;
@@ -296,7 +296,7 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
                             //debug("%s", str.str());
 
                             {
-                                ADVBProg prog = str;
+                                auto prog = ADVBProg(str);
 
                                 if (!prog.Valid()) config.logit("Ignoring invalid programme");
                                 else if (stop <= start) {
@@ -341,9 +341,9 @@ bool ADVBProgList::ReadFromXMLTVFile(const AString& filename)
 
 bool ADVBProgList::ReadFromTextFile(const AString& filename)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AString data;
-    bool    notempty = (Count() != 0);
+    auto    notempty = (Count() != 0);
     bool    success = false;
 
     if (data.ReadFromFile(filename)) {
@@ -373,7 +373,7 @@ bool ADVBProgList::ReadFromTextFile(const AString& filename)
 
 bool ADVBProgList::ReadFromBinaryFile(const AString& filename, bool sort, bool removeoverlaps)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AStdFile fp;
     bool success = false;
 
@@ -407,34 +407,34 @@ bool ADVBProgList::ReadFromBinaryFile(const AString& filename, bool sort, bool r
 
 bool ADVBProgList::ReadFromJSONFile(const AString& filename)
 {
-    //const ADVBConfig& config = ADVBConfig::Get();
+    //const auto& config = ADVBConfig::Get();
     AString data;
-    //bool    notempty = (Count() != 0);
+    //auto    notempty = (Count() != 0);
     bool    success = false;
 
     if (data.ReadFromFile(filename)) {
         std::string errors;
         Json::CharReaderBuilder rbuilder;
-        Json::CharReader *reader = rbuilder.newCharReader();
+        auto *reader = rbuilder.newCharReader();
         Json::Value obj;
 
         if ((reader != NULL) && reader->parse(data.str(), data.str() + data.len(), &obj, &errors)) {
             if (obj.isMember("Channels") && obj["Channels"].isArray()) {
-                const Json::Value& channels = obj["Channels"];
+                const auto& channels = obj["Channels"];
                 uint_t i, nchannels = (uint_t)channels.size();
 
                 for (i = 0; i < nchannels; i++) {
-                    const Json::Value& channel = channels[i];
+                    const auto& channel = channels[i];
 
                     if (channel.isMember("DisplayName")) {
                         printf("Channel %u/%u: '%s'\n", i, (uint_t)channels.size(), channel["DisplayName"].asString().c_str());
                     }
                     if (channel.isMember("TvListings") && channel["TvListings"].isArray()) {
-                        const Json::Value& tvlistings = channel["TvListings"];
+                        const auto& tvlistings = channel["TvListings"];
                         uint_t j, ntvlistings = (uint_t)tvlistings.size();
 
                         for (j = 0; j < ntvlistings; j++) {
-                            const Json::Value& programme = tvlistings[j];
+                            const auto& programme = tvlistings[j];
 
                             (void)programme;
                         }
@@ -455,9 +455,9 @@ bool ADVBProgList::ReadFromJSONFile(const AString& filename)
 
 bool ADVBProgList::ReadFromFile(const AString& filename)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AStdFile fp;
-    bool notempty = (Count() != 0);
+    auto notempty = (Count() != 0);
     bool success  = false;
 
     //config.printf("Reading data from '%s'", filename.str());
@@ -483,9 +483,9 @@ bool ADVBProgList::ReadFromFile(const AString& filename)
 
 bool ADVBProgList::ReadFromJobQueue(int queue, bool runningonly)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    AString listname   = config.GetTempFile("atlist", ".txt");
-    AString scriptname = config.GetTempFile("atjob",  ".txt");
+    const auto& config = ADVBConfig::Get();
+    auto    listname   = config.GetTempFile("atlist", ".txt");
+    auto    scriptname = config.GetTempFile("atjob",  ".txt");
     AString cmd1, cmd2;
     bool success = false;
 
@@ -502,7 +502,7 @@ bool ADVBProgList::ReadFromJobQueue(int queue, bool runningonly)
 
             success = true;
             while (line.ReadLn(fp) >= 0) {
-                uint_t jobid = (uint_t)line.Word(0);
+                auto jobid = (uint_t)line.Word(0);
 
                 if (jobid > 0) {
                     cmd.Delete();
@@ -540,7 +540,7 @@ bool ADVBProgList::ReadFromJobQueue(int queue, bool runningonly)
 
 bool ADVBProgList::ReadFromJobList(bool runningonly)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     return ReadFromJobQueue(config.GetQueue().FirstChar(), runningonly);
 }
 
@@ -552,15 +552,15 @@ bool ADVBProgList::CheckFile(const AString& filename, const AString& targetfilen
 
 void ADVBProgList::UpdateDVBChannels(std::map<uint_t, bool> *sdchannelids)
 {
-    const ADVBConfig&      config = ADVBConfig::Get();
-    const ADVBChannelList& clist  = ADVBChannelList::Get();
-    AHash  hash;
+    const auto& config = ADVBConfig::Get();
+    const auto& clist  = ADVBChannelList::Get();
+    AHash hash;
     uint_t i;
 
     for (i = 0; i < Count(); i++) {
-        ADVBProg& prog     = GetProgWritable(i);
-        AString channel    = prog.GetChannel();
-        AString dvbchannel = clist.LookupDVBChannel(channel);
+        auto& prog       = GetProgWritable(i);
+        auto  channel    = AString(prog.GetChannel());
+        auto  dvbchannel = clist.LookupDVBChannel(channel);
 
         if (dvbchannel.Valid()) {
             prog.SetDVBChannel(dvbchannel);
@@ -583,10 +583,10 @@ void ADVBProgList::UpdateDVBChannels(std::map<uint_t, bool> *sdchannelids)
 
 bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfiles) const
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    AString  backupfilename = filename + ".bak";
+    const auto& config = ADVBConfig::Get();
+    auto  backupfilename = filename + ".bak";
     AStdFile fp;
-    bool success = false;
+    bool  success = false;
 
     // keep track of 'depth' of file write so that file system sync is done at the *end*
     // of the last write
@@ -607,7 +607,7 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
             success = true;
 
             for (i = 0; i < Count(); i++) {
-                const ADVBProg& prog = GetProg(i);
+                const auto& prog = GetProg(i);
 
                 if (!prog.WriteToFile(fp)) {
                     config.printf("Failed to write programme %u/%u to file '%s'", i, Count(), filename.str());
@@ -648,7 +648,7 @@ bool ADVBProgList::WriteToFile(const AString& filename, bool updatedependantfile
 
 bool ADVBProgList::WriteToTextFile(const AString& filename) const
 {
-    AString  backupfilename = filename + ".bak";
+    auto     backupfilename = filename + ".bak";
     AStdFile fp;
     bool success = false;
 
@@ -724,7 +724,7 @@ bool ADVBProgList::WriteToGNUPlotFile(const AString& filename) const
         uint_t i;
 
         for (i = 0; i < Count(); i++) {
-            AString channel = GetProg(i).GetChannel();
+            auto channel = AString(GetProg(i).GetChannel());
 
             if (channelmap.find(channel) == channelmap.end()) {
                 channellist.push_back(channel);
@@ -741,9 +741,9 @@ bool ADVBProgList::WriteToGNUPlotFile(const AString& filename) const
         fp.printf("#time channel-index channel-name dvb-card length(hours) recorded scheduled rejected desc\n");
 
         for (i = 0; i < Count(); i++) {
-            const ADVBProg& prog    = GetProg(i);
-            const AString   channel = prog.GetChannel();
-            const uint64_t  times[] = {
+            const auto&    prog    = GetProg(i);
+            const auto     channel = AString(prog.GetChannel());
+            const uint64_t times[] = {
                 prog.GetRecordStart() ? prog.GetRecordStart() : prog.GetStart(),
                 prog.GetStart(),
                 prog.GetStop(),
@@ -755,9 +755,9 @@ bool ADVBProgList::WriteToGNUPlotFile(const AString& filename) const
                 (double)prog.GetLength() / 3600000.0,
                 0.0,
             };
-            AString desc = prog.GetQuickDescription();
-            uint_t  card = prog.GetDVBCard();
-            uint_t  k;
+            auto   desc = prog.GetQuickDescription();
+            auto   card = prog.GetDVBCard();
+            uint_t k;
 
             for (k = 0; k < NUMBEROF(times); k++) {
                 fp.printf("%s %u '%s' %u %s %u %u %u %s\n",
@@ -840,8 +840,8 @@ uint_t ADVBProgList::ModifyProg(const ADVBProg& prog, uint_t mode, bool sort)
 
 uint_t ADVBProgList::FindIndex(uint_t timeindex, uint64_t t) const
 {
-    const ADVBProg **progs = (const ADVBProg **)proglist.List();
-    const uint_t n = Count();
+    const  auto **progs = (const ADVBProg **)proglist.List();
+    const  auto n = Count();
     uint_t index   = 0;
     bool   forward = true;
 
@@ -879,8 +879,8 @@ uint_t ADVBProgList::FindIndex(uint_t timeindex, uint64_t t) const
 
 uint_t ADVBProgList::FindIndex(const ADVBProg& prog) const
 {
-    const ADVBProg **progs = (const ADVBProg **)proglist.List();
-    const uint_t n = Count();
+    const  auto **progs = (const ADVBProg **)proglist.List();
+    const  auto n = Count();
     uint_t index   = 0;
     bool   forward = true;
 
@@ -918,7 +918,7 @@ uint_t ADVBProgList::FindIndex(const ADVBProg& prog) const
 
 int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     uint_t i;
     int index = -1;
 
@@ -929,7 +929,7 @@ int ADVBProgList::AddProg(const ADVBProg *prog, bool sort, bool removeoverlaps)
         uint_t i2 = FindIndex(ADVBProg::TimeIndex_Start, prog->GetTimeIndex(ADVBProg::TimeIndex_Stop)  + 1);
 
         for (i = i1; (i <= i2) && (i < Count()) && !HasQuit();) {
-            const ADVBProg& prog1 = GetProg(i);
+            const auto& prog1 = GetProg(i);
 
             if (prog->OverlapsOnSameChannel(prog1)) {
                 //config.printf("'%s' overlaps with '%s', deleting '%s'", prog1.GetQuickDescription().str(), prog->GetQuickDescription().str(), prog1.GetQuickDescription().str());
@@ -994,7 +994,7 @@ ADVBProg& ADVBProgList::GetProgWritable(uint_t n) const
 
 bool ADVBProgList::DeleteProg(uint_t n)
 {
-    ADVBProg *prog = (ADVBProg *)proglist[n];
+    auto *prog = (ADVBProg *)proglist[n];
     bool success = false;
 
     if (prog != NULL) {
@@ -1012,7 +1012,7 @@ bool ADVBProgList::DeleteProg(const ADVBProg& prog)
     uint_t i;
 
     for (i = 0; i < Count(); i++) {
-        const ADVBProg& prog1 = GetProg(i);
+        const auto& prog1 = GetProg(i);
 
         if (prog == prog1) {
             return DeleteProg(i);
@@ -1024,11 +1024,11 @@ bool ADVBProgList::DeleteProg(const ADVBProg& prog)
 
 void ADVBProgList::DeleteProgrammesBefore(const ADateTime& dt)
 {
-    uint64_t _dt = (uint64_t)dt;
+    auto   _dt = (uint64_t)dt;
     uint_t i;
 
     for (i = 0; i < Count();) {
-        const ADVBProg& prog = GetProg(i);
+        const auto& prog = GetProg(i);
 
         if (prog.GetStop() < _dt) DeleteProg(i);
         else i++;
@@ -1054,7 +1054,7 @@ void ADVBProgList::CreateHash()
     useproghash = true;
 
     for (i = 0; i < n; i++) {
-        const ADVBProg& prog = GetProg(i);
+        const auto& prog = GetProg(i);
 
         proghash.Insert(prog.GetUUID(), (uptr_t)&prog);
     }
@@ -1105,7 +1105,7 @@ ADVBProg *ADVBProgList::FindUUIDWritable(const AString& uuid) const
 
 void ADVBProgList::FindProgrammes(ADVBProgList& dest, const ADataList& patternlist, uint_t maxmatches) const
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     uint_t i, j, n = patternlist.Count(), nfound = 0;
 
     //config.logit("Searching using %u patterns (max matches %u)...", n, maxmatches);
@@ -1114,7 +1114,7 @@ void ADVBProgList::FindProgrammes(ADVBProgList& dest, const ADataList& patternli
     //}
 
     for (i = 0; (i < Count()) && !HasQuit() && (nfound < maxmatches); i++) {
-        const ADVBProg& prog = GetProg(i);
+        const auto& prog = GetProg(i);
         ADVBProg *prog1 = NULL;
         bool     addtolist = false;
         bool     excluded  = false;
@@ -1123,7 +1123,7 @@ void ADVBProgList::FindProgrammes(ADVBProgList& dest, const ADataList& patternli
             const pattern_t& pattern = *(const pattern_t *)patternlist[j];
 
             if (pattern.enabled) {
-                bool match = prog1 ? prog1->Match(pattern) : prog.Match(pattern);
+                auto match = (prog1 != NULL) ? prog1->Match(pattern) : prog.Match(pattern);
 
                 if (match) {
                     if (pattern.exclude) {
@@ -1375,10 +1375,10 @@ ADVBProg *ADVBProgList::FindOverlap(const ADVBProg& prog1, const ADVBProg *prog2
 
 ADVBProg *ADVBProgList::FindRecordOverlap(const ADVBProg& prog1, const ADVBProg *prog2) const
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    const uint64_t mininterrectime = (uint64_t)config.GetConfigItem("mininterrectime", config.GetDefaultInterRecTime()) * 1000;
-    const uint64_t st1 = prog1.GetRecordStart();
-    const uint64_t et1 = prog1.GetRecordStop() + mininterrectime;
+    const auto& config          = ADVBConfig::Get();
+    const auto  mininterrectime = (uint64_t)config.GetConfigItem("mininterrectime", config.GetDefaultInterRecTime()) * 1000;
+    const auto  st1             = prog1.GetRecordStart();
+    const auto  et1             = prog1.GetRecordStop() + mininterrectime;
     uint_t i = 0;
     int p;
 
@@ -1386,8 +1386,8 @@ ADVBProg *ADVBProgList::FindRecordOverlap(const ADVBProg& prog1, const ADVBProg 
 
     while ((prog2 = (const ADVBProg *)proglist[i++]) != NULL) {
         if (prog2 != &prog1) {
-            const uint64_t st2 = prog2->GetRecordStart();
-            const uint64_t et2 = prog2->GetRecordStop() + mininterrectime;
+            const auto st2 = prog2->GetRecordStart();
+            const auto et2 = prog2->GetRecordStop() + mininterrectime;
 
             if ((st2 < et1) && (et2 > st1)) break;
         }
@@ -1398,17 +1398,17 @@ ADVBProg *ADVBProgList::FindRecordOverlap(const ADVBProg& prog1, const ADVBProg 
 
 void ADVBProgList::AdjustRecordTimes(uint64_t recstarttime)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    const uint64_t mininterrectime = (uint64_t)config.GetConfigItem("mininterrectime", config.GetDefaultInterRecTime()) * 1000;
+    const auto& config          = ADVBConfig::Get();
+    const auto  mininterrectime = (uint64_t)config.GetConfigItem("mininterrectime", config.GetDefaultInterRecTime()) * 1000;
     uint_t i, j;
 
     config.logit("Adjusting record times of any overlapping programmes");
 
     for (i = 0; i < Count(); i++) {
-        ADVBProg *prog1 = (ADVBProg *)proglist[i];
+        auto *prog1 = (ADVBProg *)proglist[i];
 
         for (j = i + 1; j < Count(); j++) {
-            ADVBProg *prog2 = (ADVBProg *)proglist[j];
+            auto     *prog2 = (ADVBProg *)proglist[j];
             ADVBProg *firstprog  = NULL;
             ADVBProg *secondprog = NULL;
 
@@ -1436,8 +1436,8 @@ void ADVBProgList::AdjustRecordTimes(uint64_t recstarttime)
                              secondprog->GetRecordStartDT().UTCToLocal().DateFormat("%h:%m:%s").str(),
                              secondprog->GetRecordStopDT().UTCToLocal().DateFormat("%h:%m:%s").str());
 
-                uint64_t diff = firstprog->GetRecordStop()   + mininterrectime - secondprog->GetRecordStart();
-                uint64_t newt = secondprog->GetRecordStart() + diff / 2;
+                auto diff = firstprog->GetRecordStop()   + mininterrectime - secondprog->GetRecordStart();
+                auto newt = secondprog->GetRecordStart() + diff / 2;
 
                 newt -= newt % 60000;
 
@@ -1476,7 +1476,7 @@ const ADVBProg *ADVBProgList::FindFirstRecordOverlap() const
 
 void ADVBProgList::UnscheduleAllProgrammes()
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AString cmd;
     AString filename, scriptname;
     int queue = config.GetQueue().FirstChar();
@@ -1492,7 +1492,7 @@ void ADVBProgList::UnscheduleAllProgrammes()
             AString line;
 
             while (line.ReadLn(fp) >= 0) {
-                uint_t job = (uint_t)line.Word(0);
+                auto job = (uint_t)line.Word(0);
 
                 if (job > 0) {
                     bool done = false;
@@ -1538,8 +1538,8 @@ void ADVBProgList::UnscheduleAllProgrammes()
 
 int ADVBProgList::SortPatterns(uptr_t item1, uptr_t item2, void *context)
 {
-    const pattern_t& pat1 = *(const pattern_t *)item1;
-    const pattern_t& pat2 = *(const pattern_t *)item2;
+    const auto& pat1 = *(const pattern_t *)item1;
+    const auto& pat2 = *(const pattern_t *)item2;
     uint_t pat1dis = (pat1.pattern[0] == '#');
     uint_t pat2dis = (pat2.pattern[0] == '#');
     int res;
@@ -1561,11 +1561,11 @@ int ADVBProgList::SortPatterns(uptr_t item1, uptr_t item2, void *context)
 
 void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool sort)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    AString  patternfilename    = config.GetPatternsFile();
-    AString  filepattern        = config.GetUserPatternsPattern();
-    AString  filepattern_parsed = ParseGlob(filepattern);
-    AList    userpatterns;
+    const auto& config = ADVBConfig::Get();
+    auto  patternfilename    = config.GetPatternsFile();
+    auto  filepattern        = config.GetUserPatternsPattern();
+    auto  filepattern_parsed = ParseGlob(filepattern);
+    AList userpatterns;
     AStdFile fp;
 
     if (fp.open(patternfilename)) {
@@ -1583,13 +1583,13 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
 
     ::CollectFiles(filepattern.PathPart(), filepattern.FilePart(), 0, userpatterns);
 
-    const AString *file = AString::Cast(userpatterns.First());
+    const auto *file = AString::Cast(userpatterns.First());
     while (file) {
         AString   user;
         ADataList regions;
 
         if (MatchGlob(*file, filepattern_parsed, regions)) {
-            const GLOBREGION *region = (const GLOBREGION *)regions[0];
+            const auto *region = (const GLOBREGION *)regions[0];
 
             if (region != NULL) user = file->Mid(region->pos, region->len);
             else                config.logit("Failed to find user in '%s' (no region)", file->str());
@@ -1617,8 +1617,8 @@ void ADVBProgList::ReadPatterns(ADataList& patternlist, AString& errors, bool so
 
 int ADVBProgList::SortProgsByUserThenDir(uptr_t item1, uptr_t item2, void *pContext)
 {
-    const ADVBProg& prog1 = *(const ADVBProg *)item1;
-    const ADVBProg& prog2 = *(const ADVBProg *)item2;
+    const auto& prog1 = *(const ADVBProg *)item1;
+    const auto& prog2 = *(const ADVBProg *)item2;
     int res;
 
     UNUSED(pContext);
@@ -1630,7 +1630,7 @@ int ADVBProgList::SortProgsByUserThenDir(uptr_t item1, uptr_t item2, void *pCont
 
 bool ADVBProgList::CheckDiskSpace(bool runcmd, rapidjson::Document *doc)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBProgList proglist;
 
     proglist.ReadFromFile(config.GetScheduledFile());
@@ -1640,9 +1640,9 @@ bool ADVBProgList::CheckDiskSpace(bool runcmd, rapidjson::Document *doc)
 
 bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) const
 {
-    rapidjson::Document::AllocatorType *allocator = doc ? &doc->GetAllocator() : NULL;
+    const auto& config = ADVBConfig::Get();
+    auto *allocator = (doc != NULL) ? &doc->GetAllocator() : NULL;
     rapidjson::Value  obj;
-    const ADVBConfig& config = ADVBConfig::Get();
     AStdFile fp;
     AHash    hash;
     AString  filename;
@@ -1662,11 +1662,11 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) con
     AString fmt;
     fmt.printf("%%-%us %%6.1lfG %%s", userlen);
 
-    const AString recdir = config.GetRecordingsDir();
+    const auto recdir = config.GetRecordingsDir();
     for (i = 0; i < Count(); i++) {
-        const ADVBProg& prog = GetProg(i);
-        const AString   user = prog.GetUser();
-        const AString   rdir = (prog.IsConverted() || config.IsRecordingSlave()) ? AString(prog.GetFilename()).PathPart() : prog.GetConvertedDestinationDirectory();
+        const auto& prog = GetProg(i);
+        const auto  user = AString(prog.GetUser());
+        const auto  rdir = (prog.IsConverted() || config.IsRecordingSlave()) ? AString(prog.GetFilename()).PathPart() : prog.GetConvertedDestinationDirectory();
         AString dir;
 
         if (rdir.StartsWith(recdir)) dir = rdir.Mid(recdir.len() + 1);
@@ -1719,7 +1719,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) con
         fp.close();
 
         if (!okay) {
-            AString cmd = config.GetConfigItem("lowdiskspacecmd");
+            auto cmd = config.GetConfigItem("lowdiskspacecmd");
             if (cmd.Valid()) {
                 cmd = cmd.SearchAndReplace("{logfile}", filename);
 
@@ -1727,7 +1727,7 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) con
             }
         }
         else {
-            AString cmd = config.GetConfigItem("diskspacecmd");
+            auto cmd = config.GetConfigItem("diskspacecmd");
             if (cmd.Valid()) {
                 cmd = cmd.SearchAndReplace("{logfile}", filename);
 
@@ -1747,10 +1747,10 @@ bool ADVBProgList::CheckDiskSpaceList(bool runcmd, rapidjson::Document *doc) con
 
 uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBLock     lock("dvbfiles");
     ADVBProgList proglist;
-    AString      filename = config.GetListingsFile();
+    auto         filename = config.GetListingsFile();
     uint_t       res = 0;
 
     if (config.GetServerHost().Valid()) {
@@ -1791,20 +1791,20 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
             std::map<AString, ADVBPatterns::pattern_t> extraterms;
             AString str;
             if ((str = config.GetConfigItem("extraterms")).Valid()) {
-                AString errs = ADVBPatterns::ParsePattern(str, extraterms[""]);
+                auto errs = ADVBPatterns::ParsePattern(str, extraterms[""]);
                 if (errs.Valid()) {
                     errors += errs + "\n";
                 }
             }
 
             for (i = 0; i < patternlist.Count(); i++) {
-                pattern_t& pattern = *(pattern_t *)patternlist[i];
-                const AString& user = pattern.user;
+                auto&       pattern = *(pattern_t *)patternlist[i];
+                const auto& user    = pattern.user;
 
                 if (user.Valid()) {
                     if ((extraterms.find(user) == extraterms.end()) &&
                         ((str = config.GetConfigItem("extraterms:" + user)).Valid())) {
-                        AString errs = ADVBPatterns::ParsePattern(str, extraterms[user]);
+                        auto errs = ADVBPatterns::ParsePattern(str, extraterms[user]);
                         if (errs.Valid()) {
                             errors += errs + "\n";
                         }
@@ -1819,7 +1819,7 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
                 config.printf("Errors found during parsing:");
 
                 for (i = 0; i < patternlist.Count(); i++) {
-                    const pattern_t& pattern = *(const pattern_t *)patternlist[i];
+                    const auto& pattern = *(const pattern_t *)patternlist[i];
 
                     if (pattern.errors.Valid()) {
                         config.printf("Parsing '%s': %s", pattern.pattern.str(), pattern.errors.str());
@@ -1828,7 +1828,7 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
 
                 std::map<AString, ADVBPatterns::pattern_t>::iterator it;
                 for (it = extraterms.begin(); it != extraterms.end(); ++it) {
-                    const pattern_t& pattern = it->second;
+                    const auto& pattern = it->second;
 
                     if (pattern.errors.Valid()) {
                         config.printf("Parsing '%s': %s", pattern.pattern.str(), pattern.errors.str());
@@ -1847,7 +1847,7 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
                 if (data.ReadFromFile(config.GetExtraRecordFile())) {
                     AString str;
                     uint_t n = 0;
-                    int p = 0, p1;
+                    int    p = 0, p1;
 
                     while ((p1 = data.Pos("\n\n", p)) >= 0) {
                         ADVBProg prog;
@@ -1912,7 +1912,7 @@ int ADVBProgList::CompareEpisode(uptr_t item1, uptr_t item2, void *pContext)
 
 void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool sort, bool removeoverlaps)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBLock     lock("dvbfiles");
     ADVBProgList list;
 
@@ -1923,7 +1923,7 @@ void ADVBProgList::AddToList(const AString& filename, const ADVBProg& prog, bool
 
 bool ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBLock     lock("dvbfiles");
     ADVBProgList list;
     bool         removed = false;
@@ -1944,7 +1944,7 @@ bool ADVBProgList::RemoveFromList(const AString& filename, const ADVBProg& prog)
 
 bool ADVBProgList::RemoveFromList(const AString& filename, const AString& uuid)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBLock     lock("dvbfiles");
     ADVBProgList list;
     bool         removed = false;
@@ -1971,7 +1971,7 @@ bool ADVBProgList::RemoveFromRecordLists(const ADVBProg& prog)
 
 bool ADVBProgList::RemoveFromRecordLists(const AString& uuid)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     bool removed = false;
 
     {
@@ -1992,7 +1992,7 @@ bool ADVBProgList::RemoveFromRecordLists(const AString& uuid)
 
 uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBLock     lock("dvbfiles");
     ADVBProgList oldrejectedlist;
     ADVBProgList oldscheduledlist;
@@ -2001,15 +2001,15 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
     ADVBProgList rejectedlist;
     ADVBProgList runninglist;
     ADVBProgList newrejectedlist;
-    const uint64_t starttimems   = (uint64_t)starttime;
-    const uint64_t lateststartms = (uint64_t)SUBZ(config.GetLatestStart(), 2) * (uint64_t)60000;
+    const auto starttimems   = (uint64_t)starttime;
+    const auto lateststartms = (uint64_t)SUBZ(config.GetLatestStart(), 2) * (uint64_t)60000;
     uint_t i, n, reccount;
 
     oldrejectedlist.ReadFromFile(config.GetRejectedFile());
     oldscheduledlist.ReadFromFile(config.GetScheduledFile());
 
     for (i = 0; i < Count(); ) {
-        ADVBProg& prog = GetProgWritable(i);
+        auto& prog = GetProgWritable(i);
         AString dvbchannel;
 
         // check and update DVB channel
@@ -2039,7 +2039,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
     config.printf("Found: %u programmes:", Count());
     config.logit("--------------------------------------------------------------------------------");
     for (i = 0; i < Count(); i++) {
-        const ADVBProg& prog = GetProg(i);
+        const auto&    prog = GetProg(i);
         const ADVBProg *rprog;
 
         config.logit("%s%s",
@@ -2057,8 +2057,8 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
     // or have been on too long
     for (i = 0; i < Count();) {
         const ADVBProg *otherprog = NULL;
-        ADVBProg& prog = GetProgWritable(i);
-        bool deleteprog = true;
+        auto& prog = GetProgWritable(i);
+        bool  deleteprog = true;
 
         // for a programme to be deleted: 'allowrepeats' must be disabled; and
         // completed recording is found with a lower enough video error rate (and must exist if 'recordifmissing' is enabled)
@@ -2128,8 +2128,8 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
     rejectedlist.WriteToFile(config.GetRejectedFile(), false);
 
     for (i = 0; i < rejectedlist.Count(); i++) {
-        const ADVBProg& prog = rejectedlist.GetProg(i);
-        const ADVBProg  *rejprog;
+        const auto&    prog = rejectedlist.GetProg(i);
+        const ADVBProg *rejprog;
 
         if ((rejprog = oldrejectedlist.FindUUID(prog.GetUUID())) != NULL) {
             config.printf("%s is still rejected", prog.GetDescription().str());
@@ -2151,7 +2151,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 
         // strip those that have already finished or are running
         for (i = 0; i < programmeslostlist.Count();) {
-            const ADVBProg& prog = programmeslostlist[i];
+            const auto& prog = programmeslostlist[i];
 
             if ((prog.GetStopDT() <= starttime) ||
                 runninglist.FindUUID(prog) ||
@@ -2177,7 +2177,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
             config.logit("--------------------------------------------------------------------------------");
             config.printf("%u programmes lost from scheduling:", programmeslostlist.Count());
             for (i = 0; i < programmeslostlist.Count(); i++) {
-                const ADVBProg& prog = programmeslostlist.GetProg(i);
+                const auto& prog = programmeslostlist.GetProg(i);
 
                 config.printf("%s", prog.GetQuickDescription().str());
             }
@@ -2188,7 +2188,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
             config.logit("--------------------------------------------------------------------------------");
             config.printf("%u new programmes/series in scheduling:", newprogrammeslist.Count());
             for (i = 0; i < newprogrammeslist.Count(); i++) {
-                const ADVBProg& prog = newprogrammeslist.GetProg(i);
+                const auto& prog = newprogrammeslist.GetProg(i);
 
                 config.printf("%s", prog.GetQuickDescription().str());
             }
@@ -2199,7 +2199,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
         if (((programmeslostlist.Count() > 0) ||
              (newprogrammeslist.Count() > 0)) &&
             ((cmd = config.GetConfigItem("scheduledlistchangedcmd")).Valid())) {
-            AString  filename = config.GetLogDir().CatPath("scheduled-list-changed-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
+            auto     filename = config.GetLogDir().CatPath("scheduled-list-changed-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
             AStdFile fp;
 
             if (fp.open(filename, "w")) {
@@ -2207,7 +2207,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
                     fp.printf("Programmes no longer scheduled at %s:\n", ADateTime().DateToStr().str());
 
                     for (i = 0; i < programmeslostlist.Count(); i++) {
-                        const ADVBProg& prog = programmeslostlist.GetProg(i);
+                        const auto& prog = programmeslostlist.GetProg(i);
 
                         fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("lost")).str());
                     }
@@ -2218,7 +2218,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
                     fp.printf("New programmes/series scheduled at %s:\n", ADateTime().DateToStr().str());
 
                     for (i = 0; i < newprogrammeslist.Count(); i++) {
-                        const ADVBProg& prog = newprogrammeslist.GetProg(i);
+                        const auto& prog = newprogrammeslist.GetProg(i);
 
                         fp.printf("%s\n", prog.GetDescription(config.GetScheduleReportVerbosity("new")).str());
                     }
@@ -2240,7 +2240,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
         AString cmd;
 
         if ((cmd = config.GetConfigItem("rejectedcmd")).Valid()) {
-            AString  filename = config.GetLogDir().CatPath("rejected-text-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
+            auto     filename = config.GetLogDir().CatPath("rejected-text-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
             AStdFile fp;
 
             if (fp.open(filename, "w")) {
@@ -2250,7 +2250,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
                     fp.printf("\nProgrammes newly rejected:\n");
 
                     for (i = 0; i < newrejectedlist.Count(); i++) {
-                        const ADVBProg& prog = newrejectedlist.GetProg(i);
+                        const auto& prog = newrejectedlist.GetProg(i);
 
                         fp.printf("%s\n", prog.GetDescription().str());
                     }
@@ -2260,7 +2260,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
                     fp.printf("\nProgrammes no *longer* rejected:\n");
 
                     for (i = 0; i < oldrejectedlist.Count(); i++) {
-                        const ADVBProg& prog = oldrejectedlist.GetProg(i);
+                        const auto& prog = oldrejectedlist.GetProg(i);
 
                         fp.printf("%s\n", prog.GetDescription().str());
                     }
@@ -2270,7 +2270,7 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
                     fp.printf("\nProgrammes rejected:\n");
 
                     for (i = 0; i < rejectedlist.Count(); i++) {
-                        const ADVBProg& prog = rejectedlist.GetProg(i);
+                        const auto& prog = rejectedlist.GetProg(i);
 
                         fp.printf("%s\n", prog.GetDescription().str());
                     }
@@ -2299,10 +2299,10 @@ uint_t ADVBProgList::Schedule(const ADateTime& starttime)
 int ADVBProgList::CompareRepeatLists(uptr_t item1, uptr_t item2, void *context)
 {
     // item1 and item2 are ADataList objects, sort them according to the number of items in the list (fewest first);
-    const ADataList& list1 = *(const ADataList *)item1;
-    const ADataList& list2 = *(const ADataList *)item2;
-    const ADVBProg&  prog1 = *(const ADVBProg *)list1[0];
-    const ADVBProg&  prog2 = *(const ADVBProg *)list2[0];
+    const auto& list1 = *(const ADataList *)item1;
+    const auto& list2 = *(const ADataList *)item2;
+    const auto& prog1 = *(const ADVBProg *)list1[0];
+    const auto& prog2 = *(const ADVBProg *)list2[0];
 
     UNUSED(context);
 
@@ -2315,11 +2315,11 @@ void ADVBProgList::CountOverlaps(const ADVBProg::proglistlist_t& repeatlists, co
 
     // set scores for the first programme of each list (for sorting below)
     for (i = 0; i < repeatlists.size(); i++) {
-        const ADVBProg::proglist_t& list = *repeatlists[i];
+        const auto& list = *repeatlists[i];
         uint_t j;
 
         for (j = 0; j < list.size(); j++) {
-            ADVBProg& prog = *list[j];
+            auto& prog = *list[j];
 
             prog.CountOverlaps(*this);
             prog.SetPriorityScore(starttime);
@@ -2329,13 +2329,13 @@ void ADVBProgList::CountOverlaps(const ADVBProg::proglistlist_t& repeatlists, co
 
 void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *recstarttimes, uint_t nlists, ADVBProgList& rejectedlist, const ADateTime& starttime)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     // for each programme, attach it to a list of repeats
     ADVBProg::proglistlist_t repeatlists;
     uint_t i, nscheduledmissed = 0, nearliestscheduled = 0, nscheduled = 0;
 
     for (i = 0; i < Count(); i++) {
-        ADVBProg& prog = GetProgWritable(i);
+        auto& prog = GetProgWritable(i);
 
         // no point checking anything that is already part of a list!
         if (prog.GetList() == NULL) {
@@ -2354,7 +2354,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 
                 uint_t j;
                 for (j = i + 1; j < Count(); j++) {
-                    ADVBProg& prog1 = GetProgWritable(j);
+                    auto& prog1 = GetProgWritable(j);
 
                     if (ADVBProg::SameProgramme(prog, prog1)) {
                         // prog1 is the same programme as prog, add prog1 to the list
@@ -2374,9 +2374,9 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
     config.printf("Sorted: %u programmes:", Count());
     config.logit("--------------------------------------------------------------------------------");
     for (i = 0; i < Count(); i++) {
-        const ADVBProg&           prog = GetProg(i);
-        const ADVBProg::proglist_t& list = *prog.GetList();
-        uint_t entry = std::find(list.begin(), list.end(), &prog) - list.begin();
+        const auto& prog = GetProg(i);
+        const auto& list = *prog.GetList();
+        auto entry = (uint_t)(std::find(list.begin(), list.end(), &prog) - list.begin());
 
         config.logit("%s (entry %u/%u, %d overlaps, %u repeats, score %0.1lf)",
                      prog.GetDescription(1).str(),
@@ -2393,15 +2393,15 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
     const uint_t nchecks = nlists * 2;  // two complete rounds
     for (i = 0; (Count() > 0); i++) {
         ADVBProg::proglist_t deletelist;
-        ADVBProg& prog = GetProgWritable(0);
-        uint_t    j, k;
-        bool      scheduled = false;
+        auto&  prog = GetProgWritable(0);
+        uint_t j, k;
+        bool   scheduled = false;
 
         // find a list to schedule this programme on
         for (j = 0; j < nchecks; j++) {
             const ADVBProg *overlappedprog = NULL;
-            uint_t vcard = (i + j) % nlists;
-            ADVBProgList& schedulelist = schedulelists[vcard];
+            auto  vcard = (i + j) % nlists;
+            auto& schedulelist = schedulelists[vcard];
 
             // card must be available (not ignored)
             // programme must start after list's rec start time and not overlap anything already on it
@@ -2421,8 +2421,8 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
                   (prog.GetStart() >= recstarttimes[vcard]) &&                              // record start (excluding pre-handle) is after earliest record time; and
                   !schedulelist.FindOverlap(prog)))) {                                      // this programme (excluding pre- and post- handles) does not overlap anything scheduled for this card
                 // this programme doesn't overlap anything else or anything scheduled -> this can definitely be recorded
-                const ADVBProg::proglist_t& list = *prog.GetList();
-                uint_t entry = std::find(list.begin(), list.end(), &prog) - list.begin();
+                const auto& list = *prog.GetList();
+                auto entry = (uint_t)(std::find(list.begin(), list.end(), &prog) - list.begin());
 
                 if (entry == 0) nearliestscheduled++;
 
@@ -2440,14 +2440,14 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
                 // remove any programmes that do NOT have the allow repeats flag set
                 // OR that use the same base channel
                 static const uint64_t hour = 3600UL * 1000UL;
-                AString  channel = prog.GetBaseChannel();
-                bool     plus1   = prog.IsPlus1();
-                uint64_t start   = prog.GetStart() - (plus1 ? hour : 0);
-                uint64_t start1  = start + hour;
-                bool     resort  = false;
+                auto channel = prog.GetBaseChannel();
+                auto plus1   = prog.IsPlus1();
+                auto start   = prog.GetStart() - (plus1 ? hour : 0);
+                auto start1  = start + hour;
+                bool resort  = false;
 
                 for (k = 0; k < Count(); k++) {
-                    ADVBProg& prog2 = GetProgWritable(k);
+                    auto& prog2 = GetProgWritable(k);
                     bool removed = false;
 
                     if ((prog2 != prog) && (prog2.GetList() == prog.GetList())) {
@@ -2482,7 +2482,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 
         // this repeat of the programme cannot be scheduled
         if (!scheduled) {
-            const ADVBProg::proglist_t *repeatlist = prog.GetList();
+            const auto *repeatlist = prog.GetList();
 
             // check to see if this repeat is the last one
             if (repeatlist->size() == 1) {
@@ -2509,7 +2509,7 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
     config.printf("Prioritization complete (%u programmes rejected, %u/%u scheduled at earliest time, %u primary entries not scheduled)", rejectedlist.Count(), nearliestscheduled, nscheduled, nscheduledmissed);
 
     for (i = 0; i < nlists; i++) {
-        ADVBProgList& scheduledlist = schedulelists[i];
+        auto& scheduledlist = schedulelists[i];
 
         // sort list
         scheduledlist.Sort();
@@ -2525,16 +2525,16 @@ void ADVBProgList::PrioritizeProgrammes(ADVBProgList *schedulelists, uint64_t *r
 
 uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& allscheduledlist, ADVBProgList& allrejectedlist, const ADateTime& starttime)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBProgList *schedulelists;
     uint64_t  *recstarttimes;
     AString   filename;
-    uint64_t  recstarttime = (uint64_t)starttime;
+    auto      recstarttime = (uint64_t)starttime;
     uint_t    i, j;
 
     // read DVB card mappings
     (void)config.GetPhysicalDVBCard(0, true);
-    uint_t ncards = config.GetMaxDVBCards();
+    auto ncards = config.GetMaxDVBCards();
 
     if (ncards == 0) {
         config.printf("No DVB cards available! %u programmes left to schedule", Count());
@@ -2556,8 +2556,8 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
     // for running list, adjust earliest scheduling time so as not to trampling on ongoing recordings
     if (runninglist.Count() > 0) {
         for (i = 0; i < runninglist.Count(); i++) {
-            const ADVBProg& prog = runninglist[i];
-            uint_t vcard = prog.GetDVBCard();
+            const auto& prog = runninglist[i];
+            auto  vcard = prog.GetDVBCard();
 
             if (vcard < ncards) {
                 recstarttimes[vcard] = std::max(recstarttimes[vcard], (uint64_t)(prog.GetRecordStop() + 10000));
@@ -2575,7 +2575,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 
     // generate record data, clear disabled flag and clear owner list for each programme
     for (i = 0; i < Count(); i++) {
-        ADVBProg& prog = GetProgWritable(i);
+        auto& prog = GetProgWritable(i);
 
         prog.GenerateRecordData(minrecstarttime);
         prog.ClearList();
@@ -2594,9 +2594,9 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
     //ADVBProg::debugsameprogramme = false;
 
     for (i = 0; i < ncards; i++) {
-        ADVBProgList& scheduledlist = schedulelists[i];
+        auto& scheduledlist = schedulelists[i];
         const ADVBProg *errorprog;
-        uint_t dvbcard = config.GetPhysicalDVBCard(i);
+        auto  dvbcard = config.GetPhysicalDVBCard(i);
 
         if ((errorprog = scheduledlist.FindFirstRecordOverlap()) != NULL) {
             config.printf("Error: found overlap in schedule list for card %u (hardware card %u) ('%s')!", i, dvbcard, errorprog->GetQuickDescription().str());
@@ -2606,7 +2606,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
         config.printf("Card %u (hardware card: %u): Scheduling: %u programmes:", i, dvbcard, scheduledlist.Count());
         config.logit("--------------------------------------------------------------------------------");
         for (j = 0; j < scheduledlist.Count(); j++) {
-            ADVBProg& prog = scheduledlist.GetProgWritable(j);
+            auto& prog = scheduledlist.GetProgWritable(j);
             const ADVBProg *rprog;
 
             prog.SetScheduled();
@@ -2640,7 +2640,7 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
     config.printf("Scheduling: %u programmes in total:", allscheduledlist.Count());
     config.logit("--------------------------------------------------------------------------------");
     for (i = 0; i < allscheduledlist.Count(); i++) {
-        const ADVBProg& prog = allscheduledlist.GetProg(i);
+        const auto& prog = allscheduledlist.GetProg(i);
 
         config.logit("%s (%s - %s) (DVB card %u, hardware card %u)",
                      prog.GetDescription(1).str(),
@@ -2656,9 +2656,9 @@ uint_t ADVBProgList::ScheduleEx(const ADVBProgList& runninglist, ADVBProgList& a
 
 bool ADVBProgList::WriteToJobList()
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADateTime dt;
-    const AString filename = config.GetScheduledFile();
+    const auto  filename = config.GetScheduledFile();
     bool success = false;
 
     if (config.GetRecordingSlave().Valid()) {
@@ -2686,7 +2686,7 @@ bool ADVBProgList::WriteToJobList()
 
         if (unscheduledlist.Count() > 0) {
             AStdFile fp;
-            AString  filename = config.GetTempFile("unscheduled", ".txt");
+            auto     filename = config.GetTempFile("unscheduled", ".txt");
             AString  cmd;
 
             config.printf("--------------------------------------------------------------------------------");
@@ -2731,7 +2731,7 @@ bool ADVBProgList::WriteToJobList()
             success = true;
             for (i = 0; i < scheduledlist.Count(); i++) {
                 const ADVBProg *rprog;
-                ADVBProg& prog = scheduledlist.GetProgWritable(i);
+                auto& prog = scheduledlist.GetProgWritable(i);
 
                 if ((rprog = runninglist.FindUUID(prog)) != NULL) {
                     prog.SetJobID(rprog->GetJobID());
@@ -2764,7 +2764,7 @@ bool ADVBProgList::WriteToJobList()
         AString cmd;
 
         if ((cmd = config.GetConfigItem("schedulefailurecmd")).Valid()) {
-            AString logfile = config.GetTempFile("schedulefailure", ".txt");
+            auto logfile = config.GetTempFile("schedulefailure", ".txt");
 
             config.ExtractLogData(dt, ADateTime(), logfile);
 
@@ -2780,7 +2780,7 @@ bool ADVBProgList::WriteToJobList()
 
 bool ADVBProgList::CreateCombinedFile()
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBLock     lock("dvbfiles");
     ADVBProgList list;
     bool         success = false;
@@ -2811,14 +2811,14 @@ bool ADVBProgList::CreateCombinedFile()
 
 bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBProgList recordedlist, scheduledlist;
     const ADateTime dt;
-    const AString graphsuffix      = _graphsuffix.Valid() ? _graphsuffix : config.GetGraphSuffix();
-    const AString graphfileall     = config.GetDataDir().CatPath("graphs", "graph-all." + graphsuffix);
-    const AString graphfile6months = config.GetDataDir().CatPath("graphs", "graph-6months." + graphsuffix);
-    const AString graphfile1week   = config.GetDataDir().CatPath("graphs", "graph-1week." + graphsuffix);
-    const AString graphfilepreview = config.GetDataDir().CatPath("graphs", "graph-preview." + graphsuffix);
+    const auto graphsuffix      = _graphsuffix.Valid() ? _graphsuffix : config.GetGraphSuffix();
+    const auto graphfileall     = config.GetDataDir().CatPath("graphs", "graph-all." + graphsuffix);
+    const auto graphfile6months = config.GetDataDir().CatPath("graphs", "graph-6months." + graphsuffix);
+    const auto graphfile1week   = config.GetDataDir().CatPath("graphs", "graph-1week." + graphsuffix);
+    const auto graphfilepreview = config.GetDataDir().CatPath("graphs", "graph-preview." + graphsuffix);
     bool success = false;
 
     {
@@ -2841,13 +2841,13 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
     }
 
     if (recordedlist.Count() > 0) {
-        const AString datfile  = config.GetTempFile("graph", ".dat");
-        const AString gnpfile  = config.GetTempFile("graph", ".gnp");
-        ADateTime firstdate    = ADateTime::MinDateTime;
-        ADateTime firstrecdate = ADateTime::MinDateTime;
-        ADateTime lastrecdate  = ADateTime::MinDateTime;
-        ADateTime firstschdate = ADateTime::MinDateTime;
-        ADateTime lastschdate  = ADateTime::MinDateTime;
+        const auto datfile      = config.GetTempFile("graph", ".dat");
+        const auto gnpfile      = config.GetTempFile("graph", ".gnp");
+        auto       firstdate    = ADateTime::MinDateTime;
+        auto       firstrecdate = ADateTime::MinDateTime;
+        auto       lastrecdate  = ADateTime::MinDateTime;
+        auto       firstschdate = ADateTime::MinDateTime;
+        auto       lastschdate  = ADateTime::MinDateTime;
 
         config.printf("Updating graphs...");
 
@@ -2862,7 +2862,7 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
 
             scheduledlist.CreateHash();
             for (i = 0; i < recordedlist.Count(); i++) {
-                const ADVBProg& prog = recordedlist.GetProg(i);
+                const auto& prog = recordedlist.GetProg(i);
 
                 fp.printf("%s", prog.GetStartDT().DateFormat("%D-%N-%Y %h:%m").str());
 
@@ -2895,10 +2895,10 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
         if (fp.open(gnpfile, "w")) {
             const ADateTime startdate("utc now-6M");
             const ADateTime enddate("utc now+2w+3d");
-            const double    pretime = 2.0 * 24.0 * 3600.0;
-            trend_t allrectrend = recordedlist.CalculateTrend(firstrecdate, lastrecdate);
-            trend_t rectrend = recordedlist.CalculateTrend(startdate, lastrecdate);
-            trend_t schtrend = recordedlist.CalculateTrend(firstschdate, lastschdate);
+            const auto      pretime = 2.0 * 24.0 * 3600.0;
+            auto allrectrend = recordedlist.CalculateTrend(firstrecdate, lastrecdate);
+            auto rectrend    = recordedlist.CalculateTrend(startdate, lastrecdate);
+            auto schtrend    = recordedlist.CalculateTrend(firstschdate, lastschdate);
 
             if (graphsuffix == "png") {
                 fp.printf("set terminal pngcairo size 1280,800\n");
@@ -2955,7 +2955,7 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
             fp.close();
 
             if (system("gnuplot " + gnpfile) == 0) {
-                const AString datesuffix = dt.DateFormat("-%Y-%M-%D." + graphsuffix);
+                const auto    datesuffix = dt.DateFormat("-%Y-%M-%D." + graphsuffix);
                 const AString copyfiles[] = {
                     graphfileall,
                     graphfile6months,
@@ -2964,7 +2964,7 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
                 uint_t i;
 
                 for (i = 0; i < NUMBEROF(copyfiles); i++) {
-                    AString destfilename = copyfiles[i].Prefix() + datesuffix;
+                    auto destfilename = copyfiles[i].Prefix() + datesuffix;
 
                     if (!AStdFile::exists(destfilename)) {
                         CopyFile(copyfiles[i], destfilename);
@@ -2992,7 +2992,7 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
 
 void ADVBProgList::EnhanceListings()
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBProgList list;
     uint_t added, modified;
 
@@ -3025,7 +3025,7 @@ void ADVBProgList::EnhanceListings()
 
 void ADVBProgList::CheckRecordingFile()
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBLock     lock("dvbfiles");
     ADVBProgList list;
     uint_t i;
@@ -3033,11 +3033,11 @@ void ADVBProgList::CheckRecordingFile()
     //config.logit("Creating combined list");
 
     if (list.ReadFromBinaryFile(config.GetRecordingFile())) {
-        uint64_t now     = (uint64_t)ADateTime().TimeStamp(true);
-        bool     changed = false;
+        auto now     = (uint64_t)ADateTime().TimeStamp(true);
+        bool changed = false;
 
         for (i = 0; i < list.Count();) {
-            const ADVBProg& prog = list.GetProg(i);
+            const auto& prog = list.GetProg(i);
 
             if (now >= (prog.GetRecordStop() + 60000)) {
                 config.printf("Programme '%s' should have stopped recording by now, removing it from the running list", prog.GetQuickDescription().str());
@@ -3057,7 +3057,7 @@ void ADVBProgList::CheckRecordingFile()
 
 bool ADVBProgList::GetAndConvertRecordings()
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AString  cmd;
     uint32_t tick;
     bool     success = false;
@@ -3142,7 +3142,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 
     ADVBProgList convertlist;
     for (i = 0; i < reclist.Count(); i++) {
-        const ADVBProg& prog = reclist.GetProg(i);
+        const auto& prog = reclist.GetProg(i);
 
         if (!prog.IsConverted() &&
             AStdFile::exists(prog.GetFilename())) {
@@ -3151,7 +3151,7 @@ bool ADVBProgList::GetAndConvertRecordings()
             if ((failures = failureslist.CountOccurances(prog)) < 2) {
                 if (prog.IsOnceOnly() && prog.IsRecordingComplete() && !config.IsRecordingSlave()) {
                     if (ADVBPatterns::DeletePattern(prog.GetUser(), prog.GetPattern())) {
-                        const bool rescheduleoption = config.RescheduleAfterDeletingPattern(prog.GetUser(), prog.GetCategory());
+                        const auto rescheduleoption = config.RescheduleAfterDeletingPattern(prog.GetUser(), prog.GetCategory());
 
                         config.printf("Deleted pattern '%s', %srescheduling...", prog.GetPattern(), rescheduleoption ? "" : "NOT ");
 
@@ -3167,7 +3167,7 @@ bool ADVBProgList::GetAndConvertRecordings()
 
     for (i = 0; i < convertlist.Count(); i++) {
         ADVBProgList processinglist;
-        ADVBProg& prog = convertlist.GetProgWritable(i);
+        auto& prog = convertlist.GetProgWritable(i);
         const ADVBProg *pprog;
 
         {
@@ -3225,18 +3225,18 @@ bool ADVBProgList::GetAndConvertRecordings()
 
         // create list of users affected by this round of conversion
         for (i = 0; i < convertlist.Count(); i++) {
-            const ADVBProg& prog = convertlist.GetProg(i);
+            const auto& prog = convertlist.GetProg(i);
 
             userlist[prog.GetUser()] = true;
         }
 
         for (it = userlist.begin(); it != userlist.end(); ++it) {
-            AString user = it->first;
+            auto    user = it->first;
             AString cmd;
 
             // get global or user specific command
             if ((cmd = config.GetUserConfigItem(user, "convertednotifycmd")).Valid()) {
-                AString  filename = config.GetLogDir().CatPath("converted-list-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
+                auto     filename = config.GetLogDir().CatPath("converted-list-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
                 AStdFile fp;
 
                 if (fp.open(filename, "w")) {
@@ -3247,7 +3247,7 @@ bool ADVBProgList::GetAndConvertRecordings()
                     fp.printf(":\n");
 
                     for (i = 0; i < convertlist.Count(); i++) {
-                        const ADVBProg& prog = convertlist.GetProg(i);
+                        const auto& prog = convertlist.GetProg(i);
 
                         if (user.Empty() || (user == prog.GetUser())) {
                             fp.printf("%s\n", prog.GetDescription((uint_t)config.GetUserConfigItem(user, "convertednotifyverbosity", "1")).str());
@@ -3271,11 +3271,11 @@ bool ADVBProgList::GetAndConvertRecordings()
 
 bool ADVBProgList::GetRecordingListFromRecordingSlave()
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBLock     lock("dvbfiles");
     ADVBProgList failurelist;
-    ADateTime    recordingwritetime = ADateTime::MinDateTime;
-    ADateTime    combinedwritetime  = ADateTime::MinDateTime;
+    auto         recordingwritetime = ADateTime::MinDateTime;
+    auto         combinedwritetime  = ADateTime::MinDateTime;
     FILE_INFO    info;
     bool         success = true, update = false;
 
@@ -3316,7 +3316,7 @@ bool ADVBProgList::GetRecordingListFromRecordingSlave()
 
 bool ADVBProgList::CheckRecordingNow()
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBLock     lock("dvbfiles");
     ADVBProgList scheduledlist, recordinglist;
     bool         success = false;
@@ -3326,7 +3326,7 @@ bool ADVBProgList::CheckRecordingNow()
 
         if ((cmd = config.GetConfigItem("recordingcheckcmd", "")).Valid()) {
             AStdFile fp;
-            AString  filename = config.GetTempFile("recordingcheck", ".txt");
+            auto     filename = config.GetTempFile("recordingcheck", ".txt");
 
             if (fp.open(filename, "w")) {
                 fp.printf("Recording check failed: host '%s' inaccessible\n", config.GetRecordingSlave().str());
@@ -3347,8 +3347,8 @@ bool ADVBProgList::CheckRecordingNow()
         recordinglist.CreateHash();
 
         if (scheduledlist.ReadFromFile(config.GetScheduledFile())) {
-            ADVBProgList   shouldberecordinglist, shouldntberecordinglist;
-            const uint64_t now = (uint64_t)ADateTime().TimeStamp(true), slack = (uint64_t)2 * (uint64_t)60000;
+            ADVBProgList shouldberecordinglist, shouldntberecordinglist;
+            const auto now = (uint64_t)ADateTime().TimeStamp(true), slack = (uint64_t)2 * (uint64_t)60000;
             uint_t i;
 
             lock.ReleaseLock();
@@ -3356,7 +3356,7 @@ bool ADVBProgList::CheckRecordingNow()
             success = true;
 
             for (i = 0; i < scheduledlist.Count(); i++) {
-                const ADVBProg& prog = scheduledlist[i];
+                const auto& prog = scheduledlist[i];
 
                 if ((now >= (prog.GetRecordStart() + slack)) && (now < prog.GetRecordStop())) {
                     if (recordinglist.FindUUID(prog) == NULL) shouldberecordinglist.AddProg(prog);
@@ -3374,7 +3374,7 @@ bool ADVBProgList::CheckRecordingNow()
                     report.printf("%u programmes should be recording:\n", shouldberecordinglist.Count());
 
                     for (i = 0; i < shouldberecordinglist.Count(); i++) {
-                        const ADVBProg& prog = shouldberecordinglist[i];
+                        const auto& prog = shouldberecordinglist[i];
 
                         report.printf("%s\n", prog.GetQuickDescription().str());
                     }
@@ -3388,7 +3388,7 @@ bool ADVBProgList::CheckRecordingNow()
                     report.printf("%u programmes shouldn't be recording:\n", shouldntberecordinglist.Count());
 
                     for (i = 0; i < shouldntberecordinglist.Count(); i++) {
-                        const ADVBProg& prog = shouldntberecordinglist[i];
+                        const auto& prog = shouldntberecordinglist[i];
 
                         report.printf("%s\n", prog.GetQuickDescription().str());
                     }
@@ -3400,7 +3400,7 @@ bool ADVBProgList::CheckRecordingNow()
                 AString cmd;
                 if ((cmd = config.GetConfigItem("recordingcheckcmd", "")).Valid()) {
                     AStdFile fp;
-                    AString  filename = config.GetTempFile("recordingcheck", ".txt");
+                    auto     filename = config.GetTempFile("recordingcheck", ".txt");
 
                     if (fp.open(filename, "w")) {
                         fp.printf("%s", report.str());
@@ -3427,13 +3427,13 @@ void ADVBProgList::FindSeries(serieslist_t& serieslist) const
     uint_t i;
 
     for (i = 0; i < Count(); i++) {
-        const ADVBProg&            prog    = GetProg(i);
-        const ADVBProg::episode_t& episode = prog.GetEpisode();
+        const auto& prog    = GetProg(i);
+        const auto& episode = prog.GetEpisode();
 
         if (episode.valid && (episode.episode > 0)) {
-            uint_t ser = episode.series;
-            uint_t epn = episode.episode;
-            uint_t ept = episode.episodes;
+            auto ser = episode.series;
+            auto epn = episode.episode;
+            auto ept = episode.episodes;
 
 #if 0
             if (!ser) {
@@ -3443,16 +3443,16 @@ void ADVBProgList::FindSeries(serieslist_t& serieslist) const
             }
 #endif
 
-            series_t& series = serieslist[prog.GetTitle()];
+            auto& series = serieslist[prog.GetTitle()];
             if (series.title.Empty()) series.title = prog.GetTitle();
 
             if (ser >= series.list.size()) series.list.resize(ser + 1);
 
-            AString& str = series.list[ser];
-            int len = (int)std::max(ept, epn);
+            auto& str = series.list[ser];
+            int   len = (int)std::max(ept, epn);
             if (str.len() < len) str += AString("-").Copies(len - str.len());
 
-            uint_t ind = epn - 1;
+            auto  ind = epn - 1;
             char t = str[ind], t1 = t;
 
             if      (prog.IsScheduled())          t1 = 's';
@@ -3470,9 +3470,9 @@ void ADVBProgList::FindSeries(serieslist_t& serieslist) const
                 "rasx",
                 "xsfar",
             };
-            uint_t i;
-            for (i = 0; i < NUMBEROF(allowablechanges); i++) {
-                if ((t == allowablechanges[i][0]) && (strchr(allowablechanges[i] + 1, t1) != NULL)) {
+            uint_t j;
+            for (j = 0; j < NUMBEROF(allowablechanges); j++) {
+                if ((t == allowablechanges[j][0]) && (strchr(allowablechanges[j] + 1, t1) != NULL)) {
                     t = t1;
                     break;
                 }
@@ -3487,7 +3487,7 @@ void ADVBProgList::FindSeries(serieslist_t& serieslist) const
 
 double ADVBProgList::ScoreProgrammeByPopularityFactors(const ADVBProg& prog, void *context)
 {
-    const popularityfactors_t& factors = *(const popularityfactors_t *)context;
+    const auto& factors = *(const popularityfactors_t *)context;
     double score = 0.0;
 
     if (prog.IsRecorded())  score += factors.recordedfactor;
@@ -3504,7 +3504,7 @@ double ADVBProgList::ScoreProgrammeByPopularityFactors(const ADVBProg& prog, voi
 
 bool ADVBProgList::__CollectPopularity(const AString& key, uptr_t item, void *context)
 {
-    AList& list = *(AList *)context;
+    auto& list = *(AList *)context;
 
     UNUSED(item);
 
@@ -3515,11 +3515,11 @@ bool ADVBProgList::__CollectPopularity(const AString& key, uptr_t item, void *co
 
 int  ADVBProgList::__ComparePopularity(const AListNode *pNode1, const AListNode *pNode2, void *pContext)
 {
-    const AHash&        hash   = *(const AHash *)pContext;
-    const AString&      title1 = *AString::Cast(pNode1);
-    const AString&      title2 = *AString::Cast(pNode2);
-    const popularity_t& pop1   = *(const popularity_t *)hash.Read(title1);
-    const popularity_t& pop2   = *(const popularity_t *)hash.Read(title2);
+    const auto& hash   = *(const AHash *)pContext;
+    const auto& title1 = *AString::Cast(pNode1);
+    const auto& title2 = *AString::Cast(pNode2);
+    const auto& pop1   = *(const popularity_t *)hash.Read(title1);
+    const auto& pop2   = *(const popularity_t *)hash.Read(title2);
     int res = 0;
 
     if (pop2.score > pop1.score) res =  1;
@@ -3538,7 +3538,7 @@ void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& p
     for (i = 0; i < Count(); i++) {
         const ADVBProg& prog  = GetProg(i);
         const AString&  title = prog.GetTitle();
-        popularity_t    *pop  = (popularity_t *)hash.Read(title);
+        auto            *pop  = (popularity_t *)hash.Read(title);
 
         if ((pop == NULL) && ((pop = new popularity_t) != NULL)) {
             memset(pop, 0, sizeof(*pop));
@@ -3556,9 +3556,9 @@ void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& p
     list.Sort(&__ComparePopularity, &hash);
 
 #if 0
-    const AString *str = AString::Cast(list.First());
+    const auto *str = AString::Cast(list.First());
     while (str) {
-        const popularity_t& pop = *(const popularity_t *)hash.Read(*str);
+        const auto& pop = *(const popularity_t *)hash.Read(*str);
 
         debug("Title '%s' count %u score %u\n", str->str(), pop.count, pop.score);
 
@@ -3569,10 +3569,10 @@ void ADVBProgList::FindPopularTitles(AList& list, double (*fn)(const ADVBProg& p
 
 ADVBProgList::trend_t ADVBProgList::CalculateTrend(const ADateTime& startdate, const ADateTime& enddate) const
 {
-    trend_t  trend;
-    uint64_t start = (uint64_t)startdate;
-    uint64_t end   = (uint64_t)enddate;
-    uint_t   i;
+    trend_t trend;
+    auto    start = (uint64_t)startdate;
+    auto    end   = (uint64_t)enddate;
+    uint_t  i;
 
     memset(&trend, 0, sizeof(trend));
 
@@ -3621,7 +3621,7 @@ ADVBProgList::trend_t ADVBProgList::CalculateTrend(const ADateTime& startdate, c
 
 ADVBProgList::timegap_t ADVBProgList::FindGaps(const ADateTime& start, std::vector<timegap_t>& gaps, const std::map<uint_t,bool> *cardstoavoid) const
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     std::vector<std::vector<const ADVBProg *> > lists;
     timegap_t res = {start, start, ~0U};
     uint_t i;
@@ -3631,7 +3631,7 @@ ADVBProgList::timegap_t ADVBProgList::FindGaps(const ADateTime& start, std::vect
     gaps.resize(config.GetMaxDVBCards());
 
     for (i = 0; i < Count(); i++) {
-        const ADVBProg& prog = GetProg(i);
+        const auto& prog = GetProg(i);
 
         if (prog.GetDVBCard() >= (uint_t)lists.size()) {
             lists.resize(prog.GetDVBCard() + 1);
@@ -3647,7 +3647,7 @@ ADVBProgList::timegap_t ADVBProgList::FindGaps(const ADateTime& start, std::vect
 
     for (i = 0; i < (uint_t)lists.size(); i++) {
         const std::vector<const ADVBProg *>& list = lists[i];
-        timegap_t& gap = gaps[i];
+        auto& gap = gaps[i];
 
         gap.start = start;
         gap.end   = ADateTime::MaxDateTime;
@@ -3676,14 +3676,14 @@ ADVBProgList::timegap_t ADVBProgList::FindGaps(const ADateTime& start, std::vect
 
 bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, const AString& user, uint64_t maxminutes) const
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    const uint64_t dt1 = (uint64_t)dt;
-    const uint64_t dt2 = dt1 + (uint64_t)maxminutes * (uint64_t)1000;
+    const auto& config = ADVBConfig::Get();
+    const auto  dt1 = (uint64_t)dt;
+    const auto  dt2 = dt1 + (uint64_t)maxminutes * (uint64_t)1000;
     uint_t i;
     bool success = false;
 
     for (i = 0; i < Count(); i++) {
-        const ADVBProg& prog = GetProg(i);
+        const auto& prog = GetProg(i);
 
         if ((prog.GetStop() > dt1) && (prog.GetStart() <= dt2) && (stricmp(prog.GetTitle(), title.str()) == 0)) {
             config.printf("Found '%s'", prog.GetQuickDescription().str());
@@ -3704,7 +3704,7 @@ bool ADVBProgList::RecordImmediately(const ADateTime& dt, const AString& title, 
         FindGaps(dt, gaps);
 
         for (i = 0; i < (uint_t)gaps.size(); i++) {
-            const timegap_t& gap = gaps[i];
+            const auto& gap = gaps[i];
 
             if ((prog.GetRecordStartDT() >= (gap.start + buffer)) && ((prog.GetRecordStopDT() + buffer)  <= gap.end)) {
                 if ((best < 0) || (gap.end < gaps[best].end)) best = i;
@@ -3763,12 +3763,12 @@ void ADVBProgList::StripFilmsAndSeries(const serieslist_t& serieslist)
     uint_t i;
 
     for (i = 0; i < Count();) {
-        const ADVBProg& prog = GetProg(i);
-        bool delprog = prog.IsFilm();
+        const auto& prog = GetProg(i);
+        auto delprog = prog.IsFilm();
 
         if (!delprog) {
-            serieslist_t::const_iterator it = serieslist.find(prog.GetTitle());
-            const ADVBProg::episode_t& ep = prog.GetEpisode();
+            const auto  it = serieslist.find(prog.GetTitle());
+            const auto& ep = prog.GetEpisode();
 
             delprog = ((it != serieslist.end()) &&
                        (!ep.valid ||
@@ -3787,13 +3787,13 @@ void ADVBProgList::StripFilmsAndSeries(const serieslist_t& serieslist)
 
 bool ADVBProgList::EmailList(const AString& recipient, const AString& subject, const AString& message, uint_t verbosity, bool force) const
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AString cmd;
     bool    success = false;
 
     if (force || (Count() > 0)) {
         if ((cmd = config.GetConfigItem("emailcmd", "mail -s \"{subject}\" {recipient} <{file}")).Valid()) {
-            AString  filename = config.GetLogDir().CatPath("email-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
+            auto     filename = config.GetLogDir().CatPath("email-" + ADateTime().DateFormat("%Y-%M-%D-%h-%m-%s") + ".txt");
             AStdFile fp;
 
             if (fp.open(filename, "w")) {

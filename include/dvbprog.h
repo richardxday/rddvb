@@ -269,7 +269,7 @@ public:
         TimeIndex_ActStart,
         TimeIndex_ActStop,
     };
-    uint64_t    GetTimeIndex(uint_t index) const {return data ? ((const uint64_t *)&data->start)[index] : 0;}
+    uint64_t    GetTimeIndex(uint_t index) const {return (data != NULL) ? ((const uint64_t *)&data->start)[index] : 0;}
 
     void        SetFileSize(uint64_t filesize) {data->filesize = filesize;}
     uint64_t    GetFileSize()              const {return data->filesize;}

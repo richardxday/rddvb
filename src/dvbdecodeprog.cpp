@@ -13,9 +13,9 @@
 
 int main(int argc, char *argv[])
 {
-    const ADVBConfig&   config = ADVBConfig::Get();
+    const auto&         config = ADVBConfig::Get();
     rapidjson::Document doc;
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    auto&               allocator = doc.GetAllocator();
     ADVBProg prog;  // ensure ADVBProg initialisation takes place
 
     // ensure output is disabled
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
         if (prog.Base64Decode(argv[1])) {
             prog.ExportToJSON(doc, doc);
 
-            const ADVBProg::episode_t& episode = prog.GetEpisode();
+            const auto& episode = prog.GetEpisode();
             if (episode.valid) {
                 ADVBProgList reclist, list;
                 AString      pattern, errors;
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
                 if ((p = list.FindUUIDIndex(prog)) >= 0) {
                     if (p > 0) {
                         rapidjson::Value obj;
-                        const ADVBProg& prog1 = list.GetProg(p - 1);
+                        const auto& prog1 = list.GetProg(p - 1);
 
                         obj.SetObject();
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
                     }
                     if (p < (int)(list.Count() - 1)) {
                         rapidjson::Value obj;
-                        const ADVBProg& prog1 = list.GetProg(p + 1);
+                        const auto& prog1 = list.GetProg(p + 1);
 
                         obj.SetObject();
 

@@ -14,8 +14,8 @@
 
 static size_t __writedata(void *contents, size_t size, size_t count, void *context)
 {
-    std::string& res = *(std::string *)context;
-    size_t bytes = size * count;
+    auto& res   = *(std::string *)context;
+    auto  bytes = size * count;
 
     res += std::string((const char *)contents, bytes);
 
@@ -31,7 +31,7 @@ static bool Post(CURL *curl, const char *url, const Json::Value& postdata, Json:
 
     {
         Json::StreamWriterBuilder wbuilder;
-        Json::StreamWriter *writer = wbuilder.newStreamWriter();
+        auto *writer = wbuilder.newStreamWriter();
         std::stringbuf str;
         std::ostream sout(NULL);
         sout.rdbuf(&str);
@@ -62,7 +62,7 @@ static bool Post(CURL *curl, const char *url, const Json::Value& postdata, Json:
     }
     else {
         Json::CharReaderBuilder rbuilder;
-        Json::CharReader *reader = rbuilder.newCharReader();
+        auto *reader = rbuilder.newCharReader();
         std::string errors;
 
         if (reader != NULL) {

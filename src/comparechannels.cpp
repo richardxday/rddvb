@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
                         }
 
                         std::vector<AString>& displaynames = channel.xmltv.displaynames;
-                        const AStructuredNode *node1 = node->GetChildren();
+                        const auto *node1 = node->GetChildren();
                         while (node1 != NULL) {
                             if (node1->Key == "display-name") {
                                 displaynames.push_back(node1->Value);
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 
     {
 
-        const ADVBChannelList& channellist = ADVBChannelList::Get();
+        const auto& channellist = ADVBChannelList::Get();
         uint_t i;
         size_t j;
 
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
             if ((chan = channellist.GetChannelByLCN(i)) != NULL) {
                 for (j = 0; j < channels.size(); j++) {
-                    channel_t& channel = channels[j];
+                    auto& channel = channels[j];
 
                     if (channel.lcn == chan->dvb.lcn) {
                         channel.dvb.name = chan->dvb.channelname;
@@ -145,14 +145,14 @@ int main(int argc, char *argv[])
 
                 while (line.ReadLn(fp) >= 0) {
                     if (line.CountWords() > 1) {
-                        uint_t  lcn  = line.Word(0);
-                        AString name = line.Words(1);
+                        auto lcn  = (uint_t)line.Word(0);
+                        auto name = line.Words(1);
 
                         if (channelsdone.find(name) == channelsdone.end()) {
                             size_t j;
 
                             for (j = 0; j < channels.size(); j++) {
-                                channel_t& channel = channels[j];
+                                auto& channel = channels[j];
 
                                 if ((lcn == channel.lcn) &&
                                     channel.othernames[index].Empty() &&
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
     }
 
     for (j = 0; j < channels.size(); j++) {
-        const channel_t& channel = channels[j];
+        const auto& channel = channels[j];
         TABLEROW row;
 
         row.push_back(AString("%").Arg(channel.lcn));

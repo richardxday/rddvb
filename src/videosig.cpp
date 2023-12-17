@@ -50,14 +50,14 @@ int main(int argc, char *argv[])
         outbuf.resize(n * n * 3);
 
         while (ifp->readbytes(&inbuf[0], inbuf.size()) == (slong_t)inbuf.size()) {
-            uint8_t *p = &outbuf[0];
+            auto   *p = &outbuf[0];
             uint_t i, j, div = 2 * (n + 1);
 
             for (i = 0; i < n; i++) {
-                uint_t y = (((2 * i + 1) * hgt) / div) * hgt;
+                auto y = (((2 * i + 1) * hgt) / div) * hgt;
 
                 for (j = 0; j < n; j++) {
-                    uint_t x = ((2 * j + 1) * wid) / div;
+                    auto x = ((2 * j + 1) * wid) / div;
 
                     memcpy(p, &inbuf[3 * (x + y)], 3);
                     p += 3;

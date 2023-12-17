@@ -57,7 +57,7 @@ void writestats(ASettingsHandler& statsstorage, const STATS& stats)
 
 void logsignalstats(uint_t card, const STATS *stats, uint_t n)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AString  msg;
     AStdFile fp;
     uint_t i;
@@ -65,7 +65,7 @@ void logsignalstats(uint_t card, const STATS *stats, uint_t n)
     msg.printf("%s %u", ADateTime().DateFormat("%Y-%M-%D %h:%m:%s.%S").str(), card);
 
     for (i = 0; i < n; i++) {
-        const STATS& stats1 = stats[i];
+        const auto& stats1 = stats[i];
 
         msg.printf(" %s %u %u",
                    stats1.name.str(),
@@ -86,7 +86,7 @@ void logsignalstats(uint_t card, const STATS *stats, uint_t n)
 
 int main(int argc, char *argv[])
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AQuitHandler quithandler;
     uint_t card = 0;
     int i;
@@ -97,12 +97,11 @@ int main(int argc, char *argv[])
 
     AString line;
     std::map<AString,AString> values;
-    std::map<AString,AString>::iterator it;
 
     ASettingsHandler statsstorage(AString("dvbcardstats-%").Arg(card), true, 60000);
-    uint64_t locktime   = (uint64_t)statsstorage.Get("locktime");
-    uint64_t unlocktime = (uint64_t)statsstorage.Get("unlocktime");
-    STATS    stats[] = {
+    auto  locktime   = (uint64_t)statsstorage.Get("locktime");
+    auto  unlocktime = (uint64_t)statsstorage.Get("unlocktime");
+    STATS stats[] = {
         readstats(statsstorage, "signal"),
         readstats(statsstorage, "snr"),
     };
@@ -111,14 +110,15 @@ int main(int argc, char *argv[])
 
     while (!HasQuit() && (line.ReadLn(Stdin) > 0)) {
         uint_t i, n = line.CountLines("|");
-        bool waslocked = (((it = values.find("lock")) != values.end()) && (it->second == "locked"));
+        auto it        = values.find("lock");
+        auto waslocked = ((it != values.end()) && (it->second == "locked"));
 
         values["lock"] = "unlocked";
 
         for (i = 0; i < n; i++) {
-            AString column = line.Line(i, "|").Words(0);
-            AString name   = column.Word(0).ToLower();
-            AString value  = column.Word(1);
+            auto column = line.Line(i, "|").Words(0);
+            auto name   = column.Word(0).ToLower();
+            auto value  = column.Word(1);
 
             if ((name == "signal") || (name == "snr") || (name == "ber") || (name == "unc")) value = (uint_t)("$" + value);
             if (name == "fe_has_lock") {
@@ -131,9 +131,9 @@ int main(int argc, char *argv[])
 
         statsstorage.Set("lockstatus", values["lock"]);
 
-        bool locked = (((it = values.find("lock")) != values.end()) && (it->second == "locked"));
+        auto locked = (((it = values.find("lock")) != values.end()) && (it->second == "locked"));
         if (locked != waslocked) {
-            uint64_t t = (uint64_t)ADateTime().TimeStamp(true);
+            auto t = (uint64_t)ADateTime().TimeStamp(true);
 
             if (locked) {
                 locktime = t;
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
                            card, AValue((t - locktime) / 1000).ToString().str());
 
                 for (i = 0; i < NUMBEROF(stats); i++) {
-                    const STATS& stats1 = stats[i];
+                    const auto& stats1 = stats[i];
 
                     if (i > 0) msg.printf(",");
 
@@ -168,11 +168,11 @@ int main(int argc, char *argv[])
         }
 
         if (locked) {
-            bool justlocked = (!waslocked && locked);
+            auto justlocked = (!waslocked && locked);
             bool log = false;
 
             for (i = 0; i < NUMBEROF(stats); i++) {
-                STATS& stats1 = stats[i];
+                auto& stats1 = stats[i];
 
                 updatestats(stats1, values[stats1.name], justlocked);
                 writestats(statsstorage, stats1);

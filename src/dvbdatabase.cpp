@@ -24,11 +24,11 @@ ADVBDatabase::~ADVBDatabase()
 bool ADVBDatabase::Open()
 {
     if (database != NULL) {
-        const ADVBConfig& config = ADVBConfig::Get();
-        AString host     = config.GetConfigItem("dbhost", "localhost");
-        AString username = config.GetConfigItem("dbuser", "richard");
-        AString password = config.GetConfigItem("dbpassword", "arsebark");
-        AString dbname   = config.GetConfigItem("dbname", "dvb");
+        const auto& config = ADVBConfig::Get();
+        auto host     = config.GetConfigItem("dbhost", "localhost");
+        auto username = config.GetConfigItem("dbuser", "richard");
+        auto password = config.GetConfigItem("dbpassword", "arsebark");
+        auto dbname   = config.GetConfigItem("dbname", "dvb");
 
         if (!database->Open(host, username, password, dbname)) {
             if (database->OpenAdmin(host)) {

@@ -12,7 +12,7 @@ static std::vector<AString> configrecord;
 
 int main(void)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBProg prog;
     size_t i, j;
 

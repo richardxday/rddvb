@@ -33,16 +33,16 @@ AString ConvertStream(const dvbstream_t& stream)
 
 bool ConvertStream(const AString& base64str, dvbstream_t& stream)
 {
-    AString str = base64str.Base64Decode();
+    auto str = base64str.Base64Decode();
     bool success = false;
 
     if (str.Valid()) {
         sint_t i, n = str.CountLines();
 
         for (i = 0; i < n; i++) {
-            AString line = str.Line(i);
-            AString cmd  = line.Word(0);
-            AString args = line.Words(1);
+            auto line = str.Line(i);
+            auto cmd  = line.Word(0);
+            auto args = line.Words(1);
 
             if (cmd == "type") {
                 stream.type = args;
@@ -75,10 +75,10 @@ bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& patt
     bool success = false;
 
     try {
-        const ADVBConfig& config  = ADVBConfig::Get();
-        const AString    tempfile = config.GetTempFile("streams", ".txt");
-        const AString    cmd      = config.GetStreamListingCommand(tempfile);
-        const std::regex pat      = ParseRegex(pattern);
+        const auto& config   = ADVBConfig::Get();
+        const auto  tempfile = config.GetTempFile("streams", ".txt");
+        const auto  cmd      = config.GetStreamListingCommand(tempfile);
+        const auto  pat      = ParseRegex(pattern);
 
         if (system(cmd) == 0) {
             AStdFile fp;
@@ -87,8 +87,8 @@ bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& patt
                 AString line;
 
                 while (line.ReadLn(fp) >= 0) {
-                    uint32_t pid = (uint32_t)line.Word(0);
-                    AString  str = line.Words(1);
+                    auto pid = (uint32_t)line.Word(0);
+                    auto str = line.Words(1);
                     dvbstream_t stream;
 
                     if (ConvertStream(str, stream) && MatchRegex(stream.name, pat)) {
@@ -97,7 +97,7 @@ bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& patt
                         stream.pid = pid;
 
                         for (i = 0; i < activestreams.size(); i++) {
-                            dvbstream_t& stream1 = activestreams[i];
+                            auto& stream1 = activestreams[i];
 
                             if ((stream.type == stream1.type) &&
                                 (stream.name == stream1.name) &&
@@ -130,11 +130,11 @@ bool ListDVBStreams(std::vector<dvbstream_t>& activestreams, const AString& patt
 
 static bool PrepareHLSStreaming(dvbstream_t& stream)
 {
-    const ADVBConfig& config   = ADVBConfig::Get();
-    const AString&    name     = stream.name;
-    const AString     dir      = config.GetHLSConfigItem("hlsoutputpath", name);
-    const AString     srcfile  = config.GetHLSConfigItem("hlsstreamhtmlsourcefile", name);
-    const AString     destfile = config.GetHLSConfigItem("hlsstreamhtmldestfile", name);
+    const auto& config   = ADVBConfig::Get();
+    const auto& name     = stream.name;
+    const auto  dir      = config.GetHLSConfigItem("hlsoutputpath", name);
+    const auto  srcfile  = config.GetHLSConfigItem("hlsstreamhtmlsourcefile", name);
+    const auto  destfile = config.GetHLSConfigItem("hlsstreamhtmldestfile", name);
     bool success = false;
 
     if (CreateDirectory(dir)) {
@@ -178,11 +178,11 @@ static bool PrepareHLSStreaming(dvbstream_t& stream)
 
 bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _name, const AString& dvbcardstr, bool background)
 {
-    const ADVBConfig& config      = ADVBConfig::Get();
-    const bool   useslave         = config.GetStreamSlave().Valid();
-    const uint_t dvbcard          = (uint_t)dvbcardstr;
-    const bool   dvbcardspecified = dvbcardstr.Valid();
-    AString      name             = _name;
+    const auto& config           = ADVBConfig::Get();
+    const auto  useslave         = config.GetStreamSlave().Valid();
+    const auto  dvbcard          = (uint_t)dvbcardstr;
+    const auto  dvbcardspecified = dvbcardstr.Valid();
+    auto        name             = _name;
     bool success = false;
 
     // ensure output is disabled
@@ -198,7 +198,7 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
     stream.cleanupcmd.Delete();
 
     if ((type == StreamType_Raw) && !useslave) {
-        ADVBChannelList& channellist = ADVBChannelList::Get();
+        auto& channellist = ADVBChannelList::Get();
         AString pids;
 
         stream.type = "raw";
@@ -271,7 +271,7 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
                 uint_t i;
 
                 for (i = list1.Count(); (i > 0) && filename.Empty(); ) {
-                    const ADVBProg& prog = list1[--i];
+                    const auto& prog = list1[--i];
 
                     if (AStdFile::exists(prog.GetFilename())) {
                         filename = prog.GetFilename();
@@ -288,7 +288,7 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
                 }
 
                 if (filename.Valid()) {
-                    const ADVBProg& prog = list1[i];
+                    const auto& prog = list1[i];
 
                     stream.cmd.printf("nice 10 cat \"%s\"", filename.str());
 
@@ -304,7 +304,7 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
         }
 
         if (stream.cmd.Valid()) {
-            AString cmd = stream.cmd;
+            auto cmd = stream.cmd;
 
             if (background) {
                 if (stream.cleanupcmd.Valid()) {
@@ -408,9 +408,9 @@ bool StartDVBStream(dvbstream_t& stream, dvbstreamtype_t type, const AString& _n
 
 static bool KillStream(const dvbstream_t& stream)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    const uint32_t pid = stream.pid;
-    const AString cmd = config.GetStreamListingKillingCommand(pid);
+    const auto& config = ADVBConfig::Get();
+    const auto  pid = stream.pid;
+    const auto  cmd = config.GetStreamListingKillingCommand(pid);
 
     return (system(cmd) == 0);
 }

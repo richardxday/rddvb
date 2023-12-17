@@ -10,7 +10,7 @@ ADVBEpisodeHandler::ADVBEpisodeHandler() : dayoffsethash(),
                                            changed(false)
 {
     AStdFile fp;
-    AString  filename = ADVBConfig::Get().GetEpisodesFile();
+    auto     filename = ADVBConfig::Get().GetEpisodesFile();
 
     if (fp.open(filename)) {
         AString line;
@@ -27,7 +27,7 @@ ADVBEpisodeHandler::~ADVBEpisodeHandler()
 {
     if (changed) {
         AStdFile fp;
-        AString  filename = ADVBConfig::Get().GetEpisodesFile();
+        auto     filename = ADVBConfig::Get().GetEpisodesFile();
 
         if (fp.open(filename, "w")) {
             dayoffsethash.Traverse(&__WriteString, &fp);
@@ -38,7 +38,7 @@ ADVBEpisodeHandler::~ADVBEpisodeHandler()
 
 bool ADVBEpisodeHandler::__WriteString(const AString& key, uptr_t value, void *context)
 {
-    AStdData *fp = (AStdData *)context;
+    auto *fp = (AStdData *)context;
 
     fp->printf("%s=%s\n", key.str(), AValue(value).ToString().str());
 
@@ -68,11 +68,11 @@ void ADVBEpisodeHandler::SetEpisode(const AString& key, uint32_t value)
 
 void ADVBEpisodeHandler::AssignEpisode(ADVBProg& prog, bool ignorerepeats)
 {
-    //const ADVBConfig& config = ADVBConfig::Get();
+    //const auto& config = ADVBConfig::Get();
 
     if (!prog.IsFilm() && (CompareNoCase(prog.GetTitle(), "Close") != 0)) {
         if (prog.GetAssignedEpisode() == 0) {
-            AString  key = prog.GetTitle();
+            auto     key = AString(prog.GetTitle());
             uint32_t epn;
             bool     valid = false;
 

@@ -26,7 +26,7 @@ ADVBLock::~ADVBLock()
 
 void ADVBLock::__DeleteLock(uptr_t item, void *context)
 {
-    lock_t *lock = (lock_t *)item;
+    auto *lock = (lock_t *)item;
 
     UNUSED(context);
 
@@ -47,8 +47,8 @@ AString ADVBLock::GetFilename(const lock_t *lock)
 
 bool ADVBLock::GetLock(uint_t n)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    lock_t *lock = (lock_t *)lockhash.Read(name);
+    const auto& config = ADVBConfig::Get();
+    auto *lock = (lock_t *)lockhash.Read(name);
     bool success = false;
 
     (void)config;
@@ -65,7 +65,7 @@ bool ADVBLock::GetLock(uint_t n)
 
     if (lock != NULL) {
         if (lock->refcount == 0) {
-            AString lockfile = GetFilename(lock);
+            auto lockfile = GetFilename(lock);
 
             if ((lock->fd = open(lockfile, O_CREAT | O_RDWR, (S_IRUSR | S_IWUSR))) >= 0) {
                 if (flock(lock->fd, LOCK_EX) >= 0) {
@@ -87,8 +87,8 @@ bool ADVBLock::GetLock(uint_t n)
 
 void ADVBLock::ReleaseLock(uint_t n)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    lock_t *lock = (lock_t *)lockhash.Read(name);
+    const auto& config = ADVBConfig::Get();
+    auto *lock = (lock_t *)lockhash.Read(name);
 
     (void)config;
 
@@ -96,7 +96,7 @@ void ADVBLock::ReleaseLock(uint_t n)
         lock->refcount = SUBZ(lock->refcount, n);
 
         if (lock->refcount == 0) {
-            AString lockfile = GetFilename(lock);
+            auto lockfile = GetFilename(lock);
 
             close(lock->fd);
             lock->fd = -1;

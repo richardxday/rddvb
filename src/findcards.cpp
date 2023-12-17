@@ -19,15 +19,15 @@ enum {
 
 void findcards(void)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
 
     if (config.GetRecordingSlave().Valid()) {
         RunRemoteCommandGetFile("dvb --find-cards", config.GetDVBCardsFile());
     }
     else {
         static const AString str = "using dvb card";
-        const ADVBChannelList::channel_t *channel = ADVBChannelList::Get().GetChannel(0);
-        const uint32_t freq = channel ? channel->dvb.freq : (uint32_t)((double)config.GetDVBFrequencyRange().Column(0) * 1.0e6);
+        const auto *channel = ADVBChannelList::Get().GetChannel(0);
+        const auto freq     = (channel != NULL) ? channel->dvb.freq : (uint32_t)((double)config.GetDVBFrequencyRange().Column(0) * 1.0e6);
         AString file;
         AString oldcards, newcards;
         uint_t i;

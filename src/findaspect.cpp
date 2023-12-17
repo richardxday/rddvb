@@ -87,7 +87,7 @@ static void dumpeit(void *p_cb_data, dvbpsi_eit_t *p_new_eit)
 {
     (void)p_cb_data;
 
-    const dvbpsi_eit_event_t *p_event = p_new_eit->p_first_event;
+    const auto *p_event = p_new_eit->p_first_event;
     while (p_event) {
         printf("Event: TS ID %u Network ID %u Event ID %u starttime %s duration %u\n", p_new_eit->i_ts_id, p_new_eit->i_network_id, p_event->i_event_id, AValue(p_event->i_start_time).ToString("016x").str(), p_event->i_duration);
 
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 
             while (b_ok)
             {
-                uint16_t pid = ((uint16_t)(data[1] & 0x1f) << 8) + data[2];
+                auto pid = ((uint16_t)(data[1] & 0x1f) << 8) + data[2];
                 if (pid == 0x12) dvbpsi_packet_push(p_dvbpsi, data);
                 b_ok = ReadPacket(*fp, data, sizeof(data));
             }

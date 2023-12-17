@@ -19,9 +19,9 @@ ADVBIconCache::ADVBIconCache() : cache(&__DeleteEntry),
         uint_t n = 0;
 
         while (line.ReadLn(fp) >= 0) {
-            AString type = line.Column(0);
-            AString name = line.Column(1).DeQuotify().DeEscapify();
-            AString icon = line.Column(2).DeQuotify().DeEscapify();
+            auto type = line.Column(0);
+            auto name = line.Column(1).DeQuotify().DeEscapify();
+            auto icon = line.Column(2).DeQuotify().DeEscapify();
 
             SetIcon(type, name, icon);
             n++;
@@ -58,8 +58,8 @@ ADVBIconCache& ADVBIconCache::Get()
 
 bool ADVBIconCache::__WriteEntry(const AString& key, uptr_t item, void *context)
 {
-    const entry_t *entry = (const entry_t *)item;
-    AStdFile& fp = *(AStdFile *)context;
+    const auto *entry = (const entry_t *)item;
+    auto& fp = *(AStdFile *)context;
 
     (void)key;
 

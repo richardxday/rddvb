@@ -27,7 +27,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
                            configrecorder(NULL),
                            disableoutput(false)
 {
-    const struct passwd *pw = getpwuid(getuid());
+    const auto *pw = getpwuid(getuid());
     static const struct {
         AString name;
         AString value;
@@ -173,7 +173,7 @@ ADVBConfig::ADVBConfig() : config(AString(DEFAULTCONFDIR).CatPath("dvb"), false)
 
         ListUsers(users);
 
-        const AString *user = AString::Cast(users.First());
+        const auto *user = AString::Cast(users.First());
         while (user != NULL) {
             if (((dir = GetRecordingsDir(*user)).Valid())   && (dir.Pos("{") < 0)) {
                 dirs[dir] = "user " + *user + " recordings";
@@ -237,7 +237,7 @@ ADVBConfig& ADVBConfig::GetWriteable()
 /*--------------------------------------------------------------------------------*/
 void ADVBConfig::CheckUpdate() const
 {
-    ASettingsHandler *wrconfig = const_cast<ASettingsHandler *>(&config);
+    auto *wrconfig = const_cast<ASettingsHandler *>(&config);
     if (wrconfig->CheckRead()) wrconfig->Read();
 }
 
@@ -250,11 +250,11 @@ void ADVBConfig::CheckUpdate() const
 bool ADVBConfig::ReportDirectoryCreationErrors(const AString& errors)
 {
     if (errors.Valid()) {
-        const ADVBConfig& config = ADVBConfig::Get();
-        AString cmd = config.GetConfigItem("createdirfailcmd");
+        const auto& config = ADVBConfig::Get();
+        auto  cmd = config.GetConfigItem("createdirfailcmd");
 
         if (cmd.Valid()) {
-            AString  tempfile = config.GetTempFileEx(config.GetTempDir(), "dir-creation-errors", ".txt");
+            auto     tempfile = config.GetTempFileEx(config.GetTempDir(), "dir-creation-errors", ".txt");
             AStdFile fp;
 
             if (fp.open(tempfile, "w")) {
@@ -286,11 +286,11 @@ bool ADVBConfig::ReportDirectoryCreationErrors(const AString& errors)
 /*--------------------------------------------------------------------------------*/
 AString ADVBConfig::ReplaceTerms(const AString& pre, const AString& _str, const AString& post) const
 {
-    AString str = _str;
+    auto str = _str;
     int p1, p2;
 
     while (((p1 = str.Pos("{conf:")) >= 0) && ((p2 = str.FindClosing('}', p1 + 6)) >= 0)) {
-        AString var = ReplaceTerms(pre, str.Mid(p1 + 6, p2 - p1 - 6), post);
+        auto var = ReplaceTerms(pre, str.Mid(p1 + 6, p2 - p1 - 6), post);
         AString item;
 
         auto it = livevalues.find(var);
@@ -509,11 +509,11 @@ uint_t ADVBConfig::GetPhysicalDVBCard(uint_t n, bool forcemapping) const
 
 uint_t ADVBConfig::GetVirtualDVBCard(uint_t n) const
 {
-    std::vector<uint_t>::const_iterator it;
     if (dvbcards.size() == 0) {
         (const_cast<ADVBConfig *>(this))->MapDVBCards();
     }
-    return ((it = std::find(dvbcards.begin(), dvbcards.end(), n)) != dvbcards.end()) ? *it : ~(uint_t)0;
+    const auto it = std::find(dvbcards.begin(), dvbcards.end(), n);
+    return (it != dvbcards.end()) ? *it : ~(uint_t)0;
 }
 
 AString ADVBConfig::GetIgnoreDVBCardList() const
@@ -523,7 +523,7 @@ AString ADVBConfig::GetIgnoreDVBCardList() const
 
 bool ADVBConfig::IgnoreDVBCard(uint_t n) const
 {
-    AString cards = GetIgnoreDVBCardList();
+    auto cards = GetIgnoreDVBCardList();
     uint_t i, ncards = (uint_t)cards.CountColumns();
 
     for (i = 0; i < ncards; i++) {
@@ -536,7 +536,7 @@ bool ADVBConfig::IgnoreDVBCard(uint_t n) const
 void ADVBConfig::Set(const AString& var, const AString& val) const
 {
     // must cheat const system
-    ASettingsHandler *pconfig = const_cast<ASettingsHandler *>(&config);
+    auto *pconfig = const_cast<ASettingsHandler *>(&config);
     pconfig->Set(var, val);
 }
 
@@ -561,7 +561,7 @@ void ADVBConfig::printf(const char *fmt, ...) const
 void ADVBConfig::vlogit(const char *fmt, va_list ap, bool show) const
 {
     ADateTime dt;
-    AString   filename = GetLogFile(dt.GetDays());
+    auto      filename = GetLogFile(dt.GetDays());
     AString   str;
     AStdFile  fp;
 
@@ -606,16 +606,16 @@ void ADVBConfig::ListUsers(AList& list) const
 {
     AHash    users;
     AList    userpatterns;
-    AString  filepattern        = GetUserPatternsPattern();
-    AString  filepattern_parsed = ParseGlob(filepattern);
-    AString  _users             = GetConfigItem("users");
+    auto     filepattern        = GetUserPatternsPattern();
+    auto     filepattern_parsed = ParseGlob(filepattern);
+    auto     _users             = GetConfigItem("users");
     AStdFile fp;
     uint_t   i, n = _users.CountColumns();
 
     //debug("Reading users from config %s\n", config.GetFilename().str());
 
     for (i = 0; i < n; i++) {
-        AString user = _users.Column(i).Words(0);
+        auto user = _users.Column(i).Words(0);
 
         if (!users.Exists(user)) {
             users.Insert(user, 0);
@@ -644,13 +644,13 @@ void ADVBConfig::ListUsers(AList& list) const
 
     ::CollectFiles(filepattern.PathPart(), filepattern.FilePart(), 0, userpatterns);
 
-    const AString *file = AString::Cast(userpatterns.First());
+    const auto *file = AString::Cast(userpatterns.First());
     while (file) {
         AString   user;
         ADataList regions;
 
         if (MatchGlob(*file, filepattern_parsed, regions) && (regions.Count() > 0)) {
-            const GLOBREGION *region = (const GLOBREGION *)regions[0];
+            const auto *region = (const GLOBREGION *)regions[0];
 
             if (region != NULL) {
                 user = file->Mid(region->pos, region->len);
@@ -673,7 +673,7 @@ void ADVBConfig::ListUsers(AList& list) const
 /*--------------------------------------------------------------------------------*/
 bool ADVBConfig::AddUser(const AString& user) const
 {
-    AString filename = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", user));
+    auto filename = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", user));
     AStdFile fp;
     bool success = false;
 
@@ -692,8 +692,8 @@ bool ADVBConfig::AddUser(const AString& user) const
 /*--------------------------------------------------------------------------------*/
 bool ADVBConfig::ChangeUser(const AString& olduser, const AString& newuser) const
 {
-    AString filename1 = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", olduser));
-    AString filename2 = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", newuser));
+    auto filename1 = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", olduser));
+    auto filename2 = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", newuser));
     bool success = false;
 
     if (rename(filename1, filename2) == 0) {
@@ -710,8 +710,8 @@ bool ADVBConfig::ChangeUser(const AString& olduser, const AString& newuser) cons
 /*--------------------------------------------------------------------------------*/
 bool ADVBConfig::DeleteUser(const AString& user) const
 {
-    AString filename    = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", user));
-    AString delfilename = filename + ".deleted";
+    auto filename    = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", user));
+    auto delfilename = filename + ".deleted";
     bool success = false;
 
     remove(delfilename);
@@ -729,8 +729,8 @@ bool ADVBConfig::DeleteUser(const AString& user) const
 /*--------------------------------------------------------------------------------*/
 bool ADVBConfig::UnDeleteUser(const AString& user) const
 {
-    AString filename    = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", user));
-    AString delfilename = filename + ".deleted";
+    auto filename    = GetConfigDir().CatPath(GetUserPatternsPattern().SearchAndReplace("{#?}", user));
+    auto delfilename = filename + ".deleted";
     bool success = false;
 
     remove(filename);
@@ -783,8 +783,8 @@ bool ADVBConfig::ExtractLogData(const ADateTime& start, const ADateTime& end, co
 
     if (dst.open(filename, "w")) {
         ADateTime dt;
-        uint32_t day1 = start.GetDays();
-        uint32_t day2 = end.GetDays();
+        auto     day1 = start.GetDays();
+        auto     day2 = end.GetDays();
         uint32_t day;
         bool     valid = false;
 
@@ -817,7 +817,7 @@ bool ADVBConfig::ExtractLogData(const ADateTime& start, const ADateTime& end, co
 void ADVBConfig::SetConfigRecorder(std::vector<AString> *recorder) const
 {
     // must cheat const system
-    ADVBConfig *pconfig = const_cast<ADVBConfig *>(this);
+    auto *pconfig = const_cast<ADVBConfig *>(this);
     pconfig->configrecorder = recorder;
 }
 
@@ -1095,7 +1095,7 @@ ADVBConfig::args_t ADVBConfig::GetCommaSeparatedArgs(const AString& args) const
     int i, n = args.CountLines(";");
 
     for (i = 0; i < n; i++) {
-        AString arg = args.Line(i, ";");
+        auto arg = args.Line(i, ";");
         int p;
 
         if ((p = arg.Pos("=")) > 0) {
@@ -1126,11 +1126,11 @@ uint_t ADVBConfig::GetHTTPStreamPort(const args_t& args) const
 AString ADVBConfig::GetHTTPStreamCommand(const AString& args) const
 {
     const auto argsmap = GetCommaSeparatedArgs(args);
-    uint_t  port     = GetHTTPStreamPort(argsmap);
-    AString vcodec   = GetArg(argsmap, "vcodec", GetConfigItem("httpstreamvcodec",   "h264"));
-    AString acodec   = GetArg(argsmap, "acodec", GetConfigItem("httpstreamacodec",   "mp3"));
-    AString vbitrate = GetArg(argsmap, "vb",     GetConfigItem("httpstreamvbitrate", "1000"));
-    AString abitrate = GetArg(argsmap, "ab",     GetConfigItem("httpstreamabitrate", "128"));
+    auto    port     = GetHTTPStreamPort(argsmap);
+    auto    vcodec   = GetArg(argsmap, "vcodec", GetConfigItem("httpstreamvcodec",   "h264"));
+    auto    acodec   = GetArg(argsmap, "acodec", GetConfigItem("httpstreamacodec",   "mp3"));
+    auto    vbitrate = GetArg(argsmap, "vb",     GetConfigItem("httpstreamvbitrate", "1000"));
+    auto    abitrate = GetArg(argsmap, "ab",     GetConfigItem("httpstreamabitrate", "128"));
     AString soutargs;
 
     if (GetArg(argsmap, "transcode", "1").Empty() ||
@@ -1148,7 +1148,7 @@ AString ADVBConfig::GetHTTPStreamCommand(const AString& args) const
 
 AString ADVBConfig::GetHTTPStreamURL(const AString& args) const
 {
-    uint_t port = GetHTTPStreamPort(args);
+    auto port = GetHTTPStreamPort(args);
     return AString("http://%;:%;").Arg(GetStreamSlave().Valid() ? GetStreamSlave() : "localhost").Arg(port);
 }
 
@@ -1501,7 +1501,7 @@ AString ADVBConfig::ListConfigValues() const
     config.GetAllLike(list, "");
     for (uint_t i = 0; i < list.Count(); i++)
     {
-        const ASettingsHandler::Value& value = *(const ASettingsHandler::Value *)list[i];
+        const auto& value = *(const ASettingsHandler::Value *)list[i];
         if (value.String1.Valid() && (value.String1[0] != '#')) {
             res.printf("\t%-30s = %s\n", value.String1.str(), GetConfigItem(value.String1).str());
         }
@@ -1517,7 +1517,7 @@ AString ADVBConfig::ListLiveConfigValues() const
     res.printf("Live config values:\n");
     for (auto it = livevalues.begin(); it != livevalues.end(); ++it)
     {
-        AString val = ReplaceTerms("{conf:" + it->first + "}");
+        auto val = ReplaceTerms("{conf:" + it->first + "}");
 
         if (val.Valid()) {
             res.printf("\t%-30s = %s\n", it->first.str(), val.str());

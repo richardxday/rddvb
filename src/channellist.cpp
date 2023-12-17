@@ -69,9 +69,9 @@ ADVBChannelList& ADVBChannelList::Get()
 
 bool ADVBChannelList::ForceChannelAudioAndVideoFlags(channel_t *channel)
 {
-    bool hadvideo    = channel->dvb.hasvideo;
-    bool hadaudio    = channel->dvb.hasaudio;
-    bool hadsubtitle = channel->dvb.hassubtitle;
+    auto hadvideo    = channel->dvb.hasvideo;
+    auto hadaudio    = channel->dvb.hasaudio;
+    auto hadsubtitle = channel->dvb.hassubtitle;
 
     channel->dvb.hasvideo    = false;
     channel->dvb.hasaudio    = false;
@@ -98,7 +98,7 @@ bool ADVBChannelList::ForceChannelAudioAndVideoFlags(channel_t *channel)
 
 bool ADVBChannelList::Read()
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBLock lock("dvbfiles");
     AStdFile fp;
     bool     success = false;
@@ -122,7 +122,7 @@ bool ADVBChannelList::Read()
 
                 for (i = 0; i < doc.Size(); i++) {
                     if (doc[i].IsObject()) {
-                        const rapidjson::Value& chanobj = doc[i];
+                        const auto& chanobj = doc[i];
                         channel_t *chan;
 
                         if ((chan = new channel_t) != NULL) {
@@ -134,7 +134,7 @@ bool ADVBChannelList::Read()
                             chan->dvb.hassubtitle   = false;
 
                             if (chanobj.HasMember("dvb")) {
-                                const rapidjson::Value& subobj = chanobj["dvb"];
+                                const auto& subobj = chanobj["dvb"];
 
                                 if (subobj.HasMember("lcn") && subobj["lcn"].IsNumber()) {
                                     chan->dvb.lcn = subobj["lcn"].GetUint();
@@ -175,7 +175,7 @@ bool ADVBChannelList::Read()
                                 }
 
                                 if (subobj.HasMember("pidlist") && subobj["pidlist"].IsArray()) {
-                                    const rapidjson::Value& pidlist = subobj["pidlist"];
+                                    const auto& pidlist = subobj["pidlist"];
                                     size_t j;
 
                                     for (j = 0; j < pidlist.Size(); j++) {
@@ -187,7 +187,7 @@ bool ADVBChannelList::Read()
                             }
 
                             if (chanobj.HasMember("xmltv")) {
-                                const rapidjson::Value& subobj = chanobj["xmltv"];
+                                const auto& subobj = chanobj["xmltv"];
 
                                 if (subobj.HasMember("sdchannelid") && subobj["sdchannelid"].IsNumber()) {
                                     chan->xmltv.sdchannelid = subobj["sdchannelid"].GetUint();
@@ -311,7 +311,7 @@ bool ADVBChannelList::Read()
 
                         int i, n = line.CountColumns();
                         for (i = 2; (i < n); i++) {
-                            AString col = line.Column(i);
+                            auto col = line.Column(i);
 
                             chan->dvb.pidlist.push_back((uint_t)col);
                         }
@@ -341,7 +341,7 @@ bool ADVBChannelList::Write()
     bool success = false;
 
     if (changed) {
-        const ADVBConfig& config = ADVBConfig::Get();
+        const auto& config = ADVBConfig::Get();
         ADVBLock lock("dvbfiles");
         AStdFile fp;
 
@@ -382,7 +382,7 @@ bool ADVBChannelList::Write()
         std::vector<AString> strlist;
 
         for (i = 0; i < list.size(); i++) {
-            const channel_t& chan = *list[i];
+            const auto& chan = *list[i];
 
             if (chan.dvb.channelname.Valid()) {
                 AString str;
@@ -449,13 +449,13 @@ void ADVBChannelList::DeleteAll()
 
 void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, rapidjson::Value& obj, bool incconverted) const
 {
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    auto& allocator = doc.GetAllocator();
     size_t i;
 
     obj.SetArray();
 
     for (i = 0; i < list.size(); i++) {
-        const channel_t& chan = *list[i];
+        const auto& chan = *list[i];
         rapidjson::Value chanobj;
         rapidjson::Value dvbobj;
         rapidjson::Value xmltvobj;
@@ -525,7 +525,7 @@ void ADVBChannelList::GenerateChanneList(rapidjson::Document& doc, rapidjson::Va
 AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 {
     static std::vector<replacement_t> replacements;
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
 
     if (replacements.empty()) config.ReadReplacementsFile(replacements, config.GetDVBReplacementsFile());
 
@@ -535,7 +535,7 @@ AString ADVBChannelList::ConvertDVBChannel(const AString& str)
 AString ADVBChannelList::ConvertXMLTVChannel(const AString& str)
 {
     static std::vector<replacement_t> replacements;
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
 
     if (!replacements.size()) config.ReadReplacementsFile(replacements, config.GetXMLTVReplacementsFile());
 
@@ -555,10 +555,10 @@ AString ADVBChannelList::GetPIDList(const pidlist_t& pidlist) const
 
 const ADVBChannelList::channel_t *ADVBChannelList::GetChannelByDVBChannelName(const AString& name) const
 {
-    channelmap_t::const_iterator it;
+    const auto it = dvbchannelmap.find(name.ToLower());
     const channel_t *chan = NULL;
 
-    if ((it = dvbchannelmap.find(name.ToLower())) != dvbchannelmap.end()) {
+    if (it != dvbchannelmap.end()) {
         chan = it->second;
     }
 
@@ -567,10 +567,10 @@ const ADVBChannelList::channel_t *ADVBChannelList::GetChannelByDVBChannelName(co
 
 const ADVBChannelList::channel_t *ADVBChannelList::GetChannelByXMLTVChannelName(const AString& name) const
 {
-    channelmap_t::const_iterator it;
+    const auto it = xmltvchannelmap.find(name.ToLower());
     const channel_t *chan = NULL;
 
-    if ((it = xmltvchannelmap.find(name.ToLower())) != xmltvchannelmap.end()) {
+    if (it != xmltvchannelmap.end()) {
         chan = it->second;
     }
 
@@ -593,9 +593,9 @@ ADVBChannelList::channel_t *ADVBChannelList::GetChannelByName(const AString& nam
     channel_t *chan = NULL;
 
     if ((chan = GetChannelByDVBChannelName(name, false)) == NULL) {
-        channelmap_t::iterator it;
+        const auto it = xmltvchannelmap.find(name.ToLower());
 
-        if ((it = xmltvchannelmap.find(name.ToLower())) != xmltvchannelmap.end()) {
+        if (it != xmltvchannelmap.end()) {
             chan = it->second;
         }
         else chan = GetChannelByDVBChannelName(name, create, lcn);
@@ -606,10 +606,10 @@ ADVBChannelList::channel_t *ADVBChannelList::GetChannelByName(const AString& nam
 
 ADVBChannelList::channel_t *ADVBChannelList::GetChannelByDVBChannelName(const AString& name, bool create, uint_t lcn)
 {
-    channelmap_t::iterator it;
+    const auto it = xmltvchannelmap.find(name.ToLower());
     channel_t *chan = NULL;
 
-    if ((it = dvbchannelmap.find(name.ToLower())) != dvbchannelmap.end()) {
+    if (it != dvbchannelmap.end()) {
         chan = it->second;
     }
 
@@ -673,13 +673,13 @@ const ADVBChannelList::channel_t *ADVBChannelList::GetChannelByFrequencyAndPIDs(
 
 const ADVBChannelList::channel_t *ADVBChannelList::AssignOrAddXMLTVChannel(uint_t lcn, const AString& name, const AString& id)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    const AString cname = ConvertXMLTVChannel(name);
-    channelmap_t::iterator it;
+    const auto& config = ADVBConfig::Get();
+    const auto  cname  = ConvertXMLTVChannel(name);
+    auto it = xmltvchannelmap.find(name.ToLower());
     channel_t *chan = NULL;
     bool changed1 = false, report = false;
 
-    if ((it = xmltvchannelmap.find(name.ToLower())) != xmltvchannelmap.end()) {
+    if (it != xmltvchannelmap.end()) {
         chan = it->second;
     }
     else if ((it = xmltvchannelmap.find(id.ToLower())) != xmltvchannelmap.end()) {
@@ -794,7 +794,7 @@ const ADVBChannelList::channel_t *ADVBChannelList::AssignOrAddXMLTVChannel(uint_
 
 bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AStdFile fp;
     AString  sifilename;
     AString  cmd;
@@ -826,7 +826,7 @@ bool ADVBChannelList::Update(uint_t card, uint32_t freq, bool verbose)
                     service += line + "\n";
 
                     if (line == "</service>") {
-                        channel_t *chan = GetChannelByName(servname, true);
+                        auto *chan = GetChannelByName(servname, true);
 
                         if (chan != NULL) {
                             typedef enum {
@@ -971,7 +971,7 @@ bool ADVBChannelList::Update(uint_t card, const AString& channel, bool verbose)
 
 void ADVBChannelList::UpdateAll(uint_t card, bool verbose)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     std::map<uint32_t,bool> freqs;
     size_t i;
 
@@ -992,7 +992,7 @@ void ADVBChannelList::UpdateAll(uint_t card, bool verbose)
 
 bool ADVBChannelList::GetPIDList(uint_t card, const AString& channel, AString& pids, bool update)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     const channel_t *chan;
     AString str;
     bool    success = true;
@@ -1009,7 +1009,7 @@ bool ADVBChannelList::GetPIDList(uint_t card, const AString& channel, AString& p
 
         uint_t i;
         for (i = 0; i < chan->dvb.pidlist.size(); i++) {
-            uint_t pid = (uint_t)chan->dvb.pidlist[i];
+            auto pid = (uint_t)chan->dvb.pidlist[i];
 
             pids.printf(" %u", pid);
         }

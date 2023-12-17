@@ -94,8 +94,8 @@ ADVBPatterns::ADVBPatterns()
 
 bool ADVBPatterns::UpdatePatternInFile(const AString& filename, const AString& pattern, const AString& newpattern)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    AString filename1 = filename + ".new";
+    const auto& config = ADVBConfig::Get();
+    auto filename1 = filename + ".new";
     AStdFile ifp, ofp;
     bool changed = false, found = false;
 
@@ -135,7 +135,7 @@ bool ADVBPatterns::UpdatePatternInFile(const AString& filename, const AString& p
 
 bool ADVBPatterns::AddPatternToFile(const AString& filename, const AString& pattern)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AStdFile fp;
     bool done = false;
     bool added = false;
@@ -185,7 +185,7 @@ bool ADVBPatterns::UpdatePattern(const AString& olduser, const AString& oldpatte
 
 bool ADVBPatterns::UpdatePattern(const AString& user, const AString& pattern, const AString& newpattern)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBLock lock("patterns");
     bool changed = false;
 
@@ -198,7 +198,7 @@ bool ADVBPatterns::UpdatePattern(const AString& user, const AString& pattern, co
 
 bool ADVBPatterns::InsertPattern(const AString& user, const AString& pattern)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBLock lock("patterns");
     bool changed = false;
 
@@ -300,7 +300,7 @@ void ADVBPatterns::GetFieldValue(const field_t& field, value_t& value, AString& 
 
 void ADVBPatterns::AssignValue(ADVBProg& prog, const field_t& field, const value_t& value, uint8_t termtype)
 {
-    uint8_t *ptr = prog.GetDataPtr(field.offset);
+    auto *ptr = prog.GetDataPtr(field.offset);
 
     switch (field.type) {
         case FieldType_string: {
@@ -334,8 +334,8 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const field_t& field, const value
             break;
 
         case FieldType_uint32_t...FieldType_sint8_t: {
-            sint64_t val1 = TermTypeToInt64s(ptr, field.type);
-            sint64_t val2 = TermTypeToInt64s(&value.u64, field.type);
+            auto     val1 = TermTypeToInt64s(ptr, field.type);
+            auto     val2 = TermTypeToInt64s(&value.u64, field.type);
             sint64_t val;
 
             switch (termtype) {
@@ -380,8 +380,8 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const field_t& field, const value
         }
 
         case FieldType_double: {
-            double val1 = TermTypeToDouble(ptr, field.type);
-            double val2 = TermTypeToDouble(&value.f64, field.type);
+            auto   val1 = TermTypeToDouble(ptr, field.type);
+            auto   val2 = TermTypeToDouble(&value.f64, field.type);
             double val;
 
             switch (termtype) {
@@ -466,12 +466,12 @@ void ADVBPatterns::__DeleteTerm(term_t *term)
 
 const ADVBPatterns::operator_t *ADVBPatterns::FindOperator(const pattern_t& pattern, uint_t term)
 {
-    const term_t *pterm = (const term_t *)pattern.list[term];
+    const auto *pterm = (const term_t *)pattern.list[term];
 
     if ((pterm != NULL) && (pterm->field != NULL)) {
-        uint_t  fieldtype = 1U << pterm->field->type;
-        uint8_t oper      = pterm->data.opcode;
-        uint_t  i;
+        auto   fieldtype = 1U << pterm->field->type;
+        auto   oper      = pterm->data.opcode;
+        uint_t i;
 
         for (i = 0; ((i < NUMBEROF(operators)) &&
                      !((oper == operators[i].opcode) &&
@@ -485,32 +485,32 @@ const ADVBPatterns::operator_t *ADVBPatterns::FindOperator(const pattern_t& patt
 
 const char *ADVBPatterns::GetOperatorText(const pattern_t& pattern, uint_t term)
 {
-    const operator_t *oper = FindOperator(pattern, term);
+    const auto *oper = FindOperator(pattern, term);
 
-    return oper ? oper->str : NULL;
+    return (oper != NULL) ? oper->str : NULL;
 }
 
 const char *ADVBPatterns::GetOperatorDescription(const pattern_t& pattern, uint_t term)
 {
-    const operator_t *oper = FindOperator(pattern, term);
+    const auto *oper = FindOperator(pattern, term);
 
-    return oper ? oper->desc : NULL;
+    return (oper != NULL) ? oper->desc : NULL;
 }
 
 bool ADVBPatterns::OperatorIsAssign(const pattern_t& pattern, uint_t term)
 {
-    const term_t *pterm = (const term_t *)pattern.list[term];
+    const auto *pterm = (const term_t *)pattern.list[term];
 
-    return (pterm && pterm->field) ? RANGE(pterm->data.opcode, Operator_First_Assignable, Operator_Last_Assignable) : false;
+    return ((pterm != NULL) && pterm->field) ? RANGE(pterm->data.opcode, Operator_First_Assignable, Operator_Last_Assignable) : false;
 }
 
 rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc)
 {
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    auto&            allocator = doc.GetAllocator();
     rapidjson::Value obj, subobj;
     AString str;
     uint_t i, j, nfields;
-    const field_t *fields = ADVBProg::GetFields(nfields);
+    const auto *fields = ADVBProg::GetFields(nfields);
 
     obj.SetObject();
 
@@ -521,7 +521,7 @@ rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc
 
         for (i = 0; i < nfields; i++) {
             rapidjson::Value subobj2, subobj3;
-            const field_t& field = fields[i];
+            const auto& field = fields[i];
 
             subobj2.SetObject();
 
@@ -533,7 +533,7 @@ rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc
             subobj3.SetArray();
 
             for (j = 0; j < NUMBEROF(operators); j++) {
-                const operator_t& oper = operators[j];
+                const auto& oper = operators[j];
 
                 if ((field.assignable == oper.assign) &&
                     ((oper.fieldtypes & (1U << field.type)) != 0)) {
@@ -555,7 +555,7 @@ rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc
         subobj.SetObject();
 
         for (i = 0; i < nfields; i++) {
-            const field_t& field = fields[i];
+            const auto& field = fields[i];
 
             subobj.AddMember(rapidjson::Value(field.name, allocator), rapidjson::Value(i), allocator);
         }
@@ -570,7 +570,7 @@ rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc
 
         for (j = 0; j < NUMBEROF(operators); j++) {
             rapidjson::Value subobj2;
-            const operator_t& oper = operators[j];
+            const auto& oper = operators[j];
 
             subobj2.SetObject();
 
@@ -595,8 +595,8 @@ rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc
 
             subobj2.SetObject();
 
-            subobj2.AddMember("text", rapidjson::Value(j ? "or" : "and", allocator), allocator);
-            subobj2.AddMember("desc", rapidjson::Value(j ? "Or the next term" : "And the next term", allocator), allocator);
+            subobj2.AddMember("text", rapidjson::Value((j > 0) ? "or" : "and", allocator), allocator);
+            subobj2.AddMember("desc", rapidjson::Value((j > 0) ? "Or the next term" : "And the next term", allocator), allocator);
             subobj2.AddMember("value", rapidjson::Value(j), allocator);
 
             subobj.PushBack(subobj2, allocator);
@@ -610,10 +610,10 @@ rapidjson::Value ADVBPatterns::GetPatternDefinitionJSON(rapidjson::Document& doc
 
 int ADVBPatterns::SortTermsByAssign(uptr_t item1, uptr_t item2, void *context)
 {
-    const term_t *term1 = (const term_t *)item1;
-    const term_t *term2 = (const term_t *)item2;
-    bool assign1 = (term1->field && term1->field->assignable);
-    bool assign2 = (term2->field && term2->field->assignable);
+    const auto *term1 = (const term_t *)item1;
+    const auto *term2 = (const term_t *)item2;
+    const auto assign1 = (term1->field && term1->field->assignable);
+    const auto assign2 = (term2->field && term2->field->assignable);
     int  res = 0;
 
     UNUSED(context);
@@ -638,14 +638,14 @@ uint_t ADVBPatterns::ParsePatterns(ADataList& patternlist, const AString& patter
 
 bool ADVBPatterns::ParsePattern(ADataList& patternlist, const AString& line, AString& errors, const AString& user)
 {
-    //const ADVBConfig& config = ADVBConfig::Get();
+    //const auto& config = ADVBConfig::Get();
     pattern_t *pattern;
     bool    success = false;
 
     patternlist.SetDestructor(&__DeletePattern);
 
     if ((pattern = new pattern_t) != NULL) {
-        AString errs = ParsePattern(line, *pattern, user);
+        auto errs = ParsePattern(line, *pattern, user);
 
         if (errs.Valid()) {
             //config.printf("Error parsing '%s': %s", line.str(), errs.str());
@@ -715,12 +715,12 @@ uint_t ADVBPatterns::CheckOrStatement(const AString& line, uint_t i, bool& orfla
 
 AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, const AString& user)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    ADataList&        list   = pattern.list;
-    AString&          errors = pattern.errors;
-    AString           line   = config.ReplaceTerms(user, _line, "");
-    term_t              *term;
-    uint_t            i;
+    const auto& config = ADVBConfig::Get();
+    auto&       list   = pattern.list;
+    auto&       errors = pattern.errors;
+    auto        line   = config.ReplaceTerms(user, _line, "");
+    term_t      *term;
+    uint_t      i;
 
     pattern.exclude    = false;
     pattern.enabled    = true;
@@ -763,9 +763,9 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                 uint_t i1 = i;
 
                 if (line[i] == ')') {
-                    AString subline = line.Mid(i0, i1 - i0).Words(0);
+                    auto      subline = line.Mid(i0, i1 - i0).Words(0);
                     pattern_t *subpattern;
-                    bool    orflag;
+                    bool      orflag;
 
                     i++;
                     while (IsWhiteSpace(line[i])) i++;
@@ -773,7 +773,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                     i = CheckOrStatement(line, i, orflag);
 
                     if ((subpattern = new pattern_t) != NULL) {
-                        AString suberrors = ParsePattern(subline, *subpattern, user);
+                        auto suberrors = ParsePattern(subline, *subpattern, user);
 
                         if (suberrors.Empty()) {
                             term_t *term;
@@ -840,7 +840,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                     while (IsSymbolChar(line[i])) i++;
                 }
 
-                AString field = line.Mid(fieldstart, i - fieldstart).ToLower();
+                auto field = line.Mid(fieldstart, i - fieldstart).ToLower();
 
                 if ((quote != 0) && (line[i] == quote)) i++;
 
@@ -851,14 +851,14 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                     continue;
                 }
 
-                const field_t *fieldptr = (const field_t *)ADVBProg::fieldhash.Read(field);
+                const auto *fieldptr = (const field_t *)ADVBProg::fieldhash.Read(field);
                 if (fieldptr == NULL) {
                     uint_t nfields;
-                    const field_t *fields = ADVBProg::GetFields(nfields);
+                    const auto *fields = ADVBProg::GetFields(nfields);
 
                     errors.printf("'%s' (at %u) is not a valid search field (term %u), valid search fields are: ", field.str(), fieldstart, list.Count() + 1);
                     for (i = 0; i < nfields; i++) {
-                        const field_t& field = fields[i];
+                        const auto& field = fields[i];
 
                         if (i > 0) errors.printf(", ");
                         errors.printf("'%s'", field.name);
@@ -869,7 +869,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                 uint_t opstart = i;
 
                 const char *str = line.str() + i;
-                bool isassign = fieldptr->assignable;
+                auto isassign = fieldptr->assignable;
                 uint_t j;
                 uint_t opindex = 0, opcode = Operator_EQ;
                 for (j = 0; j < NUMBEROF(operators); j++) {
@@ -1168,17 +1168,17 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
             for (i = 0; puretext[i] && (IsAlphaChar(puretext[i]) || IsNumeralChar(puretext[i]) || IsQuoteChar(puretext[i]) || (puretext[i] == ' ') || (puretext[i] == '-')); i++) ;
 
             if (i == (uint_t)puretext.len()) {
-                AString newtext = "@\"" + puretext.DeQuotify() + "\"";
-                AString newline = ("title" + newtext +
-                                   " or subtitle" + newtext +
-                                   " or desc" + newtext +
-                                   " or actor" + newtext +
-                                   " or director" + newtext +
-                                   " or category" + newtext +
+                auto newtext = "@\"" + puretext.DeQuotify() + "\"";
+                auto newline = ("title" + newtext +
+                                " or subtitle" + newtext +
+                                " or desc" + newtext +
+                                " or actor" + newtext +
+                                " or director" + newtext +
+                                " or category" + newtext +
 #if DVBDATVERSION > 1
-                                   " or subcategory" + newtext +
+                                " or subcategory" + newtext +
 #endif
-                                   conditions);
+                                conditions);
 
                 //debug("Split '%s' into:\npure text:'%s'\nconditions:'%s'\nnew pattern:'%s'\n", line.str(), puretext.str(), conditions.str(), newline.str());
 
@@ -1198,7 +1198,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
         list.Sort(&SortTermsByAssign);
 
         for (i = 0; i < list.Count(); i++) {
-            const term_t *term = (const term_t *)list[i];
+            const auto *term = (const term_t *)list[i];
 
             if ((term->data.opcode == Operator_Assign) && (term->field->offset == ADVBProg::GetUserDataOffset())) {
                 if (pattern.user.Empty()) {
@@ -1220,7 +1220,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
 
     if (errors.Empty()) {
         for (i = 0; i < list.Count(); i++) {
-            const term_t *term = (const term_t *)list[i];
+            const auto *term = (const term_t *)list[i];
 
             if ((term->data.opcode == Operator_Assign) && (term->field->offset == ADVBProg::GetPriDataOffset())) {
                 pattern.pri = term->value.s8;
@@ -1233,16 +1233,16 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
 
 void ADVBPatterns::AppendTerms(pattern_t& dstpattern, const pattern_t& srcpattern, bool excludeduplicatefields)
 {
-    const ADataList& srcterms = srcpattern.list;
-    ADataList& dstterms = dstpattern.list;
+    const auto& srcterms = srcpattern.list;
+    auto&       dstterms = dstpattern.list;
     uint_t i, j = 0;
 
     for (i = 0; i < srcterms.Count(); i++) {
-        const term_t *srcterm = (const term_t *)srcterms[i];
+        const auto *srcterm = (const term_t *)srcterms[i];
 
         if (excludeduplicatefields) {
             for (j = 0; j < dstterms.Count(); j++) {
-                const term_t *dstterm = (const term_t *)dstterms[j];
+                const auto *dstterm = (const term_t *)dstterms[j];
 
                 if (srcterm->field == dstterm->field) break;
             }
@@ -1263,12 +1263,12 @@ sint64_t ADVBPatterns::TermTypeToInt64s(const void *p, uint_t termtype)
     sint64_t val = 0;
 
     if (RANGE(termtype, FieldType_uint32_t, FieldType_sint8_t)) {
-        uint_t type     = FieldType_sint8_t - termtype;
+        auto type     = FieldType_sint8_t - termtype;
         // sint8_t/uint8_t   -> 0 -> 1
         // sint16_t/uint16_t -> 1 -> 2
         // sint32_t/uint32_t -> 2 -> 4
-        uint_t bytes    = 1U << (type >> 1);
-        bool   issigned = ((type & 1) == 0);
+        auto bytes    = 1U << (type >> 1);
+        auto issigned = ((type & 1) == 0);
 
         // first, get data from pointer
         if (MachineIsBigEndian()) {
@@ -1297,12 +1297,12 @@ void ADVBPatterns::Int64sToTermType(void *p, sint64_t val, uint_t termtype)
 {
     if (RANGE(termtype, FieldType_uint32_t, FieldType_sint8_t)) {
         sint64_t minval, maxval;
-        uint_t   type     = FieldType_sint8_t - termtype;
+        auto type     = FieldType_sint8_t - termtype;
         // sint8_t/uint8_t   -> 0 -> 1
         // sint16_t/uint16_t -> 1 -> 2
         // sint32_t/uint32_t -> 2 -> 4
-        uint_t   bytes    = 1U << (type >> 1);
-        bool     issigned = ((type & 1) == 0);
+        auto bytes    = 1U << (type >> 1);
+        auto issigned = ((type & 1) == 0);
 
         if (issigned) {
             maxval = (sint64_t)(((uint64_t)1 << ((bytes << 3) - 1)) - 1);
@@ -1352,10 +1352,10 @@ AString ADVBPatterns::RemoveDuplicateTerms(pattern_t& pattern)
 
     for (i = 0; i < pattern.list.Count();) {
         for (j = i + 1; j < pattern.list.Count(); j++) {
-            const term_t&     term1 = *(const term_t *)pattern.list[i];
-            const term_t&     term2 = *(const term_t *)pattern.list[j];
-            const termdata_t& data1 = term1.data;
-            const termdata_t& data2 = term2.data;
+            const auto& term1 = *(const term_t *)pattern.list[i];
+            const auto& term2 = *(const term_t *)pattern.list[j];
+            const auto& data1 = term1.data;
+            const auto& data2 = term2.data;
 
             if ((data1.field  == data2.field) &&
                 (data1.opcode == data2.opcode) &&
@@ -1370,8 +1370,8 @@ AString ADVBPatterns::RemoveDuplicateTerms(pattern_t& pattern)
     }
 
     for (i = 0; i < pattern.list.Count(); i++) {
-        const term_t&     term = *(const term_t *)pattern.list[i];
-        const termdata_t& data = term.data;
+        const auto& term = *(const term_t *)pattern.list[i];
+        const auto& data = term.data;
 
         if (newpattern.Valid()) newpattern.printf(" ");
         newpattern.printf("%s%s%s%s%s",
@@ -1420,8 +1420,8 @@ bool ADVBPatterns::MatchString(const term_t& term, const char *str, bool ignorei
             break;
 
         default: {
-            const char *s1 = str;
-            const char *s2 = term.value.str;
+            const auto *s1 = str;
+            const auto *s2 = term.value.str;
 
             if ((opcode >= Operator_StartsWithLT) && (opcode <= Operator_StartsWithGT)) {
                 opcode -= Operator_StartsWithLT;
@@ -1460,7 +1460,7 @@ bool ADVBPatterns::MatchString(const term_t& term, const char *str, bool ignorei
 
 int ADVBPatterns::CompareDates(uint64_t val, const term_t& term)
 {
-    ADateTime dt = ADateTime(val).UTCToLocal();
+    auto dt = ADateTime(val).UTCToLocal();
 
     val = (uint64_t)dt;
 
@@ -1494,23 +1494,23 @@ int ADVBPatterns::CompareDates(uint64_t val, const term_t& term)
 
 bool ADVBPatterns::Match(const ADVBProg& prog, const pattern_t& pattern)
 {
-    const ADataList& list = pattern.list;
+    const auto& list = pattern.list;
     uint_t i, n = list.Count();
-    bool match = (n > 0);
+    auto match = (n > 0);
     bool orflag = false;
 
     for (i = 0; (i < n) && (match || orflag); i++) {
-        const term_t&  term  = *(const term_t *)list[i];
-        const field_t& field = *term.field;
+        const auto& term  = *(const term_t *)list[i];
+        const auto& field = *term.field;
 
         if (term.pattern != NULL) {
-            bool newmatch = Match(prog, *term.pattern);
+            auto newmatch = Match(prog, *term.pattern);
 
             if (orflag) match |= newmatch;
             else        match  = newmatch;
         }
         else if (!RANGE(term.data.opcode, Operator_First_Assignable, Operator_Last_Assignable)) {
-            const uint8_t *ptr = prog.GetDataPtr(field.offset);
+            const auto *ptr = prog.GetDataPtr(field.offset);
             int  res      = 0;
             bool newmatch = false;
 
@@ -1721,21 +1721,21 @@ bool ADVBPatterns::Match(const ADVBProg& prog, const pattern_t& pattern)
 
 void ADVBPatterns::AssignValues(ADVBProg& prog, const pattern_t& pattern)
 {
-    AString user = prog.GetUser();
+    auto   user = AString(prog.GetUser());
     uint_t i;
 
     if (user.Valid()) {
-        const ADVBConfig& config = ADVBConfig::Get();
+        const auto& config = ADVBConfig::Get();
         uint_t nfields;
-        const field_t *fields = ADVBProg::GetFields(nfields);
+        const auto *fields = ADVBProg::GetFields(nfields);
 
         for (i = 0; i < nfields; i++) {
-            const field_t& field = fields[i];
+            const auto& field = fields[i];
 
             if (field.assignable &&
                 (field.offset != ADVBProg::GetUserDataOffset()) &&
                 (field.offset != ADVBProg::GetDirDataOffset())) {
-                AString val = config.GetUserSubItemConfigItem(user, prog.GetModifiedCategory(), field.name);
+                auto val = config.GetUserSubItemConfigItem(user, prog.GetModifiedCategory(), field.name);
 
                 if (val.Valid()) {
                     value_t value;
@@ -1753,14 +1753,14 @@ void ADVBPatterns::AssignValues(ADVBProg& prog, const pattern_t& pattern)
 
 void ADVBPatterns::UpdateValues(ADVBProg& prog, const pattern_t& pattern)
 {
-    const ADataList& list = pattern.list;
+    const auto& list = pattern.list;
     uint_t i, n = list.Count();
 
     for (i = 0; i < n; i++) {
-        const term_t&  term  = *(const term_t *)list[i];
-        const field_t& field = *term.field;
+        const auto& term  = *(const term_t *)list[i];
+        const auto& field = *term.field;
 
-        if      (term.pattern) UpdateValues(prog, *term.pattern);
+        if      (term.pattern != NULL) UpdateValues(prog, *term.pattern);
         else if (RANGE(term.data.opcode, Operator_First_Assignable, Operator_Last_Assignable) && (field.offset != ADVBProg::GetUserDataOffset())) {
             AssignValue(prog, field, term.value, term.data.opcode);
         }
@@ -1888,12 +1888,12 @@ AString ADVBPatterns::ToString(const term_t& val, uint_t level)
 
 AString ADVBPatterns::ToString(const pattern_t& pattern, uint_t level)
 {
-    const ADataList& list = pattern.list;
+    const auto& list = pattern.list;
     uint_t i, n = list.Count();
     AString str;
 
     for (i = 0; i < n; i++) {
-        const term_t& term = *(const term_t *)list[i];
+        const auto& term = *(const term_t *)list[i];
 
         str.printf("%sTerm %u/%u: %s\n", AString("  ").Copies(level).str(), i + 1, n, ToString(term, level).str());
     }

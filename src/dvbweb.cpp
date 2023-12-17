@@ -49,17 +49,17 @@ bool Value(const std::map<AString,AString>& vars, AString& val, const AString& v
 
 rapidjson::Value getuserdetails(rapidjson::Document& doc, const AString& user)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    const auto& config = ADVBConfig::Get();
+    auto& allocator = doc.GetAllocator();
     rapidjson::Value obj;
-    double lowlimit = config.GetLowSpaceWarningLimit();
+    auto  lowlimit = config.GetLowSpaceWarningLimit();
 
     obj.SetObject();
 
     obj.AddMember("user", rapidjson::Value(user.str(), allocator), allocator);
 
-    AString dir  = config.GetRecordingsSubDir(user);
-    AString rdir = config.GetRecordingsDir(user);
+    auto dir  = config.GetRecordingsSubDir(user);
+    auto rdir = config.GetRecordingsDir(user);
 
     int p;
     if ((p = dir.Pos("/{"))  >= 0) dir  = dir.Left(p);
@@ -70,7 +70,7 @@ rapidjson::Value getuserdetails(rapidjson::Document& doc, const AString& user)
 
     struct statvfs fiData;
     if (statvfs(rdir, &fiData) >= 0) {
-        double gb = (double)fiData.f_bavail * (double)fiData.f_bsize / ((uint64_t)1024.0 * (uint64_t)1024.0 * (uint64_t)1024.0);
+        auto gb = (double)fiData.f_bavail * (double)fiData.f_bsize / ((uint64_t)1024.0 * (uint64_t)1024.0 * (uint64_t)1024.0);
 
         obj.AddMember("freespace", rapidjson::Value(gb), allocator);
         obj.AddMember("level", rapidjson::Value((int)(gb / lowlimit)), allocator);
@@ -81,7 +81,7 @@ rapidjson::Value getuserdetails(rapidjson::Document& doc, const AString& user)
 
 rapidjson::Value getpattern(rapidjson::Document& doc, const ADVBPatterns::pattern_t& pattern)
 {
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    auto& allocator = doc.GetAllocator();
     rapidjson::Value obj, subobj;
 
     obj.SetObject();
@@ -121,7 +121,7 @@ rapidjson::Value getpattern(rapidjson::Document& doc, const ADVBPatterns::patter
 
 void addpattern(rapidjson::Document& doc, rapidjson::Value& obj, AHash& patterns, const ADVBProg& prog)
 {
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    auto& allocator = doc.GetAllocator();
     AString str;
 
     if ((str = prog.GetPattern()).Valid()) {
@@ -139,7 +139,7 @@ void addpattern(rapidjson::Document& doc, rapidjson::Value& obj, AHash& patterns
 
 void addseries(rapidjson::Document& doc, rapidjson::Value& obj, const ADVBProgList::series_t& serieslist)
 {
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    auto& allocator = doc.GetAllocator();
     rapidjson::Value subobj;
     uint_t j;
 
@@ -147,7 +147,7 @@ void addseries(rapidjson::Document& doc, rapidjson::Value& obj, const ADVBProgLi
 
     for (j = 0; j < serieslist.list.size(); j++) {
         rapidjson::Value subobj2;
-        const AString& str = serieslist.list[j];
+        const auto& str = serieslist.list[j];
 
         subobj2.SetObject();
 
@@ -166,7 +166,7 @@ void addseries(rapidjson::Document& doc, rapidjson::Value& obj, const ADVBProgLi
 
 rapidjson::Value gettrend(rapidjson::Document& doc, const ADVBProgList::trend_t& trend)
 {
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    auto& allocator = doc.GetAllocator();
     rapidjson::Value obj;
 
     obj.SetObject();
@@ -182,8 +182,8 @@ rapidjson::Value gettrend(rapidjson::Document& doc, const ADVBProgList::trend_t&
 
 int inserttitle(uptr_t value1, uptr_t value2, void *context)
 {
-    const PROGTITLE *title1 = (const PROGTITLE *)value1;
-    const PROGTITLE *title2 = (const PROGTITLE *)value2;
+    const auto *title1 = (const PROGTITLE *)value1;
+    const auto *title2 = (const PROGTITLE *)value2;
 
     (void)context;
 
@@ -201,12 +201,12 @@ void parsearg(std::map<AString,AString>& vars, const AString& arg, AStdData& log
     uint_t j, n = arg.CountLines("\n", 0);
 
     for (j = 0; j < n; j++) {
-        AString line = arg.Line(j, "\n", 0);
+        auto line = arg.Line(j, "\n", 0);
         int p;
 
         if ((p = line.Pos("=")) > 0) {
-            AString var = line.Left(p);
-            AString val = line.Mid(p + 1);
+            auto var = line.Left(p);
+            auto val = line.Mid(p + 1);
 
             log.printf("%s='%s'\n", var.str(), val.str());
 
@@ -228,13 +228,13 @@ void parsefile(AStdData& fp, std::map<AString,AString>& vars, AStdData& log)
 
 int main(int argc, char *argv[])
 {
-    const ADVBConfig&   config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     rapidjson::Document doc;
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
-    std::map<AString,AString> vars;
-    ADVBProg            prog;   // ensure ADVBProg initialisation takes place
-    AStdFile            log(RDDVB_ROOT_DIR "tmp/dvbweb.log", "w");
-    AString             val, logdata, errors;
+    auto&    allocator = doc.GetAllocator();
+    std::map<AString, AString> vars;
+    ADVBProg prog;   // ensure ADVBProg initialisation takes place
+    AStdFile log(RDDVB_ROOT_DIR "tmp/dvbweb.log", "w");
+    AString  val, logdata, errors;
     int  i;
 
     // ensure output is disabled
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
     }
 
     for (i = 1; i < argc; i++) {
-        AString arg = argv[i];
+        auto arg = AString(argv[i]);
 
         if (arg == "cli") {
             enabledebug(true);
@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
     }
 
     if (Value(vars, val, "editpattern")) {
-        AString edit = val.ToLower();
+        auto    edit = val.ToLower();
         AString user, pattern;
 
         AString newuser, newpattern;
@@ -297,7 +297,7 @@ int main(int argc, char *argv[])
     }
 
     if (Value(vars, val, "edituser")) {
-        AString edit = val.ToLower();
+        auto    edit = val.ToLower();
         AString user, newuser;
 
         Value(vars, user, "user");
@@ -309,13 +309,13 @@ int main(int argc, char *argv[])
     }
 
     if (Value(vars, val, "schedule")) {
-        bool commit = (val == "commit");
+        auto commit = (val == "commit");
 
         ADVBProgList::SchedulePatterns(ADateTime().TimeStamp(true), commit);
     }
 
     std::vector<dvbstream_t> activestreams;
-    bool liststreams = (Value(vars, val, "showchannels") && ((uint_t)val > 0));
+    auto liststreams = (Value(vars, val, "showchannels") && ((uint_t)val > 0));
 
     if (Value(vars, val, "starthlsstream")) {
         rapidjson::Value subobj;
@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
         Value(vars, user, "user");
 
         ADVBPatterns::ParsePattern(val, pattern, user);
-        AString newpattern = ADVBPatterns::RemoveDuplicateTerms(pattern);
+        auto newpattern = ADVBPatterns::RemoveDuplicateTerms(pattern);
 
         doc.SetObject();
 
@@ -449,11 +449,12 @@ int main(int argc, char *argv[])
         AHash                    titleshash;
         ADataList                titleslist;
         ADataList                patternlist;
-        ADVBPatterns::pattern_t  filterpattern = ADVBPatterns::DefaultPattern;
+        auto                     filterpattern = ADVBPatterns::DefaultPattern;
         AHash                    patterns(&ADVBPatterns::__DeletePattern);
         ADVBProgList::serieslist_t fullseries;
         AString                  from;
-        uint_t                   pagesize = (uint_t)config.GetConfigItem("pagesize", "20"), page = 0;
+        auto                     pagesize = (uint_t)config.GetConfigItem("pagesize", "20");
+        uint_t                   page = 0;
         uint_t                   datasource = DataSource_Progs;
         uint_t                   index = 0;
 
@@ -478,8 +479,8 @@ int main(int argc, char *argv[])
             const ADVBProg *pprog;
 
             if ((pprog = combinedlist.FindUUID(val)) != NULL) {
-                ADVBProg prog = *pprog;
-                AString  type;
+                auto    prog = *pprog;
+                AString type;
 
                 Value(vars, type, "type");
 
@@ -562,7 +563,7 @@ int main(int argc, char *argv[])
                 if ((p = val.Pos("start=")) >= 0) val = val.Mid(p + 6).DeQuotify();
 
                 dt.StrToDate(val);
-                uint32_t days = dt.GetDays();
+                auto days = dt.GetDays();
                 if (days > ADateTime().GetDays()) days -= 7;
 
                 logdata = AString::ReadFile(config.GetLogFile(days));
@@ -586,10 +587,10 @@ int main(int argc, char *argv[])
                 index = (index + 1) % NUMBEROF(list);
             }
 
-            ADVBProgList *reslist = list + index;
+            auto *reslist = list + index;
             index = (index + 1) % NUMBEROF(list);
 
-            AString filter = val;
+            auto filter = val;
             ADVBPatterns::ParsePattern(filter, filterpattern, errors);
             proglist->FindProgrammes(*reslist, filter, errors, (filter.Pos("\n") >= 0) ? "\n" : ";");
             proglist = reslist;
@@ -608,7 +609,7 @@ int main(int argc, char *argv[])
                 // modify programmes from other lists and eliminate those
                 // that no longer match
                 for (i = 0; i < proglist->Count(); ) {
-                    ADVBProg& prog = proglist->GetProgWritable(i);
+                    auto& prog = proglist->GetProgWritable(i);
                     const ADVBProg *prog2;
 
                     if (((prog2 = processinglist.FindUUID(prog)) != NULL) ||
@@ -631,13 +632,13 @@ int main(int argc, char *argv[])
         }
 
         if (Value(vars, val, "pagesize")) {
-            int pval = (int)val;
+            auto pval = (int)val;
 
             pagesize = (uint_t)LIMIT(pval, 1, MAX_SIGNED(sint_t));
         }
 
         if (Value(vars, val, "page")) {
-            int pval = (int)val;
+            auto pval = (int)val;
 
             page = (uint_t)LIMIT(pval, 0, MAX_SIGNED(sint_t));
         }
@@ -661,7 +662,7 @@ int main(int argc, char *argv[])
                 while (IsAlphaChar(val[i])) i++;
                 if (val[i] == 0) break;
 
-                AString field = AString(val.str() + fs, i - fs).ToLower();
+                auto field = AString(val.str() + fs, i - fs).ToLower();
 
                 while (IsWhiteSpace(val[i])) i++;
                 if (val[i] == 0) break;
@@ -675,7 +676,7 @@ int main(int argc, char *argv[])
                 if (IsQuoteChar(val[i])) quote = val[i++];
                 fs = i;
                 while (!IsWhiteSpace(val[i]) && (val[i] != quote)) i++;
-                AString value = AString(val.str() + fs, i - fs).ToLower();
+                auto value = AString(val.str() + fs, i - fs).ToLower();
                 if ((quote != 0) && (val[i] == quote)) i++;
                 while (IsWhiteSpace(val[i])) i++;
 
@@ -717,8 +718,8 @@ int main(int argc, char *argv[])
 
             if (success) {
                 for (i = 0; i < patternlist.Count();) {
-                    ADVBPatterns::pattern_t *pattern = (ADVBPatterns::pattern_t *)patternlist[i];
-                    bool keep = (!enabled_check || (enabled_value == pattern->enabled));
+                    auto *pattern = (ADVBPatterns::pattern_t *)patternlist[i];
+                    auto keep = (!enabled_check || (enabled_value == pattern->enabled));
 
                     if (keep) {
                         switch (user_op) {
@@ -761,7 +762,7 @@ int main(int argc, char *argv[])
                     titleshash.EnableCaseInSensitive(true);
 
                     for (i = 0; i < proglist->Count(); i++) {
-                        const ADVBProg& prog = proglist->GetProg(i);
+                        const auto& prog = proglist->GetProg(i);
                         PROGTITLE *title;
 
                         if (((title = (PROGTITLE *)titleshash.Read(prog.GetTitle())) == NULL) && ((title = new PROGTITLE) != NULL)) {
@@ -834,10 +835,10 @@ int main(int argc, char *argv[])
 
                             if (IsSymbolChar(line[0]) && ((p = line.Pos("=")) > 0)) {
                                 rapidjson::Value subobj2, subobj3;
-                                AString title  = line.Left(p).Words(0);
-                                AString search = line.Mid(p + 1).Words(0);
-                                AString from   = search.Word(0).DeQuotify();
-                                AString filter = search.Words(1);
+                                auto title  = line.Left(p).Words(0);
+                                auto search = line.Mid(p + 1).Words(0);
+                                auto from   = search.Word(0).DeQuotify();
+                                auto filter = search.Words(1);
 
                                 subobj2.SetObject();
                                 subobj3.SetObject();
@@ -874,12 +875,12 @@ int main(int argc, char *argv[])
                 default:
                 case DataSource_Progs: {
                     rapidjson::Value obj;
-                    bool testsimilar = ((uint_t)config.GetConfigItem("testsimilarprogrammes", "0") != 0);
+                    auto testsimilar = ((uint_t)config.GetConfigItem("testsimilarprogrammes", "0") != 0);
 
                     obj.SetArray();
 
                     for (i = 0; (i < count) && !HasQuit(); i++) {
-                        const ADVBProg& prog = proglist->GetProg(offset + i);
+                        const auto&    prog = proglist->GetProg(offset + i);
                         const ADVBProg *prog2;
                         rapidjson::Value subobj;
 
@@ -911,8 +912,8 @@ int main(int argc, char *argv[])
                             subobj.AddMember("scheduled", subobj2, allocator);
                         }
 
-                        ADVBProgList::serieslist_t::const_iterator it;
-                        if ((it = fullseries.find(prog.GetTitle())) != fullseries.end()) {
+                        const auto it = fullseries.find(prog.GetTitle());
+                        if (it != fullseries.end()) {
                             addseries(doc, subobj, it->second);
                         }
 
@@ -930,7 +931,7 @@ int main(int argc, char *argv[])
 
                     for (i = 0; i < count; i++) {
                         rapidjson::Value subobj;
-                        const PROGTITLE& title = *(const PROGTITLE *)titleslist[i + offset];
+                        const auto& title = *(const PROGTITLE *)titleslist[i + offset];
 
                         subobj.SetObject();
 
@@ -944,8 +945,8 @@ int main(int argc, char *argv[])
                         subobj.AddMember("notfilm", rapidjson::Value(title.counts.notfilm), allocator);
                         subobj.AddMember("total", rapidjson::Value(title.counts.total), allocator);
 
-                        ADVBProgList::serieslist_t::const_iterator it;
-                        if ((it = fullseries.find(prog.GetTitle())) != fullseries.end()) {
+                        const auto it = fullseries.find(prog.GetTitle());
+                        if (it != fullseries.end()) {
                             addseries(doc, subobj, it->second);
                         }
 
@@ -962,7 +963,7 @@ int main(int argc, char *argv[])
                     obj.SetArray();
 
                     for (i = 0; (i < count) && !HasQuit(); i++) {
-                        const ADVBPatterns::pattern_t& pattern = *(const ADVBPatterns::pattern_t *)patternlist[offset + i];
+                        const auto& pattern = *(const ADVBPatterns::pattern_t *)patternlist[offset + i];
 
                         obj.PushBack(getpattern(doc, pattern), allocator);
                     }
@@ -995,7 +996,7 @@ int main(int argc, char *argv[])
 
                 config.ListUsers(users);
 
-                const AString *str = AString::Cast(users.First());
+                const auto *str = AString::Cast(users.First());
                 while (str) {
                     obj.PushBack(getuserdetails(doc, *str), allocator);
 

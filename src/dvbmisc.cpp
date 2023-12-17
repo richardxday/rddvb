@@ -27,7 +27,7 @@ AString CatPath(const AString& dir1, const AString& dir2)
 
 AString ReplaceStrings(const AString& str, const replacement_t *replacements, uint_t n)
 {
-    AString res = str;
+    auto   res = str;
     uint_t i;
 
     for (i = 0; i < n; i++) {
@@ -39,9 +39,9 @@ AString ReplaceStrings(const AString& str, const replacement_t *replacements, ui
 
 bool RunAndLogCommand(const AString& cmd)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    const AString logfile = config.GetLogFile(ADateTime().GetDays());
-    AString cmd1 = cmd;
+    const auto& config  = ADVBConfig::Get();
+    const auto  logfile = config.GetLogFile(ADateTime().GetDays());
+    auto  cmd1 = cmd;
 
     if (config.IsOutputDisabled()) cmd1.printf(" >>\"%s\" 2>&1", logfile.str());
     else                           cmd1.printf(" 2>&1 | tee -a \"%s\"", logfile.str());
@@ -50,7 +50,7 @@ bool RunAndLogCommand(const AString& cmd)
         config.logit("Running '%s'", cmd1.str());
     }
 
-    bool success = (system(cmd1) == 0);
+    auto success = (system(cmd1) == 0);
     if (!success) config.logit("Command '%s' failed", cmd.str());
 
     return success;
@@ -58,23 +58,23 @@ bool RunAndLogCommand(const AString& cmd)
 
 uint_t GetRemotePort(bool streamslave)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     return streamslave ? config.GetStreamSlavePort() : config.GetRecordingSlavePort();
 }
 
 AString GetRemoteHostID(bool streamslave)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    const AString host = streamslave ? config.GetStreamSlave()     : config.GetRecordingSlave();
-    const AString user = streamslave ? config.GetStreamSlaveUser() : config.GetRecordingSlaveUser();
+    const auto& config = ADVBConfig::Get();
+    const auto  host = streamslave ? config.GetStreamSlave()     : config.GetRecordingSlave();
+    const auto  user = streamslave ? config.GetStreamSlaveUser() : config.GetRecordingSlaveUser();
 
     return AString::Formatify("%s%s%s", user.str(), user.Valid() ? "@" : "", host.str());
 }
 
 bool SendFileToRecordingSlave(const AString& filename)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    const AString args = config.GetSCPArgs();
+    const auto& config = ADVBConfig::Get();
+    const auto  args = config.GetSCPArgs();
     AString cmd;
     bool    success;
 
@@ -91,8 +91,8 @@ bool GetFileFromRecordingSlave(const AString& filename)
 
 bool GetFileFromRecordingSlave(const AString& filename, const AString& localfilename)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    const AString args = config.GetSCPArgs();
+    const auto& config = ADVBConfig::Get();
+    const auto  args   = config.GetSCPArgs();
     AString cmd;
     bool    success;
 
@@ -106,7 +106,7 @@ bool GetFileFromRecordingSlave(const AString& filename, const AString& localfile
 
 AString GetRemoteCommand(const AString& cmd, const AString& postcmd, bool compress, bool streamslave)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AString cmd1;
 
     cmd1.printf("ssh %s %s -p %u %s \"%s\" %s", compress ? "-C" : "", config.GetSSHArgs().str(), GetRemotePort(streamslave), GetRemoteHostID(streamslave).str(), cmd.Escapify().str(), postcmd.str());
@@ -131,8 +131,8 @@ bool RunRemoteCommandGetFile(const AString& cmd, const AString& filename)
 
 bool TriggerServerCommand(const AString& cmd)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    AString host = config.GetServerHost();
+    const auto& config = ADVBConfig::Get();
+    auto host = config.GetServerHost();
     bool success = false;
 
     if (host.Valid()) {
@@ -141,7 +141,7 @@ bool TriggerServerCommand(const AString& cmd)
 
         if (!socket.isopen()) {
             if (socket.open("0.0.0.0", 0, ASocketServer::Type_Datagram)) {
-                uint_t port = config.GetServerPort();
+                auto port = config.GetServerPort();
 
                 if (!socket.setdatagramdestination(host, port)) {
                     config.printf("Failed to set %s:%u as UDP destination for server command triggers", host.str(), port);
@@ -170,7 +170,7 @@ bool SameFile(const AString& file1, const AString& file2)
 bool CopyFile(AStdData& fp1, AStdData& fp2)
 {
     static uint8_t buffer[65536];
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     slong_t sl = -1, dl = -1;
 
     while ((sl = fp1.readbytes(buffer, sizeof(buffer))) > 0) {
@@ -185,7 +185,7 @@ bool CopyFile(AStdData& fp1, AStdData& fp2)
 
 bool CopyFile(const AString& src, const AString& dst, bool binary)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     AStdFile fp1, fp2;
     bool success = false;
 
@@ -207,7 +207,7 @@ bool CopyFile(const AString& src, const AString& dst, bool binary)
 
 bool MoveFile(const AString& src, const AString& dst, bool binary)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     bool success = false;
 
     if (SameFile(src, dst)) {
@@ -232,7 +232,7 @@ AString SanitizeString(const AString& str, bool filesystem, bool dir)
         sint_t i;
 
         for (i = 0; i < str.len(); i++) {
-            char c = str[i];
+            auto c = str[i];
 
             if      (IsSymbolChar(c) || (c == '.') || (c == '-') || (dir && (c == ' '))) updater.Update(c);
             else if ((c == '/') || IsWhiteSpace(c)) updater.Update('_');
@@ -245,8 +245,8 @@ AString SanitizeString(const AString& str, bool filesystem, bool dir)
 
 bool FindActiveStreamingProcesses(std::vector<dvbstreamprocs_t>& procs)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    AString tempfile = config.GetTempFile("streams", ".txt");
+    const auto& config = ADVBConfig::Get();
+    auto tempfile = config.GetTempFile("streams", ".txt");
     AString cmd;
     bool success = false;
 
@@ -272,7 +272,7 @@ bool FindActiveStreamingProcesses(std::vector<dvbstreamprocs_t>& procs)
                 proc.time  = 0;
 
                 for (i = 0; i < n; i++) {
-                    AString word = line.Word(i);
+                    auto word = line.Word(i);
 
                     if (i == 0) {
                         proc.pid = (uint32_t)line.Word(i);
@@ -327,8 +327,8 @@ bool FindActiveStreamingProcesses(std::vector<dvbstreamprocs_t>& procs)
 
 AString RunCommandAndGetResult(const AString& cmd)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    AString tempfile = config.GetTempFile("command", ".txt");
+    const auto& config = ADVBConfig::Get();
+    auto    tempfile = config.GetTempFile("command", ".txt");
     AString res;
 
     if (system(cmd + " >" + tempfile) == 0) {
@@ -342,12 +342,12 @@ AString RunCommandAndGetResult(const AString& cmd)
 
 AString GetCommandFromPID(uint32_t pid)
 {
-    AString commands = RunCommandAndGetResult("pgrep -a .+");
+    auto    commands = RunCommandAndGetResult("pgrep -a .+");
     AString res;
     int i, n = commands.CountLines();
 
     for (i = 0; i < n; i++) {
-        AString cmd = commands.Line(i);
+        auto cmd = commands.Line(i);
 
         if ((uint32_t)cmd.Word(0) == pid) {
             res = cmd.Words(1);
@@ -395,7 +395,7 @@ APIDTree::~APIDTree()
 
 void APIDTree::Populate(const AString& description, int& ln)
 {
-    AString line = description.Line(ln++);
+    auto line = description.Line(ln++);
     int indent = line.Pos(line.Word(0));
 
     pid = (uint32_t)line.Word(0);
@@ -408,11 +408,11 @@ void APIDTree::Populate(const AString& description, int& ln)
 
 void APIDTree::FindChildren()
 {
-    AString childcmds = FindChildCommandsFromPID(pid);
+    auto childcmds = FindChildCommandsFromPID(pid);
     int i, n = childcmds.CountLines();
 
     for (i = 0; i < n; i++) {
-        AString str = childcmds.Line(i);
+        auto str = childcmds.Line(i);
 
         children.push_back(new APIDTree((uint32_t)str.Word(0), str.Words(1)));
     }
@@ -439,7 +439,7 @@ bool APIDTree::Kill() const
 
 AString APIDTree::DescribeEx(uint_t level) const
 {
-    AString str = AString("  ").Copies((int)level);
+    auto    str = AString("  ").Copies((int)level);
     AString res;
 
     res.printf("%s%u %s\n", str.str(), pid, cmd.str());
@@ -453,8 +453,8 @@ AString APIDTree::DescribeEx(uint_t level) const
 
 uint32_t TestCard(uint_t card, uint32_t freq, const AString& pidlist, uint_t seconds)
 {
-    const ADVBConfig& config = ADVBConfig::Get();
-    const AString logfile = config.GetLogFile(ADateTime().GetDays());
+    const auto& config  = ADVBConfig::Get();
+    const auto  logfile = config.GetLogFile(ADateTime().GetDays());
     AString cmd;
 
     cmd.printf("dvbstream -c %u -f %u %s -n %u -o 2>>\"%s\" | wc -c", card, freq, pidlist.str(), seconds, logfile.str());

@@ -46,7 +46,7 @@ static void DisplaySeries(const ADVBProgList::series_t& series)
     uint_t j;
 
     for (j = 0; j < series.list.size(); j++) {
-        const AString& str = series.list[j];
+        const auto& str = series.list[j];
 
         if (str.Valid()) printf("Programme '%s' series %u: %s\n", series.title.str(), j, str.str());
     }
@@ -75,7 +75,7 @@ static AValue __func(const AString& funcname, const simplevars_t& vars, const si
 static bool argsvalid(int argc, const char *argv[], int i, const OPTION& option)
 {
     int  n     = option.args.CountWords();
-    bool valid = (!(((i + 1) < argc) && (stricmp(argv[i + 1], "--help") == 0)) && ((i + n) < argc));
+    auto valid = (!(((i + 1) < argc) && (stricmp(argv[i + 1], "--help") == 0)) && ((i + n) < argc));
 
     if (!valid) {
         fprintf(stderr, "Incorrect arguments: %s %s \t%s\n", argv[i], option.args.str(), option.helptext.str());
@@ -231,11 +231,11 @@ int main(int argc, const char *argv[])
         {"--test-cards",                            "",                                 "Test each DVB card to ensure card is working correctly"},
         {"--return-count",                          "",                                 "Return programme list count in error code"},
     };
-    const ADVBConfig& config = ADVBConfig::Get();
+    const auto& config = ADVBConfig::Get();
     ADVBProgList proglist;
-    ADateTime starttime = ADateTime().TimeStamp(true);
+    auto    starttime       = ADateTime().TimeStamp(true);
     auto    testcardchannel = config.GetTestCardChannel();
-    uint_t  testcardseconds = config.GetTestCardTime();
+    auto    testcardseconds = config.GetTestCardTime();
     AString testcardremotecmd;
     bool    testcardsuccess   = false;
     bool    testcardperformed = false;
@@ -266,12 +266,12 @@ int main(int argc, const char *argv[])
             uint_t n = 0;
 
             for (i = 0; i < list.Count(); i++) {
-                ADVBProg& prog = list.GetProgWritable(i);
-                AString filename = prog.GetFilename();
+                auto& prog     = list.GetProgWritable(i);
+                auto  filename = prog.GetFilename();
 
                 if (filename.FilePart() == ".") {
-                    AString convertedfilename   = prog.GenerateFilename(true);
-                    AString unconvertedfilename = prog.GenerateFilename(false);
+                    auto convertedfilename   = prog.GenerateFilename(true);
+                    auto unconvertedfilename = prog.GenerateFilename(false);
                     if (AStdFile::exists(convertedfilename)) {
                         prog.SetFilename(convertedfilename);
                     }
@@ -301,9 +301,9 @@ int main(int argc, const char *argv[])
         printf("Where <cmd> is:\n");
 
         for (nopt = 0; nopt < NUMBEROF(options); nopt++) {
-            const OPTION& option = options[nopt];
+            const auto& option = options[nopt];
             AString text;
-            uint_t nsubopts = option.option.CountColumns();
+            uint_t  nsubopts = (uint_t)option.option.CountColumns();
 
             for (nsubopt = 0; nsubopt < nsubopts; nsubopt++) {
                 if (text.Valid()) text += ", ";
@@ -318,7 +318,7 @@ int main(int argc, const char *argv[])
         maxwid++;
 
         for (nopt = 0; nopt < NUMBEROF(options); nopt++) {
-            const OPTION& option = options[nopt];
+            const auto& option = options[nopt];
 
             printf("\t%s%s\t%s\n",
                    optionlist[nopt].str(),
@@ -331,14 +331,14 @@ int main(int argc, const char *argv[])
             bool valid = false;
 
             if (strncmp(argv[i], "-v", 2) == 0) {
-                uint_t inc = (uint_t)AString(argv[i] + 2);
-                verbosity += inc ? inc : 1;
+                auto inc = (uint_t)AString(argv[i] + 2);
+                verbosity += (inc > 0) ? inc : 1;
                 continue;
             }
 
             for (nopt = 0; nopt < NUMBEROF(options); nopt++) {
-                const OPTION& option = options[nopt];
-                uint_t nsubopts = option.option.CountColumns();
+                const auto& option = options[nopt];
+                uint_t nsubopts = (uint_t)option.option.CountColumns();
 
                 for (nsubopt = 0; nsubopt < nsubopts; nsubopt++) {
                     if (strcmp(argv[i], option.option.Column(nsubopt).Words(0).str()) == 0) {
@@ -370,7 +370,7 @@ int main(int argc, const char *argv[])
                 printf("Log files: %s\n", config.GetLogDir().str());
                 printf("Recordings: %s\n", config.GetRecordingsDir().str());
 
-                const AString *user = AString::Cast(users.First());
+                const auto *user = AString::Cast(users.First());
                 while (user) {
                     printf("Recordings for %s: %s\n", user->str(), config.GetRecordingsDir(*user).str());
                     user = user->Next();
@@ -382,7 +382,7 @@ int main(int argc, const char *argv[])
             }
             else if (strcmp(argv[i], "--getxmltv") == 0) {
                 AString destfile = argv[++i];
-                AString cmd = config.GetXMLTVDownloadCommand() + " " + config.GetXMLTVDownloadArguments(destfile);
+                auto    cmd = config.GetXMLTVDownloadCommand() + " " + config.GetXMLTVDownloadArguments(destfile);
 
                 config.logit("Downloading XMLTV listings using '%s'", cmd.str());
                 if ((res = system(cmd.str())) != 0) {
@@ -406,14 +406,14 @@ int main(int argc, const char *argv[])
                 int p;
 
                 if ((p = str.Pos("=")) >= 0) {
-                    AString var = str.Left(p);
-                    AString val = str.Mid(p + 1).DeQuotify().DeEscapify();
+                    auto var = str.Left(p);
+                    auto val = str.Mid(p + 1).DeQuotify().DeEscapify();
                     config.Set(var, val);
                 }
                 else fprintf(stderr, "Configuration setting '%s' invalid, format should be '<var>=<val>'", str.str());
             }
             else if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0) || (AString(argv[i]).Suffix() == "xmltv") || (AString(argv[i]).Suffix() == "txt")) {
-                AString filename = config.GetListingsFile();
+                auto    filename = config.GetListingsFile();
                 AString updatefile;
 
                 if ((strcmp(argv[i], "--update") == 0) || (strcmp(argv[i], "-u") == 0)) i++;
@@ -470,7 +470,7 @@ int main(int argc, const char *argv[])
                 }
             }
             else if ((strcmp(argv[i], "--load") == 0) || (strcmp(argv[i], "-l") == 0)) {
-                AString filename = config.GetListingsFile();
+                auto filename = config.GetListingsFile();
 
                 printf("Reading main listings file...\n");
                 if (proglist.ReadFromFile(filename)) {
@@ -479,7 +479,7 @@ int main(int argc, const char *argv[])
                 else printf("Failed to read programme list from '%s'\n", filename.str());
             }
             else if ((strcmp(argv[i], "--read") == 0) || (strcmp(argv[i], "-r") == 0)) {
-                AString filename = config.GetNamedFile(argv[++i]);
+                auto filename = config.GetNamedFile(argv[++i]);
 
                 printf("Reading programmes...\n");
                 if (proglist.ReadFromFile(filename)) {
@@ -541,7 +541,7 @@ int main(int argc, const char *argv[])
                 }
             }
             else if (strcmp(argv[i], "--fix-pound") == 0) {
-                AString filename = config.GetNamedFile(argv[++i]);
+                auto filename = config.GetNamedFile(argv[++i]);
 
                 proglist.DeleteAll();
 
@@ -579,8 +579,8 @@ int main(int argc, const char *argv[])
             else if (strcmp(argv[i], "--update-dvb-channels-file") == 0) {
                 if (config.GetRecordingSlave().Valid()) {
                     ADVBLock lock("dvbfiles");
-                    AString filename    = config.GetDVBChannelsJSONFile();
-                    AString dstfilename = config.GetTempFile(filename.FilePart().Prefix(), "." + filename.Suffix());
+                    auto filename    = config.GetDVBChannelsJSONFile();
+                    auto dstfilename = config.GetTempFile(filename.FilePart().Prefix(), "." + filename.Suffix());
 
                     if (GetFileFromRecordingSlave(filename, dstfilename)) {
                         FILE_INFO info1, info2;
@@ -598,7 +598,7 @@ int main(int argc, const char *argv[])
                 else printf("No need to update DVB channels file: no recording slave\n");
             }
             else if (strcmp(argv[i], "--print-channels") == 0) {
-                const ADVBChannelList& channellist = ADVBChannelList::Get();
+                const auto& channellist = ADVBChannelList::Get();
                 TABLE table;
                 size_t j;
                 uint_t k;
@@ -636,9 +636,9 @@ int main(int argc, const char *argv[])
                         TABLEROW row;
 
                         table.justify[row.size()] = 2;
-                        row.push_back(chan->dvb.lcn ? AString("%;").Arg(chan->dvb.lcn) : AString());
+                        row.push_back((chan->dvb.lcn > 0) ? AString("%;").Arg(chan->dvb.lcn) : AString());
                         table.justify[row.size()] = 2;
-                        row.push_back(chan->xmltv.sdchannelid ? AString("%;").Arg(chan->xmltv.sdchannelid) : AString());
+                        row.push_back((chan->xmltv.sdchannelid > 0) ? AString("%;").Arg(chan->xmltv.sdchannelid) : AString());
                         row.push_back(chan->xmltv.channelid);
                         row.push_back(chan->xmltv.channelname);
                         row.push_back(chan->xmltv.convertedchannelname);
@@ -646,7 +646,7 @@ int main(int argc, const char *argv[])
                         row.push_back(chan->dvb.convertedchannelname);
 
                         table.justify[row.size()] = 1;
-                        row.push_back(chan->dvb.freq ? AString("%;").Arg(chan->dvb.freq) : AString());
+                        row.push_back((chan->dvb.freq > 0) ? AString("%;").Arg(chan->dvb.freq) : AString());
 
                         AString pidlist;
                         for (j = 0; j < chan->dvb.pidlist.size(); j++) {
@@ -665,7 +665,7 @@ int main(int argc, const char *argv[])
                 PrintTable(*Stdout, table);
             }
             else if (strcmp(argv[i], "--find-unused-channels") == 0) {
-                const ADVBChannelList& channellist = ADVBChannelList::Get();
+                const auto& channellist = ADVBChannelList::Get();
                 std::map<AString,uint_t> dvbchannels;
                 std::map<AString,uint_t> missingchannels;
                 uint_t j, n = channellist.GetChannelCount();
@@ -675,8 +675,8 @@ int main(int argc, const char *argv[])
                 }
 
                 for (j = 0; j < proglist.Count(); j++) {
-                    const ADVBProg& prog       = proglist[j];
-                    const AString   dvbchannel = prog.GetDVBChannel();
+                    const auto& prog       = proglist[j];
+                    const auto  dvbchannel = AString(prog.GetDVBChannel());
 
                     if (dvbchannel.Valid()) {
                         //printf("Programme '%s' has DVB channel '%s'\n", prog.GetQuickDescription().str(), dvbchannel.str());
@@ -739,8 +739,8 @@ int main(int argc, const char *argv[])
                         printf("%s: %u repeats found:\n", proglist[j].GetDescription(verbosity).str(), n);
 
                         for (k = 0; k < reslist.Count(); k++) {
-                            const ADVBProg& prog = reslist[k];
-                            AString desc = prog.GetDescription(verbosity);
+                            const auto& prog = reslist[k];
+                            auto        desc = prog.GetDescription(verbosity);
                             uint_t l, nl = desc.CountLines();
 
                             for (l = 0; l < nl; l++) {
@@ -767,7 +767,7 @@ int main(int argc, const char *argv[])
                         const ADVBProg *prog;
 
                         if ((prog = otherlist.FindSimilar(proglist[j])) != NULL) {
-                            AString desc = prog->GetDescription(verbosity);
+                            auto   desc = prog->GetDescription(verbosity);
                             uint_t k, nl = desc.CountLines();
 
                             printf("Similar to %s:\n", proglist[j].GetDescription(verbosity).str());
@@ -785,12 +785,12 @@ int main(int argc, const char *argv[])
                      (strcmp(argv[i], "--find-in-file1-only") == 0) ||
                      (strcmp(argv[i], "--find-in-file2-only") == 0) ||
                      (strcmp(argv[i], "--find-similarities")  == 0)) {
-                const bool similarities = (strcmp(argv[i], "--find-similarities") == 0);
-                const bool in1only = ((strcmp(argv[i], "--find-differences") == 0) || (strcmp(argv[i], "--find-in-file1-only") == 0));
-                const bool in2only = ((strcmp(argv[i], "--find-differences") == 0) || (strcmp(argv[i], "--find-in-file2-only") == 0));
+                const auto similarities = (strcmp(argv[i], "--find-similarities") == 0);
+                const auto in1only = ((strcmp(argv[i], "--find-differences") == 0) || (strcmp(argv[i], "--find-in-file1-only") == 0));
+                const auto in2only = ((strcmp(argv[i], "--find-differences") == 0) || (strcmp(argv[i], "--find-in-file2-only") == 0));
                 ADVBProgList file1list, file2list;
-                AString file1name = argv[++i];
-                AString file2name = argv[++i];
+                auto file1name = AString(argv[++i]);
+                auto file2name = AString(argv[++i]);
                 bool success = true;
 
                 if (!file1list.ReadFromFile(file1name)) {
@@ -817,21 +817,21 @@ int main(int argc, const char *argv[])
             }
             else if (strcmp(argv[i], "--describe-pattern") == 0) {
                 ADataList patternlist;
-                AString   patterns = argv[++i];
+                auto      patterns = AString(argv[++i]);
                 AString   errors;
                 uint_t    i;
 
                 ADVBPatterns::ParsePatterns(patternlist, patterns, errors, ';');
 
                 for (i = 0; i < patternlist.Count(); i++) {
-                    const ADVBPatterns::pattern_t& pattern = *(const ADVBPatterns::pattern_t *)patternlist[i];
+                    const auto& pattern = *(const ADVBPatterns::pattern_t *)patternlist[i];
                     printf("%s", ADVBPatterns::ToString(pattern).str());
                 }
             }
             else if ((strcmp(argv[i], "--find-with-file") == 0) || (strcmp(argv[i], "-F") == 0)) {
                 ADVBProgList reslist;
                 AString      patterns, errors;
-                AString      filename = argv[++i];
+                auto         filename = AString(argv[++i]);
 
                 if (patterns.ReadFromFile(filename)) {
                     printf("Finding programmes...\n");
@@ -856,7 +856,8 @@ int main(int argc, const char *argv[])
             }
             else if (strcmp(argv[i], "--delete") == 0) {
                 ADVBProgList reslist;
-                AString      patterns = argv[++i], errors;
+                auto         patterns = AString(argv[++i]);
+                AString      errors;
                 uint_t       j;
 
                 proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
@@ -871,7 +872,7 @@ int main(int argc, const char *argv[])
                 }
 
                 for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
-                    const ADVBProg& prog = reslist.GetProg(j);
+                    const auto& prog = reslist.GetProg(j);
 
                     if (proglist.DeleteProg(prog)) {
                         printf("Deleted '%s'\n", prog.GetDescription(verbosity).str());
@@ -882,7 +883,7 @@ int main(int argc, const char *argv[])
             else if (strcmp(argv[i], "--delete-with-file") == 0) {
                 ADVBProgList reslist;
                 AString      patterns, errors;
-                AString      filename = argv[++i];
+                auto         filename = AString(argv[++i]);
                 uint_t       j;
 
                 if (patterns.ReadFromFile(filename)) {
@@ -898,7 +899,7 @@ int main(int argc, const char *argv[])
                     }
 
                     for (j = 0; (j < reslist.Count()) && !HasQuit(); j++) {
-                        const ADVBProg& prog = reslist.GetProg(j);
+                        const auto& prog = reslist.GetProg(j);
 
                         if (proglist.DeleteProg(prog)) {
                             printf("Deleted '%s'\n", prog.GetDescription(verbosity).str());
@@ -910,7 +911,7 @@ int main(int argc, const char *argv[])
             }
             else if ((strcmp(argv[i], "--delete-recorded") == 0) ||
                      (strcmp(argv[i], "--delete-using-file") == 0)) {
-                AString      filename = config.GetRecordedFile();
+                auto         filename = config.GetRecordedFile();
                 ADVBProgList proglist2;
 
                 if (strcmp(argv[i], "--delete-using-file") == 0) filename = config.GetNamedFile(argv[++i]);
@@ -934,8 +935,8 @@ int main(int argc, const char *argv[])
                 uint_t j, ndeleted = 0;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    const ADVBProg& prog = proglist.GetProg(j);
-                    const ADVBProg  *sprog;
+                    const auto&    prog = proglist.GetProg(j);
+                    const ADVBProg *sprog;
 
                     while ((sprog = proglist.FindSimilar(prog, &prog)) != NULL) {
                         proglist.DeleteProg(*sprog);
@@ -949,7 +950,7 @@ int main(int argc, const char *argv[])
                 uint_t j, k, ndeleted = 0;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    const ADVBProg& prog = proglist.GetProg(j);
+                    const auto& prog = proglist.GetProg(j);
 
                     for (k = j + 1; (k < proglist.Count()) && !HasQuit(); ) {
                         if (prog == proglist[k]) {
@@ -995,11 +996,11 @@ int main(int argc, const char *argv[])
                 }
             }
             else if (strcmp(argv[i], "--list-channels") == 0) {
-                const ADVBChannelList& list = ADVBChannelList::Get();
+                const auto& list = ADVBChannelList::Get();
                 uint_t j, nnodvb = 0;
 
                 for (j = 0; j < list.GetChannelCount(); j++) {
-                    const ADVBChannelList::channel_t *channel = list.GetChannel(j);
+                    const auto *channel = list.GetChannel(j);
 
                     printf("Channel %u/%u (LCN %u): '%s' (DVB '%s', XMLTV channel-id '%s')\n", j + 1, list.GetChannelCount(), channel->dvb.lcn, channel->xmltv.channelname.str(), channel->dvb.channelname.str(), channel->xmltv.channelid.str());
 
@@ -1008,7 +1009,7 @@ int main(int argc, const char *argv[])
                 printf("%u/%u channels have NO DVB channel\n", nnodvb, list.GetChannelCount());
             }
             else if (strcmp(argv[i], "--cut-head") == 0) {
-                uint_t n = (uint_t)AString(argv[++i]);
+                auto   n = (uint_t)AString(argv[++i]);
                 uint_t j;
 
                 for (j = 0; (j < n) && proglist.Count(); j++) {
@@ -1016,7 +1017,7 @@ int main(int argc, const char *argv[])
                 }
             }
             else if (strcmp(argv[i], "--cut-tail") == 0) {
-                uint_t n = (uint_t)AString(argv[++i]);
+                auto   n = (uint_t)AString(argv[++i]);
                 uint_t j;
 
                 for (j = 0; (j < n) && proglist.Count(); j++) {
@@ -1024,21 +1025,21 @@ int main(int argc, const char *argv[])
                 }
             }
             else if (strcmp(argv[i], "--head") == 0) {
-                uint_t n = (uint_t)AString(argv[++i]);
+                auto n = (uint_t)AString(argv[++i]);
 
                 while (proglist.Count() > n) {
                     proglist.DeleteProg(proglist.Count() - 1);
                 }
             }
             else if (strcmp(argv[i], "--tail") == 0) {
-                uint_t n = (uint_t)AString(argv[++i]);
+                auto n = (uint_t)AString(argv[++i]);
 
                 while (proglist.Count() > n) {
                     proglist.DeleteProg(0);
                 }
             }
             else if (strcmp(argv[i], "--limit") == 0) {
-                uint_t n = (uint_t)AString(argv[++i]);
+                auto n = (uint_t)AString(argv[++i]);
 
                 while (proglist.Count() > n) {
                     proglist.DeleteProg(proglist.Count() - 1);
@@ -1046,9 +1047,9 @@ int main(int argc, const char *argv[])
             }
             else if ((strcmp(argv[i], "--diff-keep-same")      == 0) ||
                      (strcmp(argv[i], "--diff-keep-different") == 0)) {
-                const bool    keepsame = (strcmp(argv[i], "--diff-keep-same") == 0);
-                const AString filename = config.GetNamedFile(argv[++i]);
-                ADVBProgList  proglist1;
+                const auto   keepsame = (strcmp(argv[i], "--diff-keep-same") == 0);
+                const auto   filename = config.GetNamedFile(argv[++i]);
+                ADVBProgList proglist1;
 
                 if (proglist1.ReadFromFile(filename)) {
                     uint_t ndeleted = 0;
@@ -1057,10 +1058,10 @@ int main(int argc, const char *argv[])
                     proglist1.CreateHash();
 
                     for (uint_t j = 0; j < proglist.Count(); ) {
-                        const ADVBProg& prog1 = proglist[j];
+                        const auto&    prog1 = proglist[j];
                         const ADVBProg *prog2;
-                        const bool same = (((prog2 = proglist1.FindUUID(prog1)) != NULL) &&
-                                           (prog1.Base64Encode() == prog2->Base64Encode()));
+                        const auto     same = (((prog2 = proglist1.FindUUID(prog1)) != NULL) &&
+                                               (prog1.Base64Encode() == prog2->Base64Encode()));
 
                         if (same == keepsame) {
                             j++;
@@ -1078,7 +1079,7 @@ int main(int argc, const char *argv[])
                 }
             }
             else if ((strcmp(argv[i], "--write") == 0) || (strcmp(argv[i], "-w") == 0)) {
-                AString filename = config.GetNamedFile(argv[++i]);
+                auto filename = config.GetNamedFile(argv[++i]);
 
                 if (!HasQuit() && proglist.WriteToFile(filename)) {
                     printf("Wrote %u programmes to '%s'\n", proglist.Count(), filename.str());
@@ -1088,7 +1089,7 @@ int main(int argc, const char *argv[])
                 }
             }
             else if (strcmp(argv[i], "--write-text") == 0) {
-                AString filename = config.GetNamedFile(argv[++i]);
+                auto filename = config.GetNamedFile(argv[++i]);
 
                 if (proglist.WriteToTextFile(filename)) {
                     printf("Wrote %u programmes to '%s'\n", proglist.Count(), filename.str());
@@ -1098,16 +1099,16 @@ int main(int argc, const char *argv[])
                 }
             }
             else if (stricmp(argv[i], "--write-gnuplot") == 0) {
-                AString filename = argv[++i];
+                auto filename = AString(argv[++i]);
 
                 if (!proglist.WriteToGNUPlotFile(filename)) {
                     fprintf(stderr, "Failed to write GNU plot file %s\n", filename.str());
                 }
             }
             else if (stricmp(argv[i], "--email") == 0) {
-                AString recipient = argv[++i];
-                AString subject   = argv[++i];
-                AString message   = AString(argv[++i]).DeEscapify();
+                auto recipient = AString(argv[++i]);
+                auto subject   = AString(argv[++i]);
+                auto message   = AString(argv[++i]).DeEscapify();
 
                 if (proglist.EmailList(recipient, subject, message, verbosity)) {
                     printf("List emailed successfully (if not empty)\n");
@@ -1117,7 +1118,7 @@ int main(int argc, const char *argv[])
                 }
             }
             else if ((strcmp(argv[i], "--sort") == 0) || (strcmp(argv[i], "--sort-rev") == 0)) {
-                bool reverse = (strcmp(argv[i], "--sort-rev") == 0);
+                auto reverse = (strcmp(argv[i], "--sort-rev") == 0);
                 proglist.Sort(reverse);
                 printf("%sorted list chronologically\n", reverse ? "Reverse s" : "S");
             }
@@ -1158,14 +1159,14 @@ int main(int argc, const char *argv[])
                 proglist.Schedule();
             }
             else if (strcmp(argv[i], "--record") == 0) {
-                AString  progstr = argv[++i];
+                auto     progstr = AString(argv[++i]);
                 ADVBProg prog;
 
                 if (prog.Base64Decode(progstr)) prog.Record();
                 else printf("Failed to decode programme '%s'\n", progstr.str());
             }
             else if (strcmp(argv[i], "--record-title") == 0) {
-                AString  title = argv[++i];
+                auto     title = AString(argv[++i]);
                 ADVBLock lock("dvbfiles");
                 ADVBProgList list;
 
@@ -1176,7 +1177,7 @@ int main(int argc, const char *argv[])
                 }
             }
             else if (stricmp(argv[i], "--schedule-record") == 0) {
-                AString  base64 = argv[++i];
+                auto     base64 = AString(argv[++i]);
                 ADVBProg prog;
 
                 if (prog.Base64Decode(base64)) {
@@ -1196,12 +1197,12 @@ int main(int argc, const char *argv[])
                 else config.printf("Unable to decode base 64 string");
             }
             else if (strcmp(argv[i], "--add-recorded") == 0) {
-                AString  progstr = argv[++i];
+                auto     progstr = AString(argv[++i]);
                 ADVBProg prog;
 
                 if (prog.Base64Decode(progstr)) {
-                    const AString filename     = prog.GetFilename();
-                    const AString tempfilename = prog.GetTempFilename();
+                    const auto filename     = AString(prog.GetFilename());
+                    const auto tempfilename = AString(prog.GetTempFilename());
                     FILE_INFO info;
                     uint_t    nsecs;
 
@@ -1248,7 +1249,7 @@ int main(int argc, const char *argv[])
             else if (strcmp(argv[i], "--recover-recorded-from-temp") == 0) {
                 ADVBLock     lock("files");
                 ADVBProgList reclist;
-                AString      reclistfilename = config.GetRecordedFile();
+                auto         reclistfilename = config.GetRecordedFile();
                 uint_t       nchanges = 0;
 
                 if (reclist.ReadFromFile(reclistfilename)) {
@@ -1261,10 +1262,10 @@ int main(int argc, const char *argv[])
                     printf("--------------------------------------------------------------------------------\n");
 
                     // iterate through files
-                    const AString *str = AString::Cast(files.First());
+                    const auto *str = AString::Cast(files.First());
                     while (str && !HasQuit()) {
                         // for each file, attempt to find a file in the current list whose's unconverted file has the same filename
-                        const AString& filename = *str;
+                        const auto& filename = *str;
                         uint_t j;
 
                         printf("Looking for programme for '%s'...\n\n", filename.str());
@@ -1282,7 +1283,7 @@ int main(int argc, const char *argv[])
                                     break;
                                 }
                                 else {
-                                    ADVBProg prog = proglist[j];    // note: take copy of prog
+                                    auto prog = proglist[j];    // note: take copy of prog
 
                                     printf("Found as '%s':\n", prog.GetQuickDescription().str());
 
@@ -1324,7 +1325,7 @@ int main(int argc, const char *argv[])
 
             }
             else if (strcmp(argv[i], "--card") == 0) {
-                const uint_t newcard = (uint_t)AString(argv[++i]);
+                const auto newcard = (uint_t)AString(argv[++i]);
 
                 config.GetPhysicalDVBCard(0);
                 if (config.GetMaxDVBCards() > 0) {
@@ -1345,9 +1346,9 @@ int main(int argc, const char *argv[])
                 printf("Switched to using physical card %u\n", dvbcard);
             }
             else if (strcmp(argv[i], "--pids") == 0) {
-                ADVBChannelList& list = ADVBChannelList::Get();
-                const AString    channel = argv[++i];
-                AString          pids;
+                auto&      list    = ADVBChannelList::Get();
+                const auto channel = AString(argv[++i]);
+                AString    pids;
 
                 if (config.GetRecordingSlave().Valid()) {
                     // MUST write channels if they have been updated
@@ -1366,8 +1367,8 @@ int main(int argc, const char *argv[])
                 printf("pids for '%s': %s\n", channel.str(), pids.str());
             }
             else if (strcmp(argv[i], "--scan") == 0) {
-                ADVBChannelList& list = ADVBChannelList::Get();
-                const AString freqs = argv[++i];
+                auto&      list  = ADVBChannelList::Get();
+                const auto freqs = AString(argv[++i]);
 
                 if (config.GetRecordingSlave().Valid()) {
                     // MUST write channels if they have been updated
@@ -1387,7 +1388,7 @@ int main(int argc, const char *argv[])
                 }
             }
             else if (strcmp(argv[i], "--scan-all") == 0) {
-                ADVBChannelList& list = ADVBChannelList::Get();
+                auto& list = ADVBChannelList::Get();
 
                 if (config.GetRecordingSlave().Valid()) {
                     // MUST write channels if they have been updated
@@ -1402,10 +1403,10 @@ int main(int argc, const char *argv[])
                 else list.UpdateAll(dvbcard, true);
             }
             else if (strcmp(argv[i], "--scan-range") == 0) {
-                ADVBChannelList& list = ADVBChannelList::Get();
-                const AString f1str = AString(argv[++i]);
-                const AString f2str = AString(argv[++i]);
-                const AString ststr = AString(argv[++i]);
+                auto&      list  = ADVBChannelList::Get();
+                const auto f1str = AString(argv[++i]);
+                const auto f2str = AString(argv[++i]);
+                const auto ststr = AString(argv[++i]);
 
                 if (config.GetRecordingSlave().Valid()) {
                     // MUST write channels if they have been updated
@@ -1418,9 +1419,9 @@ int main(int argc, const char *argv[])
                     list.Read();
                 }
                 else {
-                    const double f1   = (double)f1str;
-                    const double f2   = (double)f2str;
-                    const double step = (double)ststr;
+                    const auto f1   = (double)f1str;
+                    const auto f2   = (double)f2str;
+                    const auto step = (double)ststr;
                     double f;
 
                     for (f = f1; f <= f2; f += step) {
@@ -1429,7 +1430,7 @@ int main(int argc, const char *argv[])
                 }
             }
             else if (strcmp(argv[i], "--find-channels") == 0) {
-                ADVBChannelList& list = ADVBChannelList::Get();
+                auto& list = ADVBChannelList::Get();
 
                 if (config.GetRecordingSlave().Valid()) {
                     // MUST write channels if they have been updated
@@ -1455,8 +1456,8 @@ int main(int argc, const char *argv[])
             }
             else if (strcmp(argv[i], "--change-filename") == 0) {
                 ADVBLock     lock("dvbfiles");
-                AString      filename1 = argv[++i];
-                AString      filename2 = argv[++i];
+                auto         filename1 = AString(argv[++i]);
+                auto         filename2 = AString(argv[++i]);
                 ADVBProgList reclist;
 
                 if (filename2 != filename1) {
@@ -1465,7 +1466,7 @@ int main(int argc, const char *argv[])
                         bool changed = false;
 
                         for (j = 0; (j < reclist.Count()) && !HasQuit(); j++) {
-                            ADVBProg& prog = reclist.GetProgWritable(j);
+                            auto& prog = reclist.GetProgWritable(j);
 
                             if (prog.GetFilename() == filename1) {
                                 config.printf("Changing filename of '%s' from '%s' to '%s'", prog.GetDescription().str(), filename1.str(), filename2.str());
@@ -1489,10 +1490,10 @@ int main(int argc, const char *argv[])
                      (strcmp(argv[i], "--change-filename-regex-test") == 0)) {
                 ADVBLock      lock("dvbfiles");
                 ADVBProgList  reclist;
-                const AString arg           = argv[i++];
-                const AString pattern       = argv[i++];
-                const AString replacement   = argv[i];
-                const bool    commit        = (strcmp(arg, "--change-filename-regex") == 0);
+                const auto arg         = AString(argv[i++]);
+                const auto pattern     = AString(argv[i++]);
+                const auto replacement = AString(argv[i]);
+                const auto commit      = (strcmp(arg, "--change-filename-regex") == 0);
 
                 try {
                     const regex_replace_t replace = {
@@ -1505,12 +1506,12 @@ int main(int argc, const char *argv[])
                         bool changed = false;
 
                         for (j = 0; j < reclist.Count(); j++) {
-                            ADataList regionlist;
-                            ADVBProg& prog = reclist.GetProgWritable(j);
+                            ADataList      regionlist;
+                            auto&          prog = reclist.GetProgWritable(j);
                             const AString& filename1 = prog.GetFilename();
 
                             if (MatchRegex(filename1, replace.regex)) {
-                                AString filename2 = RegexReplace(filename1, replace);
+                                auto filename2 = RegexReplace(filename1, replace);
 
                                 config.printf("Changing filename of '%s' from '%s' to '%s'", prog.GetDescription().str(), filename1.str(), filename2.str());
                                 prog.SetFilename(filename2);
@@ -1553,7 +1554,7 @@ int main(int argc, const char *argv[])
                     uint_t j, n = 0;
 
                     for (j = 0; (j < reclist.Count()) && !HasQuit(); j++) {
-                        ADVBProg& prog = reclist.GetProgWritable(j);
+                        auto& prog = reclist.GetProgWritable(j);
 
                         if (prog.FixData()) n++;
                     }
@@ -1586,19 +1587,19 @@ int main(int argc, const char *argv[])
             else if (stricmp(argv[i], "--find-recorded-programmes-on-disk") == 0) {
                 ADVBLock     lock("dvbfiles");
                 ADVBProgList reclist;
-                AString      recdir = config.GetRecordingsDir();
-                AString      dirs   = config.GetConfigItem("searchdirs", "");
+                auto         recdir = config.GetRecordingsDir();
+                auto         dirs   = config.GetConfigItem("searchdirs", "");
 
                 if (reclist.ReadFromFile(config.GetRecordedFile())) {
                     uint_t j, k, n = dirs.CountLines(",");
                     uint_t found = 0;
 
                     for (j = 0; (j < reclist.Count()) && !HasQuit(); j++) {
-                        ADVBProg& prog = reclist.GetProgWritable(j);
+                        auto&     prog = reclist.GetProgWritable(j);
                         FILE_INFO info;
 
                         if (!AStdFile::exists(prog.GetFilename())) {
-                            AString filename1 = prog.GenerateFilename(prog.IsConverted());
+                            auto filename1 = prog.GenerateFilename(prog.IsConverted());
                             if (AStdFile::exists(filename1)) {
                                 prog.SetFilename(filename1);
                                 found++;
@@ -1607,23 +1608,23 @@ int main(int argc, const char *argv[])
                     }
 
                     for (j = 0; (j < n) && !HasQuit(); j++) {
-                        AString path = recdir.CatPath(dirs.Line(j, ","));
-                        AList   dirs;
+                        auto  path = recdir.CatPath(dirs.Line(j, ","));
+                        AList dirs;
 
                         dirs.Add(new AString(path));
                         CollectFiles(path, "*", RECURSE_ALL_SUBDIRS, dirs, FILE_FLAG_IS_DIR, FILE_FLAG_IS_DIR);
 
-                        const AString *dir = AString::Cast(dirs.First());
+                        const auto *dir = AString::Cast(dirs.First());
                         while (dir && !HasQuit()) {
                             if (dir->FilePart() != "subs") {
                                 config.printf("Searching '%s'...", dir->str());
 
                                 for (k = 0; (k < reclist.Count()) && !HasQuit(); k++) {
-                                    ADVBProg& prog = reclist.GetProgWritable(k);
+                                    auto& prog = reclist.GetProgWritable(k);
 
                                     if (!AStdFile::exists(prog.GetFilename()) || config.GetRelativePath(prog.GetFilename()).Empty()) {
-                                        AString filename1 = dir->CatPath(AString(prog.GetFilename()).FilePart());
-                                        AString filename2 = filename1.Prefix() + "." + config.GetConvertedFileSuffix(prog.GetUser());
+                                        auto filename1 = dir->CatPath(AString(prog.GetFilename()).FilePart());
+                                        auto filename2 = filename1.Prefix() + "." + config.GetConvertedFileSuffix(prog.GetUser());
 
                                         if (AStdFile::exists(filename2)) {
                                             prog.SetFilename(filename2);
@@ -1662,7 +1663,7 @@ int main(int argc, const char *argv[])
                     uint_t j;
 
                     for (j = 0; (j < reclist.Count()) && !HasQuit(); j++) {
-                        ADVBProg& prog = reclist.GetProgWritable(j);
+                        auto& prog = reclist.GetProgWritable(j);
 
                         prog.SetRecordingComplete();
                     }
@@ -1694,9 +1695,10 @@ int main(int argc, const char *argv[])
             else if ((stricmp(argv[i], "--set-flag") == 0) ||
                      (stricmp(argv[i], "--clr-flag") == 0)) {
                 ADVBProgList reslist;
-                bool    set      = (stricmp(argv[i], "--set-flag") == 0);
-                AString flagname = argv[++i];
-                AString patterns = argv[++i], errors;
+                auto    set      = (stricmp(argv[i], "--set-flag") == 0);
+                auto    flagname = AString(argv[++i]);
+                auto    patterns = AString(argv[++i]);
+                AString errors;
                 uint_t j, nchanged = 0;
 
                 if (ADVBProg::IsFlagNameValid(flagname)) {
@@ -1743,7 +1745,7 @@ int main(int argc, const char *argv[])
                     }
 
                     for (j = 0; (j < failureslist.Count()) && !HasQuit(); j++) {
-                        ADVBProg& prog = failureslist.GetProgWritable(j);
+                        auto& prog = failureslist.GetProgWritable(j);
 
                         prog.ClearScheduled();
                         prog.SetRecordFailed();
@@ -1759,14 +1761,16 @@ int main(int argc, const char *argv[])
                 uint_t j;
 
                 for (j = 0; j < proglist.Count(); j++) {
-                    ADVBProg& prog = proglist.GetProgWritable(j);
+                    auto& prog = proglist.GetProgWritable(j);
                     prog.SetNotify();
                     prog.OnRecordSuccess();
                 }
             }
             else if (stricmp(argv[i], "--change-user") == 0) {
                 ADVBProgList reslist;
-                AString      patterns = argv[++i], newvalue = argv[++i], errors;
+                auto         patterns = AString(argv[++i]);
+                auto         newvalue = AString(argv[++i]);
+                AString      errors;
                 uint_t       j;
 
                 proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
@@ -1798,7 +1802,9 @@ int main(int argc, const char *argv[])
             }
             else if (stricmp(argv[i], "--change-dir") == 0) {
                 ADVBProgList reslist;
-                AString      patterns = argv[++i], newvalue = argv[++i], errors;
+                auto         patterns = AString(argv[++i]);
+                auto         newvalue = AString(argv[++i]);
+                AString      errors;
                 uint_t       j;
 
                 proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
@@ -1832,10 +1838,10 @@ int main(int argc, const char *argv[])
                 uint_t j;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    const ADVBProg& prog = proglist.GetProg(j);
-                    AString proccmd = config.GetEncodeCommand(prog.GetUser(), prog.GetCategory());
-                    AString args    = config.GetEncodeArgs(prog.GetUser(), prog.GetCategory());
-                    uint_t  k, n = args.CountLines(";");
+                    const auto& prog = proglist.GetProg(j);
+                    auto        proccmd = config.GetEncodeCommand(prog.GetUser(), prog.GetCategory());
+                    auto        args    = config.GetEncodeArgs(prog.GetUser(), prog.GetCategory());
+                    uint_t k, n = args.CountLines(";");
 
                     printf("%s:\n", prog.GetQuickDescription().str());
 
@@ -1852,7 +1858,7 @@ int main(int argc, const char *argv[])
                 uint_t j;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    const ADVBProg& prog = proglist.GetProg(j);
+                    const auto& prog = proglist.GetProg(j);
 
                     if (AStdFile::exists(prog.GetFilename())) {
                         AString format;
@@ -1868,8 +1874,8 @@ int main(int argc, const char *argv[])
                 uint_t j, converted = 0;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    ADVBProg& prog = proglist.GetProgWritable(j);
-                    AString   oldfilename = prog.GenerateFilename();
+                    auto& prog = proglist.GetProgWritable(j);
+                    auto  oldfilename = prog.GenerateFilename();
 
                     if ((!prog.IsConverted() && AStdFile::exists(prog.GetFilename())) ||
                         (prog.IsConverted() && !AStdFile::exists(prog.GetFilename()) && AStdFile::exists(oldfilename))) {
@@ -1892,10 +1898,10 @@ int main(int argc, const char *argv[])
                 uint_t j;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    ADVBProg& prog = proglist.GetProgWritable(j);
+                    auto& prog = proglist.GetProgWritable(j);
 
                     if (!prog.IsConverted()) {
-                        AString oldfilename = prog.GetFilename();
+                        auto oldfilename = AString(prog.GetFilename());
 
                         prog.SetFilename(prog.GenerateFilename(true));
 
@@ -1905,7 +1911,9 @@ int main(int argc, const char *argv[])
             }
             else if (stricmp(argv[i], "--set-dir") == 0) {
                 ADVBProgList reslist;
-                AString      patterns = argv[++i], newdir = argv[++i], errors;
+                auto         patterns = AString(argv[++i]);
+                auto         newdir   = AString(argv[++i]);
+                AString      errors;
                 uint_t       j;
 
                 proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
@@ -1931,9 +1939,10 @@ int main(int argc, const char *argv[])
             }
             else if ((stricmp(argv[i], "--regenerate-filename") == 0) ||
                      (stricmp(argv[i], "--regenerate-filename-test") == 0)) {
-                const bool test = (stricmp(argv[i], "--regenerate-filename-test") == 0);
+                const auto test = (stricmp(argv[i], "--regenerate-filename-test") == 0);
                 ADVBProgList reslist;
-                AString      patterns = argv[++i], errors;
+                auto         patterns = AString(argv[++i]);
+                AString      errors;
                 uint_t       j;
 
                 proglist.FindProgrammes(reslist, patterns, errors, (patterns.Pos("\n") >= 0) ? "\n" : ";");
@@ -1953,11 +1962,11 @@ int main(int argc, const char *argv[])
                         ADVBProg *pprog;
 
                         if ((pprog = proglist.FindUUIDWritable(reslist.GetProg(j))) != NULL) {
-                            ADVBProg& prog = *pprog;
-                            AString   oldfilename = prog.GetFilename();
+                            auto& prog = *pprog;
+                            auto  oldfilename = AString(prog.GetFilename());
 
                             if (prog.IsConverted()) {
-                                AString subdir = oldfilename.PathPart().PathPart().FilePart();
+                                auto subdir = oldfilename.PathPart().PathPart().FilePart();
 
                                 if (prog.IsFilm()) {
                                     if (!test) prog.SetDir("Films");
@@ -1970,9 +1979,9 @@ int main(int argc, const char *argv[])
                                 }
                             }
 
-                            AString newfilename  = prog.GenerateFilename(prog.IsConverted());
-                            AString oldfilename1 = oldfilename.FilePart();
-                            AString newfilename1 = newfilename.FilePart();
+                            auto newfilename  = prog.GenerateFilename(prog.IsConverted());
+                            auto oldfilename1 = oldfilename.FilePart();
+                            auto newfilename1 = newfilename.FilePart();
 
                             if (newfilename != oldfilename) {
                                 printf("'%s' -> '%s'\n", oldfilename.str(), newfilename.str());
@@ -2013,13 +2022,13 @@ int main(int argc, const char *argv[])
                 uint_t j;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    const ADVBProg& prog = proglist.GetProg(j);
+                    const auto& prog = proglist.GetProg(j);
 
                     prog.DeleteEncodedFiles();
                 }
             }
             else if (stricmp(argv[i], "--delete-from-record-lists") == 0) {
-                AString uuid = argv[++i];
+                auto uuid = AString(argv[++i]);
 
                 if (ADVBProgList::RemoveFromRecordLists(uuid)) {
                     printf("Removed programme with UUID '%s' from record lists\n", uuid.str());
@@ -2033,7 +2042,7 @@ int main(int argc, const char *argv[])
                 uint_t j;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    ADVBProg& prog = proglist.GetProgWritable(j);
+                    auto& prog = proglist.GetProgWritable(j);
 
                     printf("Running record success for '%s'\n", prog.GetQuickDescription().str());
                     prog.OnRecordSuccess();
@@ -2046,7 +2055,7 @@ int main(int argc, const char *argv[])
                 uint_t j;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    ADVBProg& prog = proglist.GetProgWritable(j);
+                    auto& prog = proglist.GetProgWritable(j);
 
                     prog.ForceConvertVideo(true);
                 }
@@ -2091,8 +2100,8 @@ int main(int argc, const char *argv[])
                 uint_t j;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    const ADVBProg& prog = proglist.GetProg(j);
-                    AString epid = prog.GetEpisodeID();
+                    const auto& prog = proglist.GetProg(j);
+                    auto epid = AString(prog.GetEpisodeID());
 
                     if ((epid.Left(2) == "EP") && !prog.GetEpisode().valid) {
                         std::vector<AString>& list = programmes[prog.GetTitle()][prog.GetChannel()];
@@ -2121,7 +2130,7 @@ int main(int argc, const char *argv[])
                         size_t i;
                         uint16_t epn = 1;
                         for (i = 0; i < list.size(); i++, epn++) {
-                            const AString& epid = list[i];
+                            const auto& epid = list[i];
 
                             if (episodeids.find(epid) != episodeids.end()) {
                                 if (episodeids[epid] > epn) epn = episodeids[epid];
@@ -2137,11 +2146,11 @@ int main(int argc, const char *argv[])
                 }
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    ADVBProg& prog = proglist.GetProgWritable(j);
-                    AString   epid = prog.GetEpisodeID();
-                    std::map<AString, uint16_t>::iterator it;
+                    auto& prog = proglist.GetProgWritable(j);
+                    auto  epid = AString(prog.GetEpisodeID());
+                    auto  it   = episodeids.find(epid);
 
-                    if ((it = episodeids.find(epid)) != episodeids.end()) {
+                    if (it != episodeids.end()) {
                         prog.SetAssignedEpisode(it->second);
                     }
                 }
@@ -2151,14 +2160,14 @@ int main(int argc, const char *argv[])
                 uint_t   j;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    const ADVBProg& prog = proglist.GetProg(j);
+                    const auto& prog = proglist.GetProg(j);
 
                     if      (prog.GetActualLength() > 0) ms += prog.GetActualLength();
                     else if (prog.GetRecordLength() > 0) ms += prog.GetRecordLength();
                     else                                 ms += prog.GetLength();
                 }
 
-                double hours = (double)ms / (1000.0 * 3600.0);
+                auto hours = (double)ms / (1000.0 * 3600.0);
                 printf("%u programmes, %0.2lf hours, average %0.1lf minutes/programme\n", proglist.Count(), hours, (60.0 * hours) / (double)proglist.Count());
             }
             else if (stricmp(argv[i], "--find-gaps") == 0) {
@@ -2175,7 +2184,7 @@ int main(int argc, const char *argv[])
                     best = list.FindGaps(ADateTime().TimeStamp(true), gaps);
 
                     for (i = 0; i < (uint_t)gaps.size(); i++) {
-                        const ADVBProgList::timegap_t& gap = gaps[i];
+                        const auto& gap = gaps[i];
                         uint_t card = i;
 
                         if (gap.end < ADateTime::MaxDateTime) {
@@ -2218,16 +2227,16 @@ int main(int argc, const char *argv[])
             else if ((stricmp(argv[i], "--check-video-files") == 0) ||
                      (stricmp(argv[i], "--update-duration-and-video-errors") == 0) ||
                      (stricmp(argv[i], "--force-update-duration-and-video-errors") == 0)) {
-                const bool force  = (stricmp(argv[i], "--force-update-duration-and-video-errors") == 0);
-                const bool update = (force || (stricmp(argv[i], "--update-duration-and-video-errors") == 0));
+                const auto force  = (stricmp(argv[i], "--force-update-duration-and-video-errors") == 0);
+                const auto update = (force || (stricmp(argv[i], "--update-duration-and-video-errors") == 0));
                 AString lastuuid;
                 uint_t j;
 
                 for (j = 0; (j < proglist.Count()) && !HasQuit(); j++) {
-                    const ADVBProg& prog = proglist[j];
-                    uint64_t  duration = 0;
-                    uint_t    nerrors  = 0;
-                    bool      updated  = false;
+                    const auto& prog     = proglist[j];
+                    uint64_t    duration = 0;
+                    uint_t      nerrors  = 0;
+                    bool        updated  = false;
 
                     if (force || !update || (prog.GetDuration() == 0)) {
                         printf("Finding duration and video errors in '%s' ('%s' - %u/%u)...\n", prog.GetTitleAndSubtitle().str(), prog.GetArchiveRecordingFilename().str(), j + 1, proglist.Count());
@@ -2255,7 +2264,7 @@ int main(int argc, const char *argv[])
                             // set duration and video errors of all contiguous programmes with the
                             // same UUID
                             for (uint_t k = j; (k < proglist.Count()) && (proglist[k] == prog) && !HasQuit(); k++) {
-                                ADVBProg& prog2 = proglist.GetProgWritable(k);
+                                auto& prog2 = proglist.GetProgWritable(k);
                                 prog2.SetDuration(duration);
                                 prog2.SetVideoErrors(nerrors);
                             }
@@ -2280,7 +2289,7 @@ int main(int argc, const char *argv[])
                             // update all contiguous programmes that have the same UUID
                             for (uint_t k = (uint_t)progindex; (k < recorded.Count()) && (recorded[k] == prog) && !HasQuit(); k++) {
                                 // update programme
-                                ADVBProg& prog2 = recorded.GetProgWritable(k);
+                                auto& prog2 = recorded.GetProgWritable(k);
                                 prog2.SetDuration(duration);
                                 prog2.SetVideoErrors(nerrors);
                             }
@@ -2319,9 +2328,9 @@ int main(int argc, const char *argv[])
                      (stricmp(argv[i], "--hlsstream") == 0) ||
                      (stricmp(argv[i], "--httpstream") == 0) ||
                      (stricmp(argv[i], "--rhttpstream") == 0)) {
-                dvbstreamtype_t type = StreamType_Raw;
-                AString streamtype = argv[i];
-                AString name       = argv[++i];
+                auto type       = StreamType_Raw;
+                auto streamtype = AString(argv[i]);
+                auto name       = AString(argv[++i]);
 
                 if (streamtype == "--stream") {
                     type = StreamType_Video;
@@ -2358,7 +2367,7 @@ int main(int argc, const char *argv[])
             }
             else if (stricmp(argv[i], "--stop-streams") == 0) {
                 std::vector<dvbstream_t> streams;
-                AString pattern = argv[++i];
+                auto pattern = AString(argv[++i]);
 
                 if (StopDVBStreams(pattern, streams)) {
                     for (size_t j = 0; j < streams.size(); j++) {
@@ -2369,7 +2378,7 @@ int main(int argc, const char *argv[])
             }
             else if (stricmp(argv[i], "--stop-stream") == 0) {
                 std::vector<dvbstream_t> streams;
-                AString name = argv[++i];
+                auto name = AString(argv[++i]);
 
                 if (StopDVBStreams(name, streams)) {
                     for (size_t j = 0; j < streams.size(); j++) {
@@ -2379,7 +2388,7 @@ int main(int argc, const char *argv[])
                 else fprintf(stderr, "Failed to stop DVB streams\n");
             }
             else if (stricmp(argv[i], "--describe-pid") == 0) {
-                uint32_t pid = (uint32_t)AString(argv[++i]);
+                auto     pid = (uint32_t)AString(argv[++i]);
                 APIDTree tree(pid);
 
                 if (tree.Valid()) {
@@ -2388,7 +2397,7 @@ int main(int argc, const char *argv[])
                 else fprintf(stderr, "Invalid pid %u\n", pid);
            }
             else if (stricmp(argv[i], "--kill-stream-pid") == 0) {
-                uint32_t pid = (uint32_t)AString(argv[++i]);
+                auto     pid = (uint32_t)AString(argv[++i]);
                 APIDTree tree(pid);
 
                 if (tree.Valid()) {
@@ -2400,11 +2409,11 @@ int main(int argc, const char *argv[])
                 res = (int)proglist.Count();
             }
             else if (stricmp(argv[i], "--drawprogrammes") == 0) {
-                const uint64_t hour = (uint64_t)3600U * (uint64_t)1000U;
-                const uint_t   namewidth = 20;
+                const auto   hour = (uint64_t)3600U * (uint64_t)1000U;
+                const uint_t namewidth = 20;
                 std::map<AString, std::vector<const ADVBProg *> > map;
                 std::map<AString, std::vector<const ADVBProg *> >::iterator it;
-                uint_t scale = (uint_t)AString(argv[++i]);
+                auto   scale = (uint_t)AString(argv[++i]);
                 uint_t j;
 
                 proglist.Sort();
@@ -2437,7 +2446,7 @@ int main(int argc, const char *argv[])
                         printf(AString::Formatify("%%-%us|", namewidth).str(), AString("Channel").Abbreviate(namewidth).str());
                         for (offset = 0U; offset < maxoffset;) {
                             uint64_t dt   = dt0 + ((uint64_t)offset * hour) / scale;
-                            AString  desc = ADateTime(dt).DateToStr();
+                            auto     desc = ADateTime(dt).DateToStr();
                             uint     diff = (int)(scale - ((uint_t)desc.len() % scale));
 
                             if (diff < 1) diff += scale;
@@ -2471,8 +2480,8 @@ int main(int argc, const char *argv[])
                             }
 
                             if (stopoffset > offset) {
-                                uint_t  len  = stopoffset - offset - 1;
-                                AString desc = list[k]->GetTitleAndSubtitle().Abbreviate((int)len);
+                                auto len  = stopoffset - offset - 1;
+                                auto desc = list[k]->GetTitleAndSubtitle().Abbreviate((int)len);
                                 desc += AString(" ").Copies((int)(len - (uint_t)desc.GetCharCount()));
                                 printf("%s|", desc.str());
                                 offset += desc.GetCharCount() + 1;
@@ -2486,32 +2495,32 @@ int main(int argc, const char *argv[])
                 }
             }
             else if (stricmp(argv[i], "--list-config-values") == 0) {
-                AString res = config.ListConfigValues() + "\n" + config.ListLiveConfigValues();
+                auto res = config.ListConfigValues() + "\n" + config.ListLiveConfigValues();
                 printf("%s", res.str());
             }
             else if (stricmp(argv[i], "--config-item") == 0) {
-                AString var = argv[++i];
-                AString val = config.GetConfigItem(var);
+                auto var = AString(argv[++i]);
+                auto val = config.GetConfigItem(var);
                 printf("%s=%s\n", var.str(), val.str());
             }
             else if (stricmp(argv[i], "--user-config-item") == 0) {
-                AString user = argv[++i];
-                AString var  = argv[++i];
-                AString val  = config.GetUserConfigItem(user, var);
+                auto user = AString(argv[++i]);
+                auto var  = AString(argv[++i]);
+                auto val  = config.GetUserConfigItem(user, var);
                 printf("%s:%s=%s\n", user.str(), var.str(), val.str());
             }
             else if (stricmp(argv[i], "--user-category-config-item") == 0) {
-                AString user     = argv[++i];
-                AString category = argv[++i];
-                AString var      = argv[++i];
-                AString val      = config.GetUserSubItemConfigItem(user, category, var);
+                auto user     = AString(argv[++i]);
+                auto category = AString(argv[++i]);
+                auto var      = AString(argv[++i]);
+                auto val      = config.GetUserSubItemConfigItem(user, category, var);
                 printf("%s:%s:%s=%s\n", user.str(), var.str(), category.str(), val.str());
             }
 
 #if EVALTEST
             else if (stricmp(argv[i], "--eval") == 0) {
                 simplevars_t vars;
-                AString      str = argv[++i];
+                auto         str = AString(argv[++i]);
                 AString      errors;
                 AValue       res = 0;
                 AddSimpleFunction("func", &__func);
@@ -2524,9 +2533,9 @@ int main(int argc, const char *argv[])
             }
 #endif
             else if (stricmp(argv[i], "--test-cards-channel") == 0) {
-                const auto&   channels = ADVBChannelList::Get();
-                const AString name     = argv[++i];
-                const auto    *channel = channels.GetChannelByName(name);
+                const auto& channels = ADVBChannelList::Get();
+                const auto  name     = AString(argv[++i]);
+                const auto  *channel = channels.GetChannelByName(name);
 
                 if (channel != NULL) {
                     testcardchannel = name;
@@ -2557,8 +2566,8 @@ int main(int argc, const char *argv[])
                         bool success = true;
                         for (uint_t i = 0; i < config.GetMaxDVBCards(); i++) {
                             uint32_t bytes   = channels.TestCard(config.GetPhysicalDVBCard(i), channel, testcardseconds);
-                            double   rate    = (double)bytes / (1024.0 * (double)testcardseconds);
-                            bool     invalid = (rate < 100.0);
+                            auto     rate    = (double)bytes / (1024.0 * (double)testcardseconds);
+                            auto     invalid = (rate < 100.0);
 
                             printf("Card %u: %0.1fkb/s%s\n", i, rate, invalid ? " **INVALID**" : "");
 
