@@ -1154,8 +1154,8 @@ uint_t ADVBProgList::CombineSplitFilms()
         splitprog.part1prog->SetDesc(AString::Formatify("%s\n\nContaining %s at %s - %s",
                                                         splitprog.part1prog->GetDesc(),
                                                         splitprog.splitprog->GetTitleAndSubtitle().str(),
-                                                        splitprog.splitprog->GetStartDT().DateFormat("%h:%m").str(),
-                                                        splitprog.splitprog->GetStopDT().DateFormat("%h:%m").str()));
+                                                        splitprog.splitprog->GetStartDT().UTCToLocal().DateFormat(ADVBProg::GetTimeFormat()).str(),
+                                                        splitprog.splitprog->GetStopDT().UTCToLocal().DateFormat(ADVBProg::GetTimeFormat()).str()));
 
         // update stop time of first part to be the stop time of the second part
         splitprog.part1prog->SetStop(splitprog.part2prog->GetStop());
