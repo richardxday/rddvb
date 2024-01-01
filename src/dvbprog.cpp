@@ -3505,14 +3505,12 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
     auto        dst                     = GenerateFilename(true);
     const auto  archivedst              = ReplaceFilenameTerms(config.GetRecordingsArchiveDir(), false).CatPath(src.FilePart());
 
-    if (IsConverted() || SameFile(src, dst)) return true;
-
     if (!AStdFile::exists(src)) {
         config.printf("Error: source '%s' does not exist", src.str());
         return false;
     }
 
-    if (!force && AStdFile::exists(dst)) {
+    if (!force && !HasFailed() && AStdFile::exists(dst)) {
         config.printf("Warning: destination '%s' exists, assuming conversion is complete", dst.str());
         SetFilename(dst);
         return true;
@@ -3884,15 +3882,23 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         SetFilename(dst);
 
         UpdateDuration();
-        success = UpdateFileSize();
+        success &= UpdateFileSize();
+    }
 
-        {
-            FlagsSaver saver(this);
-            ClearPostProcessing();
-            ClearRunning();
-            success &= UpdateRecordedList();
+
+    ClearScheduled();
+
+    {
+        FlagsSaver saver(this);
+        ClearRunning();
+        ClearPostProcessing();
+        if (!success) {
+            ADVBProgList::AddToList(config.GetRecordFailuresFile(), *this);
         }
+        success &= UpdateRecordedList();
+    }
 
+    if (success) {
         if (config.ArchiveRecorded()) {
             config.logit("Moving '%s' to archive directory as '%s'", src.str(), archivedst.str());
             success &= MoveFile(src, archivedst);
@@ -3945,7 +3951,9 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
             success = RunCommand(cmd);
         }
     }
-    else config.logit("Process failed!");
+    else {
+        config.logit("Process failed!");
+    }
 
     return success;
 }
@@ -4060,7 +4068,6 @@ bool ADVBProg::GetFlag(const AString& name) const
 
 bool ADVBProg::ConvertVideo(bool verbose, bool cleanup, bool force)
 {
-    const auto& config = ADVBConfig::Get();
     auto success = ConvertVideoEx(verbose, cleanup, force);
 
     if (success) {
@@ -4068,15 +4075,6 @@ bool ADVBProg::ConvertVideo(bool verbose, bool cleanup, bool force)
     }
     else {
         OnRecordFailure();
-
-        ClearScheduled();
-        SetRecordFailed();
-
-        {
-            FlagsSaver saver(this);
-            ClearRunning();
-            ADVBProgList::AddToList(config.GetRecordFailuresFile(), *this);
-        }
     }
 
     return success;

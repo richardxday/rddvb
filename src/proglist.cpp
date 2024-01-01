@@ -3248,11 +3248,17 @@ bool ADVBProgList::GetAndConvertRecordings()
         if (processinglist.FindUUID(prog) != NULL) {
             config.printf("File %u/%u - '%s' is already being processed", i + 1, convertlist.Count(), prog.GetQuickDescription().str());
         }
-        else if (((pprog = reclist.FindUUID(prog)) != NULL) && pprog->IsConverted()) {
-            config.printf("File %u/%u - '%s' has already been converted", i + 1, convertlist.Count(), prog.GetQuickDescription().str());
+        else if (((pprog = reclist.FindUUID(prog)) != NULL) && pprog->IsConverted() && !pprog->HasFailed()) {
+            config.printf("File %u/%u - '%s' has already successfully been converted", i + 1, convertlist.Count(), prog.GetQuickDescription().str());
         }
         else {
             config.printf("Converting file %u/%u - '%s':", i + 1, convertlist.Count(), prog.GetQuickDescription().str());
+
+            if (prog.IsConverted()) {
+                const auto filename = prog.GetTempRecordingFilename();
+                config.logit("Setting filename back to '%s' for conversion", filename.str());
+                prog.SetFilename(filename);
+            }
 
             if (prog.ConvertVideo(true)) {
                 converted++;
