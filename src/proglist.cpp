@@ -3209,26 +3209,27 @@ bool ADVBProgList::GetAndConvertRecordings()
 
     ADVBProgList convertlist;
     for (i = 0; i < reclist.Count(); i++) {
-        const auto& prog = reclist.GetProg(i);
+        const auto& prog     = reclist.GetProg(i);
+        const auto  filename = prog.GetTempRecordingFilename();
+        uint_t failures = 0;
 
-        if (!prog.IsConverted() &&
-            AStdFile::exists(prog.GetFilename())) {
-            uint_t failures;
+        // if unconverted programme exists and the number of failed conversion attempts is less than 3, convert programme
+        if (AStdFile::exists(filename) &&
+            ((failures = failureslist.CountOccurances(prog)) < 3)) {
+            if (prog.IsOnceOnly() && prog.IsRecordingComplete() && !config.IsRecordingSlave()) {
+                if (ADVBPatterns::DeletePattern(prog.GetUser(), prog.GetPattern())) {
+                    const auto rescheduleoption = config.RescheduleAfterDeletingPattern(prog.GetUser(), prog.GetCategory());
 
-            if ((failures = failureslist.CountOccurances(prog)) < 2) {
-                if (prog.IsOnceOnly() && prog.IsRecordingComplete() && !config.IsRecordingSlave()) {
-                    if (ADVBPatterns::DeletePattern(prog.GetUser(), prog.GetPattern())) {
-                        const auto rescheduleoption = config.RescheduleAfterDeletingPattern(prog.GetUser(), prog.GetCategory());
+                    config.printf("Deleted pattern '%s', %srescheduling...", prog.GetPattern(), rescheduleoption ? "" : "NOT ");
 
-                        config.printf("Deleted pattern '%s', %srescheduling...", prog.GetPattern(), rescheduleoption ? "" : "NOT ");
-
-                        reschedule |= rescheduleoption;
-                    }
+                    reschedule |= rescheduleoption;
                 }
-
-                convertlist.AddProg(prog);
             }
-            else config.printf("*NOT* converting %s - failed %u times already", prog.GetQuickDescription().str(), failures);
+
+            convertlist.AddProg(prog);
+        }
+        else if (AStdFile::exists(filename)) {
+            config.printf("*NOT* converting %s - failed %u times already (file '%s')", prog.GetQuickDescription().str(), failures, filename.str());
         }
     }
 
