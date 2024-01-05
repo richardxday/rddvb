@@ -1332,7 +1332,7 @@ AString ADVBConfig::GetEncodeAudioOnlyArgs(const AString& user, const AString& c
 
 AString ADVBConfig::GetEncodeAspect(const AString& user, const AString& programme) const
 {
-    return GetUserSubItemConfigItem(user, "aspect", programme, "16:9");
+    return GetUserSubItemConfigItem(user, programme, "aspect", "16:9");
 }
 
 AString ADVBConfig::GetEncodeLogLevel(const AString& user, bool verbose) const
