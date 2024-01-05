@@ -407,7 +407,7 @@ public:
     AString GetEncodeArgs(const AString& user, const AString& category)          const; // extractconfig("<user>", "<category>")
     AString GetUserEncodeArgs(const AString& user, const AString& category)      const; // extractconfig("<user>", "<category>")
     AString GetEncodeAudioOnlyArgs(const AString& user, const AString& category) const; // extractconfig("<user>", "<category>")
-
+    AString GetEncodeAspect(const AString& user, const AString& programme)       const; // extractconfig("<user>", "<programme>")
     AString GetEncodeLogLevel(const AString& user, bool verbose) const;
 
     AString GetRelativePath(const AString& filename) const;

@@ -3557,7 +3557,7 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
     if (!config.GetUseAdvancedEncoding()) {
         // use simple one-shot encoding, doesn't require ProjectX but is fixed at 16:9 and does not remove 4:3 sections
-        AString bestaspect = "16:9";
+        AString bestaspect = config.GetEncodeAspect(GetUser(), GetTitle());
         AString inputfiles;
 
         inputfiles.printf("-i \"%s\"", src.str());
