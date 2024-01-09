@@ -412,6 +412,7 @@ public:
         Flag_postprocessfailed,
         Flag_conversionfailed,
         Flag_archivedhassubtitles,
+        Flag_force43aspect,
 
         Flag_count,
 
@@ -496,9 +497,8 @@ public:
     void   SetIgnoreLateStart()         {SetFlag(Flag_ignorelatestart);}
     void   ClearIgnoreLateStart()       {ClrFlag(Flag_ignorelatestart);}
     bool   IgnoreLateStart()      const {return GetFlag(Flag_ignorelatestart);}
-    void   SetRecordIfMissing()         {SetFlag(Flag_recordifmissing);}
-    void   ClearRecordIfMissing()       {ClrFlag(Flag_recordifmissing);}
     bool   RecordIfMissing()      const {return GetFlag(Flag_recordifmissing);}
+    bool   Force43Aspect()        const {return GetFlag(Flag_force43aspect);}
     bool   IsHighVideoErrorRate() const;
     bool   IsVideoErrorRateOk()   const {return !IsHighVideoErrorRate();}
     bool   DoesArchiveHaveSubtitles() const {return GetFlag(Flag_archivedhassubtitles);}

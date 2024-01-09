@@ -134,6 +134,7 @@ const ADVBProg::field_t ADVBProg::fields[] = {
     DEFINE_FLAG_ASSIGN(partial,         Flag_partialpattern,           "Pattern is partial and not complete"),
     DEFINE_FLAG_ASSIGN(ignorelatestart, Flag_ignorelatestart,          "Allow programme to be recorded even if is late starting"),
     DEFINE_FLAG_ASSIGN(recordifmissing, Flag_recordifmissing,          "Allow programme to be recorded if it has been recorded already but the file doesn't exist"),
+    DEFINE_FLAG_ASSIGN(force43aspect,   Flag_force43aspect,            "Force 4:3 aspect"),
 
     DEFINE_ASSIGN(pri,                  pri,                           sint8_t,  "Scheduling priority"),
     DEFINE_ASSIGN(score,                score,                         sint16_t, "Record score"),
@@ -3557,8 +3558,13 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
 
     if (!config.GetUseAdvancedEncoding()) {
         // use simple one-shot encoding, doesn't require ProjectX but is fixed at 16:9 and does not remove 4:3 sections
-        AString bestaspect = config.GetEncodeAspect(GetUser(), GetTitle());
+        AString bestaspect;
         AString inputfiles;
+
+        if (Force43Aspect()) {
+            bestaspect = "4:3";
+        }
+        else bestaspect = config.GetEncodeAspect(GetUser(), GetTitle());
 
         inputfiles.printf("-i \"%s\"", src.str());
 
