@@ -2901,8 +2901,8 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
                                     std::min(info3.WriteTime, info4.WriteTime))) > ADateTime::MinDateTime) &&
              ((::GetFileInfo(config.GetRecordedFile(), &info1) && (info1.WriteTime > writetime)) ||
               (::GetFileInfo(config.GetScheduledFile(), &info1) && (info1.WriteTime > writetime))))) {
-            recordedlist.ReadFromBinaryFile(config.GetRecordedFile());
             recordedlist.ReadFromBinaryFile(config.GetScheduledFile());
+            recordedlist.ReadFromBinaryFile(config.GetRecordedFile(), true, true);      ///< ensure overlaps are removed
             scheduledlist.ReadFromBinaryFile(config.GetScheduledFile());
         }
     }
@@ -3031,10 +3031,18 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
                 uint_t i;
 
                 for (i = 0; i < NUMBEROF(copyfiles); i++) {
-                    auto destfilename = copyfiles[i].Prefix() + datesuffix;
+                    const auto& srcfilename  = copyfiles[i];
+                    const auto  destfilename = srcfilename.Prefix() + datesuffix;
 
+                    // correct SVG error in generated files
+                    // replace "]]>" with "]""]"">" to avoid it be mistaken for <!CDATA[[ close
+                    const auto cmd = AString::Formatify("sed -E -i \"s/\\\"\\]\\]>\\\"/\\\"]\\\"\\\"]\\\"\\\">\\\"/g\" \"%s\"", srcfilename.str());
+                    if (system(cmd) != 0) {
+                        config.logit("Command '%s' failed", cmd.str());
+                        config.printf("SVG correction failed for '%s'", srcfilename.str());
+                    }
                     if (!AStdFile::exists(destfilename)) {
-                        CopyFile(copyfiles[i], destfilename);
+                        CopyFile(srcfilename, destfilename);
                     }
                 }
             }
