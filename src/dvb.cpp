@@ -2608,24 +2608,26 @@ int main(int argc, const char *argv[])
                             if (ntests > 0) {
                                 usleep(1000000);
                             }
-                        } while (ntests > 0);
+                        } while (!HasQuit() && (ntests > 0));
 
-                        std::vector<uint_t> errors(filenames.size());
-                        for (uint_t card = 0; card < (uint_t)filenames.size(); card++) {
-                            AString str;
-                            if (str.ReadFromFile(filenames[card])) {
-                                errors[card] = (uint_t)str;
+                        if (!HasQuit()) {
+                            std::vector<uint_t> errors(filenames.size());
+                            for (uint_t card = 0; card < (uint_t)filenames.size(); card++) {
+                                AString str;
+                                if (str.ReadFromFile(filenames[card])) {
+                                    errors[card] = (uint_t)str;
 
-                                const double rate     = (double)errors[card] / (double)(testcardseconds * 60);
-                                const bool   invalid  = ((errors[card] == 0) || (rate >= config.GetVideoErrorRateThreshold("", "")));
+                                    const double rate     = (double)errors[card] / (double)(testcardseconds * 60);
+                                    const bool   invalid  = ((errors[card] == 0) || (rate >= config.GetVideoErrorRateThreshold("", "")));
 
-                                printf("Card %u: %0.2f errors/min (%u in total)%s\n", card, rate, errors[card], invalid ? " **INVALID**" : "");
+                                    printf("Card %u: %0.2f errors/min (%u in total)%s\n", card, rate, errors[card], invalid ? " **INVALID**" : "");
 
-                                if (invalid) {
-                                    success = false;
+                                    if (invalid) {
+                                        success = false;
+                                    }
                                 }
+                                remove(filenames[card]);
                             }
-                            remove(filenames[card]);
                         }
 #endif
 
