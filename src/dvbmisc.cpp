@@ -457,7 +457,13 @@ uint32_t TestCard(uint_t card, uint32_t freq, const AString& pidlist, uint_t sec
     const auto  logfile = config.GetLogFile(ADateTime().GetDays());
     AString cmd;
 
-    cmd.printf("dvbstream -c %u -f %u %s -n %u -o 2>>\"%s\" | wc -c", card, freq, pidlist.str(), seconds, logfile.str());
+#if OLD_STYLE_TEST_CARDS
+    cmd.printf("%s -c %u -f %u %s -n %u -o 2>>\"%s\" | wc -c", config.GetDVBStreamCommand().str(), card, freq, pidlist.str(), seconds, logfile.str());
+#else
+    cmd.printf("%s -c %u -f %u %s -n %u -o 2>>\"%s\" | %s",
+               config.GetDVBStreamCommand().str(), card, freq, pidlist.str(), seconds, logfile.str(),
+               config.GetVideoErrorCheckCommand().SearchAndReplace("{filename}", "-").str());
+#endif
 
     return (uint32_t)RunCommandAndGetResult(cmd);
 }

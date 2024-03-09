@@ -229,6 +229,7 @@ int main(int argc, const char *argv[])
         {"--test-cards-channel",                    "<channel>",                        "Channel used for --test-cards"},
         {"--test-cards-seconds",                    "<seconds>",                        "Amount of time in seconds to collect data for for --test-cards"},
         {"--test-cards",                            "",                                 "Test each DVB card to ensure card is working correctly"},
+        {"--test-card",                             "<card>",                           "Test DVB card to ensure card is working correctly"},
         {"--return-count",                          "",                                 "Return programme list count in error code"},
         {"--combine-split-films",                   "",                                 "Combine films split by news programme"},
     };
@@ -2560,25 +2561,73 @@ int main(int argc, const char *argv[])
                     testcardremotecmd.printf(" --test-cards-channel \"%s\" --test-cards-seconds %u --test-cards", testcardchannel.str(), testcardseconds);
                 }
                 else if (!testcardsuccess) {
-                    const auto&  channels = ADVBChannelList::Get();
-                    const auto   *channel = channels.GetChannelByName(testcardchannel);
+                    const auto& channels = ADVBChannelList::Get();
+                    const auto  *channel = channels.GetChannelByName(testcardchannel);
 
                     if (channel != NULL) {
                         // map DVB cards
                         (void)config.GetPhysicalDVBCard(0);
 
+                        AString basecmd;
+                        basecmd.printf("dvb --test-cards-channel \"%s\" --test-cards-seconds %u",
+                                       testcardchannel.str(), testcardseconds);
+
                         bool success = true;
-                        for (uint_t i = 0; i < config.GetMaxDVBCards(); i++) {
-                            uint32_t bytes   = channels.TestCard(config.GetPhysicalDVBCard(i), channel, testcardseconds);
+                        std::vector<AString> filenames(config.GetMaxDVBCards());
+                        for (uint_t card = 0; card < (uint_t)filenames.size(); card++) {
+#if OLD_STYLE_TEST_CARDS
+                            uint32_t bytes   = channels.TestCard(config.GetPhysicalDVBCard(card), channel, testcardseconds);
                             auto     rate    = (double)bytes / (1024.0 * (double)testcardseconds);
                             auto     invalid = (rate < 100.0);
 
-                            printf("Card %u: %0.1fkb/s%s\n", i, rate, invalid ? " **INVALID**" : "");
+                            printf("Card %u: %0.1fkb/s%s\n", card, rate, invalid ? " **INVALID**" : "");
 
                             if (invalid) {
                                 success = false;
                             }
+#else
+                            filenames[card] = config.GetTempFile("carderrors", ".txt");
+                            remove(filenames[card]);
+
+                            printf("Starting %u seconds test on card %u...\n", testcardseconds, card);
+
+                            AString cmd;
+                            cmd.printf("%s --test-card %u >\"%s\" &", basecmd.str(), card, filenames[card].str());
+                            success &= (system(cmd) == 0);
+#endif
                         }
+
+#if !OLD_STYLE_TEST_CARDS
+                        printf("Waiting until all tests complete...\n");
+
+                        uint_t ntests = 0;
+                        do {
+                            AString cmd;
+                            cmd.printf("pgrep -f \"%s\" | wc -l", basecmd.str());
+                            ntests = (uint_t)RunCommandAndGetResult(cmd);
+                            if (ntests > 0) {
+                                usleep(1000000);
+                            }
+                        } while (ntests > 0);
+
+                        std::vector<uint_t> errors(filenames.size());
+                        for (uint_t card = 0; card < (uint_t)filenames.size(); card++) {
+                            AString str;
+                            if (str.ReadFromFile(filenames[card])) {
+                                errors[card] = (uint_t)str;
+
+                                const double rate     = (double)errors[card] / (double)(testcardseconds * 60);
+                                const bool   invalid  = ((errors[card] == 0) || (rate >= config.GetVideoErrorRateThreshold("", "")));
+
+                                printf("Card %u: %0.2f errors/min (%u in total)%s\n", card, rate, errors[card], invalid ? " **INVALID**" : "");
+
+                                if (invalid) {
+                                    success = false;
+                                }
+                            }
+                            remove(filenames[card]);
+                        }
+#endif
 
                         testcardsuccess   = success;
                         testcardperformed = true;
@@ -2587,6 +2636,14 @@ int main(int argc, const char *argv[])
                         fprintf(stderr, "Unknown channel '%s'\n", testcardchannel.str());
                     }
                 }
+            }
+            else if (stricmp(argv[i], "--test-card") == 0) {
+                const auto   card     = (uint_t)AString(argv[++i]);
+                const auto&  channels = ADVBChannelList::Get();
+                const auto   *channel = channels.GetChannelByName(testcardchannel);
+                const auto   errors   = channels.TestCard(config.GetPhysicalDVBCard(card), channel, testcardseconds);
+
+                printf("%u\n", errors);
             }
             else if (stricmp(argv[i], "--combine-split-films") == 0)
             {

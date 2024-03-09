@@ -480,7 +480,7 @@ void ADVBConfig::MapDVBCards()
 
     dvbcards.clear();
 
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < MaxDVBCards; i++) {
         AString defname = ".+";
         AString cardname;
         sint_t  card = -1;
@@ -493,10 +493,12 @@ void ADVBConfig::MapDVBCards()
         else break;
     }
 
+#if 0
     printf("DVB card mapping:");
     for (i = 0; i < dvbcards.size(); i++) {
         printf("Virtual card %u -> physical card %u", i, dvbcards[i]);
     }
+#endif
 }
 
 uint_t ADVBConfig::GetPhysicalDVBCard(uint_t n, bool forcemapping) const

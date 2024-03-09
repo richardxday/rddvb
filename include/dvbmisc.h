@@ -7,6 +7,8 @@
 #include <rdlib/misc.h>
 #include <rdlib/strsup.h>
 
+#define OLD_STYLE_TEST_CARDS 0
+
 extern AString CatPath(const AString& dir1, const AString& dir2);
 
 extern uint64_t JSONTimeOffset(uint64_t dt);
