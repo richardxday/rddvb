@@ -1834,7 +1834,15 @@ uint_t ADVBProgList::SchedulePatterns(const ADateTime& starttime, bool commit)
             ADVBProgList list;
             list.ModifyFromRecordingSlave(config.GetRecordedFile(), ADVBProgList::Prog_Add);
             GetRecordingListFromRecordingSlave();
-            GetFileFromRecordingSlave(config.GetDVBChannelsFile());
+            // only fetch channels.dat file if it exists locally
+            if (AStdFile::exists(config.GetDVBChannelsFile())) {
+                GetFileFromRecordingSlave(config.GetDVBChannelsFile());
+            }
+            // fetch channels.json if it exists locally or channels.dat doesn't exist
+            if (AStdFile::exists(config.GetDVBChannelsJSONFile()) ||
+                !AStdFile::exists(config.GetDVBChannelsFile())) {
+                GetFileFromRecordingSlave(config.GetDVBChannelsJSONFile());
+            }
         }
 
         config.logit("Loading listings from '%s'", filename.str());
