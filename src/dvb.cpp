@@ -2603,7 +2603,7 @@ int main(int argc, const char *argv[])
                         uint_t ntests = 0;
                         do {
                             AString cmd;
-                            cmd.printf("pgrep -f \"%s\" | wc -l", basecmd.str());
+                            cmd.printf("pgrep -f \"%s\" | wc -l", basecmd.Escapify().str());
                             ntests = (uint_t)RunCommandAndGetResult(cmd);
                             if (ntests > 0) {
                                 usleep(1000000);
