@@ -2568,9 +2568,8 @@ int main(int argc, const char *argv[])
                         // map DVB cards
                         (void)config.GetPhysicalDVBCard(0);
 
-                        AString basecmd;
-                        basecmd.printf("dvb --test-cards-channel \"%s\" --test-cards-seconds %u",
-                                       testcardchannel.str(), testcardseconds);
+                        AString basecmd = AString::Formatify("dvb --test-cards-channel \"%s\" --test-cards-seconds %u {cardarg}",
+                                                             testcardchannel.str(), testcardseconds);
 
                         bool success = true;
                         std::vector<AString> filenames(config.GetMaxDVBCards());
@@ -2591,8 +2590,7 @@ int main(int argc, const char *argv[])
 
                             printf("Starting %u seconds test on card %u...\n", testcardseconds, card);
 
-                            AString cmd;
-                            cmd.printf("%s --test-card %u >\"%s\" &", basecmd.str(), card, filenames[card].str());
+                            AString cmd = AString::Formatify("%s >\"%s\" &", basecmd.SearchAndReplace("{cardarg}", AString::Formatify("--test-card %u", card)).str(), filenames[card].str());
                             success &= (system(cmd) == 0);
 #endif
                         }
@@ -2601,9 +2599,8 @@ int main(int argc, const char *argv[])
                         printf("Waiting until all tests complete...\n");
 
                         uint_t ntests = 0;
+                        AString cmd = AString::Formatify("pgrep -f \"%s\" | wc -l", basecmd.SearchAndReplace("{cardarg}", "--test-card [0-9]+").SearchAndReplace("\"", "").str());
                         do {
-                            AString cmd;
-                            cmd.printf("pgrep -f \"%s\" | wc -l", basecmd.Escapify().str());
                             ntests = (uint_t)RunCommandAndGetResult(cmd);
                             if (ntests > 0) {
                                 usleep(1000000);
