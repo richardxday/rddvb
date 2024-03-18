@@ -2614,7 +2614,7 @@ int main(int argc, const char *argv[])
                                 if (str.ReadFromFile(filenames[card])) {
                                     errors[card] = (uint_t)str;
 
-                                    const double rate     = (double)errors[card] / (double)(testcardseconds * 60);
+                                    const double rate     = (double)errors[card] / ((double)testcardseconds / 60.0);
                                     const bool   invalid  = ((errors[card] == 0) || (rate >= config.GetVideoErrorRateThreshold("", "")));
 
                                     printf("Card %u: %0.2f errors/min (%u in total)%s\n", card, rate, errors[card], invalid ? " **INVALID**" : "");
