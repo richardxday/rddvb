@@ -3577,7 +3577,11 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         AString bestaspect;
         AString inputfiles;
 
-        config.printf("'%s': duration %s (min duration %s)", src.str(), AString("%;ms").Arg(duration).str(), AString("%;ms").Arg(minduration).str());
+        config.printf("'%s': duration %s (min duration %s, diff %s)",
+                      src.str(),
+                      AString("%;ms").Arg(duration).str(),
+                      AString("%;ms").Arg(minduration).str(),
+                      AString("%;ms").Arg((sint64_t)(duration - minduration)).str());
 
         if (Force43Aspect()) {
             bestaspect = "4:3";
@@ -3598,7 +3602,11 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         std::vector<AString>   subtitlefiles;
         size_t i;
 
-        config.printf("'%s': duration %s (min duration %s)", src.str(), AString("%;ms").Arg(duration).str(), AString("%;ms").Arg(minduration).str());
+        config.printf("'%s': duration %s (min duration %s, diff %s)",
+                      src.str(),
+                      AString("%;ms").Arg(duration).str(),
+                      AString("%;ms").Arg(minduration).str(),
+                      AString("%;ms").Arg((sint64_t)(duration - minduration)).str());
 
         if (AStdFile::exists(src)) {
             success &= RunCommand(AString::Formatify("nice projectx -ini %s/X.ini \"%s\"", config.GetConfigDir().str(), src.str()), !verbose);
