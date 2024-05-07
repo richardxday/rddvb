@@ -3545,6 +3545,13 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
     ADVBProgList::AddToList(config.GetProcessingFile(), *this);
 
     ADateTime now;
+    auto      durationstr = RunCommandAndGetResult(AString::Formatify("ffprobe \"%s\" 2>&1 | grep Duration | sed -E \"s/^ +Duration: ([0-9:\\.]+),.+/\\1/\"", src.str()));
+    uint_t    hours, minutes;
+    double    seconds;
+    uint64_t  duration;
+    // calculate minimum expected duration
+    uint64_t  maxdurationloss = (uint64_t)config.GetConfigItem("maxdurationloss", "5") * (uint64_t)1000;
+    uint64_t  minduration     = std::max(GetActualLength(), maxdurationloss) - maxdurationloss;
     auto      basename = src.Prefix();
     auto      logfile  = basename + "_log.txt";
     auto      proccmd  = config.GetEncodeCommand(GetUser(), GetModifiedCategory());
@@ -3556,10 +3563,21 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         dircreationerrors.printf("Failed to create directory '%s' for destination file", dst.PathPart().str());
     }
 
-    if (!config.GetUseAdvancedEncoding()) {
+    if (sscanf(durationstr, "%u:%u:%lf", &hours, &minutes, &seconds) < 3) {
+        config.printf("Source '%s': failed to extract duration from '%s'", src.str(), durationstr.str());
+        success = false;
+    }
+    else if ((duration = ((uint64_t)(hours * 3600 + minutes * 60) * (uint64_t)1000 +
+                          (uint64_t)(seconds * 1000.0))) < minduration) {
+        config.printf("Source '%s' is too short (%s vs %s)", src.str(), AString("%;ms").Arg(duration).str(), AString("%;ms").Arg(minduration).str());
+        success = false;
+    }
+    else if (!config.GetUseAdvancedEncoding()) {
         // use simple one-shot encoding, doesn't require ProjectX but is fixed at 16:9 and does not remove 4:3 sections
         AString bestaspect;
         AString inputfiles;
+
+        config.printf("'%s': duration %s (min duration %s)", src.str(), AString("%;ms").Arg(duration).str(), AString("%;ms").Arg(minduration).str());
 
         if (Force43Aspect()) {
             bestaspect = "4:3";
@@ -3580,12 +3598,10 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         std::vector<AString>   subtitlefiles;
         size_t i;
 
+        config.printf("'%s': duration %s (min duration %s)", src.str(), AString("%;ms").Arg(duration).str(), AString("%;ms").Arg(minduration).str());
+
         if (AStdFile::exists(src)) {
-            AString cmd;
-
-            cmd.printf("nice projectx -ini %s/X.ini \"%s\"", config.GetConfigDir().str(), src.str());
-
-            success &= RunCommand(cmd, !verbose);
+            success &= RunCommand(AString::Formatify("nice projectx -ini %s/X.ini \"%s\"", config.GetConfigDir().str(), src.str()), !verbose);
             remove(basename + ".sup.IFO");
         }
 
@@ -3890,7 +3906,6 @@ bool ADVBProg::ConvertVideoEx(bool verbose, bool cleanup, bool force)
         UpdateDuration();
         success &= UpdateFileSize();
     }
-
 
     ClearScheduled();
 
