@@ -3030,6 +3030,7 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
             fp.close();
 
             if (system("gnuplot " + gnpfile) == 0) {
+                static const char *sedcmd = "sed -E -i \"s/\\\"\\]\\]>\\\"/\\\"]\\\"\\\"]\\\"\\\">\\\"/g\" \"%s\"";
                 const auto    datesuffix = dt.DateFormat("-%Y-%M-%D." + graphsuffix);
                 const AString copyfiles[] = {
                     graphfileall,
@@ -3038,13 +3039,21 @@ bool ADVBProgList::CreateGraphs(const AString& _graphsuffix)
                 };
                 uint_t i;
 
+                {
+                    const auto cmd = AString::Formatify(sedcmd, graphfilepreview.str());
+                    if (system(cmd) != 0) {
+                        config.logit("Command '%s' failed", cmd.str());
+                        config.printf("SVG correction failed for '%s'", graphfilepreview.str());
+                    }
+                }
+
                 for (i = 0; i < NUMBEROF(copyfiles); i++) {
                     const auto& srcfilename  = copyfiles[i];
                     const auto  destfilename = srcfilename.Prefix() + datesuffix;
 
                     // correct SVG error in generated files
                     // replace "]]>" with "]""]"">" to avoid it be mistaken for <!CDATA[[ close
-                    const auto cmd = AString::Formatify("sed -E -i \"s/\\\"\\]\\]>\\\"/\\\"]\\\"\\\"]\\\"\\\">\\\"/g\" \"%s\"", srcfilename.str());
+                    const auto cmd = AString::Formatify(sedcmd, srcfilename.str());
                     if (system(cmd) != 0) {
                         config.logit("Command '%s' failed", cmd.str());
                         config.printf("SVG correction failed for '%s'", srcfilename.str());
