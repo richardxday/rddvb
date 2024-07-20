@@ -182,9 +182,9 @@ $(APACHEDST)/%: $(APACHESRC)/%.in
 all: $(DEFAULTCONFIG)
 
 ifdef DEBUG
-RUNDVB=$(DEBUG_BINDIR)/dvb --no-report-errors
+RUNDVB=LD_LIBRARY_PATH=$(DEBUG_LIBDIR) $(DEBUG_BINDIR)/dvb --no-report-errors
 else
-RUNDVB=$(RELEASE_BINDIR)/dvb --no-report-errors
+RUNDVB=LD_LIBRARY_PATH=$(RELEASE_LIBDIR) $(RELEASE_BINDIR)/dvb --no-report-errors
 endif
 
 include $(MAKEFILEDIR)/makefile.post
