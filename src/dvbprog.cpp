@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <map>
 #include <algorithm>
@@ -2916,7 +2917,7 @@ void ADVBProg::Record()
             }
         }
 
-#if 0   // repeated recording could be because of problms with the previous one, may want to make this more intelligent in future
+#if 0   // repeated recording could be because of problems with the previous one, may want to make this more intelligent in future
         if (record) {
             if (!AllowRepeats() && !RecordIfMissing()) {
                 const ADVBProg *recordedprog = NULL;
@@ -2964,6 +2965,10 @@ void ADVBProg::Record()
 
             config.printf("--------------------------------------------------------------------------------");
             data->actstart = ADateTime().TimeStamp(true);
+            auto testcmd = AString::Formatify("dvb --check-recording-programme %s \"%s\" &", AValue(getpid()).ToString().str(), filename.str());
+            if (system(testcmd) != 0) {
+                config.logit("Failed to run recording test command '%s'", testcmd.str());
+            }
             config.writetorecordlog("start %s", Base64Encode().str());
             res = system(cmd);
             data->actstop = ADateTime().TimeStamp(true);

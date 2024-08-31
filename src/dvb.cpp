@@ -198,6 +198,7 @@ int main(int argc, const char *argv[])
         {"--force-convert-files",                   "",                                 "convert files in current list, even if they have already been converted"},
         {"--update-recordings-list",                "",                                 "Pull list of programmes being recorded"},
         {"--check-recording-now",                   "",                                 "Check to see if programmes that should be being recording are recording"},
+        {"--check-recording-programme",             "<pid> <filename>",                 "Check <filename> to ensure it is being written to, if not enough data has been written, kill PID <pid>"},
         {"--calc-trend",                            "<start-date>",                     "Calculate average programmes per day and trend line based on programmes after <start-date> in current list"},
         {"--gen-graphs",                            "",                                 "Generate graphs from recorded data"},
         {"--assign-episodes",                       "",                                 "Assign episodes to current list"},
@@ -2070,6 +2071,27 @@ int main(int argc, const char *argv[])
             }
             else if (stricmp(argv[i], "--check-recording-now") == 0) {
                 ADVBProgList::CheckRecordingNow();
+            }
+            else if (stricmp(argv[i], "--check-recording-programme") == 0) {
+                const auto pid      = (__pid_t)AString(argv[++i]);
+                const auto filename = AString(argv[++i]);
+                FILE_INFO  fileinfo;
+
+                config.logit("Testing file '%s' (pid %s) for data, waiting 5 minutes", filename.str(), AValue(pid).ToString().str());
+                usleep((uint_t)5 * (uint_t)60 * (uint_t)1000000);
+
+                config.logit("Waited 5 minutes, testing file '%s'", filename.str());
+                if (GetFileInfo(filename, &fileinfo)) {
+                    uint_t datarate = (uint_t)(fileinfo.FileSize / (5 * 60));
+                    config.logit("File '%s' is %s bytes long and has been written at a rate of %u bytes per second", filename.str(), AValue(fileinfo.FileSize).ToString().str(), datarate);
+                    // if data rate is less than 150kb/s, kill the process now
+                    if (datarate < (150 * 1024)) {
+                        config.logit("Recording of '%s' not valid, killing PID %s", filename.str(), AValue(pid).ToString().str());
+                        if (system(AString::Formatify("kill %s", AValue(pid).ToString().str())) != 0) {
+                            config.logit("Failed to run kill command for PID %s", AValue(pid).ToString().str());
+                        }
+                    }
+                }
             }
             else if (stricmp(argv[i], "--calc-trend") == 0) {
                 ADateTime startdate(argv[++i]);
