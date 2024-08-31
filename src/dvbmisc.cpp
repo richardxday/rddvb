@@ -328,7 +328,7 @@ bool FindActiveStreamingProcesses(std::vector<dvbstreamprocs_t>& procs)
 AString RunCommandAndGetResult(const AString& cmd)
 {
     const auto& config = ADVBConfig::Get();
-    auto    tempfile = config.GetTempFile("command", ".txt");
+    const auto  tempfile = config.GetTempFile("command", ".txt");
     AString res;
 
     if (system(cmd + " >" + tempfile) == 0) {
@@ -342,12 +342,12 @@ AString RunCommandAndGetResult(const AString& cmd)
 
 AString GetCommandFromPID(uint32_t pid)
 {
-    auto    commands = RunCommandAndGetResult("pgrep -a .+");
+    const auto commands = RunCommandAndGetResult("pgrep -a .+");
     AString res;
     int i, n = commands.CountLines();
 
     for (i = 0; i < n; i++) {
-        auto cmd = commands.Line(i);
+        const auto cmd = commands.Line(i);
 
         if ((uint32_t)cmd.Word(0) == pid) {
             res = cmd.Words(1);

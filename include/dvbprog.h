@@ -601,6 +601,7 @@ public:
 
     AString GetConvertedDestinationDirectory() const;
 
+    static AString GenerateBasicStreamCommand(uint_t card, uint_t nsecs, const AString& pids);
     static AString GenerateStreamCommand(uint_t card, uint_t nsecs, const AString& pids, const AString& logfile = "/dev/null");
 
     static bool FilePatternExists(const AString& filename);

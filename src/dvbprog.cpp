@@ -2700,16 +2700,26 @@ bool ADVBProg::GetRecordPIDs(AString& pids, bool update) const
     return channellist.GetPIDList(config.GetPhysicalDVBCard(GetDVBCard()), channel, pids, update);
 }
 
-AString ADVBProg::GenerateStreamCommand(uint_t card, uint_t nsecs, const AString& pids, const AString& logfile)
+AString ADVBProg::GenerateBasicStreamCommand(uint_t card, uint_t nsecs, const AString& pids)
 {
     const auto& config = ADVBConfig::Get();
     AString cmd;
 
-    cmd.printf("nice -10 %s -c %u -n %u -f %s -o 2>>\"%s\"",
+    cmd.printf("%s -c %u -n %u -f %s",
                config.GetDVBStreamCommand().str(),
                config.GetPhysicalDVBCard(card),
                nsecs,
-               pids.str(),
+               pids.str());
+
+    return cmd;
+}
+
+AString ADVBProg::GenerateStreamCommand(uint_t card, uint_t nsecs, const AString& pids, const AString& logfile)
+{
+    AString cmd;
+
+    cmd.printf("nice -10 %s -o 2>>\"%s\"",
+               GenerateBasicStreamCommand(card, nsecs, pids).str(),
                logfile.str());
 
     return cmd;
@@ -2965,7 +2975,7 @@ void ADVBProg::Record()
 
             config.printf("--------------------------------------------------------------------------------");
             data->actstart = ADateTime().TimeStamp(true);
-            auto testcmd = AString::Formatify("dvb --check-recording-programme %s \"%s\" &", AValue(getpid()).ToString().str(), filename.str());
+            auto testcmd = AString::Formatify("dvb --check-recording-programme \"%s\" \"%s\" &", GenerateBasicStreamCommand(GetDVBCard(), nsecs, pids).str(), filename.str());
             if (system(testcmd) != 0) {
                 config.logit("Failed to run recording test command '%s'", testcmd.str());
             }
