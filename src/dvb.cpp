@@ -2083,8 +2083,8 @@ int main(int argc, const char *argv[])
                 if (GetFileInfo(filename, &fileinfo)) {
                     uint_t datarate = (uint_t)(fileinfo.FileSize / (5 * 60));
                     config.logit("File '%s' is %s bytes long and has been written at a rate of %u bytes per second", filename.str(), AValue(fileinfo.FileSize).ToString().str(), datarate);
-                    // if data rate is less than 150kb/s, kill the process now
-                    if (datarate < (150 * 1024)) {
+                    // if data rate is less than 100kb/s, kill the process now
+                    if (datarate < (100 * 1024)) {
                         const auto pids = RunCommandAndGetResult(AString::Formatify("pgrep -f \"%s\"", dvbstreamcmd.str()));
                         config.logit("Recording of '%s' not valid, finding and killing command '%s', pids '%s'", filename.str(), dvbstreamcmd.str(), pids.str());
                         if (pids.Valid()) {
@@ -2096,6 +2096,9 @@ int main(int argc, const char *argv[])
                             config.logit("No pids for '%s'", dvbstreamcmd.str());
                         }
                     }
+                }
+                else {
+                    config.logit("Unable to get file info for '%s', it does not appear to exist", filename.str());
                 }
             }
             else if (stricmp(argv[i], "--calc-trend") == 0) {
