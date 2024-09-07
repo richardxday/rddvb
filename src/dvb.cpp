@@ -2085,7 +2085,7 @@ int main(int argc, const char *argv[])
                     config.logit("File '%s' is %s bytes long and has been written at a rate of %u bytes per second", filename.str(), AValue(fileinfo.FileSize).ToString().str(), datarate);
                     // if data rate is less than 100kb/s, kill the process now
                     if (datarate < (100 * 1024)) {
-                        const auto pids = RunCommandAndGetResult(AString::Formatify("pgrep -f \"%s\"", dvbstreamcmd.str()));
+                        const auto pids = RunCommandAndGetResult(AString::Formatify("pgrep -f \"%s\"", dvbstreamcmd.str())).SearchAndReplace("\n", " ").Words(0);
                         config.logit("Recording of '%s' not valid, finding and killing command '%s', pids '%s'", filename.str(), dvbstreamcmd.str(), pids.str());
                         if (pids.Valid()) {
                             if (system(AString::Formatify("kill %s", pids.str())) != 0) {
