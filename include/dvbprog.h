@@ -349,12 +349,16 @@ public:
         Compare_videoerrorrate,
         Compare_filedate,
         Compare_archivefiledate,
+        Ignored,
     };
+    void GetExternal(uint_t id, AString& val) const;
     void GetExternal(uint_t id, uint32_t& val) const;
     void GetExternal(uint_t id, sint32_t& val) const;
     void GetExternal(uint_t id, uint64_t& val) const;
     void GetExternal(uint_t id, sint64_t& val) const;
     void GetExternal(uint_t id, double& val) const;
+
+    void SetExternal(uint_t id, const AString& val) const;
 
     template<typename T>
     int CompareExternal(uint_t id, T value1) const {

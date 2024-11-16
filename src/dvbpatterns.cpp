@@ -303,26 +303,24 @@ void ADVBPatterns::AssignValue(ADVBProg& prog, const field_t& field, const value
     auto *ptr = prog.GetDataPtr(field.offset);
 
     switch (field.type) {
+        case FieldType_external_string:
         case FieldType_string: {
             AString str;
 
-            if (termtype == Operator_Concat) {
-                uint16_t offset;
+            if ((termtype == Operator_Concat) ||
+                (termtype == Operator_Remove)) {
+                GetString(prog, field, str);
 
-                memcpy(&offset, ptr, sizeof(offset));
-                str = prog.GetString(offset);
+                if (termtype == Operator_Remove) {
+                    str = str.SearchAndReplace(value.str, "");
+                }
             }
 
-            if (termtype == Operator_Remove) {
-                uint16_t offset;
-
-                memcpy(&offset, ptr, sizeof(offset));
-                str = prog.GetString(offset);
-                str = str.SearchAndReplace(value.str, "");
+            if (termtype != Operator_Remove) {
+                str += value.str;
             }
-            else str += value.str;
 
-            prog.SetString((const uint16_t *)ptr, str.str());
+            SetString(prog, field, str);
             break;
         }
 
@@ -656,6 +654,9 @@ bool ADVBPatterns::ParsePattern(ADataList& patternlist, const AString& line, ASt
             patternlist.Add((uptr_t)pattern);
             success = true;
         }
+        else {
+            __DeletePattern(pattern);
+        }
     }
 
     return success;
@@ -869,7 +870,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                 uint_t opstart = i;
 
                 const char *str = line.str() + i;
-                auto isassign = fieldptr->assignable;
+                const auto isassign = fieldptr->assignable;
                 uint_t j;
                 uint_t opindex = 0, opcode = Operator_EQ;
                 for (j = 0; j < NUMBEROF(operators); j++) {
@@ -973,6 +974,7 @@ AString ADVBPatterns::ParsePattern(const AString& _line, pattern_t& pattern, con
                     term->pattern      = NULL;
 
                     switch (term->field->type) {
+                        case FieldType_external_string:
                         case FieldType_string:
                             if ((opcode & ~Operator_Inverted) == Operator_Regex) {
                                 term->value.regex = &term->regex;
@@ -1255,6 +1257,35 @@ void ADVBPatterns::AppendTerms(pattern_t& dstpattern, const pattern_t& srcpatter
                 dstterms.Add((uptr_t)dstterm);
             }
         }
+    }
+}
+
+void ADVBPatterns::GetString(const ADVBProg& prog, const field_t& field, AString& str)
+{
+    const auto external = ((field.type >= _FieldType_external_first) && (field.type <= _FieldType_external_last));
+
+    if (external) {
+        prog.GetExternal(field.offset, str);
+    }
+    else {
+        const auto *ptr = prog.GetDataPtr(field.offset);
+        uint16_t offset;
+
+        memcpy(&offset, ptr, sizeof(offset));
+        str = prog.GetString(offset);
+    }
+}
+
+void ADVBPatterns::SetString(ADVBProg& prog, const field_t& field, const AString& str)
+{
+    const auto external = ((field.type >= _FieldType_external_first) && (field.type <= _FieldType_external_last));
+
+    if (external) {
+        prog.SetExternal(field.offset, str);
+    }
+    else {
+        auto *ptr = prog.GetDataPtr(field.offset);
+        prog.SetString((const uint16_t *)ptr, str.str());
     }
 }
 

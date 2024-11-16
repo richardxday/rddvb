@@ -98,12 +98,17 @@ protected:
         FieldType_sint8_t,
         FieldType_double,
         FieldType_prog,
+
+        _FieldType_external_first,
+        FieldType_external_string = _FieldType_external_first,
         FieldType_external_uint32_t,
         FieldType_external_uint64_t,
         FieldType_external_sint32_t,
         FieldType_external_sint64_t,
         FieldType_external_double,
         FieldType_external_date,
+        _FieldType_external_last = FieldType_external_date,
+
         FieldType_flag,
         FieldType_lastflag = FieldType_flag + 63,
     };
@@ -230,6 +235,9 @@ protected:
     static term_t *DuplicateTerm(const term_t *term);
 
     static bool MatchString(const term_t& term, const char *str, bool ignoreinvert = false);
+
+    static void     GetString(const ADVBProg& prog, const field_t& field, AString& str);
+    static void     SetString(ADVBProg& prog, const field_t& field, const AString& str);
 
     static sint64_t TermTypeToInt64s(const void *p, uint_t termtype);
     static void     Int64sToTermType(void *p, sint64_t val, uint_t termtype);
