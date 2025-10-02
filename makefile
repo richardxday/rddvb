@@ -164,7 +164,7 @@ $(INSTALLBINDST)/%: scripts/%.in
 	@$(SUDO) chmod a+x $@
 
 APACHESRC := share/apache
-APACHEDST := $(shell ls -d "$(ROOTDIR)etc/apache" "$(ROOTDIR)etc/apache2" "$(ROOTDIR)etc/httpd" 2>/dev/null | head -n 1)
+APACHEDST := $(shell ls -d "$(ROOTDIR)etc/apache" "$(ROOTDIR)etc/apache2" "$(ROOTDIR)etc/httpd" "$(ROOTDIR)usr/etc/apache" "$(ROOTDIR)usr/etc/apache2" "$(ROOTDIR)usr/etc/httpd" 2>/dev/null | head -n 1)
 LOCAL_APACHE_FILES := $(shell find $(APACHESRC) -type f | sed -E "s/\.in$$//" | uniq)
 GLOBAL_APACHE_FILES := $(LOCAL_APACHE_FILES:$(APACHESRC)/%=$(APACHEDST)/%)
 
